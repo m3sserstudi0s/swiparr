@@ -43,7 +43,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
-EXPOSE 3000
+EXPOSE 4321
 
 # Start script: Run migrations then start server
 CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
