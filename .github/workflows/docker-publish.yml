@@ -7,6 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  # This will result in ghcr.io/jakobbjelver/swiparr
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -19,6 +20,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Required to build for different architectures (e.g., ARM64 for Raspberry Pi)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # This is the FIX for the cache error. It creates a special builder 
+      # instance that supports the 'gha' cache type.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -37,12 +47,16 @@ jobs:
             type=sha,format=short
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
+          # Using the default 'Dockerfile' in the root
+          file: ./Dockerfile
           push: true
-          # FIXED THESE TWO LINES BELOW:
+          # Build for both standard PC (amd64) and ARM (arm64)
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Now these cache lines will work correctly!
           cache-from: type=gha
           cache-to: type=gha,mode=max
