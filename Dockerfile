@@ -18,6 +18,7 @@ RUN npx prisma generate
 
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_URL="file:/app/data/swiparr.db"
 RUN npm run build
 
 # Production image, copy all the files and run next
