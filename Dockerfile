@@ -39,7 +39,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Drizzle files needed at runtime
 # Copy from builder, but check if they exist or just copy the whole directory
 COPY --from=builder /app/src/db/migrations ./src/db/migrations
-COPY --from=builder /app/src/db/migrate.ts ./src/db/migrate.ts
+COPY --from=builder /app/src/db/migrate.js ./src/db/migrate.js
+
 
 
 USER nextjs
