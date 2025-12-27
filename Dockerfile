@@ -42,6 +42,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 
+# IMPORTANT: include Prisma config at runtime
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+ENV PRISMA_CONFIG_PATH=/app/prisma.config.ts
+
 USER nextjs
 EXPOSE 4321
 
