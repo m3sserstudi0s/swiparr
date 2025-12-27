@@ -13,6 +13,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { MovieListItem } from "../movie/MovieListItem";
 import { cn } from "@/lib/utils";
 import { JellyfinItem } from "@/types/swiparr";
+import { MovieDetailView } from "../movie/MovieDetailView";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
@@ -197,7 +198,7 @@ export default function SessionContent() {
                             Matches Found
                             {(matches?.length ?? 0) > 0 && <Badge variant="secondary">{matches?.length}</Badge>}
                         </h3>
-                        <ScrollArea className="h-[45vh] pr-4 -mr-4">
+                        <ScrollArea className="h-[53vh] pr-4 -mr-4">
                             {!activeCode ? (
                                 <div className="text-center text-muted-foreground text-sm py-8">
                                     Join a session to find matches.
@@ -209,6 +210,7 @@ export default function SessionContent() {
                                             key={movie.Id}
                                             movie={{ ...movie, isMatch: true } as any}
                                             onClick={() => setSelectedId(movie.Id)}
+                                            variant="condensed"
                                         />
                                     ))}
                                     {matches?.length === 0 && (
@@ -221,6 +223,10 @@ export default function SessionContent() {
                         </ScrollArea>
                     </div>
                 </div>
+                <MovieDetailView
+                    movieId={selectedId}
+                    onClose={() => setSelectedId(null)}
+                />
             </SheetContent>
         </Sheet>
     );

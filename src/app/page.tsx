@@ -15,7 +15,7 @@ export default function Home() {
         <SessionManager />
         <Tabs defaultValue="swipe" className="w-full flex flex-col h-full -mx-14">
           <TabsList className="grid mx-auto w-fit h-fit grid-cols-2 mb-4 bg-muted">
-            {/* Added 'group' class to the triggers */}
+
             <TabsTrigger value="swipe" className="h-9 w-13 group">
               <GalleryHorizontalEnd 
                 className="text-foreground fill-none transition-all group-data-[state=active]:fill-foreground" 

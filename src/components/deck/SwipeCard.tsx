@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+
 
 export type { TinderCardHandle };
 
@@ -72,8 +74,7 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
           >
             <Card className="relative h-full w-full overflow-hidden rounded-3xl border-border shadow-2xl select-none">
               <div className="absolute inset-0 bg-muted pointer-events-none">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <OptimizedImage
                   src={`/api/jellyfin/image/${item.Id}`}
                   alt={item.Name}
                   className="h-full w-full object-cover"

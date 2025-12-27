@@ -11,6 +11,7 @@ import { JellyfinItem } from "@/types/swiparr";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform } from "framer-motion";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface Props {
   movieId: string | null;
@@ -78,8 +79,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                 }}
                 className="absolute inset-0 w-full h-[120%]"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <OptimizedImage
                   src={`/api/jellyfin/image/${movie.Id}`}
                   className="w-full h-full object-cover"
                   alt="Backdrop"
@@ -91,8 +91,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
               
               {/* Header Content */}
               <div className="absolute bottom-4 left-4 right-4 flex items-end gap-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <OptimizedImage
                   src={`/api/jellyfin/image/${movie.Id}`}
                   className="w-24 h-36 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10"
                   alt="Poster"
@@ -147,7 +146,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
               {movie.People && movie.People.length > 0 && (
                 <div className="mb-8">
                   <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Users className="w-4 h-4" /> Cast
+                    Cast
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {movie.People.slice(0, 6).map(person => (

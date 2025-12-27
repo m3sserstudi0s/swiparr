@@ -7,8 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCcw } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
-import { toast } from "sonner";
 import { MovieDetailView } from "../movie/MovieDetailView";
+
+import { MatchOverlay } from "./MatchOverlay";
 
 export function CardDeck() {
   const queryClient = useQueryClient(); // Need this to refresh the sidebar
@@ -22,6 +23,8 @@ export function CardDeck() {
   const cardRefs = useRef<Record<string, React.RefObject<TinderCardHandle | null>>>({});
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
+
 
 
   // Utility to make sure we always have a generic RefObject
@@ -45,24 +48,16 @@ export function CardDeck() {
   // --- MULTIPLAYER LOGIC INTEGRATION HERE ---
   const swipeMutation = useMutation({
     mutationFn: async ({ id, direction }: { id: string; direction: "left" | "right" }) => {
-      // Find title for the toast notification
-      const itemTitle = deck?.find((i: JellyfinItem) => i.Id === id)?.Name || "Movie";
-
       const res = await axios.post("/api/swipe", { itemId: id, direction });
-
-      // Pass data + title to onSuccess
-      return { data: res.data, title: itemTitle };
+      return { data: res.data, id };
     },
-    onSuccess: ({ data, title }) => {
+    onSuccess: ({ data, id }) => {
       // 1. Check if the server returned a Match
       if (data.isMatch) {
-        toast("IT'S A MATCH",
-          {
-            description: `You both want to watch ${title}`,
-            // Make it green and visible
-            className: "bg-green-600 border-green-700 text-white font-bold",
-            duration: 5000,
-          });
+        const item = deck?.find((i: JellyfinItem) => i.Id === id);
+        if (item) {
+          setMatchedItem(item);
+        }
         // 2. Refresh the Sidebar match list immediately
         queryClient.invalidateQueries({ queryKey: ["matches"] });
       }
@@ -165,6 +160,11 @@ export function CardDeck() {
       <MovieDetailView
         movieId={selectedId}
         onClose={() => setSelectedId(null)}
+      />
+
+      <MatchOverlay
+        item={matchedItem}
+        onClose={() => setMatchedItem(null)}
       />
     </div>
   );

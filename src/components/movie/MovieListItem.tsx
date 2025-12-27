@@ -5,21 +5,25 @@ import { Play, Star, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 import { MergedLike } from "@/types/swiparr";
 
 interface MovieListItemProps {
   movie: MergedLike;
   onClick?: () => void;
+  variant?: "full" | "condensed";
 }
 
 
-export function MovieListItem({ movie, onClick }: MovieListItemProps) {
+export function MovieListItem({ movie, onClick, variant = "full" }: MovieListItemProps) {
   const swipeDate = movie.swipedAt ? new Date(movie.swipedAt) : "";
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
   const jellyfinUrl = process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL;
+
+  const isCondensed = variant === "condensed";
 
   return (
     <div
@@ -30,16 +34,15 @@ export function MovieListItem({ movie, onClick }: MovieListItemProps) {
     >
       {/* Poster */}
       <div className={cn(
-        "relative shrink-0 w-20 h-28",
+        isCondensed ? "relative shrink-0 w-15 h-20" : "relative shrink-0 w-20 h-28",
       )}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <OptimizedImage
           src={`/api/jellyfin/image/${movie.Id}`}
           alt={movie.Name}
-          className="w-full h-full object-cover rounded-md bg-muted"
+          className="w-full h-full object-cover rounded-md"
         />
         {/* Match Indicator */}
-        {movie.isMatch && (
+        {!isCondensed && movie.isMatch && (
           <Badge className="absolute -top-2 -right-2 h-5 px-1.5 text-[10px]">
             MATCH
           </Badge>
