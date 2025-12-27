@@ -20,7 +20,7 @@ export const likes = sqliteTable("Like", {
   jellyfinItemId: text("jellyfinItemId").notNull(),
   jellyfinUserId: text("jellyfinUserId").notNull(),
   isMatch: integer("isMatch", { mode: "boolean" }).notNull().default(false),
-  sessionCode: text("sessionCode").references(() => sessions.code),
+  sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
@@ -35,7 +35,7 @@ export const hiddens = sqliteTable("Hidden", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   jellyfinItemId: text("jellyfinItemId").notNull(),
   jellyfinUserId: text("jellyfinUserId").notNull(),
-  sessionCode: text("sessionCode").references(() => sessions.code),
+  sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
 }, (table) => {
   return [
     uniqueIndex("Hidden_jellyfinItemId_jellyfinUserId_sessionCode_key").on(table.jellyfinItemId, table.jellyfinUserId, table.sessionCode),
@@ -44,3 +44,18 @@ export const hiddens = sqliteTable("Hidden", {
 
 export type Hidden = InferSelectModel<typeof hiddens>;
 export type NewHidden = InferInsertModel<typeof hiddens>;
+
+export const sessionMembers = sqliteTable("SessionMember", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
+  jellyfinUserId: text("jellyfinUserId").notNull(),
+  jellyfinUserName: text("jellyfinUserName").notNull(),
+  joinedAt: text("joinedAt").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => {
+  return [
+    uniqueIndex("SessionMember_sessionCode_jellyfinUserId_key").on(table.sessionCode, table.jellyfinUserId),
+  ];
+});
+
+export type SessionMember = InferSelectModel<typeof sessionMembers>;
+export type NewSessionMember = InferInsertModel<typeof sessionMembers>;

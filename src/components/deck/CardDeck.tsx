@@ -1,5 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useSWR, { useSWRConfig } from "swr";
+import { useUpdates } from "@/lib/use-updates";
 import React, { useRef, useState, useMemo } from "react";
 import axios from "axios";
 import { JellyfinItem } from "@/types/swiparr";
@@ -8,15 +10,28 @@ import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCcw } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { MovieDetailView } from "../movie/MovieDetailView";
+import { UserAvatarList } from "../session/UserAvatarList";
 
 import { MatchOverlay } from "./MatchOverlay";
 
 export function CardDeck() {
-  const queryClient = useQueryClient(); // Need this to refresh the sidebar
+  const { mutate } = useSWRConfig();
 
   const [removedIds, setRemovedIds] = useState<string[]>([]);
 
-  // Used to prevent API double-fires
+  // -- SESSION STATUS & MEMBERS --
+  const { data: sessionStatus } = useSWR<{ code: string | null }>(
+    "/api/session",
+    (url: string) => axios.get(url).then(res => res.data)
+  );
+
+  useUpdates(sessionStatus?.code);
+
+  const { data: members } = useSWR<any[]>(
+    sessionStatus?.code ? "/api/session/members" : null,
+    (url: string) => axios.get(url).then(res => res.data)
+  );
+
   const swipedIdsRef = useRef<Set<string>>(new Set());
 
   // Store refs in a way React can track
@@ -24,8 +39,6 @@ export function CardDeck() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
-
-
 
   // Utility to make sure we always have a generic RefObject
   const getCardRef = (id: string) => {
@@ -58,8 +71,8 @@ export function CardDeck() {
         if (item) {
           setMatchedItem(item);
         }
-        // 2. Refresh the Sidebar match list immediately
-        queryClient.invalidateQueries({ queryKey: ["matches"] });
+        // 2. Refresh the Sidebar match list immediately via SWR
+        mutate("/api/session/matches");
       }
     },
     onError: (err) => {
@@ -119,8 +132,17 @@ export function CardDeck() {
     );
   }
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-[80vh]">
-      <div className="relative w-full h-[65vh] flex justify-center items-center">
+    <div className="relative flex flex-col items-center justify-center w-full h-[83vh]">
+      {sessionStatus?.code && members && members.length > 0 ? (
+        <div className="">
+          <UserAvatarList
+            users={members.map((m: any) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
+            size="md"
+          />
+        </div>
+      ) : <div className="h-9" />}
+      <div className="relative w-full h-[75vh] flex justify-center items-center">
+
         {/* Render bottom card first, then top card (Reverse order visually) */}
         {activeDeck.slice(0, 2).reverse().map((item: JellyfinItem, i, arr) => {
           // Recalculate index so 0 is front
@@ -133,13 +155,13 @@ export function CardDeck() {
               index={zIndex}
               onSwipe={onSwipe}
               onCardLeftScreen={onCardLeftScreen}
-              onClick={() => setSelectedId(item.Id)} 
+              onClick={() => setSelectedId(item.Id)}
             />
           );
         })}
       </div>
 
-      <div className="flex gap-8 mt-8 z-50">
+      <div className="flex gap-8 z-50 mt-4">
         <Button
           size="icon"
           variant="outline"
@@ -172,9 +194,12 @@ export function CardDeck() {
 
 function DeckSkeleton() {
   return (
-    <div className="flex flex-col items-center gap-8 h-[80vh] justify-center">
-      <Skeleton className="h-[65vh] w-full max-w-sm rounded-3xl" />
-      <div className="flex gap-8">
+    <div className="relative flex flex-col items-center justify-center w-full h-[83vh]">
+      <div className="h-10" />
+      <div className="relative w-full h-[83vh] flex justify-center items-center">
+        <Skeleton className="relative w-full h-[65vh] max-w-sm rounded-3xl" />
+      </div>
+      <div className="flex gap-8 mt-4">
         <Skeleton className="h-16 w-16 rounded-full" />
         <Skeleton className="h-16 w-16 rounded-full" />
       </div>

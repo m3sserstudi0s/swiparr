@@ -30,7 +30,7 @@ export function LikesList() {
         <div className="w-full mx-auto h-[80vh] max-w-sm flex flex-col">
             {/* Header w/ Filter */}
             <div className="flex items-center justify-between mb-4 px-1">
-                <h2 className="text-sm text-muted-foreground font-medium">Showing {likes?.length || 0} likes</h2>
+                {!isLoading && <h2 className="text-sm text-muted-foreground font-medium">Showing {likes?.length || 0} likes</h2>}
                 <LikesFilter
                     sortBy={sortBy}
                     setSortBy={setSortBy}

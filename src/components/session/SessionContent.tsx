@@ -6,8 +6,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Users, LogOut, Plus, Share2, UserPlus } from "lucide-react";
+import { UserAvatarList } from "./UserAvatarList";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useSWR, { useSWRConfig } from "swr";
+import { useUpdates } from "@/lib/use-updates";
+
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MovieListItem } from "../movie/MovieListItem";
@@ -20,35 +24,38 @@ export default function SessionContent() {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const queryClient = useQueryClient();
+    const { mutate } = useSWRConfig();
     const searchParams = useSearchParams();
     const router = useRouter();
 
     // -- 1. CHECK CURRENT STATUS --
-    const { data: sessionStatus, isSuccess } = useQuery({
-        queryKey: ["sessionStatus"],
-        queryFn: async () => {
-            const res = await axios.get<{ code: string | null }>("/api/session");
-            return res.data;
-        }
-    });
+    const { data: sessionStatus, isLoading: isSessionLoading } = useSWR(
+        "/api/session",
+        url => axios.get(url).then(res => res.data)
+    );
+    const isSuccess = !isSessionLoading && !!sessionStatus;
     const activeCode = sessionStatus?.code;
 
-    // -- 2. HANDLE MATCHES --
-    const { data: matches } = useQuery<JellyfinItem[]>({
-        queryKey: ["matches"],
-        queryFn: async () => {
-            const res = await axios.get<JellyfinItem[]>("/api/session/matches");
-            return res.data;
-        },
-        enabled: !!activeCode,
-        refetchInterval: 5000
-    });
+    // -- 1.6 SUBSCRIBE TO EVENTS --
+    useUpdates(activeCode);
+
+    // -- 1.5 FETCH MEMBERS (Using SWR) --
+    const { data: members } = useSWR<any[]>(
+        activeCode ? "/api/session/members" : null,
+        (url: string) => axios.get(url).then(res => res.data)
+    );
+
+    // -- 2. HANDLE MATCHES (Using SWR) --
+    const { data: matches } = useSWR<JellyfinItem[]>(
+        activeCode ? "/api/session/matches" : null,
+        (url: string) => axios.get(url).then(res => res.data)
+    );
 
     // -- 3. MUTATIONS --
     const createSession = useMutation({
         mutationFn: async () => axios.post("/api/session", { action: "create" }),
         onSuccess: (res) => {
-            queryClient.setQueryData(["sessionStatus"], { code: res.data.code });
+            mutate("/api/session", { code: res.data.code });
             toast("Session created", { description: "Waiting for friends..." });
         }
     });
@@ -56,7 +63,7 @@ export default function SessionContent() {
     const joinSession = useMutation({
         mutationFn: async (codeToJoin: string) => axios.post("/api/session", { action: "join", code: codeToJoin }),
         onSuccess: (res, variables) => {
-            queryClient.setQueryData(["sessionStatus"], { code: variables });
+            mutate("/api/session", { code: variables.toUpperCase() });
             queryClient.invalidateQueries({ queryKey: ["deck"] });
             toast.success("Connected!", { description: `You are in session ${variables}` });
             router.replace("/");
@@ -69,8 +76,8 @@ export default function SessionContent() {
     const leaveSession = useMutation({
         mutationFn: async () => axios.delete("/api/session"),
         onSuccess: () => {
-            queryClient.setQueryData(["sessionStatus"], { code: null });
-            queryClient.setQueryData(["matches"], []);
+            mutate("/api/session", { code: null });
+            mutate("/api/session/matches", []);
             toast("Left session");
         }
     });
@@ -89,7 +96,7 @@ export default function SessionContent() {
         if (!activeCode) return;
         const shareUrl = `${window.location.origin}/?join=${activeCode}`;
         const shareData = {
-            title: 'Swiparr ession invite',
+            title: 'Swiparr session invite',
             text: `Join with code: ${activeCode}`,
             url: shareUrl
         };
@@ -108,13 +115,13 @@ export default function SessionContent() {
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="z-1">
-                <Button variant="ghost" size="icon" className={cn(activeCode ? "text-primary" : "text-muted-foreground", "ml-4")}>
+                <Button variant="ghost" size="icon" className="text-foreground ml-4">
                     <Users className="w-6 h-6" />
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="z-101 sm:max-w-md w-full px-4">
                 <SheetHeader>
-                    <SheetTitle className="mb-4 flex items-center gap-2">
+                    <SheetTitle className="mb-4 flex items-center gap-2 h-12">
                         {activeCode ? (
                             <>
                                 <span className="relative flex h-3 w-3">
@@ -122,6 +129,14 @@ export default function SessionContent() {
                                     <span className="relative inline-flex rounded-full h-3 w-3 bg-muted-foreground"></span>
                                 </span>
                                 Session
+                                {activeCode && members && members.length > 0 && (
+                                    <div className="py-2">
+                                        <UserAvatarList
+                                            size="md"
+                                            users={members.map((m: any) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
+                                        />
+                                    </div>
+                                )}
                             </>
                         ) : "Session"}
                     </SheetTitle>
@@ -132,7 +147,7 @@ export default function SessionContent() {
                             {!activeCode ? (
                                 <span className="text-sm text-muted-foreground">Enter code or create session</span>
                             ) : (
-                                <span className="text-xs uppercase tracking-widest text-muted-foreground">Session Active</span>
+                                <span className="text-xs uppercase tracking-widest text-muted-foreground">Session code</span>
                             )}
                         </div>
                         <div className="flex items-center justify-center mb-4 h-12">

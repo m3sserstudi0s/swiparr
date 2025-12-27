@@ -4,14 +4,16 @@ import React from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, Users } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Play, Clock, Star, Users, HeartOff } from "lucide-react";
+import { UserAvatarList } from "../session/UserAvatarList";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { JellyfinItem } from "@/types/swiparr";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { toast } from "sonner";
 
 interface Props {
   movieId: string | null;
@@ -40,6 +42,22 @@ export function MovieDetailView({ movieId, onClose }: Props) {
       return res.data;
     },
     enabled: !!movieId,
+  });
+
+  const queryClient = useQueryClient();
+
+  const { mutate: unlike, isPending: isUnliking } = useMutation({
+    mutationFn: async () => {
+      await axios.delete(`/api/user/likes?itemId=${movieId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["likes"] });
+      toast.success("Removed from likes");
+      onClose();
+    },
+    onError: () => {
+      toast.error("Failed to remove from likes");
+    }
   });
 
   const ticksToTime = (ticks?: number) => {
@@ -124,6 +142,19 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                     <Play className="w-4 h-4 mr-2 fill-current" /> Play
                   </Button>
                 </Link>
+                <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                        if (window.confirm("Are you sure you want to unlike this movie?")) {
+                            unlike();
+                        }
+                    }}
+                    disabled={isUnliking}
+                >
+                    <HeartOff className="w-5 h-5" />
+                </Button>
                 {movie.CommunityRating && (
                   <div className="flex flex-col items-center justify-center px-6 bg-muted rounded-md border border-border">
                     <span className="flex items-center text-foreground font-bold text-lg">
@@ -133,6 +164,14 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                   </div>
                 )}
               </div>
+
+              {/* LIKED BY */}
+              {movie.likedBy && movie.likedBy.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3" >Liked By</h3>
+                  <UserAvatarList users={movie.likedBy} size="lg" />
+                </div>
+              )}
 
               {/* SYNOPSIS */}
               <div className="mb-8">

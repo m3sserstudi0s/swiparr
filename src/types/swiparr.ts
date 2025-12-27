@@ -16,7 +16,12 @@ export interface JellyfinItem {
   ImageTags: {
     Primary?: string;
   };
+  likedBy?: {
+    userId: string;
+    userName: string;
+  }[];
 }
+
 
 export interface SessionData {
   user: {
@@ -37,4 +42,9 @@ export interface MergedLike extends JellyfinItem {
   swipedAt?: string;
   sessionCode?: string | null;
   isMatch?: boolean;
+  likedBy?: {
+    userId: string;
+    userName: string;
+  }[];
 }
+

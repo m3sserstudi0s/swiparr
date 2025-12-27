@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useQuickConnectUpdates } from "@/lib/use-updates";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
@@ -14,7 +15,27 @@ export default function LoginContent() {
   
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
-  const pollInterval = useRef<NodeJS.Timeout | null>(null);
+
+  const checkAuth = useCallback(async (secret: string) => {
+    try {
+      const res = await fetch("/api/auth/quick-connect", {
+        method: "POST",
+        body: JSON.stringify({ secret }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = searchParams.get("callbackUrl") || "/";
+      }
+    } catch (err) {
+      console.error("Auth check error", err);
+    }
+  }, [searchParams]);
+
+  useQuickConnectUpdates(qcSecret, () => {
+    if (qcSecret) checkAuth(qcSecret);
+  });
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,31 +77,8 @@ export default function LoginContent() {
     }
   };
 
-  useEffect(() => {
-    if (qcSecret) {
-      pollInterval.current = setInterval(async () => {
-        try {
-          const res = await fetch("/api/auth/quick-connect", {
-            method: "POST",
-            body: JSON.stringify({ secret: qcSecret }),
-            headers: { "Content-Type": "application/json" },
-          });
-          const data = await res.json();
-          if (data.success) {
-            if (pollInterval.current) clearInterval(pollInterval.current);
-            window.location.href = searchParams.get("callbackUrl") || "/";
-          }
-        } catch (err) {
-          console.error("Polling error", err);
-        }
-      }, 5000);
-    }
-    return () => {
-      if (pollInterval.current) clearInterval(pollInterval.current);
-    };
-  }, [qcSecret, searchParams]);
-
   return (
+
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
         <CardTitle className="text-center text-2xl font-bold text-primary font-mono">

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { db, sessions } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { db, sessions, sessionMembers } from "@/lib/db";
+import { eq, and } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
 import { v4 as uuidv4 } from "uuid";
+import { events, EVENT_TYPES } from "@/lib/events";
+
 
 
 function generateCode() {
@@ -37,8 +39,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
+        // Register member
+        try {
+            await db.insert(sessionMembers).values({
+                sessionCode: code,
+                jellyfinUserId: session.user.Id,
+                jellyfinUserName: session.user.Name,
+            }).onConflictDoNothing();
+        } catch (e) {
+            // Ignore if already member
+        }
+
         session.sessionCode = code;
         await session.save();
+
+        events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+
         return NextResponse.json({ success: true, code });
     }
 
@@ -51,16 +67,26 @@ export async function POST(request: NextRequest) {
             hostUserId: session.user.Id,
         });
 
+        // Register host as member
+        await db.insert(sessionMembers).values({
+            sessionCode: code,
+            jellyfinUserId: session.user.Id,
+            jellyfinUserName: session.user.Name,
+        });
+
 
         session.sessionCode = code;
         await session.save();
+
+        events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+
         return NextResponse.json({ success: true, code });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   
@@ -74,6 +100,32 @@ export async function GET(request: NextRequest) {
 export async function DELETE() {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    
+    if (session.isLoggedIn && session.user && session.sessionCode) {
+        const code = session.sessionCode;
+        const userId = session.user.Id;
+
+        // 1. Remove member from session
+        await db.delete(sessionMembers).where(
+            and(
+                eq(sessionMembers.sessionCode, code),
+                eq(sessionMembers.jellyfinUserId, userId)
+            )
+        );
+
+        // 2. Check if any members left
+        const remainingMembers = await db.query.sessionMembers.findMany({
+            where: eq(sessionMembers.sessionCode, code),
+        });
+
+        if (remainingMembers.length === 0) {
+            // 3. Delete session if no members left (will cascade to likes/hiddens)
+            await db.delete(sessions).where(eq(sessions.code, code));
+        } else {
+            events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+        }
+    }
+
     session.sessionCode = undefined;
     await session.save();
     return NextResponse.json({ success: true });

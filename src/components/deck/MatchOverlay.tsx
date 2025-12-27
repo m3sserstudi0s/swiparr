@@ -4,6 +4,7 @@ import { JellyfinItem } from "@/types/swiparr";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { UserAvatarList } from "../session/UserAvatarList";
 
 interface MatchOverlayProps {
   item: JellyfinItem | null;
@@ -43,6 +44,10 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
             <p className="text-muted-foreground text-lg mb-8 px-4">
               You both want to watch <span className="text-foreground font-bold">{item.Name}</span>
             </p>
+
+            {item.likedBy && item.likedBy.length > 0 && (
+                <UserAvatarList users={item.likedBy} size="lg" className="mb-8" />
+            )}
 
             <motion.div
               initial={{ y: 20, opacity: 0 }}

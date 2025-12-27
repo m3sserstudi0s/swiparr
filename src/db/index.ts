@@ -8,4 +8,5 @@ const connectionString = process.env.DATABASE_URL?.replace("file:", "") || "swip
 console.log("DB connecting to:", path.resolve(connectionString));
 
 const sqlite = new Database(connectionString);
+sqlite.pragma('foreign_keys = ON');
 export const db = drizzle(sqlite, { schema });

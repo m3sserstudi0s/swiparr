@@ -11,8 +11,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
-  const { id } = await params; // Notice the 'await' here
-  const imageUrl = getJellyfinUrl(`/Items/${id}/Images/Primary`);
+  const { id } = await params;
+  const searchParams = request.nextUrl.searchParams;
+  const isUser = searchParams.get("type") === "user";
+  
+  const imageUrl = isUser 
+    ? getJellyfinUrl(`/Users/${id}/Images/Primary`)
+    : getJellyfinUrl(`/Items/${id}/Images/Primary`);
+
 
   try {
     // Stream the image from Jellyfin to the Browser

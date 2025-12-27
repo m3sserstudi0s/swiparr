@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { db, likes as likesTable, type Like } from "@/lib/db";
-import { eq, and, isNotNull, isNull, desc } from "drizzle-orm";
+import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
+import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getJellyfinUrl } from "@/lib/jellyfin/api";
 import axios from "axios";
@@ -43,13 +43,37 @@ export async function GET(request: NextRequest) {
 
     const items: JellyfinItem[] = jellyfinRes.data.Items;
 
+    // Fetch all likes in this session for these items to identify contributors
+    // Only if we have session items
+    const sessionCodes = [...new Set(likesResult.map(l => l.sessionCode).filter(Boolean))];
+    let allRelatedLikes: any[] = [];
+    let members: any[] = [];
+
+    if (sessionCodes.length > 0) {
+        allRelatedLikes = await db.query.likes.findMany({
+            where: and(
+                inArray(likesTable.sessionCode, sessionCodes as string[]),
+                inArray(likesTable.jellyfinItemId, items.map(i => i.Id))
+            )
+        });
+        members = await db.query.sessionMembers.findMany({
+            where: inArray(sessionMembers.sessionCode, sessionCodes as string[])
+        });
+    }
+
     let merged: MergedLike[] = items.map((item: JellyfinItem) => {
         const likeData = likesResult.find((l: Like) => l.jellyfinItemId === item.Id);
+        const itemLikes = allRelatedLikes.filter(l => l.jellyfinItemId === item.Id && l.sessionCode === likeData?.sessionCode);
+        
         return {
             ...item,
             swipedAt: likeData?.createdAt,
             sessionCode: likeData?.sessionCode,
-            isMatch: likeData?.isMatch ?? false
+            isMatch: likeData?.isMatch ?? false,
+            likedBy: itemLikes.map(l => ({
+                userId: l.jellyfinUserId,
+                userName: members.find(m => m.jellyfinUserId === l.jellyfinUserId && m.sessionCode === l.sessionCode)?.jellyfinUserName || "Unknown"
+            }))
         };
     });
 
@@ -69,5 +93,58 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Fetch User Likes Error", error);
     return NextResponse.json([], { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const cookieStore = await cookies();
+  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const itemId = searchParams.get("itemId");
+  const paramSessionCode = searchParams.get("sessionCode");
+  
+  if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
+
+  // Use session code from params if provided, otherwise from session cookie
+  const effectiveSessionCode = paramSessionCode !== null ? paramSessionCode : session.sessionCode;
+
+  try {
+    // Delete the user's like for this item
+    await db.delete(likesTable).where(
+        and(
+            eq(likesTable.jellyfinUserId, session.user.Id),
+            eq(likesTable.jellyfinItemId, itemId),
+            effectiveSessionCode ? eq(likesTable.sessionCode, effectiveSessionCode as string) : isNull(likesTable.sessionCode)
+        )
+    );
+
+    // If it was a session match, we might need to update other users' like.isMatch status
+    if (effectiveSessionCode) {
+        const remainingLikes = await db.query.likes.findMany({
+            where: and(
+                eq(likesTable.sessionCode, effectiveSessionCode as string),
+                eq(likesTable.jellyfinItemId, itemId)
+            )
+        });
+
+        if (remainingLikes.length < 2) {
+            // No longer a match for anyone
+            await db.update(likesTable)
+                .set({ isMatch: false })
+                .where(
+                    and(
+                        eq(likesTable.sessionCode, effectiveSessionCode as string),
+                        eq(likesTable.jellyfinItemId, itemId)
+                    )
+                );
+        }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete Like Error", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
