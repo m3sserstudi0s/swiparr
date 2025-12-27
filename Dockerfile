@@ -16,19 +16,14 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# ---- prod deps (ONLY production deps) ----
-FROM base AS prod-deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
-
 # ---- runtime ----
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=4321
+
+RUN apk add --no-cache libc6-compat
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -42,6 +37,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Drizzle files needed at runtime
+# Copy from builder, but check if they exist or just copy the whole directory
 COPY --from=builder /app/src/db/migrations ./src/db/migrations
 COPY --from=builder /app/src/db/migrate.js ./src/db/migrate.js
 
