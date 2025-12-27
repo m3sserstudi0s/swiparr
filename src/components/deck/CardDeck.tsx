@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCcw } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { toast } from "sonner";
+import { MovieDetailView } from "../movie/MovieDetailView";
 
 export function CardDeck() {
   const queryClient = useQueryClient(); // Need this to refresh the sidebar
@@ -19,6 +20,9 @@ export function CardDeck() {
 
   // Store refs in a way React can track
   const cardRefs = useRef<Record<string, React.RefObject<TinderCardHandle | null>>>({});
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
 
   // Utility to make sure we always have a generic RefObject
   const getCardRef = (id: string) => {
@@ -101,10 +105,10 @@ export function CardDeck() {
   };
 
   if (isLoading) return <DeckSkeleton />;
-  if (isError) return <div className="text-white text-center">Error loading deck. Check logs.</div>;
+  if (isError) return <div className="text-foreground text-center">Error loading deck. Check logs.</div>;
   if (activeDeck.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center text-neutral-400">
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center text-muted-foreground">
         <p className="mb-4">Nothing more.</p>
         <Button
           onClick={() => {
@@ -134,6 +138,7 @@ export function CardDeck() {
               index={zIndex}
               onSwipe={onSwipe}
               onCardLeftScreen={onCardLeftScreen}
+              onClick={() => setSelectedId(item.Id)} 
             />
           );
         })}
@@ -153,9 +158,14 @@ export function CardDeck() {
           className="h-16 w-16 rounded-full shadow-lg"
           onClick={() => swipeTop("right")}
         >
-          <Heart className="size-8 fill-neutral-900 text-neutral-900" />
+          <Heart className="size-8 fill-primary-foreground" />
         </Button>
       </div>
+      {/* MOUNT THE MODAL */}
+      <MovieDetailView
+        movieId={selectedId}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 }
@@ -163,10 +173,10 @@ export function CardDeck() {
 function DeckSkeleton() {
   return (
     <div className="flex flex-col items-center gap-8 h-[80vh] justify-center">
-      <Skeleton className="h-[65vh] w-full max-w-sm rounded-3xl bg-neutral-800" />
+      <Skeleton className="h-[65vh] w-full max-w-sm rounded-3xl" />
       <div className="flex gap-8">
-        <Skeleton className="h-16 w-16 rounded-full bg-neutral-800" />
-        <Skeleton className="h-16 w-16 rounded-full bg-neutral-800" />
+        <Skeleton className="h-16 w-16 rounded-full" />
+        <Skeleton className="h-16 w-16 rounded-full" />
       </div>
     </div>
   );

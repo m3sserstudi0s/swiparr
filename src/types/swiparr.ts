@@ -17,8 +17,6 @@ export interface JellyfinItem {
     Primary?: string;
   };
 }
-// ... keep SessionData etc
-
 
 export interface SessionData {
   user: {
@@ -33,4 +31,10 @@ export interface SessionData {
 export interface SwipePayload {
   itemId: string;
   direction: "left" | "right";
+}
+
+export interface MergedLike extends JellyfinItem {
+  swipedAt?: string;
+  sessionCode?: string | null;
+  isMatch?: boolean;
 }

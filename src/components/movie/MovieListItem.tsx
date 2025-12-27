@@ -6,10 +6,13 @@ import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 
+import { MergedLike } from "@/types/swiparr";
+
 interface MovieListItemProps {
-  movie: any;
+  movie: MergedLike;
   onClick?: () => void;
 }
+
 
 export function MovieListItem({ movie, onClick }: MovieListItemProps) {
   const swipeDate = movie.swipedAt ? new Date(movie.swipedAt) : "";
@@ -22,7 +25,7 @@ export function MovieListItem({ movie, onClick }: MovieListItemProps) {
     <div
       onClick={onClick}
       className={cn(
-        "flex gap-4 mb-4 p-3 rounded-lg border transition-colors cursor-pointer bg-neutral-900 border-neutral-800",
+        "flex gap-4 mb-4 p-3 rounded-lg border transition-colors cursor-pointer bg-card border-border",
       )}
     >
       {/* Poster */}
@@ -33,7 +36,7 @@ export function MovieListItem({ movie, onClick }: MovieListItemProps) {
         <img
           src={`/api/jellyfin/image/${movie.Id}`}
           alt={movie.Name}
-          className="w-full h-full object-cover rounded-md bg-neutral-800"
+          className="w-full h-full object-cover rounded-md bg-muted"
         />
         {/* Match Indicator */}
         {movie.isMatch && (
@@ -47,11 +50,11 @@ export function MovieListItem({ movie, onClick }: MovieListItemProps) {
       <div className="flex flex-col justify-between flex-1 py-0.5 min-w-0">
         <div>
           <h3 className={cn(
-            "font-bold line-clamp-2 leading-tight mb-1 text-neutral-100",
+            "font-bold line-clamp-2 leading-tight mb-1 text-foreground",
           )}>
             {movie.Name}
           </h3>
-          <div className="flex items-center gap-2 text-xs text-neutral-400">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>{movie.ProductionYear}</span>
             •
             {movie.CommunityRating && (
@@ -66,7 +69,7 @@ export function MovieListItem({ movie, onClick }: MovieListItemProps) {
         <div className="flex flex-col gap-2 mt-2">
           {/* Only show date in full view */}
           {movie.swipedAt && (
-            <div className="text-[10px] text-neutral-500 flex items-center">
+            <div className="text-[10px] text-muted-foreground flex items-center">
               <Calendar className="w-3 h-3 mr-1" />
               {formattedDateText}
             </div>
@@ -77,7 +80,7 @@ export function MovieListItem({ movie, onClick }: MovieListItemProps) {
             size="sm" 
             variant="secondary" 
             className={cn(
-                "h-7 text-xs w-full bg-neutral-800 hover:bg-neutral-700",
+                "h-7 text-xs w-full",
             )}
           >
             <Play className={cn("mr-2 w-2 h-2")} /> 

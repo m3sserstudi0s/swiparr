@@ -4,6 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { authenticateJellyfin } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
+import axios from "axios";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,11 +31,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, user: session.user });
 
-  } catch (error: any) {
-    console.error("[Auth] Login Failed:", error.message);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[Auth] Login Failed:", errorMessage);
     
     // Check for specific Axios error response from Jellyfin
-    if (error?.response) {
+    if (axios.isAxiosError(error) && error.response) {
        console.error("[Auth] Jellyfin Status:", error.response.status);
        console.error("[Auth] Jellyfin Data:", JSON.stringify(error.response.data));
        

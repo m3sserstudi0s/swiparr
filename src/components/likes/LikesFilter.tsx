@@ -26,23 +26,23 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
     <Drawer>
             <DrawerTitle/>
       <DrawerTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 h-8 text-xs border-neutral-700 bg-neutral-900/50">
+        <Button variant="outline" size="sm" className="gap-2 h-8 text-xs border-border bg-muted/50">
           <SlidersHorizontal className="w-3 h-3" />
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="bg-neutral-900 border-neutral-800 text-neutral-100">
+      <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
           <div className="p-4 pb-0 space-y-6">
             
             {/* SORTING */}
             <div className="space-y-3">
-              <Label className="text-neutral-400 uppercase text-xs tracking-wider">Sort By</Label>
+              <Label className="text-muted-foreground uppercase text-xs tracking-wider">Sort By</Label>
               <RadioGroup value={sortBy} onValueChange={setSortBy} className="grid grid-cols-3 gap-2">
                 <div>
                   <RadioGroupItem value="date" id="date" className="peer sr-only" />
                   <Label
                     htmlFor="date"
-                    className="flex flex-col items-center justify-between rounded-md border border-neutral-800 bg-neutral-950 p-2 hover:bg-neutral-900 peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
+                    className="flex flex-col items-center justify-between rounded-md border border-border bg-card p-2 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
                   >
                     Liked date
                   </Label>
@@ -51,7 +51,7 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
                   <RadioGroupItem value="year" id="year" className="peer sr-only" />
                   <Label
                     htmlFor="year"
-                    className="flex flex-col items-center justify-between rounded-md border border-neutral-800 bg-neutral-950 p-2 hover:bg-neutral-900 peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
+                    className="flex flex-col items-center justify-between rounded-md border border-border bg-card p-2 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
                   >
                     Year
                   </Label>
@@ -60,7 +60,7 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
                   <RadioGroupItem value="rating" id="rating" className="peer sr-only" />
                   <Label
                     htmlFor="rating"
-                    className="flex flex-col items-center justify-between rounded-md border border-neutral-800 bg-neutral-950 p-2 hover:bg-neutral-900 peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
+                    className="flex flex-col items-center justify-between rounded-md border border-border bg-card p-2 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
                   >
                     Rating
                   </Label>
@@ -70,18 +70,18 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
 
             {/* FILTERING */}
             <div className="space-y-3">
-              <Label className="text-neutral-400 uppercase text-xs tracking-wider">Show Content</Label>
+              <Label className="text-muted-foreground uppercase text-xs tracking-wider">Show Content</Label>
               <RadioGroup value={filterMode} onValueChange={setFilterMode} className="flex flex-col space-y-1">
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="f-all" className="border-neutral-600 text-primary" />
+                  <RadioGroupItem value="all" id="f-all" className="text-primary" />
                   <Label htmlFor="f-all">Everything</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="session" id="f-session" className="border-neutral-600 text-primary" />
+                  <RadioGroupItem value="session" id="f-session" className="text-primary" />
                   <Label htmlFor="f-session">Sessions</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="solo" id="f-solo" className="border-neutral-600 text-primary" />
+                  <RadioGroupItem value="solo" id="f-solo" className="text-primary" />
                   <Label htmlFor="f-solo">Solo</Label>
                 </div>
               </RadioGroup>

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { prisma } from "@/lib/db";
+import { db, sessions } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
+import { v4 as uuidv4 } from "uuid";
+
 
 function generateCode() {
     // Simple 4-letter code (e.g., AXYZ)
@@ -25,9 +28,10 @@ export async function POST(request: NextRequest) {
     // ACTION: JOIN
     if (body.action === "join") {
         const code = body.code.toUpperCase();
-        const existingSession = await prisma.session.findUnique({
-            where: { code },
+        const existingSession = await db.query.sessions.findFirst({
+            where: eq(sessions.code, code),
         });
+
 
         if (!existingSession) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -41,12 +45,12 @@ export async function POST(request: NextRequest) {
     // ACTION: CREATE
     if (body.action === "create") {
         const code = generateCode();
-        await prisma.session.create({
-            data: {
-                code,
-                hostUserId: session.user.Id,
-            },
+        await db.insert(sessions).values({
+            id: uuidv4(),
+            code,
+            hostUserId: session.user.Id,
         });
+
 
         session.sessionCode = code;
         await session.save();

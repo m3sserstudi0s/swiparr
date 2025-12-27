@@ -54,7 +54,7 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
     const rotate = useTransform(x, [-200, 200], [-25, 25]);
     
     // Opacity: Fade out slowly as it leaves the screen
-    const opacity = useTransform(x, [-200, -150, 0, 150, 200], [0, 1, 1, 1, 0]);
+    const opacity = useTransform(x, [-200, -170, 0, 170, 200], [0, 1, 1, 1, 0]);
 
     // --- OVERLAYS ---
     // Only show "Like" or "Nope" if moving mostly Horizontally

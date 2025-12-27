@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MovieListItem } from "../movie/MovieListItem";
 import { cn } from "@/lib/utils";
+import { JellyfinItem } from "@/types/swiparr";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
@@ -32,10 +33,10 @@ export default function SessionContent() {
     const activeCode = sessionStatus?.code;
 
     // -- 2. HANDLE MATCHES --
-    const { data: matches } = useQuery({
+    const { data: matches } = useQuery<JellyfinItem[]>({
         queryKey: ["matches"],
         queryFn: async () => {
-            const res = await axios.get("/api/session/matches");
+            const res = await axios.get<JellyfinItem[]>("/api/session/matches");
             return res.data;
         },
         enabled: !!activeCode,
@@ -87,38 +88,37 @@ export default function SessionContent() {
         if (!activeCode) return;
         const shareUrl = `${window.location.origin}/?join=${activeCode}`;
         const shareData = {
-            title: 'Join my Swiparr Session',
-            text: `Let's pick a movie! Join code: ${activeCode}`,
+            title: 'Swiparr ession invite',
+            text: `Join with code: ${activeCode}`,
             url: shareUrl
         };
         if (navigator.share) {
             try {
                 await navigator.share(shareData);
-                toast.success("Opened share menu");
             } catch (err) {
                 console.log("Share cancelled");
             }
         } else {
             await navigator.clipboard.writeText(shareUrl);
-            toast.success("Link copied to clipboard!");
+            toast.success("Link copied to clipboard");
         }
     };
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="z-1">
-                <Button variant="ghost" size="icon" className={cn(activeCode ? "text-neutral-400" : "text-neutral-300", "ml-4")}>
+                <Button variant="ghost" size="icon" className={cn(activeCode ? "text-primary" : "text-muted-foreground", "ml-4")}>
                     <Users className="w-6 h-6" />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="bg-neutral-900 z-101 border-neutral-800 text-neutral-100 sm:max-w-md w-full px-4">
+            <SheetContent side="left" className="z-101 sm:max-w-md w-full px-4">
                 <SheetHeader>
-                    <SheetTitle className="text-neutral-100 mb-4 flex items-center gap-2">
+                    <SheetTitle className="mb-4 flex items-center gap-2">
                         {activeCode ? (
                             <>
                                 <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neutral-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-neutral-500"></span>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-muted-foreground opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-muted-foreground"></span>
                                 </span>
                                 Session
                             </>
@@ -126,12 +126,12 @@ export default function SessionContent() {
                     </SheetTitle>
                 </SheetHeader>
                 <div className="space-y-6 px-1 mt-4">
-                    <div className="w-full p-6 rounded-xl bg-neutral-800/50 border border-neutral-800 flex flex-col min-h-40 justify-between">
+                    <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col min-h-40 justify-between">
                         <div className="h-6 flex items-center justify-center mb-2">
                             {!activeCode ? (
-                                <span className="text-sm text-neutral-400">Enter code or create session</span>
+                                <span className="text-sm text-muted-foreground">Enter code or create session</span>
                             ) : (
-                                <span className="text-xs uppercase tracking-widest text-neutral-400">Session Active</span>
+                                <span className="text-xs uppercase tracking-widest text-muted-foreground">Session Active</span>
                             )}
                         </div>
                         <div className="flex items-center justify-center mb-4 h-12">
@@ -140,11 +140,11 @@ export default function SessionContent() {
                                     placeholder="Code"
                                     value={inputCode}
                                     onChange={(e) => setInputCode(e.target.value.toUpperCase())}
-                                    className="bg-neutral-950 border-neutral-700 font-mono tracking-widest text-center uppercase h-10 w-full"
+                                    className="bg-background border-input font-mono tracking-widest text-center uppercase h-10 w-full"
                                     maxLength={4}
                                 />
                             ) : (
-                                <div className="text-4xl font-black font-mono tracking-[0.2em] text-neutral-100">
+                                <div className="text-4xl font-black font-mono tracking-[0.2em] text-foreground">
                                     {activeCode}
                                 </div>
                             )}
@@ -154,7 +154,8 @@ export default function SessionContent() {
                                 <>
                                     <Button
                                         onClick={() => joinSession.mutate(inputCode)}
-                                        className="flex-1 h-10 bg-neutral-100 text-neutral-900 hover:bg-white"
+                                        className="flex-1 h-10"
+                                        variant="default"
                                         disabled={inputCode.length !== 4}
                                     >
                                         <UserPlus className="w-4 h-4 mr-2" />
@@ -192,26 +193,26 @@ export default function SessionContent() {
                         </div>
                     </div>
                     <div className="mt-4">
-                        <h3 className="font-bold mb-3 flex items-center justify-between text-neutral-400 uppercase tracking-wider text-xs">
+                        <h3 className="font-bold mb-3 flex items-center justify-between text-muted-foreground uppercase tracking-wider text-xs">
                             Matches Found
-                            {matches?.length > 0 && <Badge className="bg-neutral-600 hover:bg-neutral-700">{matches.length}</Badge>}
+                            {(matches?.length ?? 0) > 0 && <Badge variant="secondary">{matches?.length}</Badge>}
                         </h3>
                         <ScrollArea className="h-[45vh] pr-4 -mr-4">
                             {!activeCode ? (
-                                <div className="text-center text-neutral-600 text-sm py-8">
+                                <div className="text-center text-muted-foreground text-sm py-8">
                                     Join a session to find matches.
                                 </div>
                             ) : (
                                 <>
-                                    {matches?.map((movie: any) => (
+                                    {matches?.map((movie: JellyfinItem) => (
                                         <MovieListItem
                                             key={movie.Id}
-                                            movie={{ ...movie, isMatch: true }}
+                                            movie={{ ...movie, isMatch: true } as any}
                                             onClick={() => setSelectedId(movie.Id)}
                                         />
                                     ))}
                                     {matches?.length === 0 && (
-                                        <div className="text-center text-neutral-600 text-sm py-8">
+                                        <div className="text-center text-muted-foreground text-sm py-8">
                                             No matches found yet.
                                         </div>
                                     )}

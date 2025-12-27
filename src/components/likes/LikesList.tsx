@@ -5,22 +5,21 @@ import axios from "axios";
 import { useState } from "react";
 import { LikesFilter } from "./LikesFilter";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Star, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MovieDetailView } from "../movie/MovieDetailView";
 import { MovieListItem } from "../movie/MovieListItem";
+import { type MergedLike } from "@/types/swiparr";
 
 export function LikesList() {
     const [sortBy, setSortBy] = useState("date");
     const [filterMode, setFilterMode] = useState("all");
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
-    const { data: likes, isLoading } = useQuery({
+    const { data: likes, isLoading } = useQuery<MergedLike[]>({
         queryKey: ["likes", sortBy, filterMode],
         queryFn: async () => {
-            const res = await axios.get("/api/user/likes", {
+            const res = await axios.get<MergedLike[]>("/api/user/likes", {
                 params: { sortBy, filter: filterMode }
             });
             return res.data;
@@ -45,12 +44,12 @@ export function LikesList() {
                 {isLoading && <LikesSkeleton />}
 
                 {!isLoading && likes?.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                         <p>No movies found.</p>
                     </div>
                 )}
 
-                {likes?.map((movie: any) => (
+                {likes?.map((movie: MergedLike) => (
                      <MovieListItem
                         key={movie.Id} 
                         movie={movie} 
@@ -73,11 +72,11 @@ function LikesSkeleton() {
         <div className="space-y-4">
             {[1, 2, 3].map(i => (
                 <div key={i} className="flex gap-4 p-3">
-                    <Skeleton className="w-20 h-28 bg-neutral-800 rounded-md" />
+                    <Skeleton className="w-20 h-28 rounded-md" />
                     <div className="flex-1 space-y-2 py-2">
-                        <Skeleton className="h-4 w-3/4 bg-neutral-800" />
-                        <Skeleton className="h-3 w-1/4 bg-neutral-800" />
-                        <Skeleton className="h-8 w-full bg-neutral-800 mt-4" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/4" />
+                        <Skeleton className="h-8 w-full mt-4" />
                     </div>
                 </div>
             ))}

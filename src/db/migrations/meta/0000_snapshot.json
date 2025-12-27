@@ -1,0 +1,205 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "53ba28f7-0bf5-4405-9cf8-c53e461d7c14",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "Hidden": {
+      "name": "Hidden",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "jellyfinItemId": {
+          "name": "jellyfinItemId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "jellyfinUserId": {
+          "name": "jellyfinUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sessionCode": {
+          "name": "sessionCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "Hidden_jellyfinItemId_jellyfinUserId_sessionCode_key": {
+          "name": "Hidden_jellyfinItemId_jellyfinUserId_sessionCode_key",
+          "columns": [
+            "jellyfinItemId",
+            "jellyfinUserId",
+            "sessionCode"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "Hidden_sessionCode_Session_code_fk": {
+          "name": "Hidden_sessionCode_Session_code_fk",
+          "tableFrom": "Hidden",
+          "tableTo": "Session",
+          "columnsFrom": [
+            "sessionCode"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Like": {
+      "name": "Like",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "jellyfinItemId": {
+          "name": "jellyfinItemId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "jellyfinUserId": {
+          "name": "jellyfinUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "isMatch": {
+          "name": "isMatch",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "sessionCode": {
+          "name": "sessionCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "Like_jellyfinItemId_jellyfinUserId_sessionCode_key": {
+          "name": "Like_jellyfinItemId_jellyfinUserId_sessionCode_key",
+          "columns": [
+            "jellyfinItemId",
+            "jellyfinUserId",
+            "sessionCode"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "Like_sessionCode_Session_code_fk": {
+          "name": "Like_sessionCode_Session_code_fk",
+          "tableFrom": "Like",
+          "tableTo": "Session",
+          "columnsFrom": [
+            "sessionCode"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Session": {
+      "name": "Session",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hostUserId": {
+          "name": "hostUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "Session_code_key": {
+          "name": "Session_code_key",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

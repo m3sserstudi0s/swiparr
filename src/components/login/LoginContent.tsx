@@ -81,12 +81,12 @@ export default function LoginContent() {
   }, [qcSecret, searchParams]);
 
   return (
-    <Card className="w-full max-w-xs border-neutral-800 bg-neutral-900 text-neutral-100">
+    <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
         <CardTitle className="text-center text-2xl font-bold text-primary font-mono">
           Swiparr
         </CardTitle>
-        <p className="text-center text-sm text-neutral-400">
+        <p className="text-center text-sm text-muted-foreground">
           {qcCode ? "Authorize this code in Jellyfin" : "Enter your Jellyfin credentials"}
         </p>
       </CardHeader>
@@ -97,26 +97,26 @@ export default function LoginContent() {
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="bg-neutral-800 border-neutral-700"
+              className="bg-muted border-input"
             />
             <Input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-neutral-800 border-neutral-700"
+              className="bg-muted border-input"
             />
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Connecting..." : "Log in"}
             </Button>
             <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-neutral-800" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-neutral-900 px-2 text-neutral-500">Or</span></div>
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
             </div>
             <Button
               type="button"
               variant="outline"
-              className="w-full border-neutral-700 hover:bg-neutral-800"
+              className="w-full hover:bg-accent"
               onClick={startQuickConnect}
               disabled={loading}
             >
@@ -125,17 +125,17 @@ export default function LoginContent() {
           </form>
         ) : (
           <div className="flex flex-col items-center space-y-6 py-4">
-            <div className="text-4xl font-black tracking-[0.5em] text-primary bg-neutral-800 p-6 rounded-lg border border-primary/20">
+            <div className="text-4xl font-black tracking-[0.5em] text-primary bg-muted p-6 rounded-lg border border-primary/20">
               {qcCode}
             </div>
-            <p className="text-xs text-center text-neutral-500">
-              Go to <span className="text-neutral-300">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
+            <p className="text-xs text-center text-muted-foreground">
+              Go to <span className="text-foreground">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
             </p>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setQcCode(null)}
-              className="text-neutral-500 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               Cancel
             </Button>

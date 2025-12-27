@@ -13,14 +13,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma generate needs a URL during build
-ENV DATABASE_URL="file:/tmp/build.db"
-RUN npx prisma generate
-
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# ---- prod deps (ONLY production deps, includes prisma now) ----
+# ---- prod deps (ONLY production deps) ----
 FROM base AS prod-deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
@@ -45,17 +41,13 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma files needed at runtime for migrate deploy
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-ENV PRISMA_CONFIG_PATH=/app/prisma.config.ts
+# Drizzle files needed at runtime
+COPY --from=builder /app/src/db/migrations ./src/db/migrations
+COPY --from=builder /app/src/db/migrate.js ./src/db/migrate.js
 
-# Ensure prisma CLI exists at runtime
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/package.json ./package.json
 
 USER nextjs
 EXPOSE 4321
 
 # Run migrations then start Next standalone server
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "node src/db/migrate.js && node server.js"]

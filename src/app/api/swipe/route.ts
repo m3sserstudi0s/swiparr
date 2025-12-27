@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { prisma } from "@/lib/db";
+import { db, likes, hiddens } from "@/lib/db";
+import { eq, and, ne } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData, SwipePayload } from "@/types/swiparr";
+
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -18,44 +20,40 @@ export async function POST(request: NextRequest) {
       // 1. Check if we are in a session
       if (session.sessionCode) {
         // 2. Check if ANYONE else in this session liked this movie
-        const existingLike = await prisma.like.findFirst({
-          where: {
-            sessionCode: session.sessionCode,
-            jellyfinItemId: body.itemId,
-            // Ensure we don't match with ourselves (though unique constraint prevents double likes)
-            jellyfinUserId: { not: session.user.Id } 
-          }
+        const existingLike = await db.query.likes.findFirst({
+          where: and(
+            eq(likes.sessionCode, session.sessionCode),
+            eq(likes.jellyfinItemId, body.itemId),
+            ne(likes.jellyfinUserId, session.user.Id)
+          )
         });
 
         if (existingLike) {
             isMatch = true;
             // Update the OTHER user's like to be a match
-            await prisma.like.update({
-                where: { id: existingLike.id },
-                data: { isMatch: true }
-            });
+            await db.update(likes)
+                .set({ isMatch: true })
+                .where(eq(likes.id, existingLike.id));
         }
       }
 
       // 3. Store OUR like
-      await prisma.like.create({
-        data: {
+      await db.insert(likes).values({
           jellyfinUserId: session.user.Id,
           jellyfinItemId: body.itemId,
           sessionCode: session.sessionCode, // Link to session if exists
           isMatch: isMatch, // If we found a match, we are also a match
-        }
       });
       
     } else {
       // Dislike logic (Hidden)
-      await prisma.hidden.create({
-        data: {
+      await db.insert(hiddens).values({
           jellyfinUserId: session.user.Id,
           jellyfinItemId: body.itemId,
-        }
+          sessionCode: session.sessionCode,
       });
     }
+
 
     // Return isMatch status so Frontend can show a "Boom!" effect
     return NextResponse.json({ success: true, isMatch });

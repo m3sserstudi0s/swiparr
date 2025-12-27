@@ -1,43 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { prisma } from "@/lib/db";
+import { db, likes as likesTable, type Like } from "@/lib/db";
+import { eq, and, isNotNull, isNull, desc } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getJellyfinUrl } from "@/lib/jellyfin/api";
 import axios from "axios";
-import { SessionData } from "@/types/swiparr";
+import { SessionData, type JellyfinItem, type MergedLike } from "@/types/swiparr";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
-  // Parse Query Params
   const { searchParams } = new URL(request.url);
-  const sortBy = searchParams.get("sortBy") || "date"; // date, year, rating
-  const filter = searchParams.get("filter") || "all";  // all, session, solo
+  const sortBy = searchParams.get("sortBy") || "date";
+  const filter = searchParams.get("filter") || "all";
 
   try {
-    // 1. Build DB Query
-    const where: any = {
-        jellyfinUserId: session.user.Id,
-    };
+    const conditions = [eq(likesTable.jellyfinUserId, session.user.Id)];
 
     if (filter === "session") {
-        where.sessionCode = { not: null }; // Only likes made inside a session
+        conditions.push(isNotNull(likesTable.sessionCode));
     } else if (filter === "solo") {
-        where.sessionCode = null; // Only likes made alone
+        conditions.push(isNull(likesTable.sessionCode));
     }
 
-    const likes = await prisma.like.findMany({
-        where,
-        orderBy: { createdAt: 'desc' } // Default DB sort
-    });
+    const likesResult = await db.select().from(likesTable)
+        .where(and(...conditions))
+        .orderBy(desc(likesTable.createdAt));
 
-    if (likes.length === 0) return NextResponse.json([]);
+    if (likesResult.length === 0) return NextResponse.json([]);
 
-    // 2. Fetch Metadata from Jellyfin
-    const ids = likes.map(l => l.jellyfinItemId).join(",");
+    const ids = likesResult.map((l: Like) => l.jellyfinItemId).join(",");
     const jellyfinRes = await axios.get(getJellyfinUrl(`/Items`), {
         params: {
             Ids: ids,
@@ -46,31 +41,31 @@ export async function GET(request: NextRequest) {
         headers: { "X-Emby-Token": session.user.AccessToken },
     });
 
-    const items = jellyfinRes.data.Items;
+    const items: JellyfinItem[] = jellyfinRes.data.Items;
 
-    // 3. Merge DB Data (Date) with Jellyfin Data (Year/Rating)
-    let merged = items.map((item: any) => {
-        const likeData = likes.find(l => l.jellyfinItemId === item.Id);
+    let merged: MergedLike[] = items.map((item: JellyfinItem) => {
+        const likeData = likesResult.find((l: Like) => l.jellyfinItemId === item.Id);
         return {
             ...item,
             swipedAt: likeData?.createdAt,
             sessionCode: likeData?.sessionCode,
-            isMatch: likeData?.isMatch
+            isMatch: likeData?.isMatch ?? false
         };
     });
 
-    // 4. Handle Sorting (In-Memory)
     if (sortBy === "year") {
-        merged.sort((a: any, b: any) => (b.ProductionYear || 0) - (a.ProductionYear || 0));
+        merged.sort((a, b) => (b.ProductionYear || 0) - (a.ProductionYear || 0));
     } else if (sortBy === "rating") {
-        merged.sort((a: any, b: any) => (b.CommunityRating || 0) - (a.CommunityRating || 0));
+        merged.sort((a, b) => (b.CommunityRating || 0) - (a.CommunityRating || 0));
     } else {
-        // Date (Default)
-        merged.sort((a: any, b: any) => new Date(b.swipedAt).getTime() - new Date(a.swipedAt).getTime());
+        merged.sort((a, b) => {
+            const dateA = a.swipedAt ? new Date(a.swipedAt).getTime() : 0;
+            const dateB = b.swipedAt ? new Date(b.swipedAt).getTime() : 0;
+            return dateB - dateA;
+        });
     }
 
     return NextResponse.json(merged);
-
   } catch (error) {
     console.error("Fetch User Likes Error", error);
     return NextResponse.json([], { status: 500 });

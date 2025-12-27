@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Google_Sans_Flex } from 'next/font/google'
 import './globals.css'
-import Providers from '@/components/providers'
+import { Providers } from '@/components/providers'
 import { Toaster } from "@/components/ui/sonner"
 
-const inter = Inter({ subsets: ['latin'] })
+const sansFlex = Google_Sans_Flex({ 
+  subsets: ['latin'],
+  display: 'swap',
+  adjustFontFallback: false 
+})
 
 export const metadata: Metadata = {
   title: "Swiparr",
@@ -15,10 +19,6 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
     shortcut: '/icon1.png',
     apple: '/apple-icon.png',
-    other: {
-      rel: 'apple-icon-precomposed',
-      url: '/apple-icon.png',
-    }
   },
 };
 
@@ -28,9 +28,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-neutral-950 min-h-screen`}>
-        <Providers>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${sansFlex.className} min-h-screen`}>
+        <Providers
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
           <Toaster />
         </Providers>

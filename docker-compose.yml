@@ -16,4 +16,4 @@ services:
       # Map host folder to the specific folder created in the Dockerfile
       - ./swiparr-data:/app/data
     ports:
-      - 3000:3000
+      - 4321:4321
