@@ -37,9 +37,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Drizzle files needed at runtime
-# Copy from builder, but check if they exist or just copy the whole directory
-COPY --from=builder /app/src/db/migrations ./src/db/migrations
-COPY --from=builder /app/src/db/migrate.js ./src/db/migrate.js
+COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrations ./src/db/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrate.js ./src/db/migrate.js
+# Ensure drizzle-orm is available for the migration script
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
 
 
 
