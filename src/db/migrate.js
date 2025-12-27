@@ -2,11 +2,9 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import Database from 'better-sqlite3';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const connectionString = process.env.DATABASE_URL?.replace("file:", "") || "swiparr.db";
 const sqlite = new Database(connectionString);
