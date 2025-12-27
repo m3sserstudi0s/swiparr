@@ -16,8 +16,23 @@ import { MatchOverlay } from "./MatchOverlay";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
+  const queryClient = useQueryClient();
 
   const [removedIds, setRemovedIds] = useState<string[]>([]);
+  const swipedIdsRef = useRef<Set<string>>(new Set());
+
+  // Sync swipes to cache on unmount to handle fast tab switching
+  React.useEffect(() => {
+    return () => {
+      const swiped = swipedIdsRef.current;
+      if (swiped.size > 0) {
+        queryClient.setQueryData(["deck"], (old: JellyfinItem[] | undefined) => {
+          if (!old) return old;
+          return old.filter((item) => !swiped.has(item.Id));
+        });
+      }
+    };
+  }, [queryClient]);
 
   // -- SESSION STATUS & MEMBERS --
   const { data: sessionStatus } = useSWR<{ code: string | null }>(
@@ -32,13 +47,11 @@ export function CardDeck() {
     (url: string) => axios.get(url).then(res => res.data)
   );
 
-  const swipedIdsRef = useRef<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
 
   // Store refs in a way React can track
   const cardRefs = useRef<Record<string, React.RefObject<TinderCardHandle | null>>>({});
-
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
 
   // Utility to make sure we always have a generic RefObject
   const getCardRef = (id: string) => {
@@ -60,17 +73,14 @@ export function CardDeck() {
 
   // --- MULTIPLAYER LOGIC INTEGRATION HERE ---
   const swipeMutation = useMutation({
-    mutationFn: async ({ id, direction }: { id: string; direction: "left" | "right" }) => {
+    mutationFn: async ({ id, direction, item }: { id: string; direction: "left" | "right"; item: JellyfinItem }) => {
       const res = await axios.post("/api/swipe", { itemId: id, direction });
-      return { data: res.data, id };
+      return { data: res.data, id, item };
     },
-    onSuccess: ({ data, id }) => {
+    onSuccess: ({ data, item }) => {
       // 1. Check if the server returned a Match
       if (data.isMatch) {
-        const item = deck?.find((i: JellyfinItem) => i.Id === id);
-        if (item) {
-          setMatchedItem(item);
-        }
+        setMatchedItem(item);
         // 2. Refresh the Sidebar match list immediately via SWR
         mutate("/api/session/matches");
       }
@@ -90,13 +100,21 @@ export function CardDeck() {
     if (swipedIdsRef.current.has(id)) return;
     swipedIdsRef.current.add(id);
 
+    const item = deck?.find((i) => i.Id === id);
+    if (!item) return;
+
     // Fire the mutation (which checks for matches)
-    swipeMutation.mutate({ id, direction });
+    swipeMutation.mutate({ id, direction, item });
   };
 
   const onCardLeftScreen = (id: string) => {
     // 2. Remove from state here (after animation is done)
     setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+
+    // Update React Query cache so it persists even if the component unmounts
+    queryClient.setQueryData(["deck"], (old: JellyfinItem[] | undefined) => {
+      return old?.filter((item) => item.Id !== id);
+    });
   };
 
   const swipeTop = async (direction: "left" | "right") => {

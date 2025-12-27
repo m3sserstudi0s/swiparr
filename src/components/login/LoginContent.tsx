@@ -6,15 +6,26 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
+import { Copy, Check } from "lucide-react";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
-  
+
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    if (qcCode) {
+      await navigator.clipboard.writeText(qcCode);
+      setCopied(true);
+      toast.success("Code copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const checkAuth = useCallback(async (secret: string) => {
     try {
@@ -88,7 +99,7 @@ export default function LoginContent() {
           {qcCode ? "Authorize this code in Jellyfin" : "Enter your Jellyfin credentials"}
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="h-60">
         {!qcCode ? (
           <form onSubmit={handleLogin} className="space-y-4">
             <Input
@@ -123,8 +134,22 @@ export default function LoginContent() {
           </form>
         ) : (
           <div className="flex flex-col items-center space-y-6 py-4">
-            <div className="text-4xl font-black tracking-[0.5em] text-primary bg-muted p-6 rounded-lg border border-primary/20">
-              {qcCode}
+            <div className="relative group">
+              <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-6 rounded-lg border border-primary/20">
+                {qcCode}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={copyToClipboard}
+                  title="Copy to clipboard"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 " />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-center text-muted-foreground">
               Go to <span className="text-foreground">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
