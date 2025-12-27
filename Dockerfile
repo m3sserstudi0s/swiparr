@@ -43,7 +43,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Drizzle files needed at runtime
 COPY --from=builder /app/src/db/migrations ./src/db/migrations
-COPY --from=builder /app/src/db/migrate.js ./src/db/migrate.js
+COPY --from=builder /app/src/db/migrate.ts ./src/db/migrate.ts
 
 
 USER nextjs
