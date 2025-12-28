@@ -18,6 +18,13 @@ export function CardDeck() {
   const { mutate } = useSWRConfig();
   const queryClient = useQueryClient();
 
+  const { data: sessionStatus } = useSWR<{ code: string | null }>(
+    "/api/session",
+    (url: string) => axios.get(url).then(res => res.data)
+  );
+
+  const sessionCode = sessionStatus?.code || null;
+
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const swipedIdsRef = useRef<Set<string>>(new Set());
 
@@ -26,26 +33,26 @@ export function CardDeck() {
     return () => {
       const swiped = swipedIdsRef.current;
       if (swiped.size > 0) {
-        queryClient.setQueryData(["deck"], (old: JellyfinItem[] | undefined) => {
+        queryClient.setQueryData(["deck", sessionCode], (old: JellyfinItem[] | undefined) => {
           if (!old) return old;
           return old.filter((item) => !swiped.has(item.Id));
         });
       }
     };
-  }, [queryClient]);
+  }, [queryClient, sessionCode]);
 
-  // -- SESSION STATUS & MEMBERS --
-  const { data: sessionStatus } = useSWR<{ code: string | null }>(
-    "/api/session",
-    (url: string) => axios.get(url).then(res => res.data)
-  );
-
-  useUpdates(sessionStatus?.code);
+  useUpdates(sessionCode);
 
   const { data: members } = useSWR<any[]>(
-    sessionStatus?.code ? "/api/session/members" : null,
+    sessionCode ? "/api/session/members" : null,
     (url: string) => axios.get(url).then(res => res.data)
   );
+
+  // Clear local state when session changes to get a fresh start
+  React.useEffect(() => {
+    setRemovedIds([]);
+    swipedIdsRef.current.clear();
+  }, [sessionCode]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
@@ -63,7 +70,7 @@ export function CardDeck() {
   };
 
   const { data: deck, isLoading, isError, refetch } = useQuery({
-    queryKey: ["deck"],
+    queryKey: ["deck", sessionCode],
     queryFn: async () => {
       const res = await axios.get<JellyfinItem[]>("/api/jellyfin/items");
       return res.data;
@@ -112,7 +119,7 @@ export function CardDeck() {
     setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
 
     // Update React Query cache so it persists even if the component unmounts
-    queryClient.setQueryData(["deck"], (old: JellyfinItem[] | undefined) => {
+    queryClient.setQueryData(["deck", sessionCode], (old: JellyfinItem[] | undefined) => {
       return old?.filter((item) => item.Id !== id);
     });
   };

@@ -43,9 +43,12 @@ export default function LoginContent() {
     }
   }, [searchParams]);
 
-  useQuickConnectUpdates(qcSecret, () => {
-    if (qcSecret) checkAuth(qcSecret);
-  });
+  const onAuthorized = useCallback(() => {
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
+    window.location.href = callbackUrl;
+  }, [searchParams]);
+
+  useQuickConnectUpdates(qcSecret, onAuthorized);
 
 
   const handleLogin = async (e: React.FormEvent) => {
