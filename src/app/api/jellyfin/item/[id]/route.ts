@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import axios from "axios";
 import { SessionData } from "@/types/swiparr";
 import { db, likes, sessionMembers } from "@/lib/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
@@ -23,25 +23,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const item = jellyfinRes.data;
 
-    // Add session matches info if in session
-    if (session.sessionCode) {
-        const itemLikes = await db.query.likes.findMany({
-            where: and(
-                eq(likes.sessionCode, session.sessionCode),
-                eq(likes.jellyfinItemId, id)
-            )
-        });
+    // Add likes info
+    const itemLikes = await db.query.likes.findMany({
+        where: and(
+            session.sessionCode 
+                ? eq(likes.sessionCode, session.sessionCode) 
+                : isNull(likes.sessionCode),
+            eq(likes.jellyfinItemId, id)
+        )
+    });
 
-        if (itemLikes.length > 0) {
-            const members = await db.query.sessionMembers.findMany({
+    if (itemLikes.length > 0) {
+        // If in session, we can get names from sessionMembers
+        let members: any[] = [];
+        if (session.sessionCode) {
+            members = await db.query.sessionMembers.findMany({
                 where: eq(sessionMembers.sessionCode, session.sessionCode)
             });
-
-            item.likedBy = itemLikes.map(l => ({
-                userId: l.jellyfinUserId,
-                userName: members.find(m => m.jellyfinUserId === l.jellyfinUserId)?.jellyfinUserName || "Unknown"
-            }));
         }
+
+        item.likedBy = itemLikes.map(l => ({
+            userId: l.jellyfinUserId,
+            userName: session.sessionCode 
+                ? (members.find(m => m.jellyfinUserId === l.jellyfinUserId)?.jellyfinUserName || "Unknown")
+                : (l.jellyfinUserId === session.user.Id ? session.user.Name : "Unknown")
+        }));
     }
 
     return NextResponse.json(item);

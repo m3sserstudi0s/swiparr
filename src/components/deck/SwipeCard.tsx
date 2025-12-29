@@ -94,7 +94,7 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
                   {item.ProductionYear && (
                     <Badge
                       variant="secondary"
-                      className="bg-neutral-600/70 hover:bg-accent text-neutral-100 border-0"
+                      className="bg-neutral-600/70 hover:bg-accent text-neutral-100 border-0 flex"
                     >
                       {item.ProductionYear}
                     </Badge>

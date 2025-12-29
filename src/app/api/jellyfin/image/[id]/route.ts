@@ -14,18 +14,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const searchParams = request.nextUrl.searchParams;
   const isUser = searchParams.get("type") === "user";
+  const imageType = searchParams.get("imageType") || "Primary";
   const width = searchParams.get("width");
   const height = searchParams.get("height");
   const quality = searchParams.get("quality");
+  const tag = searchParams.get("tag");
   
   let imageUrl = isUser 
-    ? getJellyfinUrl(`/Users/${id}/Images/Primary`)
-    : getJellyfinUrl(`/Items/${id}/Images/Primary`);
+    ? getJellyfinUrl(`/Users/${id}/Images/${imageType}`)
+    : getJellyfinUrl(`/Items/${id}/Images/${imageType}`);
 
   const urlObj = new URL(imageUrl);
   if (width) urlObj.searchParams.set("maxWidth", width);
   if (height) urlObj.searchParams.set("maxHeight", height);
   if (quality) urlObj.searchParams.set("quality", quality);
+  if (tag) urlObj.searchParams.set("tag", tag);
   imageUrl = urlObj.toString();
 
 

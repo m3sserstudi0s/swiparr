@@ -14,7 +14,6 @@ import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { UserAvatarList } from "../session/UserAvatarList";
 
 import { MatchOverlay } from "./MatchOverlay";
-import { KeyboardShortcuts } from "./KeyboardShortcuts";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();

@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { GalleryHorizontalEnd, Heart, LogOut } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserMenu } from "@/components/home/UserMenu";
-import { KeyboardShortcuts } from "@/components/deck/KeyboardShortcuts";
 
 export default function Home() {
 
   return (
-    <main className="flex min-h-screen flex-col items-center">
-      <div className="w-full flex items-top justify-between 3xl:max-w-md max-w-sm mt-8 md:mt-[5vh] 2xl:mt-[8vh] mx-6 md:m-0 relative">
+    <main className="flex min-h-screen flex-col items-center px-6 md:p-0">
+      <div className="w-full flex items-top justify-between 3xl:max-w-md max-w-sm mt-8 md:mt-[5vh] 2xl:mt-[8vh] relative">
         <SessionManager />
         <Tabs defaultValue="swipe" className="w-full flex flex-col h-full -mt-2">
           <TabsList className="grid mx-auto w-fit h-fit grid-cols-2 bg-muted rounded-4xl">
@@ -39,8 +38,6 @@ export default function Home() {
         </Tabs>
         <UserMenu />
       </div>
-            <KeyboardShortcuts/>
-
     </main>
   );
 }

@@ -4,7 +4,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, Menu, Moon, Sun, Trash2 } from "lucide-react"
+import { BookOpenText, LogOut, Menu, Moon, Sun, Trash2 } from "lucide-react"
 
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -39,17 +39,21 @@ export function UserMenu() {
 
     const handleClearData = async () => {
         setIsClearing(true);
-        try {
-            await axios.post("/api/user/clear");
-            toast.success("All data cleared successfully");
-            setShowClearDialog(false);
-            router.refresh();
-        } catch (error) {
-            console.error("Clear data failed:", error);
-            toast.error("Failed to clear data");
-        } finally {
-            setIsClearing(false);
-        }
+        const promise = axios.post("/api/user/clear");
+
+        toast.promise(promise, {
+            loading: "Clearing all data...",
+            success: () => {
+                setShowClearDialog(false);
+                router.refresh();
+                setIsClearing(false);
+                return "All data cleared successfully";
+            },
+            error: () => {
+                setIsClearing(false);
+                return "Failed to clear data";
+            },
+        });
     };
 
     return (
@@ -70,12 +74,18 @@ export function UserMenu() {
                         <Moon className="size-4 absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
                         Theme
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                         onSelect={() => setShowClearDialog(true)}
                         className="text-default"
                     >
                         <Trash2 className="size-4" />
                         Clear data
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        className="text-default"
+                    >
+                        <BookOpenText className="size-4" />
+                        User guide
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

@@ -35,24 +35,27 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
     }
   });
 
-  const { mutate: unlike, isPending } = useMutation({
+  const { mutateAsync: unlike, isPending } = useMutation({
     mutationFn: async () => {
       const sessionParam = movie.sessionCode ? `&sessionCode=${movie.sessionCode}` : "";
       await axios.delete(`/api/user/likes?itemId=${movie.Id}${sessionParam}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });
-      toast('Movie removed from likes', {
-        action: {
-          label: 'Undo',
-          onClick: () => relike()
-        },
-      });
     },
-    onError: () => {
-      toast.error("Failed to remove from likes");
-    }
   });
+
+  const handleUnlike = () => {
+    toast.promise(unlike(), {
+      loading: "Removing from likes...",
+      success: "Movie removed from likes",
+      error: "Failed to remove from likes",
+      action: !isPending && {
+        label: 'Undo',
+        onClick: () => relike()
+      },
+    });
+  };
 
   const swipeDate = movie.swipedAt ? new Date(movie.swipedAt) : "";
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
@@ -104,11 +107,11 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
               </span>
             )}
             {movie.likedBy && movie.likedBy.length > 0 && (
-                <UserAvatarList 
-                    users={movie.likedBy} 
-                    size="sm" 
-                    className="ml-auto translate-y-0.5 mr-1" 
-                />
+              <UserAvatarList
+                users={movie.likedBy}
+                size="sm"
+                className="ml-auto translate-y-0.5 mr-1"
+              />
             )}
           </div>
         </div>
@@ -121,17 +124,17 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
               {formattedDateText}
             </div>
           )}
-          
+
           <div className="flex gap-2">
             <Link href={`${jellyfinUrl}/web/index.html#/details?id=${movie.Id}&context=home`} target="_blank" onClick={e => e.stopPropagation()} className="flex-1">
-              <Button 
-                size="sm" 
-                variant="secondary" 
+              <Button
+                size="sm"
+                variant="secondary"
                 className={cn(
-                    "h-7 text-xs w-full",
+                  "h-7 text-xs w-full",
                 )}
               >
-                <Play className={cn("mr-2 w-2 h-2")} /> 
+                <Play className={cn("mr-2 w-2 h-2")} />
                 Play
               </Button>
             </Link>
@@ -141,7 +144,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
               className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               onClick={(e) => {
                 e.stopPropagation();
-                unlike();
+                handleUnlike();
               }}
               disabled={isPending}
             >

@@ -55,7 +55,6 @@ export default function SessionContent() {
         mutationFn: async () => axios.post("/api/session", { action: "create" }),
         onSuccess: (res) => {
             mutate("/api/session", { code: res.data.code });
-            toast("Session created", { description: "Waiting for friends..." });
         }
     });
 
@@ -64,12 +63,8 @@ export default function SessionContent() {
         onSuccess: (res, variables) => {
             mutate("/api/session", { code: variables.toUpperCase() });
             queryClient.invalidateQueries({ queryKey: ["deck"] });
-            toast.success("Connected!", { description: `You are in session ${variables}` });
             router.replace("/");
         },
-        onError: () => {
-            toast.error("Invalid Code", { description: "Could not find that session." });
-        }
     });
 
     const leaveSession = useMutation({
@@ -77,16 +72,39 @@ export default function SessionContent() {
         onSuccess: () => {
             mutate("/api/session", { code: null });
             mutate("/api/session/matches", []);
-            toast("Left session");
         }
     });
+
+    const handleCreateSession = () => {
+        toast.promise(createSession.mutateAsync(), {
+            loading: "Creating session...",
+            success: "Session created",
+            error: "Failed to create session",
+        });
+    };
+
+    const handleJoinSession = (code: string) => {
+        toast.promise(joinSession.mutateAsync(code), {
+            loading: "Joining session...",
+            success: "Connected!",
+            error: "Invalid Code",
+        });
+    };
+
+    const handleLeaveSession = () => {
+        toast.promise(leaveSession.mutateAsync(), {
+            loading: "Leaving session...",
+            success: "Left session",
+            error: "Failed to leave session",
+        });
+    };
 
     // -- 4. AUTO-JOIN LOGIC --
     useEffect(() => {
         const joinParam = searchParams.get("join");
         if (joinParam && isSuccess && !activeCode) {
             setIsOpen(true);
-            joinSession.mutate(joinParam);
+            handleJoinSession(joinParam);
         }
     }, [searchParams, isSuccess, activeCode]);
 
@@ -168,18 +186,19 @@ export default function SessionContent() {
                             {!activeCode ? (
                                 <>
                                     <Button
-                                        onClick={() => joinSession.mutate(inputCode)}
+                                        onClick={() => handleJoinSession(inputCode)}
                                         className="flex-1 h-10"
                                         variant="default"
-                                        disabled={inputCode.length !== 4}
+                                        disabled={inputCode.length !== 4 || joinSession.isPending}
                                     >
                                         <UserPlus className="w-4 h-4 mr-2" />
                                         Join
                                     </Button>
                                     <Button
-                                        onClick={() => createSession.mutate()}
+                                        onClick={handleCreateSession}
                                         variant="outline"
                                         className="flex-1 h-10"
+                                        disabled={createSession.isPending}
                                     >
                                         <Plus className="w-4 h-4 mr-2" />
                                         Create
@@ -196,9 +215,10 @@ export default function SessionContent() {
                                         Share
                                     </Button>
                                     <Button
-                                        onClick={() => leaveSession.mutate()}
+                                        onClick={handleLeaveSession}
                                         variant="outline"
                                         className="flex-1 h-10"
+                                        disabled={leaveSession.isPending}
                                     >
                                         <LogOut className="w-4 h-4 mr-2" />
                                         Leave

@@ -54,41 +54,55 @@ export default function LoginContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
+
+    const promise = async () => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ username, password }),
         headers: { "Content-Type": "application/json" },
       });
-      if (res.ok) {
+      if (!res.ok) throw new Error("Login failed");
+      return res;
+    };
+
+    toast.promise(promise(), {
+      loading: "Logging in...",
+      success: () => {
         const callbackUrl = searchParams.get("callbackUrl") || "/";
         window.location.href = callbackUrl;
-      } else {
-        toast.error("Login Failed", {
-          description: "Check your Jellyfin credentials/URL",
-        });
         setLoading(false);
-      }
-    } catch (err) {
-      setLoading(false);
-    }
+        return "Logged in successfully";
+      },
+      error: () => {
+        setLoading(false);
+        return "Login Failed: Check your credentials";
+      },
+    });
   };
 
   const startQuickConnect = async () => {
     setLoading(true);
-    try {
+
+    const promise = async () => {
       const res = await fetch("/api/auth/quick-connect");
       const data = await res.json();
-      if (data.Code) {
+      if (!data.Code) throw new Error("Quick Connect failed");
+      return data;
+    };
+
+    toast.promise(promise(), {
+      loading: "Starting Quick Connect...",
+      success: (data) => {
         setQcCode(data.Code);
         setQcSecret(data.Secret);
-        toast.info("Quick Connect Started", { description: "Enter the code on your other device." });
-      }
-    } catch (err) {
-      toast.error("Quick Connect failed to initialize");
-    } finally {
-      setLoading(false);
-    }
+        setLoading(false);
+        return "Quick Connect Started";
+      },
+      error: () => {
+        setLoading(false);
+        return "Quick Connect failed to initialize";
+      },
+    });
   };
 
   return (

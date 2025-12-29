@@ -1,20 +1,37 @@
 export interface JellyfinItem {
   Name: string;
+  OriginalTitle?: string;
   Id: string;
   RunTimeTicks?: number; // 1 tick = 100ns
   ProductionYear?: number;
   CommunityRating?: number;
   Overview?: string;
+  Taglines?: string[];
   OfficialRating?: string; // e.g., PG-13
   Genres?: string[];
   People?: {
     Name: string;
     Id: string;
     Role: string;
+    Type?: string;
     PrimaryImageTag?: string;
+  }[];
+  Studios?: {
+    Name: string;
+    Id: string;
   }[];
   ImageTags: {
     Primary?: string;
+    Logo?: string;
+    Thumb?: string;
+    Backdrop?: string;
+    Banner?: string;
+    Art?: string;
+  };
+  BackdropImageTags?: string[];
+  UserData?: {
+    IsFavorite: boolean;
+    Likes?: boolean;
   };
   likedBy?: {
     userId: string;
