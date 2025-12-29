@@ -4,6 +4,7 @@ import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "./ui/tooltip";
+import { MovieDetailProvider } from "./movie/MovieDetailProvider";
 
 export function Providers({
   children,
@@ -14,7 +15,9 @@ export function Providers({
     <QueryClientProvider client={queryClient}>
       <NextThemesProvider {...props}>
         <TooltipProvider>
-          {children}
+          <MovieDetailProvider>
+            {children}
+          </MovieDetailProvider>
         </TooltipProvider>
       </NextThemesProvider>
     </QueryClientProvider>

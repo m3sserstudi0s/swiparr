@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
             events.emit(EVENT_TYPES.MATCH_FOUND, {
               sessionCode: session.sessionCode,
               itemId: body.itemId,
+              swiperId: session.user.Id,
+              itemName: body.item?.Name || "a movie",
             });
         }
       }

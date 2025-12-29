@@ -7,14 +7,14 @@ import { LikesFilter } from "./LikesFilter";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MovieDetailView } from "../movie/MovieDetailView";
+import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { MovieListItem } from "../movie/MovieListItem";
 import { type MergedLike } from "@/types/swiparr";
 
 export function LikesList() {
     const [sortBy, setSortBy] = useState("date");
     const [filterMode, setFilterMode] = useState("all");
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const { openMovie } = useMovieDetail();
 
     const { data: likes, isLoading } = useQuery<MergedLike[]>({
         queryKey: ["likes", sortBy, filterMode],
@@ -49,20 +49,14 @@ export function LikesList() {
                     </div>
                 )}
 
-                {likes?.map((movie: MergedLike) => (
+                 {likes?.map((movie: MergedLike) => (
                      <MovieListItem
                         key={movie.Id} 
                         movie={movie} 
-                        onClick={() => setSelectedId(movie.Id)} 
+                        onClick={() => openMovie(movie.Id)} 
                     />
                 ))}
             </ScrollArea>
-
-            {/* MOUNT THE MODAL */}
-            <MovieDetailView
-                movieId={selectedId}
-                onClose={() => setSelectedId(null)}
-            />
         </div>
     )
 }

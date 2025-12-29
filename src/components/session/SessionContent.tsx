@@ -11,18 +11,17 @@ import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
 import { useUpdates } from "@/lib/use-updates";
+import { useMovieDetail } from "../movie/MovieDetailProvider";
 
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MovieListItem } from "../movie/MovieListItem";
-import { cn } from "@/lib/utils";
 import { JellyfinItem } from "@/types/swiparr";
-import { MovieDetailView } from "../movie/MovieDetailView";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const { openMovie } = useMovieDetail();
     const queryClient = useQueryClient();
     const { mutate } = useSWRConfig();
     const searchParams = useSearchParams();
@@ -114,9 +113,9 @@ export default function SessionContent() {
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="z-1">
-                <Button variant="ghost" size="icon" className="text-foreground ml-4">
-                    <Users className="w-6 h-6" />
+            <SheetTrigger asChild className="z-1 absolute">
+                <Button variant="ghost" size="icon" className="text-foreground">
+                    <Users className="size-5" />
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="z-101 sm:max-w-md w-full px-4">
@@ -224,7 +223,7 @@ export default function SessionContent() {
                                         <MovieListItem
                                             key={movie.Id}
                                             movie={{ ...movie, isMatch: true } as any}
-                                            onClick={() => setSelectedId(movie.Id)}
+                                            onClick={() => openMovie(movie.Id)}
                                             variant="condensed"
                                         />
                                     ))}
@@ -238,10 +237,6 @@ export default function SessionContent() {
                         </ScrollArea>
                     </div>
                 </div>
-                <MovieDetailView
-                    movieId={selectedId}
-                    onClose={() => setSelectedId(null)}
-                />
             </SheetContent>
         </Sheet>
     );

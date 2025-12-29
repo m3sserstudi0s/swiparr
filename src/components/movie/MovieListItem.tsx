@@ -94,7 +94,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
           )}>
             {movie.Name}
           </h3>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground h-6">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground h-6">
             <span>{movie.ProductionYear}</span>
             •
             {movie.CommunityRating && (
@@ -116,7 +116,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
         <div className="flex flex-col gap-2 mt-2">
           {/* Only show date in full view */}
           {movie.swipedAt && (
-            <div className="text-[10px] text-muted-foreground flex items-center">
+            <div className="text-xs text-muted-foreground flex items-center">
               <Calendar className="w-3 h-3 mr-1" />
               {formattedDateText}
             </div>

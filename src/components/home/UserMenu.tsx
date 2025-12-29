@@ -55,25 +55,26 @@ export function UserMenu() {
     return (
         <>
             <DropdownMenu>
-                <DropdownMenuTrigger className="mr-5" asChild>
-                    <Button variant="ghost" size="icon">
-                        <Menu className="w-5 h-5" />
+                <DropdownMenuTrigger asChild>
+                    <Button className="absolute right-0" variant="ghost" size="icon">
+                        <Menu className="size-6" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-fit z-101" align="start">
-                    <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="w-5 h-5" />
+                    <DropdownMenuItem onClick={handleLogout} className="text-default">
+                        <LogOut className="size-4" />
                         Log out
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-                        <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-                        <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+                    <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")} className="text-default">
+                        <Sun className="size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                        <Moon className="size-4 absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
                         Theme
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                         onSelect={() => setShowClearDialog(true)}
+                        className="text-default"
                     >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="size-4" />
                         Clear data
                     </DropdownMenuItem>
                 </DropdownMenuContent>

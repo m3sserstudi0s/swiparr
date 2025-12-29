@@ -36,6 +36,7 @@ export interface SessionData {
 export interface SwipePayload {
   itemId: string;
   direction: "left" | "right";
+  item?: JellyfinItem;
 }
 
 export interface MergedLike extends JellyfinItem {

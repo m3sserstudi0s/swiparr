@@ -26,25 +26,47 @@ export function OptimizedImage({
 
   const isFill = fill ?? (!width && !height);
 
+  // High-res version for the main image
+  const optimizedSrc = typeof src === "string" && src.startsWith("/api/jellyfin/image")
+    ? `${src}${src.includes("?") ? "&" : "?"}${width ? `width=${width}` : "width=1200"}${height ? `&height=${height}` : ""}&quality=80`
+    : src;
+
+  // Tiny version to use as a blur placeholder
+  const blurSrc = typeof src === "string" && src.startsWith("/api/jellyfin/image")
+    ? `${src}${src.includes("?") ? "&" : "?"}width=40&quality=10`
+    : null;
+
   return (
-    <div className={cn("relative overflow-hidden", containerClassName || className)}>
-      {isLoading && (
-        <Skeleton 
-          className="absolute inset-0" 
+    <div 
+      className={cn("relative overflow-hidden bg-muted/20", containerClassName || className)}
+    >
+      {/* Real-image blur placeholder */}
+      {blurSrc && isLoading && (
+        <img 
+          src={blurSrc} 
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-50"
         />
       )}
+      
+      {/* Loading Skeleton fallback if no blurSrc */}
+      {isLoading && !blurSrc && (
+        <Skeleton className="absolute inset-0" />
+      )}
+
       <Image
         {...props}
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         width={isFill ? undefined : width}
         height={isFill ? undefined : height}
         fill={isFill}
         priority={priority}
-        unoptimized
+        unoptimized // Required: Next.js optimizer cannot pass user session cookies to internal API routes
         className={cn(
-          "transition-opacity duration-300",
-          isLoading ? "opacity-0" : "opacity-100",
+          "transition-all duration-700 ease-in-out",
+          isLoading ? "opacity-0 scale-102" : "opacity-100 scale-100",
           className
         )}
         onLoad={(e) => {

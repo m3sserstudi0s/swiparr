@@ -24,16 +24,16 @@ interface FilterProps {
 export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: FilterProps) {
   return (
     <Drawer>
-            <DrawerTitle/>
+      <DrawerTitle />
       <DrawerTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 h-8 text-xs border-border bg-muted/50">
-          <SlidersHorizontal className="w-3 h-3" />
+        <Button variant="outline" size="icon" className=" gap-2 text-xs border-border bg-muted/50">
+          <SlidersHorizontal className="size-5" />
         </Button>
       </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
           <div className="p-4 pb-0 space-y-6">
-            
+
             {/* SORTING */}
             <div className="space-y-3">
               <Label className="text-muted-foreground uppercase text-xs tracking-wider">Sort By</Label>

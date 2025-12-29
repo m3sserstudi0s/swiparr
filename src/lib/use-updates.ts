@@ -1,11 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSWRConfig } from 'swr';
 import { useQueryClient } from '@tanstack/react-query';
 import { EVENT_TYPES } from './events';
+import { toast } from 'sonner';
+import useSWR from 'swr';
+import { useMovieDetail } from '@/components/movie/MovieDetailProvider';
+import React from 'react';
+import axios from 'axios';
 
 export function useUpdates(sessionCode?: string | null) {
     const { mutate } = useSWRConfig();
     const queryClient = useQueryClient();
+    const { openMovie } = useMovieDetail();
+
+    const { data: sessionData } = useSWR<{ code: string | null; userId: string }>('/api/session', (url: string) => axios.get(url).then(res => res.data));
 
     useEffect(() => {
         if (!sessionCode) return;
@@ -27,13 +35,24 @@ export function useUpdates(sessionCode?: string | null) {
             if (data.sessionCode === sessionCode) {
                 // Invalidate matches
                 mutate('/api/session/matches');
+
+                // If it's not the current user who swiped, show a toast
+                if (sessionData && data.swiperId !== sessionData.userId) {
+                    toast.success(`Match! ${data.itemName}`, {
+                        description: "Check out what else they liked.",
+                        action: {
+                            label: "View",
+                            onClick: () => openMovie(data.itemId)
+                        }
+                    });
+                }
             }
         });
 
         return () => {
             eventSource.close();
         };
-    }, [sessionCode, mutate]);
+    }, [sessionCode, mutate, sessionData, queryClient, openMovie]);
 }
 
 export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: () => void) {

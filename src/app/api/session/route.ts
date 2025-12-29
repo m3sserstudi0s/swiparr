@@ -93,7 +93,8 @@ export async function GET() {
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
   return NextResponse.json({ 
-    code: session.sessionCode || null 
+    code: session.sessionCode || null,
+    userId: session.user.Id
   });
 }
 

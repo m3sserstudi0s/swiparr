@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCcw } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
-import { MovieDetailView } from "../movie/MovieDetailView";
+import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { UserAvatarList } from "../session/UserAvatarList";
 
 import { MatchOverlay } from "./MatchOverlay";
@@ -17,6 +17,7 @@ import { MatchOverlay } from "./MatchOverlay";
 export function CardDeck() {
   const { mutate } = useSWRConfig();
   const queryClient = useQueryClient();
+  const { openMovie } = useMovieDetail();
 
   const { data: sessionStatus } = useSWR<{ code: string | null }>(
     "/api/session",
@@ -54,7 +55,6 @@ export function CardDeck() {
     swipedIdsRef.current.clear();
   }, [sessionCode]);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
 
   // Store refs in a way React can track
@@ -81,7 +81,7 @@ export function CardDeck() {
   // --- MULTIPLAYER LOGIC INTEGRATION HERE ---
   const swipeMutation = useMutation({
     mutationFn: async ({ id, direction, item }: { id: string; direction: "left" | "right"; item: JellyfinItem }) => {
-      const res = await axios.post("/api/swipe", { itemId: id, direction });
+      const res = await axios.post("/api/swipe", { itemId: id, direction, item });
       return { data: res.data, id, item };
     },
     onSuccess: ({ data, item }) => {
@@ -157,7 +157,7 @@ export function CardDeck() {
     );
   }
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-[83vh]">
+    <div className="relative flex flex-col items-center justify-center w-full">
       {sessionStatus?.code && members && members.length > 0 ? (
         <div className="">
           <UserAvatarList
@@ -166,7 +166,7 @@ export function CardDeck() {
           />
         </div>
       ) : <div className="h-9" />}
-      <div className="relative w-full h-[75vh] flex justify-center items-center">
+      <div className="relative w-full h-[67vh] flex justify-center items-center">
 
         {/* Render bottom card first, then top card (Reverse order visually) */}
         {activeDeck.slice(0, 2).reverse().map((item: JellyfinItem, i, arr) => {
@@ -176,11 +176,11 @@ export function CardDeck() {
             <SwipeCard
               key={item.Id}
               ref={getCardRef(item.Id)}
-              item={item}
+               item={item}
               index={zIndex}
               onSwipe={onSwipe}
               onCardLeftScreen={onCardLeftScreen}
-              onClick={() => setSelectedId(item.Id)}
+              onClick={() => openMovie(item.Id)}
             />
           );
         })}
@@ -190,24 +190,19 @@ export function CardDeck() {
         <Button
           size="icon"
           variant="outline"
-          className="h-16 w-16 rounded-full bg-background border-2"
+          className="h-18 w-18 rounded-full bg-background border-2"
           onClick={() => swipeTop("left")}
         >
-          <X className="size-8" />
+          <X className="size-9" />
         </Button>
         <Button
           size="icon"
-          className="h-16 w-16 rounded-full shadow-lg"
+          className="h-18 w-18 rounded-full shadow-lg"
           onClick={() => swipeTop("right")}
         >
-          <Heart className="size-8 fill-primary-foreground" />
+          <Heart className="size-9 fill-primary-foreground" />
         </Button>
       </div>
-      {/* MOUNT THE MODAL */}
-      <MovieDetailView
-        movieId={selectedId}
-        onClose={() => setSelectedId(null)}
-      />
 
       <MatchOverlay
         item={matchedItem}
@@ -219,14 +214,14 @@ export function CardDeck() {
 
 function DeckSkeleton() {
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-[83vh]">
+    <div className="relative flex flex-col items-center justify-center w-full">
       <div className="h-10" />
-      <div className="relative w-full h-[83vh] flex justify-center items-center">
-        <Skeleton className="relative w-full h-[65vh] max-w-sm rounded-3xl" />
+      <div className="relative w-full h-[65vh] flex justify-center items-center">
+        <Skeleton className="relative w-full h-full rounded-3xl" />
       </div>
-      <div className="flex gap-8 mt-4">
-        <Skeleton className="h-16 w-16 rounded-full" />
-        <Skeleton className="h-16 w-16 rounded-full" />
+      <div className="flex gap-8 mt-5.5">
+        <Skeleton className="h-18 w-18 rounded-full" />
+        <Skeleton className="h-18 w-18 rounded-full" />
       </div>
     </div>
   );
