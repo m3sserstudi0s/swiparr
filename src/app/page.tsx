@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { GalleryHorizontalEnd, Heart, LogOut } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserMenu } from "@/components/home/UserMenu";
+import { KeyboardShortcuts } from "@/components/deck/KeyboardShortcuts";
 
 export default function Home() {
 
@@ -38,6 +39,8 @@ export default function Home() {
         </Tabs>
         <UserMenu />
       </div>
+            <KeyboardShortcuts/>
+
     </main>
   );
 }

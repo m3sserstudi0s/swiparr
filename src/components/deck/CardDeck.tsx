@@ -8,11 +8,13 @@ import { JellyfinItem } from "@/types/swiparr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCcw } from "lucide-react";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { UserAvatarList } from "../session/UserAvatarList";
 
 import { MatchOverlay } from "./MatchOverlay";
+import { KeyboardShortcuts } from "./KeyboardShortcuts";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
@@ -137,6 +139,32 @@ export function CardDeck() {
     }
   };
 
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+        swipeTop("left");
+      } else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+        swipeTop("right");
+      } else if (e.key === "Enter" || e.key === " ") {
+        if (activeDeck.length > 0) {
+          openMovie(activeDeck[0].Id);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeDeck, openMovie]);
+
   if (isLoading) return <DeckSkeleton />;
   if (isError) return <div className="text-foreground text-center">Error loading deck. Check logs.</div>;
   if (activeDeck.length === 0) {
@@ -166,7 +194,7 @@ export function CardDeck() {
           />
         </div>
       ) : <div className="h-9" />}
-      <div className="relative w-full h-[67vh] flex justify-center items-center">
+      <div className="relative w-full h-[67vh] flex justify-center items-center select-none">
 
         {/* Render bottom card first, then top card (Reverse order visually) */}
         {activeDeck.slice(0, 2).reverse().map((item: JellyfinItem, i, arr) => {

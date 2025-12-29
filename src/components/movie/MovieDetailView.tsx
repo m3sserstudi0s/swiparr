@@ -79,7 +79,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
         <div className="h-8 w-full bg-linear-to-t to-background via-background/30 absolute top-9 z-102"/>
         <div
           onScroll={handleScroll} // Update motion value here
-          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full z-101 outline-none mt-4">
+          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full z-101 outline-none mt-3.25">
 
           {isLoading ? (
             <div className="p-6 space-y-4">
