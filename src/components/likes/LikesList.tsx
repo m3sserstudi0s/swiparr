@@ -11,6 +11,16 @@ import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { MovieListItem } from "../movie/MovieListItem";
 import { type MergedLike } from "@/types/swiparr";
 
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from "@/components/ui/empty"
+import { Heart } from "lucide-react";
+
 export function LikesList() {
     const [sortBy, setSortBy] = useState("date");
     const [filterMode, setFilterMode] = useState("all");
@@ -45,15 +55,26 @@ export function LikesList() {
 
                 {!isLoading && likes?.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                        <p>No movies found.</p>
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <Heart />
+                                </EmptyMedia>
+                                <EmptyTitle className="text-foreground">No likes yet</EmptyTitle>
+                                <EmptyDescription>
+                                    You haven&apos;t liked any movies yet. Get started by swiping
+                                    your first movie.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
                     </div>
                 )}
 
-                 {likes?.map((movie: MergedLike) => (
-                     <MovieListItem
-                        key={movie.Id} 
-                        movie={movie} 
-                        onClick={() => openMovie(movie.Id)} 
+                {likes?.map((movie: MergedLike) => (
+                    <MovieListItem
+                        key={movie.Id}
+                        movie={movie}
+                        onClick={() => openMovie(movie.Id)}
                     />
                 ))}
             </ScrollArea>

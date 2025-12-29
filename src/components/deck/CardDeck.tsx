@@ -7,13 +7,22 @@ import axios from "axios";
 import { JellyfinItem } from "@/types/swiparr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Heart, X, RotateCcw } from "lucide-react";
+import { Heart, X, RotateCcw, GalleryHorizontalEnd, RefreshCcwIcon, RefreshCcw } from "lucide-react";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { UserAvatarList } from "../session/UserAvatarList";
 
 import { MatchOverlay } from "./MatchOverlay";
+
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
@@ -165,35 +174,73 @@ export function CardDeck() {
   }, [activeDeck, openMovie]);
 
   if (isLoading) return <DeckSkeleton />;
-  if (isError) return <div className="flex items-center justify-center text-foreground text-center h-[83vh]">Error loading deck. Check logs.</div>;
+  if (isError) return (
+          <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
+        <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <GalleryHorizontalEnd />
+            </EmptyMedia>
+            <EmptyTitle className="text-foreground">Something unexpected happened.</EmptyTitle>
+            <EmptyDescription>
+              Reload the page to try again.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.reload();
+              }}>
+              <RefreshCcw />
+              Reload
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+  );
   if (activeDeck.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[83vh] text-center text-muted-foreground ">
-        <p className="mb-4">Nothing more.</p>
-        <Button
-          onClick={() => {
-            setRemovedIds([]);
-            swipedIdsRef.current.clear();
-            refetch();
-          }}
-          variant="outline"
-        >
-          <RotateCcw className="mr-2 h-4 w-4" /> Refresh
-        </Button>
+      <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
+        <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <GalleryHorizontalEnd />
+            </EmptyMedia>
+            <EmptyTitle className="text-foreground">Nothing left to swipe.</EmptyTitle>
+            <EmptyDescription>
+              You&apos;re all swiped up. Refresh to fetch more.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setRemovedIds([]);
+                swipedIdsRef.current.clear();
+                refetch();
+              }}>
+              <RefreshCcw />
+              Refresh
+            </Button>
+          </EmptyContent>
+        </Empty>
       </div>
     );
   }
   return (
     <div className="relative flex flex-col items-center justify-center w-full">
       {sessionStatus?.code && members && members.length > 0 ? (
-        <div className="">
+        <div className="h-10">
           <UserAvatarList
             users={members.map((m: any) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
             size="md"
           />
         </div>
-      ) : <div className="h-9" />}
-      <div className="relative w-full h-[67vh] flex justify-center items-center select-none">
+      ) : <div className="h-10" />}
+      <div className="relative w-full h-[65vh] flex justify-center items-center select-none">
 
         {/* Render bottom card first, then top card (Reverse order visually) */}
         {activeDeck.slice(0, 2).reverse().map((item: JellyfinItem, i, arr) => {
@@ -203,7 +250,7 @@ export function CardDeck() {
             <SwipeCard
               key={item.Id}
               ref={getCardRef(item.Id)}
-               item={item}
+              item={item}
               index={zIndex}
               onSwipe={onSwipe}
               onCardLeftScreen={onCardLeftScreen}
@@ -246,7 +293,7 @@ function DeckSkeleton() {
       <div className="relative w-full h-[65vh] flex justify-center items-center">
         <Skeleton className="relative w-full h-full rounded-3xl" />
       </div>
-      <div className="flex gap-8 mt-5.5">
+      <div className="flex gap-8 mt-4">
         <Skeleton className="h-18 w-18 rounded-full" />
         <Skeleton className="h-18 w-18 rounded-full" />
       </div>

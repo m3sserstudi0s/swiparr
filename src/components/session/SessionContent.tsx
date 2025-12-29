@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Users, LogOut, Plus, Share2, UserPlus } from "lucide-react";
+import { Users, LogOut, Plus, Share2, UserPlus, Sparkles } from "lucide-react";
 import { UserAvatarList } from "./UserAvatarList";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MovieListItem } from "../movie/MovieListItem";
 import { JellyfinItem } from "@/types/swiparr";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
@@ -235,7 +236,17 @@ export default function SessionContent() {
                         <ScrollArea className="h-[53vh] pr-4 -mr-4">
                             {!activeCode ? (
                                 <div className="text-center text-muted-foreground text-sm py-8">
-                                    Join a session to find matches.
+                                    <Empty>
+                                        <EmptyHeader>
+                                            <EmptyMedia variant="icon">
+                                                <UserPlus />
+                                            </EmptyMedia>
+                                            <EmptyTitle className="text-foreground">Not in a session</EmptyTitle>
+                                            <EmptyDescription>
+                                                Create or join a session get started.
+                                            </EmptyDescription>
+                                        </EmptyHeader>
+                                    </Empty>
                                 </div>
                             ) : (
                                 <>
@@ -249,7 +260,17 @@ export default function SessionContent() {
                                     ))}
                                     {matches?.length === 0 && (
                                         <div className="text-center text-muted-foreground text-sm py-8">
-                                            No matches found yet.
+                                            <Empty>
+                                                <EmptyHeader>
+                                                    <EmptyMedia variant="icon">
+                                                        <Sparkles />
+                                                    </EmptyMedia>
+                                                    <EmptyTitle className="text-foreground">No matches made yet</EmptyTitle>
+                                                    <EmptyDescription>
+                                                        Start swiping together and see matches here.
+                                                    </EmptyDescription>
+                                                </EmptyHeader>
+                                            </Empty>
                                         </div>
                                     )}
                                 </>
