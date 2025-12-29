@@ -166,10 +166,10 @@ export function CardDeck() {
   }, [activeDeck, openMovie]);
 
   if (isLoading) return <DeckSkeleton />;
-  if (isError) return <div className="text-foreground text-center">Error loading deck. Check logs.</div>;
+  if (isError) return <div className="flex items-center justify-center text-foreground text-center h-[83vh]">Error loading deck. Check logs.</div>;
   if (activeDeck.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-[83vh] text-center text-muted-foreground ">
         <p className="mb-4">Nothing more.</p>
         <Button
           onClick={() => {

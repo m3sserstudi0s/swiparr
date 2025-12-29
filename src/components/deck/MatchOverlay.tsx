@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
+import { useMovieDetail } from "../movie/MovieDetailProvider";
 
 interface MatchOverlayProps {
   item: JellyfinItem | null;
@@ -12,6 +13,8 @@ interface MatchOverlayProps {
 }
 
 export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
+  const { openMovie } = useMovieDetail();
+
   return (
     <AnimatePresence>
       {item && (
@@ -46,7 +49,7 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
             </p>
 
             {item.likedBy && item.likedBy.length > 0 && (
-                <UserAvatarList users={item.likedBy} size="lg" className="mb-8" />
+              <UserAvatarList users={item.likedBy} size="lg" className="mb-8" />
             )}
 
             <motion.div
@@ -54,6 +57,7 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
               className="relative w-64 h-96 mb-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-primary/20"
+              onClick={() => openMovie(item.Id)}
             >
               <OptimizedImage
                 src={`/api/jellyfin/image/${item.Id}`}
@@ -68,9 +72,9 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               transition={{ delay: 0.4 }}
               className="flex flex-col gap-3 w-full items-center"
             >
-              <Button 
-                size="lg" 
-                className="rounded-full text-lg h-12 w-40 font-bold shadow-lg shadow-primary/20" 
+              <Button
+                size="lg"
+                className="rounded-full text-lg h-12 w-40 font-bold shadow-lg shadow-primary/20"
                 onClick={onClose}
               >
                 Continue

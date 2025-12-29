@@ -7,7 +7,7 @@ export function KeyboardShortcuts() {
   
   return (
 
-      <div className="hidden md:flex flex-col items-center gap-3 mt-8 text-muted-foreground/60 select-none absolute left-4/5 top-1/2 transform -translate-y-1/2 pr-4">
+      <div className="hidden sm:flex flex-col items-center gap-3 mt-8 text-muted-foreground/60 select-none absolute left-[70%] top-[45%] transform -translate-y-1/2 pr-4">
         <div className="flex flex-col gap-12">
           <div className="flex flex-col items-center gap-2">
             <KbdGroup>
