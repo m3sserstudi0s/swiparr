@@ -39,7 +39,7 @@ export function useUpdates(sessionCode?: string | null) {
                 // If it's not the current user who swiped, show a toast
                 if (sessionData && data.swiperId !== sessionData.userId) {
                     toast.success(`Match! ${data.itemName}`, {
-                        description: "Check out what else they liked.",
+                        description: "Check it out.",
                         action: {
                             label: "View",
                             onClick: () => openMovie(data.itemId)

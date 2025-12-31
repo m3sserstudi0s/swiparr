@@ -37,7 +37,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <Toaster />
+          <Toaster expand visibleToasts={1} position='top-right'/>
         </Providers>
       </body>
     </html>
