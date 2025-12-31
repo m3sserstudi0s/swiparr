@@ -11,6 +11,7 @@ import axios from "axios";
 import { Button } from "../ui/button";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { UserGuide } from "./UserGuide";
 import {
     Dialog,
     DialogContent,
@@ -24,6 +25,7 @@ import { toast } from "sonner";
 export function UserMenu() {
     const router = useRouter();
     const [showClearDialog, setShowClearDialog] = useState(false);
+    const [showUserGuide, setShowUserGuide] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
 
     const { setTheme, theme } = useTheme()
@@ -82,6 +84,7 @@ export function UserMenu() {
                         Clear data
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                        onSelect={() => setShowUserGuide(true)}
                         className="text-default"
                     >
                         <BookOpenText className="size-4" />
@@ -89,6 +92,8 @@ export function UserMenu() {
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+
+            <UserGuide open={showUserGuide} onOpenChange={setShowUserGuide} />
 
             <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
                 <DialogContent className="z-101">
