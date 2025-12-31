@@ -57,7 +57,7 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
               className="relative w-64 h-96 mb-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-primary/20"
-              onClick={() => openMovie(item.Id)}
+              onClick={() => { openMovie(item.Id); onClose(); }}
             >
               <OptimizedImage
                 src={`/api/jellyfin/image/${item.Id}`}
