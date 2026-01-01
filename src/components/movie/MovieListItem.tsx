@@ -12,8 +12,10 @@ import axios from "axios";
 import { toast } from "sonner";
 
 import { MergedLike } from "@/types/swiparr";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 
 interface MovieListItemProps {
+
   movie: MergedLike;
   onClick?: () => void;
   variant?: "full" | "condensed";
@@ -61,7 +63,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
-  const jellyfinUrl = process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL;
+  const { jellyfinPublicUrl } = useRuntimeConfig();
 
   const isCondensed = variant === "condensed";
 
@@ -129,7 +131,8 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
           )}
 
           <div className="flex gap-2">
-            <Link href={`${jellyfinUrl}/web/index.html#/details?id=${movie.Id}&context=home`} target="_blank" onClick={e => e.stopPropagation()} className="flex-1">
+            <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} target="_blank" onClick={e => e.stopPropagation()} className="flex-1">
+
               <Button
                 size="sm"
                 variant="secondary"

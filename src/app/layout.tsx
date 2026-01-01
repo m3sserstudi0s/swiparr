@@ -3,8 +3,10 @@ import { Google_Sans_Flex } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { Toaster } from "@/components/ui/sonner"
+import { getRuntimeConfig } from '@/lib/runtime-config'
 
 const sansFlex = Google_Sans_Flex({ 
+
   subsets: ['latin'],
   display: 'swap',
   adjustFontFallback: true 
@@ -27,9 +29,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const config = getRuntimeConfig();
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__SWIPARR_CONFIG__ = ${JSON.stringify(config)};`,
+          }}
+        />
+      </head>
       <body className={`${sansFlex.className} min-h-screen`}>
+
         <Providers
           attribute="class"
           defaultTheme="system"

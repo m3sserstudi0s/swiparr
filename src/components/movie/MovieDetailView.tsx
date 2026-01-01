@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSettings } from "@/lib/settings";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 
 interface Props {
 
@@ -118,7 +119,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
-  const jellyfinUrl = process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL;
+  const { jellyfinPublicUrl } = useRuntimeConfig();
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -224,7 +225,8 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                 )}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
-                  <Link href={`${jellyfinUrl}/web/index.html#/details?id=${movie.Id}&context=home`} target="_blank" className="w-32">
+                  <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} target="_blank" className="w-32">
+
                     <Button className="w-32" size="lg">
                       <Play className="w-4 h-4 mr-2 fill-current" /> Play
                     </Button>

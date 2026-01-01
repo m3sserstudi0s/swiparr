@@ -1,0 +1,25 @@
+services:
+  swiparr:
+    image: ghcr.io/messerstudios/swiparr:latest
+    container_name: swiparr
+    restart: unless-stopped
+    environment:
+      # The internal URL of your Jellyfin server (accessible by the container)
+      - JELLYFIN_URL=http://jellyfin:8096
+      
+      # The public URL of your Jellyfin server (accessible by your browser)
+      - JELLYFIN_PUBLIC_URL=https://jellyfin.example.com
+      
+      # A long random string for session encryption
+      - AUTHORS_SECRET=your_random_secret_here
+      
+      # Optional: Database location (internal to container)
+      - DATABASE_URL=file:/app/data/swiparr.db
+      
+      # Optional: Use Jellyfin Watchlist (Jellyfin Enhanced plugin/KefwinTweaks script) instead of Favorites
+      - JELLYFIN_USE_WATCHLIST=false
+    volumes:
+      # Persist database and data
+      - ./swiparr-data:/app/data
+    ports:
+      - 4321:4321

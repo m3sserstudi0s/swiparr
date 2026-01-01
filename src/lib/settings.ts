@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { getRuntimeConfig } from './runtime-config';
 
 export interface Settings {
   useWatchlist: boolean;
@@ -11,8 +12,10 @@ interface SettingsState {
   resetSettings: () => void;
 }
 
+const config = getRuntimeConfig();
+
 export const DEFAULT_SETTINGS: Settings = {
-  useWatchlist: process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST === "true",
+  useWatchlist: config.useWatchlist,
 };
 
 export const useSettingsStore = create<SettingsState>()(

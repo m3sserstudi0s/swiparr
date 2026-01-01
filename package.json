@@ -1,7 +1,11 @@
 {
   "name": "swiparr",
   "version": "0.1.1",
-  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jakobbjelver/swiparr.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "next dev",
