@@ -121,10 +121,10 @@ export function MovieDetailView({ movieId, onClose }: Props) {
         className="z-101"
       >
         <DrawerTitle className="sr-only">Movie Details</DrawerTitle>
-        <div className="h-8 w-full bg-linear-to-t to-background via-background/30 absolute top-9 z-102" />
+        <div className="h-20 w-full bg-linear-to-t to-background absolute top-10 z-102" />
         <div
           onScroll={handleScroll} // Update motion value here
-          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full z-101 outline-none mt-3.25">
+          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full z-101 outline-none mt-4">
 
           {isLoading ? (
             <div className="p-6 space-y-4">
@@ -253,7 +253,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                 </div>
 
                 {/* LIKED BY */}
-                {movie.likedBy && movie.likedBy.length > 0 && (
+                {movie.likedBy && movie.likedBy.length > 0 && sessionData?.code && (
                   <div className="mb-8 bg-muted/20 p-4 rounded-xl border border-border/50">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3" >Liked By</h3>
                     <UserAvatarList users={movie.likedBy} size="lg" />

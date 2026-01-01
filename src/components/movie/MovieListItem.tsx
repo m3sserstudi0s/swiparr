@@ -80,6 +80,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
           src={`/api/jellyfin/image/${movie.Id}`}
           alt={movie.Name}
           className="w-full h-full object-cover rounded-md"
+          sizes="(max-width: 768px) 100px, 150px"
         />
         {/* Match Indicator */}
         {!isCondensed && movie.isMatch && (
@@ -106,13 +107,15 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
                 {movie.CommunityRating.toFixed(1)}
               </span>
             )}
-            {movie.likedBy && movie.likedBy.length > 0 && (
-              <UserAvatarList
-                users={movie.likedBy}
-                size="sm"
-                className="ml-auto translate-y-0.5 mr-1"
-              />
-            )}
+            <div className="ml-auto">
+              {movie.likedBy && movie.likedBy.length > 0 && (
+                <UserAvatarList
+                  users={movie.likedBy}
+                  size="sm"
+                  className="translate-y-0.5 mr-1"
+                />
+              )}
+            </div>
           </div>
         </div>
 

@@ -101,7 +101,7 @@ export function UserMenu() {
                         <DialogTitle>Are you absolutely sure?</DialogTitle>
                         <DialogDescription>
                             This action cannot be undone. This will permanently delete your
-                            likes, hidden items, and any sessions you have created.
+                            likes and any sessions you have created.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

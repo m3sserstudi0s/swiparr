@@ -81,6 +81,8 @@ export async function GET(request: NextRequest) {
         merged.sort((a, b) => (b.ProductionYear || 0) - (a.ProductionYear || 0));
     } else if (sortBy === "rating") {
         merged.sort((a, b) => (b.CommunityRating || 0) - (a.CommunityRating || 0));
+    } else if (sortBy === "likes") {
+        merged.sort((a, b) => (b.likedBy?.length || 0) - (a.likedBy?.length || 0));
     } else {
         merged.sort((a, b) => {
             const dateA = a.swipedAt ? new Date(a.swipedAt).getTime() : 0;

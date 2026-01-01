@@ -94,7 +94,8 @@ export async function GET() {
 
   return NextResponse.json({ 
     code: session.sessionCode || null,
-    userId: session.user.Id
+    userId: session.user.Id,
+    accessToken: session.user.AccessToken
   });
 }
 

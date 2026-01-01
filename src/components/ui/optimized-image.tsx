@@ -25,25 +25,16 @@ export function OptimizedImage({
   const [isLoading, setIsLoading] = useState(true);
 
   const isFill = fill ?? (!width && !height);
-
-  // High-res version for the main image
-  const optimizedSrc = typeof src === "string" && src.startsWith("/api/jellyfin/image")
-    ? `${src}${src.includes("?") ? "&" : "?"}${width ? `width=${width}` : "width=1200"}${height ? `&height=${height}` : ""}&quality=80`
-    : src;
-
-  // Tiny version to use as a blur placeholder
-  const blurSrc = typeof src === "string" && src.startsWith("/api/jellyfin/image")
-    ? `${src}${src.includes("?") ? "&" : "?"}width=40&quality=10`
-    : null;
+  const isJellyfinImage = typeof src === "string" && src.startsWith("/api/jellyfin/image");
 
   return (
     <div 
       className={cn("relative overflow-hidden bg-muted/20", containerClassName || className)}
     >
       {/* Real-image blur placeholder */}
-      {blurSrc && isLoading && (
+      {isJellyfinImage && isLoading && (
         <img 
-          src={blurSrc} 
+          src={`${src}${src.includes("?") ? "&" : "?"}width=40&quality=10`} 
           alt=""
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-50"
@@ -51,22 +42,24 @@ export function OptimizedImage({
       )}
       
       {/* Loading Skeleton fallback if no blurSrc */}
-      {isLoading && !blurSrc && (
+      {isLoading && !isJellyfinImage && (
         <Skeleton className="absolute inset-0" />
       )}
 
       <Image
         {...props}
-        src={optimizedSrc}
+        loader={isJellyfinImage ? ({ src, width, quality }) => {
+          return `${src}${src.includes("?") ? "&" : "?"}width=${width}&quality=${quality || 80}`;
+        } : undefined}
+        src={src}
         alt={alt}
         width={isFill ? undefined : width}
         height={isFill ? undefined : height}
         fill={isFill}
         priority={priority}
-        unoptimized // Required: Next.js optimizer cannot pass user session cookies to internal API routes
         className={cn(
           "transition-all duration-700 ease-in-out",
-          isLoading ? "opacity-0 scale-102" : "opacity-100 scale-100",
+          isLoading ? "scale-102" : "scale-100",
           className
         )}
         onLoad={(e) => {

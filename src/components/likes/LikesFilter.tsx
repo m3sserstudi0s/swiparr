@@ -14,6 +14,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SlidersHorizontal } from "lucide-react";
 
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group"
+
 interface FilterProps {
   sortBy: string;
   setSortBy: (v: string) => void;
@@ -37,52 +42,37 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
             {/* SORTING */}
             <div className="space-y-3">
               <Label className="text-muted-foreground uppercase text-xs tracking-wider">Sort By</Label>
-              <RadioGroup value={sortBy} onValueChange={setSortBy} className="grid grid-cols-3 gap-2">
-                <div>
-                  <RadioGroupItem value="date" id="date" className="peer sr-only" />
-                  <Label
-                    htmlFor="date"
-                    className="flex flex-col items-center justify-between rounded-md border border-border bg-card p-2 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
-                  >
-                    Liked date
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem value="year" id="year" className="peer sr-only" />
-                  <Label
-                    htmlFor="year"
-                    className="flex flex-col items-center justify-between rounded-md border border-border bg-card p-2 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
-                  >
-                    Year
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem value="rating" id="rating" className="peer sr-only" />
-                  <Label
-                    htmlFor="rating"
-                    className="flex flex-col items-center justify-between rounded-md border border-border bg-card p-2 hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer"
-                  >
-                    Rating
-                  </Label>
-                </div>
-              </RadioGroup>
+              <ToggleGroup type="single" value={sortBy} onValueChange={setSortBy} className="grid grid-flow-col w-full">
+                <ToggleGroupItem value="date" aria-label="Toggle date">
+                  Added
+                </ToggleGroupItem>
+                <ToggleGroupItem value="year" aria-label="Toggle year">
+                  Year
+                </ToggleGroupItem>
+                <ToggleGroupItem value="rating" aria-label="Toggle rating">
+                  Rating
+                </ToggleGroupItem>
+                <ToggleGroupItem value="likes" aria-label="Toggle likes">
+                  Likes
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
 
             {/* FILTERING */}
             <div className="space-y-3">
-              <Label className="text-muted-foreground uppercase text-xs tracking-wider">Show Content</Label>
-              <RadioGroup value={filterMode} onValueChange={setFilterMode} className="flex flex-col space-y-1">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="f-all" className="text-primary" />
-                  <Label htmlFor="f-all">Everything</Label>
+              <Label className="text-muted-foreground uppercase text-xs tracking-wider">Filter</Label>
+              <RadioGroup value={filterMode} onValueChange={setFilterMode} className="flex ml-1 flex-col space-y-1">
+                <div className="flex items-center space-x-4">
+                  <RadioGroupItem value="all" id="f-all" className="text-primary scale-150" />
+                  <Label htmlFor="f-all" className="text-lg">Everything</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="session" id="f-session" className="text-primary" />
-                  <Label htmlFor="f-session">Sessions</Label>
+                <div className="flex items-center space-x-4">
+                  <RadioGroupItem value="session" id="f-session" className="text-primary scale-150" />
+                  <Label htmlFor="f-session" className="text-lg">Sessions</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="solo" id="f-solo" className="text-primary" />
-                  <Label htmlFor="f-solo">Solo</Label>
+                <div className="flex items-center space-x-4">
+                  <RadioGroupItem value="solo" id="f-solo" className="text-primary scale-150" />
+                  <Label htmlFor="f-solo" className="text-lg">Solo</Label>
                 </div>
               </RadioGroup>
             </div>

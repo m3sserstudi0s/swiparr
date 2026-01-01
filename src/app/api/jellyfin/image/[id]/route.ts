@@ -7,12 +7,19 @@ import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types/swiparr";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
-  if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
+  const searchParams = request.nextUrl.searchParams;
+  const token = searchParams.get("token");
+  
+  let accessToken = token;
+  
+  if (!accessToken) {
+    const cookieStore = await cookies();
+    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
+    accessToken = session.user.AccessToken;
+  }
 
   const { id } = await params;
-  const searchParams = request.nextUrl.searchParams;
   const isUser = searchParams.get("type") === "user";
   const imageType = searchParams.get("imageType") || "Primary";
   const width = searchParams.get("width");
@@ -39,7 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       headers: {
         // Pass auth if required by your Jellyfin config, usually images are public if access token is in query
         // But better to use header
-        "X-Emby-Token": session.user.AccessToken, 
+        "X-Emby-Token": accessToken, 
       },
     });
 

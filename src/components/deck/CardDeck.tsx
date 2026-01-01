@@ -243,7 +243,7 @@ export function CardDeck() {
       <div className="relative w-full h-[65vh] flex justify-center items-center select-none">
 
         {/* Render bottom card first, then top card (Reverse order visually) */}
-        {activeDeck.slice(0, 2).reverse().map((item: JellyfinItem, i, arr) => {
+        {activeDeck.slice(0, 3).reverse().map((item: JellyfinItem, i, arr) => {
           // Recalculate index so 0 is front
           const zIndex = arr.length - 1 - i;
           return (
