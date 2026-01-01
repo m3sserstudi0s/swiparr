@@ -5,9 +5,10 @@ import { LikesList } from "@/components/likes/LikesList";
 import { Button } from "@/components/ui/button";
 import { GalleryHorizontalEnd, Heart, LogOut } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserMenu } from "@/components/home/UserMenu";
+import { SettingsSidebar } from "@/components/home/SettingsSidebar";
 
 export default function Home() {
+
 
   return (
     <main className="flex min-h-screen flex-col items-center px-6 md:p-0">
@@ -36,8 +37,9 @@ export default function Home() {
             <LikesList />
           </TabsContent>
         </Tabs>
-        <UserMenu />
+        <SettingsSidebar />
       </div>
     </main>
+
   );
 }

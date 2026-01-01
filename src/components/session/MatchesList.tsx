@@ -1,0 +1,74 @@
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { UserPlus, Sparkles } from "lucide-react";
+import { MovieListItem } from "../movie/MovieListItem";
+import { JellyfinItem } from "@/types/swiparr";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
+
+interface MatchesListProps {
+  activeCode?: string;
+  matches?: JellyfinItem[];
+  openMovie: (id: string) => void;
+}
+
+export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps) {
+  return (
+    <div className="mt-4">
+      <h3 className="font-bold mb-1 flex items-center justify-between text-muted-foreground uppercase tracking-wider text-xs">
+        Matches Found
+        {(matches?.length ?? 0) > 0 && (
+          <Badge variant="secondary">{matches?.length}</Badge>
+        )}
+      </h3>
+      <ScrollArea className="h-[50vh] pr-4 -mr-4 relative">
+        <div className="bg-linear-to-b from-background to-transparent via-background/70 h-10 z-101 -top-px absolute w-full" />
+        {!activeCode ? (
+          <div className="text-center text-muted-foreground text-sm py-8">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <UserPlus />
+                </EmptyMedia>
+                <EmptyTitle className="text-foreground">
+                  Not in a session
+                </EmptyTitle>
+                <EmptyDescription>
+                  Create or join a session get started.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          </div>
+        ) : (
+          <div className="py-6">
+            {matches?.map((movie: JellyfinItem) => (
+              <MovieListItem
+                key={movie.Id}
+                movie={{ ...movie, isMatch: true } as any}
+                onClick={() => openMovie(movie.Id)}
+                variant="condensed"
+              />
+            ))}
+            {matches?.length === 0 && (
+              <div className="text-center text-muted-foreground text-sm py-8">
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Sparkles />
+                    </EmptyMedia>
+                    <EmptyTitle className="text-foreground">
+                      No matches made yet
+                    </EmptyTitle>
+                    <EmptyDescription>
+                      Start swiping together and see matches here.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="bg-linear-to-t from-background to-transparent h-10 z-101 bottom-0 absolute w-full" />
+      </ScrollArea>
+    </div>
+  );
+}

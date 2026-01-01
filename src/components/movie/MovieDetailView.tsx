@@ -15,8 +15,10 @@ import { OptimizedImage } from "@/components/ui/optimized-image";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useSettings } from "@/lib/settings";
 
 interface Props {
+
   movieId: string | null;
   onClose: () => void;
 }
@@ -56,8 +58,10 @@ export function MovieDetailView({ movieId, onClose }: Props) {
   const isLoading = isMovieLoading || isSessionLoading;
 
   const queryClient = useQueryClient();
+  const { settings } = useSettings();
 
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
+
     mutationFn: async () => {
       await axios.delete(`/api/user/likes?itemId=${movieId}`);
     },
@@ -67,8 +71,9 @@ export function MovieDetailView({ movieId, onClose }: Props) {
     },
   });
 
-  const useWatchlist = process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST === "true";
+  const useWatchlist = settings.useWatchlist;
   const isInList = (useWatchlist ? movie?.UserData?.Likes : movie?.UserData?.IsFavorite) ?? false;
+
 
   const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
     mutationFn: async () => {
@@ -144,6 +149,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                   }}
                   className="absolute inset-0 w-full h-[120%]"
                 >
+
                   <OptimizedImage
                     src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0 
                       ? `/api/jellyfin/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
@@ -285,6 +291,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                     {movie.Overview || "No overview available."}
                   </p>
                 </div>
+
 
                 {/* CAST */}
                 {movie.People && movie.People.length > 0 && (

@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { useSettings } from "@/lib/settings";
 
 
 export type { TinderCardHandle };
+
 
 interface SwipeCardProps {
   item: JellyfinItem;
@@ -21,8 +23,10 @@ interface SwipeCardProps {
 export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
   function SwipeCard({ item, index, onSwipe, onCardLeftScreen, onClick }, ref) {
     const isFront = index === 0;
+    const { settings } = useSettings();
 
     // Track the start position of the click/touch
+
     const clickCoords = useRef<{ x: number; y: number } | null>(null);
 
     const handlePointerDown = (e: React.PointerEvent) => {
@@ -111,6 +115,7 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
                   {item.Overview}
                 </p>
               </div>
+
             </Card>
           </div>
         </FramerTinderCard>

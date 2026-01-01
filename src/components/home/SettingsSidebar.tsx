@@ -1,16 +1,17 @@
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { BookOpenText, LogOut, Menu, Moon, Sun, Trash2 } from "lucide-react"
+"use client";
 
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Button } from "../ui/button";
-import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useState, Suspense, lazy } from "react";
 import { UserGuide } from "./UserGuide";
 import {
     Dialog,
@@ -19,16 +20,22 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { ScrollArea } from "../ui/scroll-area";
+import { Skeleton } from "../ui/skeleton";
 
-export function UserMenu() {
+// Lazy load settings sections for code splitting
+const GeneralSettings = lazy(() => import("./settings/GeneralSettings").then(m => ({ default: m.GeneralSettings })));
+const AboutSettings = lazy(() => import("./settings/AboutSettings").then(m => ({ default: m.AboutSettings })));
+const DangerZone = lazy(() => import("./settings/DangerZone").then(m => ({ default: m.DangerZone })));
+
+export function SettingsSidebar() {
     const router = useRouter();
     const [showClearDialog, setShowClearDialog] = useState(false);
     const [showUserGuide, setShowUserGuide] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
-
-    const { setTheme, theme } = useTheme()
+    const [open, setOpen] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -36,6 +43,7 @@ export function UserMenu() {
             router.push("/login");
         } catch (error) {
             console.error("Logout failed:", error);
+            toast.error("Logout failed");
         }
     };
 
@@ -60,38 +68,36 @@ export function UserMenu() {
 
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+            <Sheet open={open} onOpenChange={setOpen}>
+                <SheetTrigger asChild>
                     <Button className="absolute right-0" variant="ghost" size="icon">
                         <Menu className="size-6" />
                     </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-fit z-101" align="start">
-                    <DropdownMenuItem onClick={handleLogout} className="text-default">
-                        <LogOut className="size-4" />
-                        Log out
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")} className="text-default">
-                        <Sun className="size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-                        <Moon className="size-4 absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-                        Theme
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onSelect={() => setShowClearDialog(true)}
-                        className="text-default"
-                    >
-                        <Trash2 className="size-4" />
-                        Clear data
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onSelect={() => setShowUserGuide(true)}
-                        className="text-default"
-                    >
-                        <BookOpenText className="size-4" />
-                        User guide
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                </SheetTrigger>
+                <SheetContent className="w-80 sm:w-96 flex flex-col p-0 overflow-hidden z-101">
+                    <SheetHeader className="p-6 pb-2">
+                        <div className="flex items-center gap-2 mb-2">
+                            <SheetTitle>Settings</SheetTitle>
+                        </div>
+                    </SheetHeader>
+
+                    <ScrollArea className="flex-1 px-6 h-[calc(100vh-80px)]">
+                        <div className="space-y-8 py-4 pb-12">
+                            <Suspense fallback={<SettingsSkeleton />}>
+                                <GeneralSettings />
+                                <AboutSettings onShowUserGuide={() => {
+                                    setShowUserGuide(true);
+                                    setOpen(false);
+                                }} />
+                                <DangerZone 
+                                    onClearData={() => setShowClearDialog(true)} 
+                                    onLogout={handleLogout} 
+                                />
+                            </Suspense>
+                        </div>
+                    </ScrollArea>
+                </SheetContent>
+            </Sheet>
 
             <UserGuide open={showUserGuide} onOpenChange={setShowUserGuide} />
 
@@ -123,6 +129,21 @@ export function UserMenu() {
                 </DialogContent>
             </Dialog>
         </>
-    )
+    );
 }
 
+function SettingsSkeleton() {
+    return (
+        <div className="space-y-8">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="space-y-4">
+                    <Skeleton className="h-4 w-24" />
+                    <div className="space-y-3">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}

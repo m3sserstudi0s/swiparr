@@ -1,23 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Users, LogOut, Plus, Share2, UserPlus, Sparkles } from "lucide-react";
-import { UserAvatarList } from "./UserAvatarList";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Users, Dices } from "lucide-react";
 import axios from "axios";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
 import { useUpdates } from "@/lib/use-updates";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MovieListItem } from "../movie/MovieListItem";
 import { JellyfinItem } from "@/types/swiparr";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
+import { SessionHeader } from "./SessionHeader";
+import { SessionCodeSection } from "./SessionCodeSection";
+import { MatchesList } from "./MatchesList";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
@@ -130,6 +127,17 @@ export default function SessionContent() {
         }
     };
 
+    const handleRandomMovie = () => {
+        if (!matches || matches.length === 0) {
+            toast.error("No matches found yet!");
+            return;
+        }
+        const randomIndex = Math.floor(Math.random() * matches.length);
+        const randomMovie = matches[randomIndex];
+        openMovie(randomMovie.Id);
+        toast.success(`Randomly picked: ${randomMovie.Name}`);
+    };
+
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="z-1 absolute">
@@ -138,147 +146,36 @@ export default function SessionContent() {
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="z-101 sm:max-w-md w-full px-4">
-                <SheetHeader>
-                    <SheetTitle className="mb-4 flex items-center gap-2 h-12">
-                        {activeCode ? (
-                            <>
-                                <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-muted-foreground opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-muted-foreground"></span>
-                                </span>
-                                Session
-                                {activeCode && members && members.length > 0 && (
-                                    <div className="py-2">
-                                        <UserAvatarList
-                                            size="md"
-                                            users={members.map((m: any) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        ) : "Session"}
-                    </SheetTitle>
-                </SheetHeader>
+                <SessionHeader activeCode={activeCode} members={members} />
                 <div className="space-y-6 px-1 mt-4">
-                    <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col min-h-40 justify-between">
-                        <div className="h-6 flex items-center justify-center mb-2">
-                            {!activeCode ? (
-                                <span className="text-sm text-muted-foreground">Enter code or create session</span>
-                            ) : (
-                                <span className="text-xs uppercase tracking-widest text-muted-foreground">Session code</span>
-                            )}
-                        </div>
-                        <div className="flex items-center justify-center mb-4 h-12">
-                            {!activeCode ? (
-                                <Input
-                                    placeholder="Code"
-                                    value={inputCode}
-                                    onChange={(e) => setInputCode(e.target.value.toUpperCase())}
-                                    className="bg-background border-input font-mono tracking-widest text-center uppercase h-10 w-full"
-                                    maxLength={4}
-                                />
-                            ) : (
-                                <div className="text-4xl font-black font-mono tracking-[0.2em] text-foreground">
-                                    {activeCode}
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex gap-3">
-                            {!activeCode ? (
-                                <>
-                                    <Button
-                                        onClick={() => handleJoinSession(inputCode)}
-                                        className="flex-1 h-10"
-                                        variant="default"
-                                        disabled={inputCode.length !== 4 || joinSession.isPending}
-                                    >
-                                        <UserPlus className="w-4 h-4 mr-2" />
-                                        Join
-                                    </Button>
-                                    <Button
-                                        onClick={handleCreateSession}
-                                        variant="outline"
-                                        className="flex-1 h-10"
-                                        disabled={createSession.isPending}
-                                    >
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Create
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Button
-                                        onClick={handleShare}
-                                        className="flex-1 h-10"
-                                        variant="default"
-                                    >
-                                        <Share2 className="w-4 h-4 mr-2" />
-                                        Share
-                                    </Button>
-                                    <Button
-                                        onClick={handleLeaveSession}
-                                        variant="outline"
-                                        className="flex-1 h-10"
-                                        disabled={leaveSession.isPending}
-                                    >
-                                        <LogOut className="w-4 h-4 mr-2" />
-                                        Leave
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                    <div className="mt-4">
-                        <h3 className="font-bold mb-3 flex items-center justify-between text-muted-foreground uppercase tracking-wider text-xs">
-                            Matches Found
-                            {(matches?.length ?? 0) > 0 && <Badge variant="secondary">{matches?.length}</Badge>}
-                        </h3>
-                        <ScrollArea className="h-[53vh] pr-4 -mr-4">
-                            {!activeCode ? (
-                                <div className="text-center text-muted-foreground text-sm py-8">
-                                    <Empty>
-                                        <EmptyHeader>
-                                            <EmptyMedia variant="icon">
-                                                <UserPlus />
-                                            </EmptyMedia>
-                                            <EmptyTitle className="text-foreground">Not in a session</EmptyTitle>
-                                            <EmptyDescription>
-                                                Create or join a session get started.
-                                            </EmptyDescription>
-                                        </EmptyHeader>
-                                    </Empty>
-                                </div>
-                            ) : (
-                                <>
-                                    {matches?.map((movie: JellyfinItem) => (
-                                        <MovieListItem
-                                            key={movie.Id}
-                                            movie={{ ...movie, isMatch: true } as any}
-                                            onClick={() => openMovie(movie.Id)}
-                                            variant="condensed"
-                                        />
-                                    ))}
-                                    {matches?.length === 0 && (
-                                        <div className="text-center text-muted-foreground text-sm py-8">
-                                            <Empty>
-                                                <EmptyHeader>
-                                                    <EmptyMedia variant="icon">
-                                                        <Sparkles />
-                                                    </EmptyMedia>
-                                                    <EmptyTitle className="text-foreground">No matches made yet</EmptyTitle>
-                                                    <EmptyDescription>
-                                                        Start swiping together and see matches here.
-                                                    </EmptyDescription>
-                                                </EmptyHeader>
-                                            </Empty>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </ScrollArea>
-                    </div>
+                    <SessionCodeSection
+                        activeCode={activeCode}
+                        inputCode={inputCode}
+                        setInputCode={setInputCode}
+                        handleJoinSession={handleJoinSession}
+                        handleCreateSession={handleCreateSession}
+                        handleShare={handleShare}
+                        handleLeaveSession={handleLeaveSession}
+                        isJoining={joinSession.isPending}
+                        isCreating={createSession.isPending}
+                        isLeaving={leaveSession.isPending}
+                    />
+                    <MatchesList
+                        activeCode={activeCode}
+                        matches={matches}
+                        openMovie={openMovie}
+                    />
                 </div>
+                <Button 
+                    className="absolute bottom-10 right-10 scale-150 backdrop-blur-sm group" 
+                    variant={'outline'} 
+                    size={'icon'}
+                    onClick={handleRandomMovie}
+                >
+                    <Dices className="transform group-hover:rotate-360 group-hover:scale-85 transition-transform duration-500" />
+                </Button>
             </SheetContent>
         </Sheet>
     );
 }
+
