@@ -121,7 +121,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
         <div className="h-20 w-full bg-linear-to-t to-background absolute top-10 z-1" />
         <div
           onScroll={handleScroll} // Update motion value here
-          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-4">
+          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-4 no-scrollbar">
 
           {isLoading ? (
             <div className="p-6 space-y-4">
@@ -305,8 +305,8 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col gap-0.5">
-                            <div className="text-[11px] font-bold text-foreground leading-tight line-clamp-2 w-20">{person.Name}</div>
-                            <div className="text-[10px] text-muted-foreground leading-tight line-clamp-1 w-20">{person.Role}</div>
+                            <div className="text-sm font-bold text-foreground leading-tight line-clamp-2 w-20">{person.Name}</div>
+                            <div className="text-xs text-muted-foreground leading-tight line-clamp-2 w-20">{person.Role}</div>
                           </div>
                         </div>
                       ))}

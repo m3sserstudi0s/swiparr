@@ -36,7 +36,7 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
           <DrawerHeader>
             <DrawerTitle>Filter & Sort</DrawerTitle>
           </DrawerHeader>
-          <div className="p-4 pb-8 space-y-6">
+          <div className="p-4 pb-20 space-y-6">
 
             {/* SORTING */}
             <div className="space-y-3">
