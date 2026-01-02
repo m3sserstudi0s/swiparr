@@ -1,16 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-html {
-  scrollbar-gutter: stable both-edges;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #1a1a1a; }
-::-webkit-scrollbar-thumb { background: #626262; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #7f7f7f; }
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
