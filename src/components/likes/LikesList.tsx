@@ -50,7 +50,7 @@ export function LikesList() {
             </div>
 
             {/* List Content */}
-            <ScrollArea className="flex-1 h-[calc(100vh-135px)] -mr-5 pr-5">
+            <ScrollArea className="flex-1 h-[calc(100vh-135px)] -mr-5 pr-5 mt-1">
                 {isLoading && <LikesSkeleton />}
 
                 {!isLoading && likes?.length === 0 && (

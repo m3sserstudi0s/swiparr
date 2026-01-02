@@ -3,15 +3,12 @@
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SlidersHorizontal } from "lucide-react";
 
 import {
@@ -29,7 +26,6 @@ interface FilterProps {
 export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: FilterProps) {
   return (
     <Drawer>
-      <DrawerTitle />
       <DrawerTrigger asChild>
         <Button variant="outline" size="icon" className=" gap-2 text-xs border-border bg-muted/50">
           <SlidersHorizontal className="size-5" />
@@ -37,12 +33,21 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
       </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
-          <div className="p-4 pb-0 space-y-6">
+          <DrawerHeader>
+            <DrawerTitle>Filter & Sort</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 pb-8 space-y-6">
 
             {/* SORTING */}
             <div className="space-y-3">
               <Label className="text-muted-foreground uppercase text-xs tracking-wider">Sort By</Label>
-              <ToggleGroup type="single" value={sortBy} onValueChange={setSortBy} className="grid grid-flow-col w-full">
+              <ToggleGroup 
+                type="single" 
+                variant="outline"
+                value={sortBy} 
+                onValueChange={(v) => v && setSortBy(v)} 
+                className="grid grid-cols-4 w-full"
+              >
                 <ToggleGroupItem value="date" aria-label="Toggle date">
                   Added
                 </ToggleGroupItem>
@@ -61,28 +66,26 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
             {/* FILTERING */}
             <div className="space-y-3">
               <Label className="text-muted-foreground uppercase text-xs tracking-wider">Filter</Label>
-              <RadioGroup value={filterMode} onValueChange={setFilterMode} className="flex ml-1 flex-col space-y-1">
-                <div className="flex items-center space-x-4">
-                  <RadioGroupItem value="all" id="f-all" className="text-primary scale-150" />
-                  <Label htmlFor="f-all" className="text-lg">Everything</Label>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <RadioGroupItem value="session" id="f-session" className="text-primary scale-150" />
-                  <Label htmlFor="f-session" className="text-lg">Sessions</Label>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <RadioGroupItem value="solo" id="f-solo" className="text-primary scale-150" />
-                  <Label htmlFor="f-solo" className="text-lg">Solo</Label>
-                </div>
-              </RadioGroup>
+              <ToggleGroup 
+                type="single" 
+                variant="outline"
+                value={filterMode} 
+                onValueChange={(v) => v && setFilterMode(v)} 
+                className="grid grid-cols-3 w-full"
+              >
+                <ToggleGroupItem value="all" aria-label="Everything">
+                  Everything
+                </ToggleGroupItem>
+                <ToggleGroupItem value="session" aria-label="Sessions">
+                  Sessions
+                </ToggleGroupItem>
+                <ToggleGroupItem value="solo" aria-label="Solo">
+                  Solo
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
 
           </div>
-          <DrawerFooter>
-            <DrawerClose asChild>
-              <Button>Done</Button>
-            </DrawerClose>
-          </DrawerFooter>
         </div>
       </DrawerContent>
     </Drawer>
