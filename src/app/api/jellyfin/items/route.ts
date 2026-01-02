@@ -73,11 +73,11 @@ export async function GET(request: NextRequest) {
             const allItems = allRes.data.Items || [];
             
             // Seeded shuffle of the entire library
-            const shuffledItems = shuffleWithSeed(allItems, session.sessionCode);
+            const shuffledItems = shuffleWithSeed(allItems, session.sessionCode) as JellyfinItem[];
             
-            // Pick first 50 not excluded and unplayed for the current user
+            // Pick first 50 not excluded for the current user
             const targetIds = shuffledItems
-                .filter((item: JellyfinItem) => !excludeIds.has(item.Id) && item.UserData?.PlayCount === 0)
+                .filter((item: JellyfinItem) => !excludeIds.has(item.Id))
                 .slice(0, 50)
                 .map((item: JellyfinItem) => item.Id);
 
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
                     Filters: "IsUnplayed",
                     Genres: session.soloFilters?.genres?.join(",") || undefined,
                     Years: session.soloFilters?.yearRange 
-                        ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters.yearRange[0] + i).join(",") 
+                        ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
                         : undefined,
                     MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
                 },
