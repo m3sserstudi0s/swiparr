@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Code, Info, Loader2, AlertCircle, CircleCheck, Newspaper, ExternalLink, FileText } from "lucide-react";
+import { BookOpenText, Code, Info, Loader2, AlertCircle, CircleCheck, Newspaper, ExternalLink, FileText, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import useSWR from "swr";
@@ -35,7 +35,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                 if (!latest) return "Could not check version";
                 return currentVersion >= latest 
                     ? "You are on the latest version" 
-                    : `New version v${latest} available!`;
+                    : `New version v${latest} available`;
             },
             error: "Failed to check for updates",
         });
@@ -104,7 +104,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                             </Badge>
                         ) : (
                             <Badge variant="secondary" className="h-6">
-                                <Newspaper className="size-3" />
+                                <ArrowUp className="size-3" />
                                 Update
                             </Badge>
                         )}

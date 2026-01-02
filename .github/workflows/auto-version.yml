@@ -47,13 +47,15 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and Push changes
+        id: auto-commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: bump version to ${{ steps.npm-version.outputs.new_version }} [skip ci]"
           file_pattern: 'package*.json'
 
       - name: Create Tag
+        if: steps.auto-commit.outputs.changes_detected == 'true'
         run: |
           VERSION=${{ steps.npm-version.outputs.new_version }}
-          git tag $VERSION
+          git tag $VERSION ${{ steps.auto-commit.outputs.commit_hash }}
           git push origin $VERSION
