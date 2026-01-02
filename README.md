@@ -2,7 +2,7 @@
 
 Swiparr is a fun way to discover and decide what to watch next from your Jellyfin media library. Think "Tinder for Movies" – swipe through your library, match with friends in a session, and find something everyone wants to watch.
 
-![License](https://img.shields.io/github/license/messerstudios/swiparr)
+![License](https://img.shields.io/github/license/m3sserstudi0s/swiparr)
 ![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)
 
 ## Features
@@ -23,7 +23,7 @@ The easiest way to run Swiparr is with Docker Compose.
 ```yaml
 services:
   swiparr:
-    image: ghcr.io/messerstudios/swiparr:latest
+    image: ghcr.io/m3sserstudi0s/swiparr:latest
     container_name: swiparr
     restart: unless-stopped
     environment:
@@ -73,10 +73,10 @@ If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy), ensur
 
 I use **GitHub discussions** for everything related to Swiparr
 
-- 💬 [Ask a question](https://github.com/messerstudios/swiparr/discussions/new?category=q-a)
-- 💡 [Propose a feature](https://github.com/messerstudios/swiparr/discussions/new?category=ideas)
-- 🐛 [Report a bug](https://github.com/messerstudios/swiparr/discussions/new?category=bugs)
-- 🙌 [General discussion](https://github.com/messerstudios/swiparr/discussions/new?category=general)
+- 💬 [Ask a question](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=q-a)
+- 💡 [Propose a feature](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=ideas)
+- 🐛 [Report a bug](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=bugs)
+- 🙌 [General discussion](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=general)
 
 **Please note:** I am currently not accepting pull requests.
 
