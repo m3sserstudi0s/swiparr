@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: messerstudios/swiparr
+  IMAGE_NAME: m3sserstudi0s/swiparr
 
 jobs:
 

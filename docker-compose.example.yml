@@ -1,6 +1,6 @@
 services:
   swiparr:
-    image: ghcr.io/messerstudios/swiparr:latest
+    image: ghcr.io/m3sserstudi0s/swiparr:latest
     container_name: swiparr
     restart: unless-stopped
     environment:
