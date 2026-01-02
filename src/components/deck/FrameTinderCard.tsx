@@ -17,6 +17,7 @@ export type Direction = "left" | "right" | "up" | "down";
 
 export interface TinderCardHandle {
   swipe: (dir: Direction) => Promise<void>;
+  restore: (dir: Direction) => Promise<void>;
 }
 
 interface TinderCardProps {
@@ -66,6 +67,37 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
         if (isAnimating.current) return;
         isAnimating.current = true;
         await swipeProgrammatically(dir);
+        isAnimating.current = false;
+      },
+      async restore(dir: Direction) {
+        if (isAnimating.current) return;
+        isAnimating.current = true;
+
+        const flyDist = 300;
+        let startX = 0;
+
+        if (dir === "left") {
+          startX = -flyDist;
+        } else if (dir === "right") {
+          startX = flyDist;
+        }
+
+        // Use controls.set to ensure internal state is synced
+        controls.set({ x: startX, y: 0 });
+
+        // Wait for next frame
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        // Animate back to center
+        await controls.start({
+          x: 0,
+          y: 0,
+          transition: {
+            duration: 0.5,
+            ease: "easeOut"
+          },
+        });
+
         isAnimating.current = false;
       },
     }));

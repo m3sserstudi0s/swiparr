@@ -91,3 +91,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, isMatch: false });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const cookieStore = await cookies();
+  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body: { itemId: string } = await request.json();
+
+  try {
+    await db.delete(likes).where(
+      and(
+        eq(likes.jellyfinUserId, session.user.Id),
+        eq(likes.jellyfinItemId, body.itemId)
+      )
+    );
+    await db.delete(hiddens).where(
+      and(
+        eq(hiddens.jellyfinUserId, session.user.Id),
+        eq(hiddens.jellyfinItemId, body.itemId)
+      )
+    );
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to delete swipe" }, { status: 500 });
+  }
+}

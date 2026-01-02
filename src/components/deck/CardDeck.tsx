@@ -38,6 +38,8 @@ export function CardDeck() {
 
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const swipedIdsRef = useRef<Set<string>>(new Set());
+  const [lastSwipe, setLastSwipe] = useState<{ id: string; direction: "left" | "right" } | null>(null);
+  const [rewindingId, setRewindingId] = useState<{ id: string; direction: "left" | "right" } | null>(null);
 
   // Sync swipes to cache on unmount to handle fast tab switching
   React.useEffect(() => {
@@ -63,6 +65,7 @@ export function CardDeck() {
   React.useEffect(() => {
     setRemovedIds([]);
     swipedIdsRef.current.clear();
+    setLastSwipe(null);
   }, [sessionCode]);
 
   const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
@@ -117,6 +120,8 @@ export function CardDeck() {
     if (swipedIdsRef.current.has(id)) return;
     swipedIdsRef.current.add(id);
 
+    setLastSwipe({ id, direction });
+
     const item = deck?.find((i) => i.Id === id);
     if (!item) return;
 
@@ -125,13 +130,11 @@ export function CardDeck() {
   };
 
   const onCardLeftScreen = (id: string) => {
+    // If the card was rewound, don't remove it
+    if (!swipedIdsRef.current.has(id)) return;
+
     // 2. Remove from state here (after animation is done)
     setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-
-    // Update React Query cache so it persists even if the component unmounts
-    queryClient.setQueryData(["deck", sessionCode], (old: JellyfinItem[] | undefined) => {
-      return old?.filter((item) => item.Id !== id);
-    });
   };
 
   const swipeTop = async (direction: "left" | "right") => {
@@ -146,6 +149,33 @@ export function CardDeck() {
       await ref.current.swipe(direction);
     }
   };
+
+  const rewind = async () => {
+    if (!lastSwipe) return;
+    const { id, direction } = lastSwipe;
+
+    setRewindingId({ id, direction });
+    setRemovedIds((prev) => prev.filter((rid) => rid !== id));
+    swipedIdsRef.current.delete(id);
+    setLastSwipe(null);
+
+    try {
+      await axios.delete("/api/swipe", { data: { itemId: id } });
+    } catch (err) {
+      console.error("Failed to undo swipe", err);
+    }
+  };
+
+  // Effect to trigger animation after card is re-mounted
+  React.useEffect(() => {
+    if (rewindingId) {
+      const ref = cardRefs.current[rewindingId.id];
+      if (ref && ref.current) {
+        ref.current.restore(rewindingId.direction);
+        setRewindingId(null);
+      }
+    }
+  }, [rewindingId, activeDeck]);
 
   // Keyboard shortcuts
   React.useEffect(() => {
@@ -220,6 +250,7 @@ export function CardDeck() {
               onClick={() => {
                 setRemovedIds([]);
                 swipedIdsRef.current.clear();
+                setLastSwipe(null);
                 refetch();
               }}>
               <RefreshCcw />
@@ -243,7 +274,7 @@ export function CardDeck() {
       <div className="relative w-full h-[65vh] flex justify-center items-center select-none">
 
         {/* Render bottom card first, then top card (Reverse order visually) */}
-        {activeDeck.slice(0, 3).reverse().map((item: JellyfinItem, i, arr) => {
+        {activeDeck.slice(0, 4).reverse().map((item: JellyfinItem, i, arr) => {
           // Recalculate index so 0 is front
           const zIndex = arr.length - 1 - i;
           return (
@@ -265,7 +296,8 @@ export function CardDeck() {
           size="icon"
           variant="secondary"
           className="h-12 w-12 rounded-full bg-background border-2"
-          onClick={() => swipeTop("left")}
+          onClick={rewind}
+          disabled={!lastSwipe}
         >
           <Rewind className="size-6" />
         </Button>
