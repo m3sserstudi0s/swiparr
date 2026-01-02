@@ -58,8 +58,6 @@ docker run -d \
 
 3. Access Swiparr at `http://your-server-ip:4321`.
 
-3. Access Swiparr at `http://your-server-ip:4321`.
-
 ## Configuration
 
 | Variable | Description | Default |

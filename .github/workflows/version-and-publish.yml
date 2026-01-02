@@ -9,7 +9,7 @@ on:
       - 'package-lock.json'
       - 'CHANGELOG.md'
       - 'README.md'
-      - 'CONTRIBUTING.md'
+      - '.github/CONTRIBUTING.md'
       - 'LICENSE'
   workflow_dispatch:
 
