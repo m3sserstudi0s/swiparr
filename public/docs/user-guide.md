@@ -1,26 +1,31 @@
-**Swiparr** helps you and your friends find movies and shows to watch on your Jellyfin server by swiping through them, Tinder-style.
+**Swiparr** is a discovery tool for your Jellyfin library. Swipe through movies and shows together with friends to find what to watch next.
 
 ## Core Features
 
-**Swiping**
-  - Swipe **Right** to like a title.
-  - Swipe **Left** to pass on a title.
+- **Swiping**: Swipe **Right** to like, **Left** to pass.
+- **Sessions**: Join or create a session to swipe with friends. When everyone in a session likes the same title, it's a **Match**.
+- **Filters**: Fine-tune your deck by genres, years, and ratings.
+- **Likes**: Review your liked titles and filter them to find your next watch.
+- **Sync**: Choose to sync your likes with your Jellyfin **Watchlist** or **Favorites** in settings.
 
-**Movie Details**: Tap on a card to see more information about the movie or show, including its description and rating.
+## Keyboard Shortcuts
 
-**Sessions**: Start a session to swipe together with friends. When all members of a session like the same title, it's a **Match**!
+- **Swipe Left**: `←` or `A`
+- **Swipe Right**: `→` or `D`
+- **Rewind**: `R` or `Backspace`
+- **Details**: `Enter` or `Space`
+- **Filters**: `F`
+- **Settings**: `S` or `,`
+- **Session**: `M` or `C`
+- **Cards**: `1`
+- **Likes**: `2`
 
-**Likes**: View all your liked movies in the "Likes" tab.
 
 ## Tips
 
-- You can see who else is in your session by looking at the avatar list.
-- Use the filter in the Likes tab to quickly find what you're looking for.
-- Matches will appear as a special overlay when they happen.
-
-## Data Management
-
-- You can clear your likes and session history at any time from the menu.
-- Your data is stored locally on the server linked to your account.
+- Tap a card to see descriptions, ratings, and more details.
+- Matches appear as an overlay and are saved in the session history.
+- Use the **Rewind** button to undo an accidental swipe.
+- Change your collection type (Watchlist vs. Favorites) in the settings menu.
 
 Swipe away!

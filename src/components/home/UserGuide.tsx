@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/drawer"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Spinner } from "@/components/ui/spinner"
+import { Kbd } from "@/components/ui/kbd"
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
@@ -31,7 +32,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                     <DrawerDescription>Learn how to use Swiparr</DrawerDescription>
                 </DrawerHeader>
                 <ScrollArea className="px-6 h-[55vh]">
-                    <div className="prose dark:prose-invert max-w-none py-6">
+                    <div className="prose dark:prose-invert max-w-none py-8">
                         {isLoading ? (
                             <div className="flex justify-center p-8">
                                 <Spinner className="size-6" />
@@ -45,6 +46,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                     ul: ({ ...props }) => <ul className="list-disc pl-6 mb-4 text-muted-foreground" {...props} />,
                                     li: ({ ...props }) => <li className="mb-1" {...props} />,
                                     strong: ({ ...props }) => <strong className="font-bold text-foreground" {...props} />,
+                                    code: ({ children }) => <Kbd className="mx-0.5">{children}</Kbd>,
                                 }}
                             >
                                 {content}
