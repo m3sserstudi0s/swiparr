@@ -1,6 +1,11 @@
 import { EventEmitter } from 'events';
 
-class AppEventEmitter extends EventEmitter {}
+class AppEventEmitter extends EventEmitter {
+    constructor() {
+        super();
+        this.setMaxListeners(0); // Unlimited listeners
+    }
+}
 
 // Global singleton
 let eventEmitter: AppEventEmitter;

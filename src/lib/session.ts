@@ -7,7 +7,7 @@ export const sessionOptions: SessionOptions = {
   cookieOptions: {
     // Only use secure cookies if explicitly set, otherwise defaults to false
     // This ensures it works on local HTTP access (standard for home labs)
-    secure: process.env.USE_SECURE_COOKIES === "true",
+    secure: process.env.USE_SECURE_COOKIES?.toLowerCase() === "true",
     httpOnly: true,
   },
 };
