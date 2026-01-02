@@ -2,9 +2,8 @@ name: Build and Publish Docker Image
 
 on:
   push:
-    branches: ['main', 'master']
-  release:
-    types: [published]
+    branches: ['master']
+    tags: ['v*']
   workflow_dispatch:
 
 env:

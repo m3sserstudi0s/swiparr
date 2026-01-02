@@ -1,0 +1,59 @@
+name: Auto Versioning
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'CHANGELOG.md'
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine Version Bump
+        id: bump
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$COMMIT_MSG" == *"breaking"* ]] || [[ "$COMMIT_MSG" == *"!:"* ]]; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif [[ "$COMMIT_MSG" == *"feat"* ]]; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          else
+            echo "type=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version in package.json
+        id: npm-version
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          NEW_VERSION=$(npm version ${{ steps.bump.outputs.type }} --no-git-tag-version)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit and Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: bump version to ${{ steps.npm-version.outputs.new_version }} [skip ci]"
+          file_pattern: 'package*.json'
+
+      - name: Create Tag
+        run: |
+          VERSION=${{ steps.npm-version.outputs.new_version }}
+          git tag $VERSION
+          git push origin $VERSION

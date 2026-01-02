@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { GITHUB_API_URL } from "@/lib/constants";
+import { GITHUB_REPO } from "@/lib/constants";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET() {
     const { version: currentVersion } = getRuntimeConfig();
     try {
-        const response = await fetch(`${GITHUB_API_URL}/releases/latest`, {
+        // Fetch package.json from the master branch to check for the latest version
+        const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/master/package.json`, {
             next: { revalidate: 3600 } // Cache for 1 hour
         });
 
@@ -14,15 +15,17 @@ export async function GET() {
         }
 
         const data = await response.json();
+        const latestVersion = data.version;
+
         return NextResponse.json({
-            version: data.tag_name?.replace('v', ''),
-            url: data.html_url
+            version: latestVersion,
+            url: `https://github.com/${GITHUB_REPO}`
         });
     } catch (error) {
         console.error("Version fetch error:", error);
         return NextResponse.json({
             version: currentVersion,
-            url: "https://github.com/m3sserstudi0s/swiparr"
+            url: `https://github.com/${GITHUB_REPO}`
         });
     }
 }
