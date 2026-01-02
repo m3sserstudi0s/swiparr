@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 
 const getDefaultDbPath = () => {
-  if (process.env.NODE_ENV === 'production' || fs.existsSync('/app/data')) {
+  if (process.env.NODE_ENV === 'production') {
     return '/app/data/swiparr.db';
   }
   return 'swiparr.db';
