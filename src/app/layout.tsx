@@ -6,10 +6,9 @@ import { Toaster } from "@/components/ui/sonner"
 import { getRuntimeConfig } from '@/lib/runtime-config'
 
 const sansFlex = Google_Sans_Flex({ 
-
   subsets: ['latin'],
   display: 'swap',
-  adjustFontFallback: true 
+  adjustFontFallback: false 
 })
 
 export const metadata: Metadata = {

@@ -30,12 +30,16 @@ const GeneralSettings = lazy(() => import("./settings/GeneralSettings").then(m =
 const AboutSettings = lazy(() => import("./settings/AboutSettings").then(m => ({ default: m.AboutSettings })));
 const DangerZone = lazy(() => import("./settings/DangerZone").then(m => ({ default: m.DangerZone })));
 
+import { useHotkeys } from "react-hotkeys-hook";
+
 export function SettingsSidebar() {
     const router = useRouter();
     const [showClearDialog, setShowClearDialog] = useState(false);
     const [showUserGuide, setShowUserGuide] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
     const [open, setOpen] = useState(false);
+
+    useHotkeys("s, ,", () => setOpen(prev => !prev), []);
 
     const handleLogout = async () => {
         try {

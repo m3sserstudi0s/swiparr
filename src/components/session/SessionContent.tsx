@@ -16,9 +16,13 @@ import { SessionHeader } from "./SessionHeader";
 import { SessionCodeSection } from "./SessionCodeSection";
 import { MatchesList } from "./MatchesList";
 
+import { useHotkeys } from "react-hotkeys-hook";
+
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
     const [isOpen, setIsOpen] = useState(false);
+
+    useHotkeys("m, c", () => setIsOpen(prev => !prev), []);
     const { openMovie } = useMovieDetail();
     const queryClient = useQueryClient();
     const { mutate } = useSWRConfig();

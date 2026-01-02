@@ -5,24 +5,17 @@ import { useUpdates } from "@/lib/use-updates";
 import React, { useRef, useState, useMemo } from "react";
 import axios from "axios";
 import { JellyfinItem, Filters } from "@/types/swiparr";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Heart, X, GalleryHorizontalEnd, RefreshCcw, Rewind, SlidersHorizontal } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { FilterDrawer } from "./FilterDrawer";
-
 import { MatchOverlay } from "./MatchOverlay";
-
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
+import { useHotkeys } from "react-hotkeys-hook";
+import { DeckControls } from "./DeckControls";
+import { DeckEmpty } from "./DeckEmpty";
+import { DeckError } from "./DeckError";
+import { DeckLoading } from "./DeckLoading";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
@@ -211,96 +204,30 @@ export function CardDeck() {
   };
 
   // Keyboard shortcuts
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+  useHotkeys("left, a", () => swipeTop("left"), [swipeTop]);
+  useHotkeys("right, d", () => swipeTop("right"), [swipeTop]);
+  useHotkeys("enter, space", () => {
+    if (activeDeck.length > 0) {
+      openMovie(activeDeck[0].Id);
+    }
+  }, [activeDeck, openMovie]);
+  useHotkeys("r, backspace", () => rewind(), [rewind]);
+  useHotkeys("f", () => setIsFilterOpen(prev => !prev), []);
 
-      if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
-        swipeTop("left");
-      } else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
-        swipeTop("right");
-      } else if (e.key === "Enter" || e.key === " ") {
-        if (activeDeck.length > 0) {
-          openMovie(activeDeck[0].Id);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeDeck, openMovie, swipeTop]);
-
-  if (isLoading || isFetching || isApplyingFilters) return <DeckSkeleton />;
-  if (isError) return (
-    <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
-      <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <GalleryHorizontalEnd />
-          </EmptyMedia>
-          <EmptyTitle className="text-foreground">Something unexpected happened.</EmptyTitle>
-          <EmptyDescription>
-            Reload the page to try again.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              window.location.reload();
-            }}>
-            <RefreshCcw />
-            Reload
-          </Button>
-        </EmptyContent>
-      </Empty>
-    </div>
-  );
+  if (isLoading || isFetching || isApplyingFilters) return <DeckLoading />;
+  if (isError) return <DeckError />;
   if (activeDeck.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
-        <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <GalleryHorizontalEnd />
-            </EmptyMedia>
-            <EmptyTitle className="text-foreground">Nothing left to swipe.</EmptyTitle>
-            <EmptyDescription>
-              You&apos;re all swiped up. Refresh to fetch more, or adjust the filters.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent className="flex flex-row justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-28"
-              onClick={() => {
-                setRemovedIds([]);
-                swipedIdsRef.current.clear();
-                setLastSwipe(null);
-                refetch();
-              }}>
-              <RefreshCcw />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-28"
-              onClick={() => setIsFilterOpen(true)}
-            >
-              <SlidersHorizontal />
-              Filter
-            </Button>
-          </EmptyContent>
-        </Empty>
+      <div className="w-full">
+        <DeckEmpty
+          onRefresh={() => {
+            setRemovedIds([]);
+            swipedIdsRef.current.clear();
+            setLastSwipe(null);
+            refetch();
+          }}
+          onOpenFilter={() => setIsFilterOpen(true)}
+        />
         <FilterDrawer
           open={isFilterOpen}
           onOpenChange={setIsFilterOpen}
@@ -340,43 +267,14 @@ export function CardDeck() {
         })}
       </div>
 
-      <div className="flex space-x-6 z-1 mt-4 items-center">
-        <Button
-          size="icon"
-          variant="secondary"
-          className="h-12 w-12 rounded-full bg-background border-2"
-          onClick={rewind}
-          disabled={!lastSwipe}
-        >
-          <Rewind className="size-5.5" />
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          className="h-18 w-18 rounded-full bg-background border-2"
-          onClick={() => swipeTop("left")}
-        >
-          <X className="size-9" />
-        </Button>
-        <Button
-          size="icon"
-          className="h-18 w-18 rounded-full shadow-lg"
-          onClick={() => swipeTop("right")}
-        >
-          <Heart className="size-9 fill-primary-foreground" />
-        </Button>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="h-12 w-12 rounded-full bg-background border-2 relative"
-          onClick={() => setIsFilterOpen(true)}
-        >
-          <SlidersHorizontal className="size-5.5" />
-          {hasAppliedFilters && (
-            <span className="rounded-full bg-foreground absolute top-0 right-0 size-3.5 border-2 border-background animate-in zoom-in duration-300" />
-          )}
-        </Button>
-      </div>
+      <DeckControls
+        onRewind={rewind}
+        onSwipeLeft={() => swipeTop("left")}
+        onSwipeRight={() => swipeTop("right")}
+        onOpenFilter={() => setIsFilterOpen(true)}
+        canRewind={!!lastSwipe}
+        hasAppliedFilters={hasAppliedFilters}
+      />
 
       <MatchOverlay
         item={matchedItem}
@@ -389,23 +287,6 @@ export function CardDeck() {
         currentFilters={sessionFilters}
         onSave={updateFilters}
       />
-    </div>
-  );
-}
-
-function DeckSkeleton() {
-  return (
-    <div className="relative flex flex-col items-center justify-center w-full">
-      <div className="h-10" />
-      <div className="relative w-full h-[65vh] flex justify-center items-center">
-        <Skeleton className="relative w-full h-full rounded-3xl" />
-      </div>
-      <div className="flex space-x-6 mt-4 items-center">
-        <Skeleton className="h-12 w-12 rounded-full" />
-        <Skeleton className="h-18 w-18 rounded-full" />
-        <Skeleton className="h-18 w-18 rounded-full" />
-        <Skeleton className="h-12 w-12 rounded-full" />
-      </div>
     </div>
   );
 }
