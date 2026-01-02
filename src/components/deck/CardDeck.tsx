@@ -260,7 +260,7 @@ export function CardDeck() {
         })}
       </div>
 
-      <div className="flex gap-8 z-50 mt-4">
+      <div className="flex gap-8 z-1 mt-4">
         <Button
           size="icon"
           variant="outline"

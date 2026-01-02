@@ -74,7 +74,7 @@ export function SettingsSidebar() {
                         <Menu className="size-6" />
                     </Button>
                 </SheetTrigger>
-                <SheetContent className="w-80 sm:w-96 flex flex-col p-0 overflow-hidden z-101">
+                <SheetContent className="flex flex-col p-0 overflow-hidden">
                     <SheetHeader className="p-6 pb-2">
                         <div className="flex items-center gap-2 mb-2">
                             <SheetTitle>Settings</SheetTitle>
@@ -102,7 +102,7 @@ export function SettingsSidebar() {
             <UserGuide open={showUserGuide} onOpenChange={setShowUserGuide} />
 
             <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-                <DialogContent className="z-101">
+                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Are you absolutely sure?</DialogTitle>
                         <DialogDescription>

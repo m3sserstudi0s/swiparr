@@ -65,7 +65,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                 >
                     <a href={GITHUB_URL} target="_blank" rel="noreferrer">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-muted rounded-md">
+                            <div className="p-2 bg-primary/10 rounded-md">
                                 <Code className="size-4" />
                             </div>
                             <span>Source code</span>
@@ -82,7 +82,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                 >
                     <div className="flex flex-row items-center justify-between w-full">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-muted rounded-md">
+                            <div className="p-2 bg-primary/10 rounded-md">
                                 <Info className="size-4" />
                             </div>
                             <div className="flex flex-col items-start">

@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
   }
 
 if (!session.isLoggedIn) {
-    // FIX: Include the current URL (with query params) as the callback
+    // Include the current URL (with query params) as the callback
     // browse to /?join=ABCD -> Login -> Back to /?join=ABCD
     const loginUrl = new URL("/login", request.url);
     // Encode the full original URL

@@ -28,7 +28,7 @@ export function SessionCodeSection({
   isLeaving,
 }: SessionCodeSectionProps) {
   return (
-    <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col min-h-40 justify-between">
+    <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col justify-between h-40">
       <div className="h-6 flex items-center justify-center mb-2">
         {!activeCode ? (
           <span className="text-sm text-muted-foreground">

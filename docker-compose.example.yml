@@ -4,22 +4,36 @@ services:
     container_name: swiparr
     restart: unless-stopped
     environment:
-      # The internal URL of your Jellyfin server (accessible by the container)
+      # REQUIRED: The internal URL of your Jellyfin server (accessible by the container)
+      # Example: http://192.168.1.10:8096 or http://jellyfin:8096
       - JELLYFIN_URL=http://jellyfin:8096
       
-      # The public URL of your Jellyfin server (accessible by your browser)
+      # REQUIRED: The public URL of your Jellyfin server (accessible by your browser)
+      # Used for loading images and redirecting to the Jellyfin login.
       - JELLYFIN_PUBLIC_URL=https://jellyfin.example.com
       
-      # A long random string for session encryption
-      - AUTHORS_SECRET=your_random_secret_here
+      # REQUIRED: A long random string (at least 32 chars) for session encryption.
+      # You can generate one with: openssl rand -hex 32
+      - AUTH_SECRET=your_random_secret_here
       
-      # Optional: Database location (internal to container)
+      # OPTIONAL: Database location (internal to container)
+      # Default: file:/app/data/swiparr.db
       - DATABASE_URL=file:/app/data/swiparr.db
       
-      # Optional: Use Jellyfin Watchlist (Jellyfin Enhanced plugin/KefwinTweaks script) instead of Favorites
+      # OPTIONAL: Use Jellyfin Watchlist instead of Favorites
+      # Requires Jellyfin Enhanced plugin or similar script.
       - JELLYFIN_USE_WATCHLIST=false
+
+      # OPTIONAL: Use secure cookies (set to true if using HTTPS)
+      - USE_SECURE_COOKIES=false
     volumes:
-      # Persist database and data
+      # Persist database and other data
       - ./swiparr-data:/app/data
     ports:
       - 4321:4321
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4321/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

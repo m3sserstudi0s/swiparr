@@ -6,6 +6,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+if (!process.env.AUTH_SECRET && !process.env.AUTHORS_SECRET) {
+  console.warn('WARNING: AUTH_SECRET is not set. Using default (insecure) secret.');
+}
+
+if (!process.env.JELLYFIN_URL) {
+  console.error('ERROR: JELLYFIN_URL is not set. Swiparr requires this to function.');
+  process.exit(1);
+}
+
 const connectionString = process.env.DATABASE_URL?.replace("file:", "") || "swiparr.db";
 const sqlite = new Database(connectionString);
 const db = drizzle(sqlite);

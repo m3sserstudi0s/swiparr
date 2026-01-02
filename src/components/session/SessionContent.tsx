@@ -140,12 +140,12 @@ export default function SessionContent() {
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="z-1 absolute">
+            <SheetTrigger asChild className="absolute">
                 <Button variant="ghost" size="icon" className="text-foreground">
                     <Users className="size-5" />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="z-101 sm:max-w-md w-full px-4">
+            <SheetContent side="left" className="sm:max-w-md w-full px-4">
                 <SessionHeader activeCode={activeCode} members={members} />
                 <div className="space-y-6 px-1 mt-4">
                     <SessionCodeSection

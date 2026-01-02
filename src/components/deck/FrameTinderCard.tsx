@@ -191,7 +191,7 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
         {/* --- LIKE STAMP --- */}
         <motion.div
           style={{ opacity: likeOpacity }}
-          className="absolute top-8 left-8 z-100 pointer-events-none"
+          className="absolute top-8 left-8 z-2 pointer-events-none"
         >
            <div className="border-4 border-green-500 rounded-lg p-2 px-4 -rotate-12 bg-black/20 backdrop-blur-sm">
             <span className="text-4xl font-black text-green-500 tracking-widest uppercase shadow-black drop-shadow-sm">
@@ -203,7 +203,7 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
         {/* --- NOPE STAMP --- */}
         <motion.div
           style={{ opacity: nopeOpacity }}
-          className="absolute top-8 right-8 z-100 pointer-events-none"
+          className="absolute top-8 right-8 z-2 pointer-events-none"
         >
           <div className="border-4 border-red-500 rounded-lg p-2 px-4 rotate-12 bg-black/20 backdrop-blur-sm">
              <span className="text-4xl font-black text-red-500 tracking-widest uppercase shadow-black drop-shadow-sm">

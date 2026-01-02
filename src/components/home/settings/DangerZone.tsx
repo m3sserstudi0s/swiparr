@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, LogOut } from "lucide-react";
+import { Trash2, LogOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsSection } from "./SettingsSection";
 import { useSettingsStore } from "@/lib/settings";
@@ -27,7 +27,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                         className="w-22 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
                         onClick={resetSettings}
                     >
-                        Reset
+                        <RotateCcw className="mr-2 size-4" /> Reset
                     </Button>
                 </div>
 

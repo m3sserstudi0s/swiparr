@@ -52,7 +52,7 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
       // 1. Outer Container: Positions the slot in the center of the deck
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        style={{ zIndex: 100 - index }}
+        style={{ zIndex: 3 - index }}
       >
         {/* 2. Motion Component: Needs to be absolute to stack perfectly */}
         <FramerTinderCard

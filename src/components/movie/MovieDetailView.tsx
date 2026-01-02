@@ -123,14 +123,12 @@ export function MovieDetailView({ movieId, onClose }: Props) {
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DrawerContent
-        className="z-101"
-      >
+      <DrawerContent>
         <DrawerTitle className="sr-only">Movie Details</DrawerTitle>
-        <div className="h-20 w-full bg-linear-to-t to-background absolute top-10 z-102" />
+        <div className="h-20 w-full bg-linear-to-t to-background absolute top-10 z-1" />
         <div
           onScroll={handleScroll} // Update motion value here
-          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full z-101 outline-none mt-4">
+          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-4">
 
           {isLoading ? (
             <div className="p-6 space-y-4">

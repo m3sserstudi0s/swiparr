@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Bookmark, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { useTheme } from "next-themes";
@@ -14,7 +14,7 @@ export function GeneralSettings() {
 
     return (
         <SettingsSection title="General">
-            <div className="flex items-center justify-between">
+            <div className="grid grid-flow-col items-center justify-between gap-2">
                 <div className="space-y-0.5">
                     <div className="text-sm font-medium">Theme</div>
                     <div className="text-xs text-muted-foreground text-pretty">Switch between light and dark mode</div>
@@ -23,7 +23,7 @@ export function GeneralSettings() {
                     variant="outline"
                     size="sm"
                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                    className="w-24"
+                    className="w-26"
                 >
                     {theme === "light" ? (
                         <><Sun className="mr-2 size-4" /> Light</>
@@ -33,7 +33,7 @@ export function GeneralSettings() {
                 </Button>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="grid grid-flow-col items-center justify-between gap-2">
                 <div className="space-y-0.5">
                     <div className="text-sm font-medium">Collection type</div>
                     <div className="text-xs text-muted-foreground text-pretty">Toggle between Watchlist and Favorites</div>
@@ -43,8 +43,9 @@ export function GeneralSettings() {
                     onPressedChange={(pressed) => updateSettings({ useWatchlist: pressed })}
                     variant="outline"
                     size="sm"
-                    className="w-24 data-[state=on]:bg-primary/20 data-[state=on]:text-primary"
+                    className="w-26"
                 >
+                    {settings.useWatchlist ? <Bookmark/> : <Star/>}
                     {settings.useWatchlist ? "Watchlist" : "Favorites"}
                 </Toggle>
             </div>

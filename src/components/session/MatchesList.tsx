@@ -20,8 +20,8 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
           <Badge variant="secondary">{matches?.length}</Badge>
         )}
       </h3>
-      <ScrollArea className="h-[50vh] pr-4 -mr-4 relative">
-        <div className="bg-linear-to-b from-background to-transparent via-background/70 h-10 z-101 -top-px absolute w-full" />
+      <ScrollArea className="h-[calc(100vh-350px)] pr-4 -mr-4 relative">
+        <div className="bg-linear-to-b from-background to-transparent via-background/70 h-10 z-1 -top-px absolute w-full" />
         {!activeCode ? (
           <div className="text-center text-muted-foreground text-sm py-8">
             <Empty>
@@ -67,7 +67,7 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
             )}
           </div>
         )}
-        <div className="bg-linear-to-t from-background to-transparent h-10 z-101 bottom-0 absolute w-full" />
+        <div className="bg-linear-to-t from-background to-transparent h-10 z-1 bottom-0 absolute w-full" />
       </ScrollArea>
     </div>
   );

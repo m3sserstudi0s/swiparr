@@ -25,7 +25,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange}>
-            <DrawerContent className="max-h-[85vh] z-101">
+            <DrawerContent className="max-h-[85vh] z-5">
                 <DrawerHeader className="border-b">
                     <DrawerTitle>User Guide</DrawerTitle>
                     <DrawerDescription>Learn how to use Swiparr</DrawerDescription>
