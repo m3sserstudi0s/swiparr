@@ -2,6 +2,9 @@
 
 Swiparr is a fun way to discover and decide what to watch next from your Jellyfin media library. Think "Tinder for Movies" – swipe through your library, match with friends in a session, and find something everyone wants to watch.
 
+It's a web app built with Next.js, connects to your Jellyfin server, and is available to host as a docker container. 
+Open source and free forever.
+
 ![License](https://img.shields.io/github/license/m3sserstudi0s/swiparr)
 ![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)
 
