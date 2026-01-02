@@ -1,3 +1,9 @@
+export interface Filters {
+  genres: string[];
+  yearRange?: [number, number];
+  minCommunityRating?: number;
+}
+
 export interface JellyfinItem {
   Name: string;
   OriginalTitle?: string;
@@ -46,8 +52,9 @@ export interface SessionData {
     Name: string;
     AccessToken: string;
   };
-  sessionCode?: string; // <--- ADD THIS
+  sessionCode?: string;
   isLoggedIn: boolean;
+  soloFilters?: Filters;
 }
 
 export interface SwipePayload {

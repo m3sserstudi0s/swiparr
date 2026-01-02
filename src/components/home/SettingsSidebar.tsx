@@ -75,14 +75,14 @@ export function SettingsSidebar() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent className="flex flex-col p-0 overflow-hidden">
-                    <SheetHeader className="p-6 pb-2">
-                        <div className="flex items-center gap-2 mb-2">
+                    <SheetHeader className="p-6 pb-0">
+                        <div className="flex items-center gap-2">
                             <SheetTitle>Settings</SheetTitle>
                         </div>
                     </SheetHeader>
 
                     <ScrollArea className="flex-1 px-6 h-[calc(100vh-80px)]">
-                        <div className="space-y-8 py-4 pb-12">
+                        <div className="space-y-8 py-8 pb-12">
                             <Suspense fallback={<SettingsSkeleton />}>
                                 <GeneralSettings />
                                 <AboutSettings onShowUserGuide={() => {

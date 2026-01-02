@@ -26,8 +26,15 @@ export async function GET(request: NextRequest) {
                 }
             };
 
+            const onFiltersUpdate = (payload: { sessionCode: string; userName: string; filters: any }) => {
+                if (session.sessionCode === payload.sessionCode) {
+                    controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.FILTERS_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
+                }
+            };
+
             events.on(EVENT_TYPES.SESSION_UPDATED, onSessionUpdate);
             events.on(EVENT_TYPES.MATCH_FOUND, onMatch);
+            events.on(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
 
             // Keep-alive interval
             const keepAlive = setInterval(() => {
@@ -37,6 +44,7 @@ export async function GET(request: NextRequest) {
             request.signal.onabort = () => {
                 events.off(EVENT_TYPES.SESSION_UPDATED, onSessionUpdate);
                 events.off(EVENT_TYPES.MATCH_FOUND, onMatch);
+                events.off(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
                 clearInterval(keepAlive);
             };
         },

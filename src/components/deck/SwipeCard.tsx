@@ -68,21 +68,21 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
           }}
           onCardLeftScreen={() => onCardLeftScreen(item.Id)}
           // 3. Important: absolute positioning + width constraint
-          className={`absolute w-full h-[65vh] ${isFront ? "cursor-grab pointer-events-auto" : ""}`}
+          className={`absolute w-full h-[65vh] rounded-3xl ${isFront ? "cursor-grab pointer-events-auto" : ""}`}
         >
           {/* 4. Scale Wrapper: Handles the background card "stack" effect */}
           <div
-            className={`w-full h-full transition-transform duration-300 ${isFront ? "scale-100" : "scale-95"
+            className={`w-full h-full transition-transform duration-300 rounded-3xl ${isFront ? "scale-100" : "scale-95"
               }`}
             onPointerDown={isFront ? handlePointerDown : undefined}
             onPointerUp={isFront ? handlePointerUp : undefined}
           >
-            <Card className="relative h-full w-full overflow-hidden rounded-3xl border-border shadow-2xl select-none">
-              <div className="absolute inset-0 bg-muted pointer-events-none">
+            <Card className="relative h-full w-full overflow-hidden rounded-3xl border-border shadow-2xl select-none isolate transform-gpu">
+              <div className="absolute inset-0 bg-muted pointer-events-none rounded-3xl">
                 <OptimizedImage
                   src={`/api/jellyfin/image/${item.Id}`}
                   alt={item.Name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover rounded-3xl"
                   draggable={false} // Native drag must be disabled
                   sizes="(max-width: 768px) 100vw, 400px"
                 />

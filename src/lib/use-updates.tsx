@@ -24,7 +24,7 @@ export function useUpdates(sessionCode?: string | null) {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
                 // Invalidate session members
-                mutate('/api/session/members');
+                mutate(['/api/session/members', sessionCode]);
                 // Invalidate deck to get fresh cards for new member configuration
                 queryClient.invalidateQueries({ queryKey: ['deck'] });
             }
@@ -34,16 +34,31 @@ export function useUpdates(sessionCode?: string | null) {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
                 // Invalidate matches
-                mutate('/api/session/matches');
+                mutate(['/api/session/matches', sessionCode]);
 
                 // If it's not the current user who swiped, show a toast
                 if (sessionData && data.swiperId !== sessionData.userId) {
-                    toast.success(`Match! ${data.itemName}`, {
+                    toast.success(<p>Match! <span className='font-semibold italic'>{data.itemName}</span></p>, {
                         description: "Check it out.",
                         action: {
                             label: "View",
                             onClick: () => openMovie(data.itemId)
                         }
+                    });
+                }
+            }
+        });
+
+        eventSource.addEventListener(EVENT_TYPES.FILTERS_UPDATED, (event: any) => {
+            const data = JSON.parse(event.data);
+            if (data.sessionCode === sessionCode) {
+                // Invalidate deck to get fresh cards with new filters
+                queryClient.invalidateQueries({ queryKey: ['deck', sessionCode] });
+                
+                // Show toast if another member changed the filters
+                if (sessionData && data.userId !== sessionData.userId) {
+                    toast.info(`${data.userName} changed the filters`, {
+                        description: "The cards have been updated."
                     });
                 }
             }

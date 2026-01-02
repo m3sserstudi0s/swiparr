@@ -75,15 +75,18 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
 
         const flyDist = 300;
         let startX = 0;
+        let startRotate = 0;
 
         if (dir === "left") {
           startX = -flyDist;
+          startRotate = -20;
         } else if (dir === "right") {
           startX = flyDist;
+          startRotate = 20;
         }
 
         // Use controls.set to ensure internal state is synced
-        controls.set({ x: startX, y: 0 });
+        controls.set({ x: startX, y: 0, rotate: startRotate, opacity: 0 });
 
         // Wait for next frame
         await new Promise(resolve => requestAnimationFrame(resolve));
@@ -92,6 +95,8 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
         await controls.start({
           x: 0,
           y: 0,
+          rotate: 0,
+          opacity: 1,
           transition: {
             duration: 0.5,
             ease: "easeOut"

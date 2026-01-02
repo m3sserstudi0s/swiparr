@@ -11,7 +11,7 @@ export default function Home() {
 
 
   return (
-    <main className="flex min-h-screen flex-col items-center px-6 md:p-0">
+    <main className="flex min-h-screen flex-col items-center px-6 md:p-0 overflow-x-hidden">
       <div className="w-full flex items-top justify-between 3xl:max-w-md max-w-sm mt-8 md:mt-[5vh] 2xl:mt-[8vh] relative">
         <SessionManager />
         <Tabs defaultValue="swipe" className="w-full flex flex-col h-full -mt-2">

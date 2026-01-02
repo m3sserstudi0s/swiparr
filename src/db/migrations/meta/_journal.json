@@ -15,6 +15,13 @@
       "when": 1767349238088,
       "tag": "0001_flaky_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1767352460173,
+      "tag": "0002_stormy_oracle",
+      "breakpoints": true
     }
   ]
 }

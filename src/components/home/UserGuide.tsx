@@ -25,13 +25,13 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange}>
-            <DrawerContent className="max-h-[85vh] z-5">
+            <DrawerContent>
                 <DrawerHeader className="border-b">
                     <DrawerTitle>User Guide</DrawerTitle>
                     <DrawerDescription>Learn how to use Swiparr</DrawerDescription>
                 </DrawerHeader>
-                <ScrollArea className="p-6 overflow-y-auto">
-                    <div className="prose dark:prose-invert max-w-none">
+                <ScrollArea className="px-6 h-[55vh]">
+                    <div className="prose dark:prose-invert max-w-none py-6">
                         {isLoading ? (
                             <div className="flex justify-center p-8">
                                 <Spinner className="size-6" />

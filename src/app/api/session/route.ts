@@ -86,16 +86,53 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
+export async function PATCH(request: NextRequest) {
+    const cookieStore = await cookies();
+    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    if (!session.isLoggedIn) {
+        return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const { filters } = await request.json();
+
+    if (session.sessionCode) {
+        await db.update(sessions)
+            .set({ filters: JSON.stringify(filters) })
+            .where(eq(sessions.code, session.sessionCode));
+
+        events.emit(EVENT_TYPES.FILTERS_UPDATED, {
+            sessionCode: session.sessionCode,
+            userId: session.user.Id,
+            userName: session.user.Name,
+            filters
+        });
+    } else {
+        session.soloFilters = filters;
+        await session.save();
+    }
+
+    return NextResponse.json({ success: true });
+}
+
 export async function GET() {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
+  let filters = session.soloFilters || null;
+  if (session.sessionCode) {
+    const currentSession = await db.query.sessions.findFirst({
+        where: eq(sessions.code, session.sessionCode)
+    });
+    filters = currentSession?.filters ? JSON.parse(currentSession.filters) : null;
+  }
+
   return NextResponse.json({ 
     code: session.sessionCode || null,
     userId: session.user.Id,
-    accessToken: session.user.AccessToken
+    accessToken: session.user.AccessToken,
+    filters
   });
 }
 

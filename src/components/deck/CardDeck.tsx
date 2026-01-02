@@ -4,14 +4,14 @@ import useSWR, { useSWRConfig } from "swr";
 import { useUpdates } from "@/lib/use-updates";
 import React, { useRef, useState, useMemo } from "react";
 import axios from "axios";
-import { JellyfinItem } from "@/types/swiparr";
+import { JellyfinItem, Filters } from "@/types/swiparr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Heart, X, RotateCcw, GalleryHorizontalEnd, RefreshCcwIcon, RefreshCcw, Rewind } from "lucide-react";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Heart, X, GalleryHorizontalEnd, RefreshCcw, Rewind, SlidersHorizontal } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { UserAvatarList } from "../session/UserAvatarList";
+import { FilterDrawer } from "./FilterDrawer";
 
 import { MatchOverlay } from "./MatchOverlay";
 
@@ -29,12 +29,16 @@ export function CardDeck() {
   const queryClient = useQueryClient();
   const { openMovie } = useMovieDetail();
 
-  const { data: sessionStatus } = useSWR<{ code: string | null }>(
+  const { data: sessionStatus } = useSWR<{ code: string | null; filters: Filters | null }>(
     "/api/session",
     (url: string) => axios.get(url).then(res => res.data)
   );
 
   const sessionCode = sessionStatus?.code || null;
+  const sessionFilters = sessionStatus?.filters || { genres: [] };
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
 
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const swipedIdsRef = useRef<Set<string>>(new Set());
@@ -43,12 +47,12 @@ export function CardDeck() {
 
   // Sync swipes to cache on unmount to handle fast tab switching
   React.useEffect(() => {
+    const currentSwipedIds = swipedIdsRef.current;
     return () => {
-      const swiped = swipedIdsRef.current;
-      if (swiped.size > 0) {
+      if (currentSwipedIds.size > 0) {
         queryClient.setQueryData(["deck", sessionCode], (old: JellyfinItem[] | undefined) => {
           if (!old) return old;
-          return old.filter((item) => !swiped.has(item.Id));
+          return old.filter((item) => !currentSwipedIds.has(item.Id));
         });
       }
     };
@@ -56,9 +60,9 @@ export function CardDeck() {
 
   useUpdates(sessionCode);
 
-  const { data: members } = useSWR<any[]>(
-    sessionCode ? "/api/session/members" : null,
-    (url: string) => axios.get(url).then(res => res.data)
+  const { data: members } = useSWR<{ jellyfinUserId: string; jellyfinUserName: string }[]>(
+    sessionCode ? ["/api/session/members", sessionCode] : null,
+    ([url]: [string]) => axios.get(url).then(res => res.data)
   );
 
   // Clear local state when session changes to get a fresh start
@@ -73,16 +77,7 @@ export function CardDeck() {
   // Store refs in a way React can track
   const cardRefs = useRef<Record<string, React.RefObject<TinderCardHandle | null>>>({});
 
-  // Utility to make sure we always have a generic RefObject
-  const getCardRef = (id: string) => {
-    if (!cardRefs.current[id]) {
-      // @ts-ignore - Create ref if missing
-      cardRefs.current[id] = React.createRef<TinderCardHandle>();
-    }
-    return cardRefs.current[id];
-  };
-
-  const { data: deck, isLoading, isError, refetch } = useQuery({
+  const { data: deck, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["deck", sessionCode],
     queryFn: async () => {
       const res = await axios.get<JellyfinItem[]>("/api/jellyfin/items");
@@ -90,6 +85,33 @@ export function CardDeck() {
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  // Pre-generate refs for the deck to avoid modifying refs during render
+  useMemo(() => {
+    if (deck) {
+      deck.forEach(item => {
+        if (!cardRefs.current[item.Id]) {
+          cardRefs.current[item.Id] = React.createRef<TinderCardHandle>();
+        }
+      });
+    }
+  }, [deck]);
+
+  // Utility to make sure we always have a generic RefObject
+  const getCardRef = (id: string) => {
+    return cardRefs.current[id];
+  };
+
+  // Check if filters are non-default
+  const hasAppliedFilters = useMemo(() => {
+    if (!sessionStatus?.filters) return false;
+    const { genres, yearRange, minCommunityRating } = sessionStatus.filters;
+    const genresApplied = genres && genres.length > 0;
+    const ratingApplied = minCommunityRating !== undefined && minCommunityRating > 0;
+    const yearApplied = yearRange !== undefined;
+    
+    return genresApplied || ratingApplied || yearApplied;
+  }, [sessionStatus?.filters]);
 
   // --- MULTIPLAYER LOGIC INTEGRATION HERE ---
   const swipeMutation = useMutation({
@@ -102,7 +124,7 @@ export function CardDeck() {
       if (data.isMatch) {
         setMatchedItem(item);
         // 2. Refresh the Sidebar match list immediately via SWR
-        mutate("/api/session/matches");
+        mutate(["/api/session/matches", sessionCode]);
       }
     },
     onError: (err) => {
@@ -137,18 +159,18 @@ export function CardDeck() {
     setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
   };
 
-  const swipeTop = async (direction: "left" | "right") => {
+  const swipeTop = React.useCallback(async (direction: "left" | "right") => {
     if (activeDeck.length === 0) return;
 
     // Active deck is filtered, so index 0 is always the visual top
     const topCard = activeDeck[0];
-    const ref = getCardRef(topCard.Id);
+    const ref = cardRefs.current[topCard.Id];
 
     // Trigger the Framer Motion animation via Ref
-    if (ref.current) {
+    if (ref && ref.current) {
       await ref.current.swipe(direction);
     }
-  };
+  }, [activeDeck]);
 
   const rewind = async () => {
     if (!lastSwipe) return;
@@ -177,6 +199,17 @@ export function CardDeck() {
     }
   }, [rewindingId, activeDeck]);
 
+  const updateFilters = async (newFilters: Filters) => {
+    setIsApplyingFilters(true);
+    try {
+      await axios.patch("/api/session", { filters: newFilters });
+      await mutate("/api/session"); // Refresh session status to get new filters
+      await queryClient.invalidateQueries({ queryKey: ["deck", sessionCode] });
+    } finally {
+      setIsApplyingFilters(false);
+    }
+  };
+
   // Keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -201,9 +234,9 @@ export function CardDeck() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeDeck, openMovie]);
+  }, [activeDeck, openMovie, swipeTop]);
 
-  if (isLoading) return <DeckSkeleton />;
+  if (isLoading || isFetching || isApplyingFilters) return <DeckSkeleton />;
   if (isError) return (
     <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
       <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
@@ -240,13 +273,14 @@ export function CardDeck() {
             </EmptyMedia>
             <EmptyTitle className="text-foreground">Nothing left to swipe.</EmptyTitle>
             <EmptyDescription>
-              You&apos;re all swiped up. Refresh to fetch more.
+              You&apos;re all swiped up. Refresh to fetch more, or adjust the filters.
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
+          <EmptyContent className="flex flex-row justify-center">
             <Button
               variant="outline"
               size="sm"
+              className="w-28"
               onClick={() => {
                 setRemovedIds([]);
                 swipedIdsRef.current.clear();
@@ -256,8 +290,23 @@ export function CardDeck() {
               <RefreshCcw />
               Refresh
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-28"
+              onClick={() => setIsFilterOpen(true)}
+            >
+              <SlidersHorizontal />
+              Filter
+            </Button>
           </EmptyContent>
         </Empty>
+        <FilterDrawer
+          open={isFilterOpen}
+          onOpenChange={setIsFilterOpen}
+          currentFilters={sessionFilters}
+          onSave={updateFilters}
+        />
       </div>
     );
   }
@@ -266,7 +315,7 @@ export function CardDeck() {
       {sessionStatus?.code && members && members.length > 0 ? (
         <div className="h-10">
           <UserAvatarList
-            users={members.map((m: any) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
+            users={members.map((m) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
             size="md"
           />
         </div>
@@ -291,7 +340,7 @@ export function CardDeck() {
         })}
       </div>
 
-      <div className="flex gap-8 z-1 mt-4 items-center">
+      <div className="flex space-x-6 z-1 mt-4 items-center">
         <Button
           size="icon"
           variant="secondary"
@@ -299,7 +348,7 @@ export function CardDeck() {
           onClick={rewind}
           disabled={!lastSwipe}
         >
-          <Rewind className="size-6" />
+          <Rewind className="size-5.5" />
         </Button>
         <Button
           size="icon"
@@ -316,11 +365,29 @@ export function CardDeck() {
         >
           <Heart className="size-9 fill-primary-foreground" />
         </Button>
+        <Button
+          size="icon"
+          variant="secondary"
+          className="h-12 w-12 rounded-full bg-background border-2 relative"
+          onClick={() => setIsFilterOpen(true)}
+        >
+          <SlidersHorizontal className="size-5.5" />
+          {hasAppliedFilters && (
+            <span className="rounded-full bg-foreground absolute top-0 right-0 size-3.5 border-2 border-background animate-in zoom-in duration-300" />
+          )}
+        </Button>
       </div>
 
       <MatchOverlay
         item={matchedItem}
         onClose={() => setMatchedItem(null)}
+      />
+
+      <FilterDrawer
+        open={isFilterOpen}
+        onOpenChange={setIsFilterOpen}
+        currentFilters={sessionFilters}
+        onSave={updateFilters}
       />
     </div>
   );
@@ -333,9 +400,11 @@ function DeckSkeleton() {
       <div className="relative w-full h-[65vh] flex justify-center items-center">
         <Skeleton className="relative w-full h-full rounded-3xl" />
       </div>
-      <div className="flex gap-8 mt-4">
+      <div className="flex space-x-6 mt-4 items-center">
+        <Skeleton className="h-12 w-12 rounded-full" />
         <Skeleton className="h-18 w-18 rounded-full" />
         <Skeleton className="h-18 w-18 rounded-full" />
+        <Skeleton className="h-12 w-12 rounded-full" />
       </div>
     </div>
   );

@@ -38,28 +38,29 @@ export default function SessionContent() {
 
     // -- 1.5 FETCH MEMBERS (Using SWR) --
     const { data: members } = useSWR<any[]>(
-        activeCode ? "/api/session/members" : null,
-        (url: string) => axios.get(url).then(res => res.data)
+        activeCode ? ["/api/session/members", activeCode] : null,
+        ([url]: [string]) => axios.get(url).then(res => res.data)
     );
 
     // -- 2. HANDLE MATCHES (Using SWR) --
     const { data: matches } = useSWR<JellyfinItem[]>(
-        activeCode ? "/api/session/matches" : null,
-        (url: string) => axios.get(url).then(res => res.data)
+        activeCode ? ["/api/session/matches", activeCode] : null,
+        ([url]: [string]) => axios.get(url).then(res => res.data)
     );
 
     // -- 3. MUTATIONS --
     const createSession = useMutation({
         mutationFn: async () => axios.post("/api/session", { action: "create" }),
-        onSuccess: (res) => {
-            mutate("/api/session", { code: res.data.code });
+        onSuccess: () => {
+            mutate("/api/session");
+            queryClient.invalidateQueries({ queryKey: ["deck"] });
         }
     });
 
     const joinSession = useMutation({
         mutationFn: async (codeToJoin: string) => axios.post("/api/session", { action: "join", code: codeToJoin }),
-        onSuccess: (res, variables) => {
-            mutate("/api/session", { code: variables.toUpperCase() });
+        onSuccess: () => {
+            mutate("/api/session");
             queryClient.invalidateQueries({ queryKey: ["deck"] });
             router.replace("/");
         },
@@ -68,8 +69,12 @@ export default function SessionContent() {
     const leaveSession = useMutation({
         mutationFn: async () => axios.delete("/api/session"),
         onSuccess: () => {
-            mutate("/api/session", { code: null });
-            mutate("/api/session/matches", []);
+            mutate("/api/session");
+            if (activeCode) {
+                mutate(["/api/session/matches", activeCode], []);
+                mutate(["/api/session/members", activeCode], []);
+            }
+            queryClient.invalidateQueries({ queryKey: ["deck"] });
         }
     });
 
@@ -135,7 +140,7 @@ export default function SessionContent() {
         const randomIndex = Math.floor(Math.random() * matches.length);
         const randomMovie = matches[randomIndex];
         openMovie(randomMovie.Id);
-        toast.success(`Randomly picked: ${randomMovie.Name}`);
+        toast.success(<p>Randomly picked <span className="font-semibold italic">{randomMovie.Name}</span></p>);
     };
 
     return (

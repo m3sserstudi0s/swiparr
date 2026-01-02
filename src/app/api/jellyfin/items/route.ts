@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 
-import { db, likes, hiddens } from "@/lib/db";
+import { db, likes, hiddens, sessions } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
 
@@ -47,13 +47,25 @@ export async function GET(request: NextRequest) {
 
         if (session.sessionCode) {
             // SESSION MODE: Seeded random
+            // Fetch session to get filters
+            const currentSession = await db.query.sessions.findFirst({
+                where: eq(sessions.code, session.sessionCode)
+            });
+
+            const sessionFilters = currentSession?.filters ? JSON.parse(currentSession.filters) : null;
+
             // Fetch ALL movies (IDs + UserData) to ensure a consistent shuffle across users
             const allRes = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
                 params: {
                     IncludeItemTypes: "Movie",
                     Recursive: true,
-                    Fields: "Id,UserData", 
+                    Fields: "Id,UserData",
                     SortBy: "Id", // Deterministic starting point
+                    Genres: sessionFilters?.genres?.join(",") || undefined,
+                    Years: sessionFilters?.yearRange 
+                        ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange[0] + i).join(",") 
+                        : undefined,
+                    MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
                 },
                 headers: { "X-Emby-Token": session.user.AccessToken },
             });
@@ -65,9 +77,9 @@ export async function GET(request: NextRequest) {
             
             // Pick first 50 not excluded and unplayed for the current user
             const targetIds = shuffledItems
-                .filter((item: any) => !excludeIds.has(item.Id) && item.UserData?.PlayCount === 0)
+                .filter((item: JellyfinItem) => !excludeIds.has(item.Id) && item.UserData?.PlayCount === 0)
                 .slice(0, 50)
-                .map((item: any) => item.Id);
+                .map((item: JellyfinItem) => item.Id);
 
             if (targetIds.length > 0) {
                 // Fetch full data for these specific IDs
@@ -80,7 +92,7 @@ export async function GET(request: NextRequest) {
                 });
                 // Sort them back to the shuffled order because Jellyfin might return them in different order
                 const detailItems = detailRes.data.Items || [];
-                items = targetIds.map(id => detailItems.find((item: any) => item.Id === id)).filter(Boolean);
+                items = targetIds.map(id => detailItems.find((item: JellyfinItem) => item.Id === id)).filter((item): item is JellyfinItem => !!item);
             }
         } else {
             // SOLO MODE: Normal random
@@ -92,6 +104,11 @@ export async function GET(request: NextRequest) {
                     Limit: 100,
                     Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
                     Filters: "IsUnplayed",
+                    Genres: session.soloFilters?.genres?.join(",") || undefined,
+                    Years: session.soloFilters?.yearRange 
+                        ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters.yearRange[0] + i).join(",") 
+                        : undefined,
+                    MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
                 },
                 headers: { "X-Emby-Token": session.user.AccessToken },
             });

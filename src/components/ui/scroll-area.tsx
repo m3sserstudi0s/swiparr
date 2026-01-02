@@ -20,7 +20,9 @@ function ScrollArea({
         data-slot="scroll-area-viewport"
         className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
       >
+        <div className="bg-linear-to-b from-background to-transparent via-background/70 h-10 z-1 -top-px absolute w-full" />
         {children}
+        <div className="bg-linear-to-t from-background to-transparent h-10 z-1 bottom-0 absolute w-full" />
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar />
       <ScrollAreaPrimitive.Corner />

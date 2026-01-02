@@ -5,6 +5,7 @@ export const sessions = sqliteTable("Session", {
   id: text("id").primaryKey(),
   code: text("code").notNull(),
   hostUserId: text("hostUserId").notNull(),
+  filters: text("filters"),
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
