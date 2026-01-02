@@ -27,3 +27,11 @@ export function shuffleWithSeed<T>(array: T[], seed: string): T[] {
   }
   return result;
 }
+
+export const ticksToTime = (ticks?: number) => {
+  if (!ticks) return "";
+  const minutes = Math.floor(ticks / 600000000);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};

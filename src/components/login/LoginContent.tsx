@@ -86,21 +86,21 @@ export default function LoginContent() {
     const promise = async () => {
       const res = await fetch("/api/auth/quick-connect");
       const data = await res.json();
-      if (!data.Code) throw new Error("Quick Connect failed");
+      if (!data.Code) throw new Error("Quick connect failed");
       return data;
     };
 
     toast.promise(promise(), {
-      loading: "Starting Quick Connect...",
+      loading: "Starting quick connect...",
       success: (data) => {
         setQcCode(data.Code);
         setQcSecret(data.Secret);
         setLoading(false);
-        return "Quick Connect Started";
+        return "Quick connect started";
       },
       error: () => {
         setLoading(false);
-        return "Quick Connect failed to initialize";
+        return "Quick connect failed to initialize";
       },
     });
   };

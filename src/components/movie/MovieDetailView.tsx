@@ -17,6 +17,7 @@ import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSettings } from "@/lib/settings";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { ticksToTime } from "@/lib/utils";
 
 interface Props {
 
@@ -109,14 +110,6 @@ export function MovieDetailView({ movieId, onClose }: Props) {
       success: "Removed from likes",
       error: "Failed to remove from likes",
     });
-  };
-
-  const ticksToTime = (ticks?: number) => {
-    if (!ticks) return "";
-    const minutes = Math.floor(ticks / 600000000);
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
   const { jellyfinPublicUrl } = useRuntimeConfig();

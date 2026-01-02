@@ -3,10 +3,11 @@ import React, { forwardRef, useRef } from "react";
 import { JellyfinItem } from "@/types/swiparr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
+import { Star, Clock } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { useSettings } from "@/lib/settings";
+import { ticksToTime } from "@/lib/utils";
 
 
 export type { TinderCardHandle };
@@ -96,6 +97,14 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
+                  {item.Genres?.[0] && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-primary/20 text-primary border border-primary/10 hover:bg-primary/30 backdrop-blur-md"
+                    >
+                      {item.Genres[0]}
+                    </Badge>
+                  )}
                   {item.ProductionYear && (
                     <Badge
                       variant="secondary"
@@ -108,6 +117,12 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
                     <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
                       <Star className="w-3 h-3 fill-neutral-100" />
                       {item.CommunityRating.toFixed(1)}
+                    </Badge>
+                  )}
+                  {item.RunTimeTicks && (
+                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
+                      <Clock className="w-3 h-3" />
+                      {ticksToTime(item.RunTimeTicks)}
                     </Badge>
                   )}
                 </div>
