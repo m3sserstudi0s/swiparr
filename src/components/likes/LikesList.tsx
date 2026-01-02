@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { MovieListItem } from "../movie/MovieListItem";
+import { RandomMovieButton } from "../movie/RandomMovieButton";
 import { type MergedLike } from "@/types/swiparr";
 
 import {
@@ -37,7 +38,7 @@ export function LikesList() {
     });
 
     return (
-        <div className="w-full mx-auto h-[83vh] flex flex-col">
+        <div className="relative w-full mx-auto h-[83vh] flex flex-col">
             {/* Header w/ Filter */}
             <div className="flex items-center justify-between">
                 <h2 className="text-sm text-muted-foreground font-medium">Showing {likes?.length || '?'} likes</h2>
@@ -79,6 +80,11 @@ export function LikesList() {
                 ))}
                 </div>
             </ScrollArea>
+
+            <RandomMovieButton 
+                items={likes} 
+                className="absolute -bottom-3 right-5" 
+            />
         </div>
     )
 }

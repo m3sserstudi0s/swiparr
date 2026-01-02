@@ -2,12 +2,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Users, Dices } from "lucide-react";
+import { Users } from "lucide-react";
 import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
 import { useUpdates } from "@/lib/use-updates";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
+import { RandomMovieButton } from "../movie/RandomMovieButton";
 
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -136,17 +137,6 @@ export default function SessionContent() {
         }
     };
 
-    const handleRandomMovie = () => {
-        if (!matches || matches.length === 0) {
-            toast.error("No matches found yet!");
-            return;
-        }
-        const randomIndex = Math.floor(Math.random() * matches.length);
-        const randomMovie = matches[randomIndex];
-        openMovie(randomMovie.Id);
-        toast.success(<p>Randomly picked <span className="font-semibold italic">{randomMovie.Name}</span></p>);
-    };
-
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="absolute">
@@ -175,14 +165,10 @@ export default function SessionContent() {
                         openMovie={openMovie}
                     />
                 </div>
-                <Button 
-                    className="absolute bottom-10 right-10 scale-150 backdrop-blur-sm group" 
-                    variant={'outline'} 
-                    size={'icon'}
-                    onClick={handleRandomMovie}
-                >
-                    <Dices className="transform group-hover:rotate-360 group-hover:scale-85 transition-transform duration-500" />
-                </Button>
+                <RandomMovieButton 
+                    items={matches} 
+                    className="absolute bottom-10 right-10" 
+                />
             </SheetContent>
         </Sheet>
     );
