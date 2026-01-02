@@ -8,6 +8,13 @@
       "when": 1766873911837,
       "tag": "0000_bumpy_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1767349238088,
+      "tag": "0001_flaky_darkhawk",
+      "breakpoints": true
     }
   ]
 }

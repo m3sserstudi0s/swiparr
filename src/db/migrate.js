@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 if (!process.env.AUTH_SECRET && !process.env.AUTHORS_SECRET) {
-  console.warn('WARNING: AUTH_SECRET is not set. Using default (insecure) secret.');
+  console.log('INFO: AUTH_SECRET is not set. A persistent secret will be generated in the database.');
 }
 
 if (!process.env.JELLYFIN_URL) {

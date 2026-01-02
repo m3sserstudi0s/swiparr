@@ -36,7 +36,7 @@ services:
       - 4321:4321
 ```
 
-> **Note:** Generate a secure `AUTH_SECRET` using `openssl rand -hex 32`.
+> **Note:** For maximum security, generate a secure `AUTH_SECRET` using `openssl rand -hex 32`. If not provided, Swiparr will generate and persist one in the database.
 
 2. Run the container:
 ```bash
@@ -51,7 +51,7 @@ docker compose up -d
 |----------|-------------|---------|
 | `JELLYFIN_URL` | **Required.** Internal URL to your Jellyfin server. | - |
 | `JELLYFIN_PUBLIC_URL` | **Required.** Public URL to your Jellyfin server. | - |
-| `AUTH_SECRET` | **Required.** Random string (min 32 chars) for encryption. | - |
+| `AUTH_SECRET` | Optional. Random string (min 32 chars). Generated automatically if not set. | - |
 | `JELLYFIN_USE_WATCHLIST` | Set to `true` to use "Watchlist" instead of "Favorites". | `false` |
 | `USE_SECURE_COOKIES` | Set to `true` if you are accessing Swiparr over HTTPS. | `false` |
 | `DATABASE_URL` | Path to the SQLite database file. | `file:/app/data/swiparr.db` |

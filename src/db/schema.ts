@@ -59,3 +59,11 @@ export const sessionMembers = sqliteTable("SessionMember", {
 
 export type SessionMember = InferSelectModel<typeof sessionMembers>;
 export type NewSessionMember = InferInsertModel<typeof sessionMembers>;
+
+export const config = sqliteTable("Config", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
+export type Config = InferSelectModel<typeof config>;
+export type NewConfig = InferInsertModel<typeof config>;

@@ -1,7 +1,8 @@
 import { SessionOptions } from "iron-session";
+import { getAuthSecret } from "./server/session-secret";
 
 export const sessionOptions: SessionOptions = {
-  password: process.env.AUTH_SECRET || process.env.AUTHORS_SECRET || "complex_password_at_least_32_characters_long",
+  password: getAuthSecret(),
   cookieName: "swiparr-session",
   cookieOptions: {
     // Only use secure cookies if explicitly set, otherwise defaults to false

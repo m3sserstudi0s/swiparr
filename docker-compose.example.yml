@@ -12,9 +12,9 @@ services:
       # Used for loading images and redirecting to the Jellyfin login.
       - JELLYFIN_PUBLIC_URL=https://jellyfin.example.com
       
-      # REQUIRED: A long random string (at least 32 chars) for session encryption.
-      # You can generate one with: openssl rand -hex 32
-      - AUTH_SECRET=your_random_secret_here
+      # OPTIONAL: A long random string (at least 32 chars) for session encryption.
+      # Generated automatically and stored in the database if not provided.
+      # - AUTH_SECRET=your_random_secret_here
       
       # OPTIONAL: Database location (internal to container)
       # Default: file:/app/data/swiparr.db
