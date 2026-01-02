@@ -8,9 +8,10 @@ services:
       # Example: http://192.168.1.10:8096 or http://jellyfin:8096
       - JELLYFIN_URL=http://jellyfin:8096
       
-      # REQUIRED: The public URL of your Jellyfin server (accessible by your browser)
+      # OPTIONAL: The public URL of your Jellyfin server (accessible by your browser)
       # Used for loading images and redirecting to the Jellyfin login.
-      - JELLYFIN_PUBLIC_URL=https://jellyfin.example.com
+      # Defaults to JELLYFIN_URL if not provided.
+      # - JELLYFIN_PUBLIC_URL=https://jellyfin.example.com
       
       # OPTIONAL: A long random string (at least 32 chars) for session encryption.
       # Generated automatically and stored in the database if not provided.

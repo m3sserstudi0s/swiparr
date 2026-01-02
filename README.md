@@ -28,15 +28,12 @@ services:
     restart: unless-stopped
     environment:
       - JELLYFIN_URL=http://your-jellyfin-internal-ip:8096
-      - JELLYFIN_PUBLIC_URL=https://jellyfin.yourdomain.com
-      - AUTH_SECRET=your_32_character_random_string
+      # - JELLYFIN_PUBLIC_URL=https://jellyfin.yourdomain.com
     volumes:
       - ./swiparr-data:/app/data
     ports:
       - 4321:4321
 ```
-
-> **Note:** For maximum security, generate a secure `AUTH_SECRET` using `openssl rand -hex 32`. If not provided, Swiparr will generate and persist one in the database.
 
 2. Run the container:
 ```bash
@@ -50,12 +47,14 @@ docker compose up -d
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `JELLYFIN_URL` | **Required.** Internal URL to your Jellyfin server. | - |
-| `JELLYFIN_PUBLIC_URL` | **Required.** Public URL to your Jellyfin server. | - |
+| `JELLYFIN_PUBLIC_URL` | Optional. Public URL to your Jellyfin server. Defaults to `JELLYFIN_URL`. | - |
 | `AUTH_SECRET` | Optional. Random string (min 32 chars). Generated automatically if not set. | - |
 | `JELLYFIN_USE_WATCHLIST` | Set to `true` to use "Watchlist" instead of "Favorites". | `false` |
 | `USE_SECURE_COOKIES` | Set to `true` if you are accessing Swiparr over HTTPS. | `false` |
 | `DATABASE_URL` | Path to the SQLite database file. | `file:/app/data/swiparr.db` |
 | `PORT` | The port the container listens on. | `4321` |
+
+> **Note:** For maximum security, generate a secure `AUTH_SECRET` using `openssl rand -hex 32`. If not provided, Swiparr will generate and persist one in the database.
 
 ## Self-hosting tips
 
@@ -67,7 +66,7 @@ If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy), ensur
 
 ### Internal vs public Jellyfin URL
 - **`JELLYFIN_URL`**: Used by the Swiparr backend to talk to Jellyfin. Use an internal IP or Docker service name (e.g., `http://192.168.1.10:8096`).
-- **`JELLYFIN_PUBLIC_URL`**: Used by your browser to load images and handle authentication redirects. Use your public domain (e.g., `https://jellyfin.example.com`).
+- **`JELLYFIN_PUBLIC_URL`**: Used by your browser to load images and handle authentication redirects. Defaults to `JELLYFIN_URL` if not provided.
 
 ## Community and support
 

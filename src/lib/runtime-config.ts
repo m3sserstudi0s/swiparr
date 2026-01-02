@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: RuntimeConfig = {
  */
 export function getRuntimeConfig(): RuntimeConfig {
   return {
-    jellyfinPublicUrl: process.env.JELLYFIN_PUBLIC_URL || process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL || '',
+    jellyfinPublicUrl: process.env.JELLYFIN_PUBLIC_URL || process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || process.env.NEXT_PUBLIC_JELLYFIN_URL || '',
     useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST) === 'true',
     version: process.env.APP_VERSION || process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version,
   };
