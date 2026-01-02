@@ -4,15 +4,19 @@
  * in Docker/Compose while still making them available to the browser.
  */
 
+import packageJson from "../../package.json";
+
 export interface RuntimeConfig {
   jellyfinPublicUrl: string;
   useWatchlist: boolean;
+  version: string;
 }
 
 // Default values for development
 const DEFAULT_CONFIG: RuntimeConfig = {
   jellyfinPublicUrl: '',
   useWatchlist: false,
+  version: packageJson.version,
 };
 
 /**
@@ -23,6 +27,7 @@ export function getRuntimeConfig(): RuntimeConfig {
   return {
     jellyfinPublicUrl: process.env.JELLYFIN_PUBLIC_URL || process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL || '',
     useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST) === 'true',
+    version: process.env.APP_VERSION || process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version,
   };
 }
 

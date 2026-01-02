@@ -4,7 +4,7 @@ import { BookOpenText, Code, Info, Loader2, AlertCircle, CircleCheck, Newspaper,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import useSWR from "swr";
-import packageJson from "../../../../package.json";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 import { GITHUB_URL } from "@/lib/constants";
 import { SettingsSection } from "./SettingsSection";
 
@@ -17,7 +17,7 @@ interface AboutSettingsProps {
 }
 
 export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
-    const currentVersion = packageJson.version;
+    const { version: currentVersion } = useRuntimeConfig();
     const { data: versionData, error: versionError, isLoading: isCheckingVersion, mutate } = useSWR(
         "/api/version",
         fetcher

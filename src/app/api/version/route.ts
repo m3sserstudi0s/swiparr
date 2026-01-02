@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { GITHUB_API_URL } from "@/lib/constants";
-import packageJson from "../../../../package.json";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET() {
+    const { version: currentVersion } = getRuntimeConfig();
     try {
         const response = await fetch(`${GITHUB_API_URL}/releases/latest`, {
             next: { revalidate: 3600 } // Cache for 1 hour
@@ -20,8 +21,8 @@ export async function GET() {
     } catch (error) {
         console.error("Version fetch error:", error);
         return NextResponse.json({
-            version: packageJson.version,
-            url: "https://example.com"
+            version: currentVersion,
+            url: "https://github.com/m3sserstudi0s/swiparr"
         });
     }
 }
