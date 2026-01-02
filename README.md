@@ -5,7 +5,7 @@ Swiparr is a fun way to discover and decide what to watch next from your Jellyfi
 ![License](https://img.shields.io/github/license/m3sserstudi0s/swiparr)
 ![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)
 
-![swiparr_3](https://github.com/user-attachments/assets/74e8dcf1-38aa-4e53-a556-55a87486fd04)
+![swiparr_6](https://github.com/user-attachments/assets/86617fda-1ed5-4637-bb13-1c00cc5a443c)
 
 ## Features
 
