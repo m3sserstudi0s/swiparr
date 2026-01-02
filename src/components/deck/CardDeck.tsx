@@ -7,7 +7,7 @@ import axios from "axios";
 import { JellyfinItem } from "@/types/swiparr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Heart, X, RotateCcw, GalleryHorizontalEnd, RefreshCcwIcon, RefreshCcw } from "lucide-react";
+import { Heart, X, RotateCcw, GalleryHorizontalEnd, RefreshCcwIcon, RefreshCcw, Rewind } from "lucide-react";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
@@ -175,30 +175,30 @@ export function CardDeck() {
 
   if (isLoading) return <DeckSkeleton />;
   if (isError) return (
-          <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
-        <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <GalleryHorizontalEnd />
-            </EmptyMedia>
-            <EmptyTitle className="text-foreground">Something unexpected happened.</EmptyTitle>
-            <EmptyDescription>
-              Reload the page to try again.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                window.location.reload();
-              }}>
-              <RefreshCcw />
-              Reload
-            </Button>
-          </EmptyContent>
-        </Empty>
-      </div>
+    <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
+      <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <GalleryHorizontalEnd />
+          </EmptyMedia>
+          <EmptyTitle className="text-foreground">Something unexpected happened.</EmptyTitle>
+          <EmptyDescription>
+            Reload the page to try again.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              window.location.reload();
+            }}>
+            <RefreshCcw />
+            Reload
+          </Button>
+        </EmptyContent>
+      </Empty>
+    </div>
   );
   if (activeDeck.length === 0) {
     return (
@@ -260,7 +260,15 @@ export function CardDeck() {
         })}
       </div>
 
-      <div className="flex gap-8 z-1 mt-4">
+      <div className="flex gap-8 z-1 mt-4 items-center">
+        <Button
+          size="icon"
+          variant="secondary"
+          className="h-12 w-12 rounded-full bg-background border-2"
+          onClick={() => swipeTop("left")}
+        >
+          <Rewind className="size-6" />
+        </Button>
         <Button
           size="icon"
           variant="outline"
