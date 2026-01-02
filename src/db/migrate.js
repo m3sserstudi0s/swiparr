@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -15,7 +16,14 @@ if (!process.env.JELLYFIN_URL) {
   process.exit(1);
 }
 
-const connectionString = process.env.DATABASE_URL?.replace("file:", "") || "swiparr.db";
+const getDefaultDbPath = () => {
+  if (process.env.NODE_ENV === 'production' || fs.existsSync('/app/data')) {
+    return '/app/data/swiparr.db';
+  }
+  return 'swiparr.db';
+};
+
+const connectionString = process.env.DATABASE_URL?.replace("file:", "") || getDefaultDbPath();
 const sqlite = new Database(connectionString);
 const db = drizzle(sqlite);
 
