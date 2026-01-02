@@ -18,6 +18,8 @@ Swiparr is a fun way to discover and decide what to watch next from your Jellyfi
 
 The easiest way to run Swiparr is with Docker Compose.
 
+### Docker Compose (Recommended)
+
 1. Create a or add to an existing `docker-compose.yml` file (or copy `docker-compose.example.yml`):
 
 ```yaml
@@ -39,6 +41,22 @@ services:
 ```bash
 docker compose up -d
 ```
+
+### Docker CLI
+
+Alternatively, you can run the container directly with the Docker CLI:
+
+```bash
+docker run -d \
+  --name swiparr \
+  --restart unless-stopped \
+  -p 4321:4321 \
+  -v $(pwd)/swiparr-data:/app/data \
+  -e JELLYFIN_URL=http://your-jellyfin-internal-ip:8096 \
+  ghcr.io/m3sserstudi0s/swiparr:latest
+```
+
+3. Access Swiparr at `http://your-server-ip:4321`.
 
 3. Access Swiparr at `http://your-server-ip:4321`.
 

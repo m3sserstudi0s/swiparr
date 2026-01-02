@@ -8,6 +8,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'CHANGELOG.md'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'LICENSE'
   workflow_dispatch:
 
 env:
