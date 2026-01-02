@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
 import axios from "axios";
-import { getJellyfinUrl } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
                 IncludeItemTypes: "Movie",
                 UserId: session.user.Id,
             },
-            headers: { "X-Emby-Token": session.user.AccessToken },
+            headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
         });
 
         return NextResponse.json(res.data.Items || []);

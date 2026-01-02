@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import axios from "axios";
-import { getJellyfinUrl } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types/swiparr";
 
@@ -11,12 +11,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const token = searchParams.get("token");
   
   let accessToken = token;
+  let deviceId: string | undefined;
   
+  const cookieStore = await cookies();
+  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+
   if (!accessToken) {
-    const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
     if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
     accessToken = session.user.AccessToken;
+    deviceId = session.user.DeviceId;
+  } else if (session.isLoggedIn && session.user.AccessToken === accessToken) {
+    deviceId = session.user.DeviceId;
   }
 
   const { id } = await params;
@@ -43,11 +48,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Stream the image from Jellyfin to the Browser
     const response = await axios.get(imageUrl, {
       responseType: "arraybuffer", // Important for images
-      headers: {
-        // Pass auth if required by your Jellyfin config, usually images are public if access token is in query
-        // But better to use header
-        "X-Emby-Token": accessToken, 
-      },
+      headers: (accessToken && deviceId) 
+        ? getAuthenticatedHeaders(accessToken, deviceId)
+        : (accessToken ? { "X-Emby-Token": accessToken } : {}),
     });
 
     const headers = new Headers();

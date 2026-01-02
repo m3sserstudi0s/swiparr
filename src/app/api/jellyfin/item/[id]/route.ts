@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import axios from "axios";
 import { SessionData } from "@/types/swiparr";
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const jellyfinRes = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items/${id}`), {
-      headers: { "X-Emby-Token": session.user.AccessToken },
+      headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
     });
 
     const item = jellyfinRes.data;

@@ -51,10 +51,12 @@ export interface SessionData {
     Id: string;
     Name: string;
     AccessToken: string;
+    DeviceId: string;
   };
   sessionCode?: string;
   isLoggedIn: boolean;
   soloFilters?: Filters;
+  tempDeviceId?: string;
 }
 
 export interface SwipePayload {

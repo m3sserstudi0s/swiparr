@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { getJellyfinUrl } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import axios from "axios";
 import { SessionData, type JellyfinItem, type MergedLike } from "@/types/swiparr";
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
             Ids: ids,
             Fields: "ProductionYear,CommunityRating",
         },
-        headers: { "X-Emby-Token": session.user.AccessToken },
+        headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
     });
 
     const items: JellyfinItem[] = jellyfinRes.data.Items;

@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 
 import axios from "axios";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { SessionData, JellyfinItem } from "@/types/swiparr";
 import { shuffleWithSeed } from "@/lib/utils";
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
                         : undefined,
                     MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
                 },
-                headers: { "X-Emby-Token": session.user.AccessToken },
+                headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
             });
 
             const allItems = allRes.data.Items || [];
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
                         Ids: targetIds.join(","),
                         Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
                     },
-                    headers: { "X-Emby-Token": session.user.AccessToken },
+                    headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
                 });
                 // Sort them back to the shuffled order because Jellyfin might return them in different order
                 const detailItems = detailRes.data.Items || [];
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
                         : undefined,
                     MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
                 },
-                headers: { "X-Emby-Token": session.user.AccessToken },
+                headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
             });
             items = (jellyfinRes.data.Items || []).filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
         }

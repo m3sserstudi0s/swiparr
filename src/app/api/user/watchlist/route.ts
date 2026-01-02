@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import axios from "axios";
 import { SessionData } from "@/types/swiparr";
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
   try {
     const userId = session.user.Id;
     const token = session.user.AccessToken;
+    const deviceId = session.user.DeviceId;
 
     if (useWatchlist) {
       // Kefwin Tweaks / Jellyfin Enhanced Watchlist
@@ -29,16 +30,16 @@ export async function POST(request: NextRequest) {
         null,
         { 
             params: { Likes: action === "add" },
-            headers: { "X-Emby-Token": token } 
+            headers: getAuthenticatedHeaders(token, deviceId)
         }
       );
     } else {
       // Standard Favorites
       const url = getJellyfinUrl(`/Users/${userId}/FavoriteItems/${itemId}`);
       if (action === "add") {
-        await axios.post(url, null, { headers: { "X-Emby-Token": token } });
+        await axios.post(url, null, { headers: getAuthenticatedHeaders(token, deviceId) });
       } else {
-        await axios.delete(url, { headers: { "X-Emby-Token": token } });
+        await axios.delete(url, { headers: getAuthenticatedHeaders(token, deviceId) });
       }
     }
 

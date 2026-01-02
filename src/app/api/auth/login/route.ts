@@ -9,11 +9,12 @@ import axios from "axios";
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
+    const deviceId = crypto.randomUUID();
 
     // Log the attempt (Don't log the password!)
-    console.log(`[Auth] Attempting login for user: ${username}`);
+    console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
 
-    const jellyfinUser = await authenticateJellyfin(username, password);
+    const jellyfinUser = await authenticateJellyfin(username, password, deviceId);
     console.log("[Auth] Jellyfin API accepted credentials. User ID:", jellyfinUser.User.Id);
 
     const cookieStore = await cookies();
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
       Id: jellyfinUser.User.Id,
       Name: jellyfinUser.User.Name,
       AccessToken: jellyfinUser.AccessToken,
+      DeviceId: deviceId,
     };
     session.isLoggedIn = true;
     

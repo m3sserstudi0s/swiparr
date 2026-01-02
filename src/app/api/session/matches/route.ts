@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { db, likes, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, desc } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { getJellyfinUrl } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import axios from "axios";
 import { SessionData } from "@/types/swiparr";
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         Ids: ids,
         Fields: "ProductionYear,CommunityRating,Overview",
       },
-      headers: { "X-Emby-Token": session.user.AccessToken },
+      headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
     });
 
     const items = jellyfinRes.data.Items;
@@ -52,11 +52,6 @@ export async function GET(request: NextRequest) {
             ...item,
             likedBy: itemLikes.map(l => ({
                 userId: l.jellyfinUserId,
-                // We don't have the username in the likes table, 
-                // but we should! Let's assume we can get it from sessionMembers 
-                // OR we just show avatars for now.
-                // Re-reading schema: likes table doesn't have username.
-                // I should have added it to likes too, or join with sessionMembers.
             }))
         };
     });
