@@ -14,23 +14,25 @@ interface SettingsState {
   resetSettings: () => void;
 }
 
-const config = getRuntimeConfig();
-
-export const DEFAULT_SETTINGS: Settings = {
-  useWatchlist: config.useWatchlist,
-  allowGuestLending: false,
-  hasDismissedGuestLendingAlert: false,
-};
-
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      settings: DEFAULT_SETTINGS,
+      settings: {
+        useWatchlist: getRuntimeConfig().useWatchlist,
+        allowGuestLending: false,
+        hasDismissedGuestLendingAlert: false,
+      },
       updateSettings: (updates) =>
         set((state) => ({
           settings: { ...state.settings, ...updates },
         })),
-      resetSettings: () => set({ settings: DEFAULT_SETTINGS }),
+      resetSettings: () => set({
+        settings: {
+          useWatchlist: getRuntimeConfig().useWatchlist,
+          allowGuestLending: false,
+          hasDismissedGuestLendingAlert: false,
+        }
+      }),
     }),
     {
       name: 'swiparr-settings',
