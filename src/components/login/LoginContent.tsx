@@ -8,12 +8,15 @@ import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
 import { Copy, Check } from "lucide-react";
 import Image from "next/image";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ShieldCheck, ArrowRight } from "lucide-react";
 import logo from "../../../public/icon0.svg"
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [wasMadeAdmin, setWasMadeAdmin] = useState(false);
   const searchParams = useSearchParams();
 
   const [qcCode, setQcCode] = useState<string | null>(null);
@@ -29,9 +32,14 @@ export default function LoginContent() {
     }
   };
 
-  const onAuthorized = useCallback(() => {
-    const callbackUrl = searchParams.get("callbackUrl") || "/";
-    window.location.href = callbackUrl;
+  const onAuthorized = useCallback((data?: any) => {
+    if (data?.wasMadeAdmin) {
+      setWasMadeAdmin(true);
+      setLoading(false);
+    } else {
+      const callbackUrl = searchParams.get("callbackUrl") || "/";
+      window.location.href = callbackUrl;
+    }
   }, [searchParams]);
 
   useQuickConnectUpdates(qcSecret, onAuthorized);
@@ -48,12 +56,17 @@ export default function LoginContent() {
         headers: { "Content-Type": "application/json" },
       });
       if (!res.ok) throw new Error("Login failed");
-      return res;
+      return res.json();
     };
 
     toast.promise(promise(), {
       loading: "Logging in...",
-      success: () => {
+      success: (data) => {
+        if (data.wasMadeAdmin) {
+          setWasMadeAdmin(true);
+          setLoading(false);
+          return "Admin account initialized";
+        }
         const callbackUrl = searchParams.get("callbackUrl") || "/";
         window.location.href = callbackUrl;
         setLoading(false);
@@ -64,6 +77,11 @@ export default function LoginContent() {
         return "Login Failed: Check your credentials";
       },
     });
+  };
+
+  const continueToApp = () => {
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
+    window.location.href = callbackUrl;
   };
 
   const startQuickConnect = async () => {
@@ -104,7 +122,23 @@ export default function LoginContent() {
         </p>
       </CardHeader>
       <CardContent className="h-60">
-        {!qcCode ? (
+        {wasMadeAdmin ? (
+          <div className="flex flex-col space-y-4 h-full">
+            <Alert className="bg-primary/10 border-primary/20">
+              <ShieldCheck className="size-4 text-primary" />
+              <AlertTitle className="text-primary font-bold">Admin Privileges</AlertTitle>
+              <AlertDescription className="text-xs text-primary/80">
+                You are the first user and have been set as the administrator.
+              </AlertDescription>
+            </Alert>
+            <div className="flex-1 flex items-end">
+              <Button onClick={continueToApp} className="w-full group">
+                Continue
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </div>
+          </div>
+        ) : !qcCode ? (
           <form onSubmit={handleLogin} className="space-y-4">
             <Input
               placeholder="Username"

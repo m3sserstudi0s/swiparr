@@ -128,7 +128,7 @@ export function AdminSettings() {
                         onClick={handleClaim}
                         disabled={isClaiming}
                     >
-                        {isClaiming ? "Claiming..." : "Claim Admin Role"}
+                        {isClaiming ? "Claiming..." : "Claim admin"}
                     </Button>
                 </div>
             ) : (

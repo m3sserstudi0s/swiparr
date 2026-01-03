@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
 import { v4 as uuidv4 } from "uuid";
 import { events, EVENT_TYPES } from "@/lib/events";
+import { isAdmin } from "@/lib/server/admin";
 
 
 
@@ -128,13 +129,15 @@ export async function GET() {
     filters = currentSession?.filters ? JSON.parse(currentSession.filters) : null;
   }
 
-  return NextResponse.json({ 
+  const response = { 
     code: session.sessionCode || null,
     userId: session.user.Id,
-    isAdmin: session.user.isAdmin || false,
+    isAdmin: await isAdmin(session.user.Id, session.user.Name),
     accessToken: session.user.AccessToken,
     filters
-  });
+  };
+
+  return NextResponse.json(response);
 }
 
 export async function DELETE() {

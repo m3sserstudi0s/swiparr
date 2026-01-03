@@ -80,7 +80,7 @@ export function useUpdates(sessionCode?: string | null) {
     }, [sessionCode, mutate, sessionData, queryClient, openMovie]);
 }
 
-export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: () => void) {
+export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: (data: any) => void) {
     useEffect(() => {
         if (!qcSecret) return;
 
@@ -95,7 +95,7 @@ export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: 
                 });
                 const data = await res.json();
                 if (data.success) {
-                    onAuthorized?.();
+                    onAuthorized?.(data);
                     return true;
                 }
             } catch (err) {

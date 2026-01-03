@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { authenticateJellyfin } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
-import { isAdmin } from "@/lib/server/admin";
+import { isAdmin, setAdminUserId } from "@/lib/server/admin";
 import axios from "axios";
 
 export async function POST(request: NextRequest) {
@@ -18,6 +18,12 @@ export async function POST(request: NextRequest) {
         const jellyfinUser = await authenticateJellyfin(username, password, deviceId);
         console.log("[Auth] Jellyfin API accepted credentials. User ID:", jellyfinUser.User.Id);
 
+        // Set as admin if no admin exists
+        const wasMadeAdmin = await setAdminUserId(jellyfinUser.User.Id);
+        if (wasMadeAdmin) {
+            console.log(`[Auth] User ${jellyfinUser.User.Name} (${jellyfinUser.User.Id}) set as initial admin.`);
+        }
+
         const cookieStore = await cookies();
         const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
 
@@ -26,14 +32,15 @@ export async function POST(request: NextRequest) {
             Name: jellyfinUser.User.Name,
             AccessToken: jellyfinUser.AccessToken,
             DeviceId: deviceId,
-            isAdmin: await isAdmin(jellyfinUser.User.Id),
+            isAdmin: await isAdmin(jellyfinUser.User.Id, jellyfinUser.User.Name),
+            wasMadeAdmin: wasMadeAdmin,
         };
         session.isLoggedIn = true;
     
     await session.save();
     console.log("[Auth] Session cookie saved.");
 
-    return NextResponse.json({ success: true, user: session.user });
+    return NextResponse.json({ success: true, user: session.user, wasMadeAdmin });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

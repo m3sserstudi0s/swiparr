@@ -11,7 +11,14 @@ export async function getAdminUserId(): Promise<string | null> {
     return adminConfig?.value || null;
 }
 
-export async function isAdmin(userId: string): Promise<boolean> {
+export async function isAdmin(userId: string, username?: string): Promise<boolean> {
+    // 1. Check if username matches ADMIN_USERNAME env var
+    const adminUsername = process.env.ADMIN_USERNAME;
+    if (adminUsername && username && username.toLowerCase() === adminUsername.toLowerCase()) {
+        return true;
+    }
+
+    // 2. Check if userId matches the one in DB
     const adminUserId = await getAdminUserId();
     return adminUserId === userId;
 }

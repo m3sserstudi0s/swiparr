@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { initiateQuickConnect, checkQuickConnect } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
-import { isAdmin } from "@/lib/server/admin";
+import { isAdmin, setAdminUserId } from "@/lib/server/admin";
 
 export async function GET() {
   try {
@@ -41,18 +41,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Pending" });
     }
 
+    // Set as admin if no admin exists
+    const wasMadeAdmin = await setAdminUserId(authData.User.Id);
+    if (wasMadeAdmin) {
+        console.log(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
+    }
+
     session.user = {
       Id: authData.User.Id,
       Name: authData.User.Name,
       AccessToken: authData.AccessToken,
       DeviceId: session.tempDeviceId,
-      isAdmin: await isAdmin(authData.User.Id),
+      isAdmin: await isAdmin(authData.User.Id, authData.User.Name),
+      wasMadeAdmin: wasMadeAdmin,
     };
     session.isLoggedIn = true;
     delete session.tempDeviceId;
     await session.save();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, wasMadeAdmin });
   } catch (error) {
     console.error("[QuickConnect] Auth error:", error);
     return NextResponse.json({ success: false }, { status: 400 });

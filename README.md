@@ -74,8 +74,17 @@ docker run -d \
 | `USE_SECURE_COOKIES` | Set to `true` if you are accessing Swiparr over HTTPS. | `false` |
 | `DATABASE_URL` | Path to the SQLite database file. | `file:/app/data/swiparr.db` |
 | `PORT` | The port the container listens on. | `4321` |
+| `ADMIN_USERNAME` | Optional. A Jellyfin username that will always have admin privileges. | - |
 
 > **Note:** For maximum security, generate a secure `AUTH_SECRET` using `openssl rand -hex 32`. If not provided, Swiparr will generate and persist one in the database.
+
+## Admin Privileges
+
+The first user to log in to Swiparr is automatically appointed as the system administrator. Admins can:
+- Configure which Jellyfin libraries are included in discovery.
+- Access future admin-only features and management tools.
+
+Alternatively, you can manually assign an admin by setting the `ADMIN_USERNAME` environment variable to a specific Jellyfin username.
 
 ## Self-hosting tips
 
