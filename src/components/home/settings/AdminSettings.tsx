@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { SettingsSection } from "./SettingsSection";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Shield, ShieldAlert, ShieldCheck, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -59,13 +61,13 @@ export function AdminSettings() {
             await axios.post("/api/admin/claim");
             toast.success("You are now the admin");
             setStatus({ hasAdmin: true, isAdmin: true });
-            
+
             // Fetch libraries after claiming
             setIsLoadingLibs(true);
             const availRes = await axios.get("/api/jellyfin/libraries");
             setAvailableLibraries(availRes.data);
             setIncludedLibraries([]);
-            
+
             router.refresh();
         } catch (err) {
             toast.error("Failed to claim admin role");
@@ -77,7 +79,12 @@ export function AdminSettings() {
     };
 
     const toggleLibrary = (id: string) => {
-        setIncludedLibraries(prev => 
+        if (id === "all") {
+            setIncludedLibraries([]);
+            return;
+        }
+
+        setIncludedLibraries(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
     };
@@ -116,14 +123,14 @@ export function AdminSettings() {
                         <div className="space-y-1">
                             <div className="text-sm font-medium">No admin appointed</div>
                             <div className="text-xs text-muted-foreground">
-                                Claim the admin role to manage global application settings. 
+                                Claim the admin role to manage global application settings.
                                 Only one user can be admin.
                             </div>
                         </div>
                     </div>
-                    <Button 
-                        variant="default" 
-                        size="sm" 
+                    <Button
+                        variant="default"
+                        size="sm"
                         className="w-full"
                         onClick={handleClaim}
                         disabled={isClaiming}
@@ -134,7 +141,7 @@ export function AdminSettings() {
             ) : (
                 <div className="space-y-6">
                     <div className="space-y-3">
-                        <button 
+                        <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className="flex items-center justify-between w-full group"
                         >
@@ -147,10 +154,20 @@ export function AdminSettings() {
 
                         {isExpanded && (
                             <div className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <p className="text-xs text-muted-foreground">
-                                    Select which libraries to include.
-                                </p>
-
+                                <div className="flex flex-row justify-between items-center gap-2">
+                                    <p className="text-xs text-muted-foreground">
+                                        Select which libraries to include.
+                                    </p>
+                                    {!isLoadingLibs && <div className="flex items-center space-x-2 ml-auto">
+                                        <Label htmlFor="all-libraries" className="text-sm font-medium">All</Label>
+                                        <Switch
+                                            id="all-libraries"
+                                            checked={includedLibraries.length === 0}
+                                            disabled={includedLibraries.length === 0}
+                                            onCheckedChange={() => toggleLibrary("all")}
+                                        />
+                                    </div>}
+                                </div>
                                 {isLoadingLibs ? (
                                     <div className="flex items-center justify-center py-4">
                                         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -162,6 +179,7 @@ export function AdminSettings() {
                                                 No movie libraries found
                                             </div>
                                         ) : (
+
                                             availableLibraries.map(lib => {
                                                 const isIncluded = includedLibraries.includes(lib.Id);
                                                 return (
@@ -170,8 +188,8 @@ export function AdminSettings() {
                                                         onClick={() => toggleLibrary(lib.Id)}
                                                         className={cn(
                                                             "flex items-center justify-between p-3 rounded-md border text-sm transition-colors",
-                                                            isIncluded 
-                                                                ? "bg-primary/5 border-primary text-primary font-medium" 
+                                                            isIncluded
+                                                                ? "bg-primary/5 border-primary text-primary font-medium"
                                                                 : "bg-background hover:bg-muted/50 border-input text-muted-foreground"
                                                         )}
                                                     >
@@ -185,13 +203,14 @@ export function AdminSettings() {
                                                     </button>
                                                 );
                                             })
+
                                         )}
                                     </div>
                                 )}
 
-                                <Button 
-                                    variant="secondary" 
-                                    size="sm" 
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
                                     className="w-full"
                                     onClick={saveLibraries}
                                     disabled={isSavingLibs || isLoadingLibs}
@@ -204,9 +223,9 @@ export function AdminSettings() {
 
                         {needsRefresh && (
                             <div className="animate-in zoom-in-95 duration-300">
-                                <Button 
-                                    variant="default" 
-                                    size="sm" 
+                                <Button
+                                    variant="default"
+                                    size="sm"
                                     className="w-full"
                                     onClick={handleRefresh}
                                 >

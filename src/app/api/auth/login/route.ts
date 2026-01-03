@@ -10,7 +10,10 @@ import axios from "axios";
 export async function POST(request: NextRequest) {
     try {
         const { username, password } = await request.json();
-        const deviceId = crypto.randomUUID();
+        // Create a unique deviceId for this user-device combination
+        // Using a hash or simply appending username to a base device ID
+        const baseDeviceId = crypto.randomUUID();
+        const deviceId = `${baseDeviceId}-${username}`;
 
         // Log the attempt (Don't log the password!)
         console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
