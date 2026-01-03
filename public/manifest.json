@@ -25,10 +25,11 @@
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "display": "standalone",
-  "display_override": ["standalone", "window-controls-overlay"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "handle_links": "auto",
   "start_url": "/",
   "scope": "/",
   "launch_handler": {
-    "client_mode": "focus-existing"
+    "client_mode": ["focus-existing", "auto"]
   }
 }
