@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { SessionData } from "./types/swiparr";
+import { SessionData } from "@/types/swiparr";
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
