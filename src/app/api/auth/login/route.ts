@@ -5,6 +5,7 @@ import { authenticateJellyfin } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
 import { isAdmin, setAdminUserId } from "@/lib/server/admin";
+import { apiClient } from "@/lib/jellyfin/api";
 import axios from "axios";
 
 export async function POST(request: NextRequest) {
@@ -45,22 +46,28 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, user: session.user, wasMadeAdmin });
 
-  } catch (error) {
+    } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("[Auth] Login Failed:", errorMessage);
+    const { username } = await request.json().catch(() => ({ username: "unknown" }));
+    console.error(`[Auth] Login Failed for user ${username}:`, errorMessage);
     
     // Check for specific Axios error response from Jellyfin
-    if (axios.isAxiosError(error) && error.response) {
-       console.error("[Auth] Jellyfin Status:", error.response.status);
-       console.error("[Auth] Jellyfin Data:", JSON.stringify(error.response.data));
-       
-       if (error.response.status === 401) {
-           return NextResponse.json({ message: "Invalid username or password" }, { status: 401 });
+    if (axios.isAxiosError(error)) {
+       if (error.response) {
+         console.error("[Auth] Jellyfin Status:", error.response.status);
+         console.error("[Auth] Jellyfin Data:", JSON.stringify(error.response.data));
+         
+         if (error.response.status === 401) {
+             return NextResponse.json({ message: "Invalid username or password" }, { status: 401 });
+         }
+       } else if (error.request) {
+         console.error("[Auth] No response from Jellyfin. Check JELLYFIN_URL.");
+         console.error("[Auth] Request details:", error.config?.url);
        }
     }
 
     return NextResponse.json(
-      { message: "Server connection failed or invalid credentials" },
+      { message: "Server connection failed or invalid credentials. Check Swiparr logs for details." },
       { status: 500 }
     );
   }

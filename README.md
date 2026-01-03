@@ -90,10 +90,26 @@ Alternatively, you can manually assign an admin by setting the `ADMIN_USERNAME` 
 ## Self-hosting tips
 
 ### Reverse proxy
-If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy), ensure you:
-1. Set `USE_SECURE_COOKIES=true` in your environment variables.
-2. Forward the correct headers (`Host`, `X-Real-IP`, `X-Forwarded-For`).
-3. Swiparr runs on port `4321` by default.
+If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy, Nginx Proxy Manager), ensure you:
+1. Set `USE_SECURE_COOKIES=true` in your environment variables if using HTTPS.
+2. **CRITICAL:** Ensure your proxy passes the `Host` header to Swiparr. In Nginx, this is `proxy_set_header Host $host;`. Without this, authentication will fail due to Next.js 15 security checks.
+3. Forward other standard headers: `X-Forwarded-For`, `X-Forwarded-Proto`.
+4. Swiparr runs on port `4321` by default.
+
+#### Nginx Proxy Manager (NPM) setup:
+- **Scheme:** http
+- **Forward Hostname:** swiparr (or your container name/IP)
+- **Forward Port:** 4321
+- **Websockets Support:** Enabled (required for match updates)
+- **Block Common Exploits:** Should be compatible, but try disabling if you encounter issues.
+- **Advanced Tab (Custom Nginx Configuration):**
+  If you still have issues logging in, try adding this to the Advanced tab:
+  ```nginx
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  ```
 
 ### Internal vs public Jellyfin URL
 - **`JELLYFIN_URL`**: Internal URL used by the Swiparr backend to communicate with Jellyfin. 

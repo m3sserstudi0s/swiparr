@@ -28,6 +28,7 @@ services:
       - JELLYFIN_USE_WATCHLIST=false
 
       # OPTIONAL: Use secure cookies (set to true if using HTTPS)
+      # IMPORTANT: When using a reverse proxy, ensure it passes the "Host" header.
       - USE_SECURE_COOKIES=false
     volumes:
       # Persist database and other data

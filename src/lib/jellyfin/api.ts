@@ -3,6 +3,11 @@ import { getRuntimeConfig } from '../runtime-config';
 
 const JELLYFIN_URL = process.env.JELLYFIN_URL || 'http://localhost:8096';
 
+// Create an axios instance with a timeout to prevent hanging requests
+export const apiClient = axios.create({
+  timeout: 15000, // 15 seconds
+});
+
 export const getJellyfinUrl = (path: string) => {
   let base = JELLYFIN_URL.replace(/\/$/, '');
   if (!base.startsWith('http')) {
@@ -29,7 +34,7 @@ export const getAuthenticatedHeaders = (accessToken: string, deviceId: string) =
 export const authenticateJellyfin = async (username: string, pw: string, deviceId: string) => {
   const url = getJellyfinUrl('Users/AuthenticateByName');
   const config = getRuntimeConfig()
-  const response = await axios.post(
+  const response = await apiClient.post(
     url,
     {
       Username: username,
@@ -47,19 +52,19 @@ export const authenticateJellyfin = async (username: string, pw: string, deviceI
 
 export const getQuickConnectEnabled = async () => {
   const url = getJellyfinUrl('QuickConnect/Enabled');
-  const res = await axios.get(url);
+  const res = await apiClient.get(url);
   return res.data;
 };
 
 export const initiateQuickConnect = async (deviceId: string) => {
   const url = getJellyfinUrl('QuickConnect/Initiate');
-  const res = await axios.post(url, null, { headers: getAuthHeaders(deviceId) });
+  const res = await apiClient.post(url, null, { headers: getAuthHeaders(deviceId) });
   return res.data; // { Code, Secret, ... }
 };
 
 export const checkQuickConnect = async (secret: string, deviceId: string) => {
   const url = getJellyfinUrl('Users/AuthenticateWithQuickConnect');
-  const res = await axios.post(
+  const res = await apiClient.post(
     url,
     {
       Secret: secret,

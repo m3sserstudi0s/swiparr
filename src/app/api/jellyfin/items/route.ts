@@ -5,9 +5,8 @@ import { db, likes, hiddens, sessions } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
 
-import axios from "axios";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { SessionData, JellyfinItem } from "@/types/swiparr";
 import { shuffleWithSeed } from "@/lib/utils";
 import { getIncludedLibraries } from "@/lib/server/admin";
@@ -62,7 +61,7 @@ export async function GET(request: NextRequest) {
                 : undefined;
 
             const fetchAllForLibrary = async (parentId?: string) => {
-                const res = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                const res = await apiClient.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
                     params: {
                         IncludeItemTypes: "Movie",
                         Recursive: true,
@@ -95,10 +94,10 @@ export async function GET(request: NextRequest) {
                 .filter((item: JellyfinItem) => !excludeIds.has(item.Id))
                 .slice(0, 50)
                 .map((item: JellyfinItem) => item.Id);
-
+ 
             if (targetIds.length > 0) {
                 // Fetch full data for these specific IDs
-                const detailRes = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                const detailRes = await apiClient.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
                     params: {
                         Ids: targetIds.join(","),
                         Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
@@ -115,9 +114,9 @@ export async function GET(request: NextRequest) {
             const soloYearsStr = session.soloFilters?.yearRange 
                 ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
                 : undefined;
-
+ 
             const fetchRandomForLibrary = async (parentId?: string) => {
-                const res = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                const res = await apiClient.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
                     params: {
                         IncludeItemTypes: "Movie",
                         Recursive: true,
