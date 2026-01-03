@@ -4,6 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { initiateQuickConnect, checkQuickConnect } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
+import { isAdmin } from "@/lib/server/admin";
 
 export async function GET() {
   try {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
       Name: authData.User.Name,
       AccessToken: authData.AccessToken,
       DeviceId: session.tempDeviceId,
+      isAdmin: await isAdmin(authData.User.Id),
     };
     session.isLoggedIn = true;
     delete session.tempDeviceId;

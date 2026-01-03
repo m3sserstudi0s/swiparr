@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
 import { Copy, Check } from "lucide-react";
+import Image from "next/image";
+import logo from "../../../public/icon0.svg"
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
@@ -26,22 +28,6 @@ export default function LoginContent() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  const checkAuth = useCallback(async (secret: string) => {
-    try {
-      const res = await fetch("/api/auth/quick-connect", {
-        method: "POST",
-        body: JSON.stringify({ secret }),
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await res.json();
-      if (data.success) {
-        window.location.href = searchParams.get("callbackUrl") || "/";
-      }
-    } catch (err) {
-      console.error("Auth check error", err);
-    }
-  }, [searchParams]);
 
   const onAuthorized = useCallback(() => {
     const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -109,6 +95,7 @@ export default function LoginContent() {
 
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
+        <Image src={logo} alt="Logo" className="size-20 mx-auto mb-4"/>
         <CardTitle className="text-center text-2xl font-bold text-primary font-mono">
           Swiparr
         </CardTitle>

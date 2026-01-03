@@ -131,6 +131,7 @@ export async function GET() {
   return NextResponse.json({ 
     code: session.sessionCode || null,
     userId: session.user.Id,
+    isAdmin: session.user.isAdmin || false,
     accessToken: session.user.AccessToken,
     filters
   });

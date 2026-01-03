@@ -52,6 +52,7 @@ export interface SessionData {
     Name: string;
     AccessToken: string;
     DeviceId: string;
+    isAdmin?: boolean;
   };
   sessionCode?: string;
   isLoggedIn: boolean;

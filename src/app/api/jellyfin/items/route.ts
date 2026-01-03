@@ -10,6 +10,7 @@ import { sessionOptions } from "@/lib/session";
 import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { SessionData, JellyfinItem } from "@/types/swiparr";
 import { shuffleWithSeed } from "@/lib/utils";
+import { getIncludedLibraries } from "@/lib/server/admin";
 
 export async function GET(request: NextRequest) {
 
@@ -18,6 +19,9 @@ export async function GET(request: NextRequest) {
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
+        // 0. Get admin-defined libraries
+        const includedLibraries = await getIncludedLibraries();
+
         // 1. Get existing interactions from DB (Likes and Hiddens)
         // Solo: Only MY interactions. Session: MY likes, ANYONE'S hidden.
         const [liked, hidden] = await Promise.all([
@@ -53,24 +57,35 @@ export async function GET(request: NextRequest) {
             });
 
             const sessionFilters = currentSession?.filters ? JSON.parse(currentSession.filters) : null;
+            const yearsStr = sessionFilters?.yearRange 
+                ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange[0] + i).join(",") 
+                : undefined;
+
+            const fetchAllForLibrary = async (parentId?: string) => {
+                const res = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                    params: {
+                        IncludeItemTypes: "Movie",
+                        Recursive: true,
+                        Fields: "Id,UserData",
+                        SortBy: "Id", // Deterministic starting point
+                        ParentId: parentId,
+                        Genres: sessionFilters?.genres?.join(",") || undefined,
+                        Years: yearsStr,
+                        MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
+                    },
+                    headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+                });
+                return res.data.Items || [];
+            };
 
             // Fetch ALL movies (IDs + UserData) to ensure a consistent shuffle across users
-            const allRes = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
-                params: {
-                    IncludeItemTypes: "Movie",
-                    Recursive: true,
-                    Fields: "Id,UserData",
-                    SortBy: "Id", // Deterministic starting point
-                    Genres: sessionFilters?.genres?.join(",") || undefined,
-                    Years: sessionFilters?.yearRange 
-                        ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange[0] + i).join(",") 
-                        : undefined,
-                    MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
-                },
-                headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
-            });
-
-            const allItems = allRes.data.Items || [];
+            let allItems = [];
+            if (includedLibraries.length > 0) {
+                const results = await Promise.all(includedLibraries.map(libId => fetchAllForLibrary(libId)));
+                allItems = results.flat();
+            } else {
+                allItems = await fetchAllForLibrary();
+            }
             
             // Seeded shuffle of the entire library
             const shuffledItems = shuffleWithSeed(allItems, session.sessionCode) as JellyfinItem[];
@@ -96,23 +111,37 @@ export async function GET(request: NextRequest) {
             }
         } else {
             // SOLO MODE: Normal random
-            const jellyfinRes = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
-                params: {
-                    IncludeItemTypes: "Movie",
-                    Recursive: true,
-                    SortBy: "Random",
-                    Limit: 100,
-                    Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
-                    Filters: "IsUnplayed",
-                    Genres: session.soloFilters?.genres?.join(",") || undefined,
-                    Years: session.soloFilters?.yearRange 
-                        ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
-                        : undefined,
-                    MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
-                },
-                headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
-            });
-            items = (jellyfinRes.data.Items || []).filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
+            const limitPerLib = includedLibraries.length > 0 ? Math.ceil(100 / includedLibraries.length) : 100;
+            const soloYearsStr = session.soloFilters?.yearRange 
+                ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
+                : undefined;
+
+            const fetchRandomForLibrary = async (parentId?: string) => {
+                const res = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                    params: {
+                        IncludeItemTypes: "Movie",
+                        Recursive: true,
+                        SortBy: "Random",
+                        Limit: limitPerLib,
+                        Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
+                        Filters: "IsUnplayed",
+                        ParentId: parentId,
+                        Genres: session.soloFilters?.genres?.join(",") || undefined,
+                        Years: soloYearsStr,
+                        MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
+                    },
+                    headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+                });
+                return res.data.Items || [];
+            };
+
+            if (includedLibraries.length > 0) {
+                const results = await Promise.all(includedLibraries.map(libId => fetchRandomForLibrary(libId)));
+                const combined = results.flat();
+                items = combined.filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
+            } else {
+                items = (await fetchRandomForLibrary()).filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
+            }
         }
 
 

@@ -27,6 +27,7 @@ import { Skeleton } from "../ui/skeleton";
 
 // Lazy load settings sections for code splitting
 const GeneralSettings = lazy(() => import("./settings/GeneralSettings").then(m => ({ default: m.GeneralSettings })));
+const AdminSettings = lazy(() => import("./settings/AdminSettings").then(m => ({ default: m.AdminSettings })));
 const AboutSettings = lazy(() => import("./settings/AboutSettings").then(m => ({ default: m.AboutSettings })));
 const DangerZone = lazy(() => import("./settings/DangerZone").then(m => ({ default: m.DangerZone })));
 
@@ -89,6 +90,7 @@ export function SettingsSidebar() {
                         <div className="space-y-8 py-8 pb-12">
                             <Suspense fallback={<SettingsSkeleton />}>
                                 <GeneralSettings />
+                                <AdminSettings />
                                 <AboutSettings onShowUserGuide={() => {
                                     setShowUserGuide(true);
                                     setOpen(false);

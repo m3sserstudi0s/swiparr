@@ -4,29 +4,31 @@ import { sessionOptions } from "@/lib/session";
 import { authenticateJellyfin } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
+import { isAdmin } from "@/lib/server/admin";
 import axios from "axios";
 
 export async function POST(request: NextRequest) {
-  try {
-    const { username, password } = await request.json();
-    const deviceId = crypto.randomUUID();
+    try {
+        const { username, password } = await request.json();
+        const deviceId = crypto.randomUUID();
 
-    // Log the attempt (Don't log the password!)
-    console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
+        // Log the attempt (Don't log the password!)
+        console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
 
-    const jellyfinUser = await authenticateJellyfin(username, password, deviceId);
-    console.log("[Auth] Jellyfin API accepted credentials. User ID:", jellyfinUser.User.Id);
+        const jellyfinUser = await authenticateJellyfin(username, password, deviceId);
+        console.log("[Auth] Jellyfin API accepted credentials. User ID:", jellyfinUser.User.Id);
 
-    const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+        const cookieStore = await cookies();
+        const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
 
-    session.user = {
-      Id: jellyfinUser.User.Id,
-      Name: jellyfinUser.User.Name,
-      AccessToken: jellyfinUser.AccessToken,
-      DeviceId: deviceId,
-    };
-    session.isLoggedIn = true;
+        session.user = {
+            Id: jellyfinUser.User.Id,
+            Name: jellyfinUser.User.Name,
+            AccessToken: jellyfinUser.AccessToken,
+            DeviceId: deviceId,
+            isAdmin: await isAdmin(jellyfinUser.User.Id),
+        };
+        session.isLoggedIn = true;
     
     await session.save();
     console.log("[Auth] Session cookie saved.");
