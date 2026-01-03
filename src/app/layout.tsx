@@ -35,7 +35,14 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__SWIPARR_CONFIG__ = ${JSON.stringify(config)};`,
+            __html: `
+              window.__SWIPARR_CONFIG__ = ${JSON.stringify(config)};
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
           }}
         />
       </head>

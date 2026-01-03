@@ -1,6 +1,7 @@
 {
   "name": "Swiparr",
   "short_name": "Swiparr",
+  "id": "/",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -24,6 +25,10 @@
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
   "start_url": "/",
-  "scope": "/"
+  "scope": "/",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
 }
