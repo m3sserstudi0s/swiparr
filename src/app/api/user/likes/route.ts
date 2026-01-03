@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import axios from "axios";
 import { SessionData, type JellyfinItem, type MergedLike } from "@/types/swiparr";
+import { events, EVENT_TYPES } from "@/lib/events";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -142,6 +143,13 @@ export async function DELETE(request: NextRequest) {
                     )
                 );
         }
+
+        // Notify that matches might have changed
+        events.emit(EVENT_TYPES.MATCH_REMOVED, {
+            sessionCode: effectiveSessionCode,
+            itemId: itemId,
+            userId: session.user.Id
+        });
     }
 
     return NextResponse.json({ success: true });

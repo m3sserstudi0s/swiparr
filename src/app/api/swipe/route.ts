@@ -100,12 +100,44 @@ export async function DELETE(request: NextRequest) {
   const body: { itemId: string } = await request.json();
 
   try {
+    const sessionCode = session.sessionCode;
+
     await db.delete(likes).where(
       and(
         eq(likes.jellyfinUserId, session.user.Id),
         eq(likes.jellyfinItemId, body.itemId)
       )
     );
+
+    // If it was a session match, we might need to update other users' like.isMatch status
+    if (sessionCode) {
+        const remainingLikes = await db.query.likes.findMany({
+            where: and(
+                eq(likes.sessionCode, sessionCode),
+                eq(likes.jellyfinItemId, body.itemId)
+            )
+        });
+
+        if (remainingLikes.length < 2) {
+            // No longer a match for anyone
+            await db.update(likes)
+                .set({ isMatch: false })
+                .where(
+                    and(
+                        eq(likes.sessionCode, sessionCode),
+                        eq(likes.jellyfinItemId, body.itemId)
+                    )
+                );
+        }
+
+        // Notify that matches might have changed
+        events.emit(EVENT_TYPES.MATCH_REMOVED, {
+            sessionCode: sessionCode,
+            itemId: body.itemId,
+            userId: session.user.Id
+        });
+    }
+
     await db.delete(hiddens).where(
       and(
         eq(hiddens.jellyfinUserId, session.user.Id),

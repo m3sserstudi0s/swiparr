@@ -37,7 +37,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
     }
   });
 
-  const { mutateAsync: unlike, isPending } = useMutation({
+  const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
     mutationFn: async () => {
       const sessionParam = movie.sessionCode ? `&sessionCode=${movie.sessionCode}` : "";
       await axios.delete(`/api/user/likes?itemId=${movie.Id}${sessionParam}`);
@@ -52,7 +52,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
       loading: "Removing from likes...",
       success: "Movie removed from likes",
       error: "Failed to remove from likes",
-      action: !isPending && {
+      action: !isUnliking && {
         label: 'Undo',
         onClick: () => relike()
       },
@@ -76,7 +76,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
     >
       {/* Poster */}
       <div className={cn(
-        isCondensed ? "relative shrink-0 w-15 h-20" : "relative shrink-0 w-20 h-28",
+        isCondensed ? "relative shrink-0 w-15 h-22" : "relative shrink-0 w-20 h-28",
       )}>
         <OptimizedImage
           src={`/api/jellyfin/image/${movie.Id}`}
@@ -152,7 +152,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
                 e.stopPropagation();
                 handleUnlike();
               }}
-              disabled={isPending}
+              disabled={isUnliking}
             >
               <HeartOff className="w-3.5 h-3.5" />
             </Button>

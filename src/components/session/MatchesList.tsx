@@ -38,7 +38,7 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
             </Empty>
           </div>
         ) : (
-          <div className="py-6">
+          <div className="pt-6 pb-22">
             {matches?.map((movie: JellyfinItem) => (
               <MovieListItem
                 key={movie.Id}

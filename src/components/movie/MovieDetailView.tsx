@@ -73,6 +73,18 @@ export function MovieDetailView({ movieId, onClose }: Props) {
     },
   });
 
+  const { mutate: relike } = useMutation({
+    mutationFn: async () => {
+      movie && await axios.post("/api/swipe", {
+        itemId: movie.Id,
+        direction: "right"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["likes"] });
+    }
+  });
+
   const useWatchlist = settings.useWatchlist;
   const isInList = (useWatchlist ? movie?.UserData?.Likes : movie?.UserData?.IsFavorite) ?? false;
 
@@ -104,11 +116,14 @@ export function MovieDetailView({ movieId, onClose }: Props) {
   };
 
   const handleUnlike = () => {
-    const promise = unlike();
-    toast.promise(promise, {
+    toast.promise(unlike(), {
       loading: "Removing from likes...",
-      success: "Removed from likes",
+      success: "Movie removed from likes",
       error: "Failed to remove from likes",
+      action: !isUnliking && {
+        label: 'Undo',
+        onClick: () => relike()
+      },
     });
   };
 
@@ -143,7 +158,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                 >
 
                   <OptimizedImage
-                    src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0 
+                    src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0
                       ? `/api/jellyfin/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
                       : `/api/jellyfin/image/${movie.Id}`
                     }
@@ -240,10 +255,9 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                     variant="outline"
                     size="lg"
                     className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      if (window.confirm("Are you sure you want to unlike this movie?")) {
-                        handleUnlike();
-                      }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnlike();
                     }}
                     disabled={isUnliking}
                   >
@@ -296,8 +310,8 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                       {movie.People.filter(p => p.Type === "Actor").slice(0, 12).map(person => (
                         <div key={person.Id} className="flex flex-col items-center gap-2 min-w-20 text-center">
                           <Avatar className="w-16 h-16 border border-border shadow-sm">
-                            <AvatarImage 
-                              src={`/api/jellyfin/image/${person.Id}?tag=${person.PrimaryImageTag}`} 
+                            <AvatarImage
+                              src={`/api/jellyfin/image/${person.Id}?tag=${person.PrimaryImageTag}`}
                               className="object-cover"
                             />
                             <AvatarFallback className="bg-muted text-muted-foreground text-xs">

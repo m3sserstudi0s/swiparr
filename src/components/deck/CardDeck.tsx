@@ -38,6 +38,8 @@ export function CardDeck() {
   const [lastSwipe, setLastSwipe] = useState<{ id: string; direction: "left" | "right" } | null>(null);
   const [rewindingId, setRewindingId] = useState<{ id: string; direction: "left" | "right" } | null>(null);
 
+  const [displayDeck, setDisplayDeck] = useState<JellyfinItem[]>([]);
+
   // Sync swipes to cache on unmount to handle fast tab switching
   React.useEffect(() => {
     const currentSwipedIds = swipedIdsRef.current;
@@ -58,12 +60,14 @@ export function CardDeck() {
     ([url]: [string]) => axios.get(url).then(res => res.data)
   );
 
-  // Clear local state when session changes to get a fresh start
+  const filtersJson = JSON.stringify(sessionStatus?.filters);
+  // Clear local state when session or filters change to get a fresh start
   React.useEffect(() => {
     setRemovedIds([]);
     swipedIdsRef.current.clear();
     setLastSwipe(null);
-  }, [sessionCode]);
+    setDisplayDeck([]);
+  }, [sessionCode, filtersJson]);
 
   const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
 
@@ -79,16 +83,26 @@ export function CardDeck() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Pre-generate refs for the deck to avoid modifying refs during render
-  useMemo(() => {
+  // Update displayDeck when new items are fetched
+  React.useEffect(() => {
     if (deck) {
-      deck.forEach(item => {
-        if (!cardRefs.current[item.Id]) {
-          cardRefs.current[item.Id] = React.createRef<TinderCardHandle>();
-        }
+      setDisplayDeck((prev) => {
+        const existingIds = new Set(prev.map((i) => i.Id));
+        const newItems = deck.filter((item) => !existingIds.has(item.Id));
+        if (newItems.length === 0) return prev;
+        return [...prev, ...newItems];
       });
     }
   }, [deck]);
+
+  // Pre-generate refs for the deck to avoid modifying refs during render
+  useMemo(() => {
+    displayDeck.forEach(item => {
+      if (!cardRefs.current[item.Id]) {
+        cardRefs.current[item.Id] = React.createRef<TinderCardHandle>();
+      }
+    });
+  }, [displayDeck]);
 
   // Utility to make sure we always have a generic RefObject
   const getCardRef = (id: string) => {
@@ -127,8 +141,15 @@ export function CardDeck() {
 
   // Calculate active deck
   const activeDeck = useMemo(() => {
-    return deck ? deck.filter((item: JellyfinItem) => !removedIds.includes(item.Id)) : [];
-  }, [deck, removedIds]);
+    return displayDeck.filter((item: JellyfinItem) => !removedIds.includes(item.Id));
+  }, [displayDeck, removedIds]);
+
+  // Auto-refresh when deck is low
+  React.useEffect(() => {
+    if (!isFetching && activeDeck.length > 0 && activeDeck.length <= 5) {
+      refetch();
+    }
+  }, [activeDeck.length, isFetching, refetch]);
 
   const onSwipe = (id: string, direction: "left" | "right") => {
     // 1. Only fire API calls here
@@ -137,7 +158,7 @@ export function CardDeck() {
 
     setLastSwipe({ id, direction });
 
-    const item = deck?.find((i) => i.Id === id);
+    const item = displayDeck.find((i) => i.Id === id);
     if (!item) return;
 
     // Fire the mutation (which checks for matches)
@@ -214,8 +235,9 @@ export function CardDeck() {
   useHotkeys("r, backspace", () => rewind(), [rewind]);
   useHotkeys("f", () => setIsFilterOpen(prev => !prev), []);
 
-  if (isLoading || isFetching || isApplyingFilters) return <DeckLoading />;
-  if (isError) return <DeckError />;
+  const showLoader = (isFetching && activeDeck.length === 0) || isApplyingFilters;
+  if (showLoader) return <DeckLoading />;
+  if (isError && activeDeck.length === 0) return <DeckError />;
   if (activeDeck.length === 0) {
     return (
       <div className="w-full">
@@ -224,6 +246,7 @@ export function CardDeck() {
             setRemovedIds([]);
             swipedIdsRef.current.clear();
             setLastSwipe(null);
+            setDisplayDeck([]);
             refetch();
           }}
           onOpenFilter={() => setIsFilterOpen(true)}

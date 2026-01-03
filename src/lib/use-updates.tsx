@@ -49,9 +49,19 @@ export function useUpdates(sessionCode?: string | null) {
             }
         });
 
+        eventSource.addEventListener(EVENT_TYPES.MATCH_REMOVED, (event: any) => {
+            const data = JSON.parse(event.data);
+            if (data.sessionCode === sessionCode) {
+                // Invalidate matches
+                mutate(['/api/session/matches', sessionCode]);
+            }
+        });
+
         eventSource.addEventListener(EVENT_TYPES.FILTERS_UPDATED, (event: any) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
+                // Invalidate session to get new filters
+                mutate('/api/session');
                 // Invalidate deck to get fresh cards with new filters
                 queryClient.invalidateQueries({ queryKey: ['deck', sessionCode] });
                 

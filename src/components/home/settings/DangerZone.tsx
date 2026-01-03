@@ -16,7 +16,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
     return (
         <SettingsSection title="Danger Zone">
             <div className="space-y-4 p-4 rounded-xl border border-destructive/20 bg-destructive/5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                     <div className="space-y-0.5">
                         <div className="text-sm font-medium">Reset settings</div>
                         <div className="text-xs text-muted-foreground">Restore default preferences</div>
@@ -31,7 +31,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                     </Button>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-destructive/10 pt-4">
+                <div className="flex items-center justify-between border-t border-destructive/10 pt-4 gap-2">
                     <div className="space-y-0.5">
                         <div className="text-sm font-medium">Clear data</div>
                         <div className="text-xs text-muted-foreground">Reset likes and sessions</div>
@@ -46,7 +46,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                     </Button>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-destructive/10 pt-4">
+                <div className="flex items-center justify-between border-t border-destructive/10 pt-4 gap-2">
                     <div className="space-y-0.5">
                         <div className="text-sm font-medium">Log out</div>
                         <div className="text-xs text-muted-foreground">End your current session</div>

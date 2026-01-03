@@ -25,6 +25,7 @@ export const events = eventEmitter;
 export const EVENT_TYPES = {
     SESSION_UPDATED: 'session_updated',
     MATCH_FOUND: 'match_found',
+    MATCH_REMOVED: 'match_removed',
     QUICK_CONNECT_AUTHORIZED: 'quick_connect_authorized',
     FILTERS_UPDATED: 'filters_updated',
 };

@@ -65,15 +65,16 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   });
 
   useEffect(() => {
-    if (open) {
-      if (!hasInitializedRef.current && !isLoadingYears) {
+    if (open && !isLoadingYears) {
+      const filtersStr = JSON.stringify(currentFilters);
+      if (filtersStr !== lastSavedFiltersRef.current || !hasInitializedRef.current) {
         setSelectedGenres(currentFilters?.genres || []);
         setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
         setMinRating(currentFilters?.minCommunityRating || 0);
-        lastSavedFiltersRef.current = JSON.stringify(currentFilters);
+        lastSavedFiltersRef.current = filtersStr;
         hasInitializedRef.current = true;
       }
-    } else {
+    } else if (!open) {
       if (hasInitializedRef.current) {
         // Only save if we actually had valid limits to compare against
         const isYearDefault = !isLoadingYears && yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
@@ -89,7 +90,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, minYearLimit, maxYearLimit]);
+  }, [open, minYearLimit, maxYearLimit, currentFilters, isLoadingYears]);
 
   const toggleGenre = (genreName: string) => {
     setSelectedGenres((prev) =>

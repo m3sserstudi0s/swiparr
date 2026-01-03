@@ -36,6 +36,16 @@ export async function GET(request: NextRequest) {
                 }
             };
 
+            const onMatchRemoved = (payload: { sessionCode: string; itemId: string }) => {
+                if (!closed && session.sessionCode === payload.sessionCode) {
+                    try {
+                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.MATCH_REMOVED}\ndata: ${JSON.stringify(payload)}\n\n`));
+                    } catch (e) {
+                        cleanup();
+                    }
+                }
+            };
+
             const onFiltersUpdate = (payload: { sessionCode: string; userName: string; filters: any }) => {
                 if (!closed && session.sessionCode === payload.sessionCode) {
                     try {
@@ -51,6 +61,7 @@ export async function GET(request: NextRequest) {
                 closed = true;
                 events.off(EVENT_TYPES.SESSION_UPDATED, onSessionUpdate);
                 events.off(EVENT_TYPES.MATCH_FOUND, onMatch);
+                events.off(EVENT_TYPES.MATCH_REMOVED, onMatchRemoved);
                 events.off(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
                 if (keepAlive) clearInterval(keepAlive);
                 try {
@@ -62,6 +73,7 @@ export async function GET(request: NextRequest) {
 
             events.on(EVENT_TYPES.SESSION_UPDATED, onSessionUpdate);
             events.on(EVENT_TYPES.MATCH_FOUND, onMatch);
+            events.on(EVENT_TYPES.MATCH_REMOVED, onMatchRemoved);
             events.on(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
 
             keepAlive = setInterval(() => {
