@@ -41,6 +41,7 @@ services:
     ports:
       - 4321:4321
 ```
+Make sure that ./swiparr-data is owned by UID 1001:65533 or is writable by this user.
 
 2. Run the container:
 ```bash
