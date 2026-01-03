@@ -77,7 +77,7 @@ docker run -d \
 | `PORT` | The port the container listens on. | `4321` |
 | `ADMIN_USERNAME` | Optional. A Jellyfin username that will always have admin privileges. | - |
 
-> **Note:** For maximum security, generate a secure `AUTH_SECRET` using `openssl rand -hex 32`. If not provided, Swiparr will generate and persist one in the database.
+> **Note:** Watchlist is not a feature in vanilla Jellyfin, but available either through the Jellyfin Enhanced plugin or Kefwin Tweaks script.
 
 ## Admin Privileges
 
