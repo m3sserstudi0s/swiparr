@@ -18,7 +18,7 @@ Open source and free forever.
 - **Guest Mode:** Let friends join your session without needing their own Jellyfin account by "lending" your connection temporarily.
 - **Mobile friendly:** Optimized for use on your phone.
 
-**Tip**: Download as a web app on mobile, and use the keyboard shortcuts on desktop.
+**Highly recommended**: Download as a web app on mobile, and use the keyboard shortcuts on desktop.
 
 To make your final choice, use the **Random button** to pick a movie from your matches!
 
