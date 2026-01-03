@@ -6,6 +6,8 @@ services:
     environment:
       # REQUIRED: The internal URL of your Jellyfin server (accessible by the container)
       # Example: http://192.168.1.10:8096 or http://jellyfin:8096
+      # Note: If your Jellyfin is behind a reverse proxy on the same network, 
+      # use the container name and port here instead of the public domain.
       - JELLYFIN_URL=http://jellyfin:8096
       
       # OPTIONAL: The public URL of your Jellyfin server (accessible by your browser)

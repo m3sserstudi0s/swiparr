@@ -86,8 +86,11 @@ If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy), ensur
 3. Swiparr runs on port `4321` by default.
 
 ### Internal vs public Jellyfin URL
-- **`JELLYFIN_URL`**: Used by the Swiparr backend to talk to Jellyfin. Use an internal IP or Docker service name (e.g., `http://192.168.1.10:8096`).
-- **`JELLYFIN_PUBLIC_URL`**: Used by your browser to load images and handle authentication redirects. Defaults to `JELLYFIN_URL` if not provided.
+- **`JELLYFIN_URL`**: Internal URL used by the Swiparr backend to communicate with Jellyfin. 
+  - If Jellyfin is in the same Docker network, use the container name: `http://jellyfin:8096`.
+  - Otherwise, use the internal IP: `http://192.168.1.10:8096`.
+  - **Note:** This URL should be accessible from *within* the Swiparr container.
+- **`JELLYFIN_PUBLIC_URL`**: The public-facing URL your browser uses to access Jellyfin (e.g., `https://jellyfin.yourdomain.com`). This is used for links and redirects. Defaults to `JELLYFIN_URL` if not provided.
 
 ## Community and support
 
