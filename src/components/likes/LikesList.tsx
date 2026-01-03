@@ -70,7 +70,7 @@ export function LikesList() {
                         </Empty>
                     </div>
                 )}
-                <div className="mt-8">
+                <div className="mt-8 mb-14">
                 {likes?.map((movie: MergedLike) => (
                     <MovieListItem
                         key={movie.Id}
