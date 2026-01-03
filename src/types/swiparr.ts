@@ -54,6 +54,7 @@ export interface SessionData {
     DeviceId: string;
     isAdmin?: boolean;
     wasMadeAdmin?: boolean;
+    isGuest?: boolean;
   };
   sessionCode?: string;
   isLoggedIn: boolean;

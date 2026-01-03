@@ -30,6 +30,10 @@ services:
       # OPTIONAL: Use secure cookies (set to true if using HTTPS)
       # IMPORTANT: When using a reverse proxy, ensure it passes the "Host" header.
       - USE_SECURE_COOKIES=false
+      
+      # OPTIONAL: The hostname the server binds to
+      # Default: 0.0.0.0 (listens on all interfaces)
+      - HOSTNAME=0.0.0.0
     volumes:
       # Persist database and other data
       - ./swiparr-data:/app/data

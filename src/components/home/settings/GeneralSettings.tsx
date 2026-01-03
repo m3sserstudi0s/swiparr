@@ -1,16 +1,20 @@
 "use client";
 
-import { Sun, Moon, Bookmark, Star } from "lucide-react";
+import { Sun, Moon, Bookmark, Star, Users, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { useTheme } from "next-themes";
 import { useSettings } from "@/lib/settings";
 import { SettingsSection } from "./SettingsSection";
-
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import useSWR from "swr";
+import axios from "axios";
 
 export function GeneralSettings() {
     const { setTheme, theme } = useTheme();
     const { settings, updateSettings } = useSettings();
+    const { data: sessionStatus } = useSWR("/api/session", (url) => axios.get(url).then(res => res.data));
+    const isGuest = sessionStatus?.isGuest || false;
 
     return (
         <SettingsSection title="General">
@@ -26,29 +30,75 @@ export function GeneralSettings() {
                     className="w-26"
                 >
                     {theme === "light" ? (
-                        <><Sun className="mr-2 size-4" /> Light</>
+                        <><Sun className="size-4" /> Light</>
                     ) : (
-                        <><Moon className="mr-2 size-4" /> Dark</>
+                        <><Moon className="size-4" /> Dark</>
                     )}
                 </Button>
             </div>
 
-            <div className="grid grid-flow-col items-center justify-between gap-2">
-                <div className="space-y-0.5">
-                    <div className="text-sm font-medium">Collection type</div>
-                    <div className="text-xs text-muted-foreground text-pretty">Toggle between Watchlist and Favorites</div>
-                </div>
-                <Toggle
-                    pressed={settings.useWatchlist}
-                    onPressedChange={(pressed) => updateSettings({ useWatchlist: pressed })}
-                    variant="outline"
-                    size="sm"
-                    className="w-26"
-                >
-                    {settings.useWatchlist ? <Bookmark/> : <Star/>}
-                    {settings.useWatchlist ? "Watchlist" : "Favorites"}
-                </Toggle>
-            </div>
+            {!isGuest && (
+                <>
+                    <div className="grid grid-flow-col items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                            <div className="text-sm font-medium">Collection type</div>
+                            <div className="text-xs text-muted-foreground text-pretty">Toggle between Watchlist and Favorites</div>
+                        </div>
+                        <Toggle
+                            pressed={settings.useWatchlist}
+                            onPressedChange={(pressed) => updateSettings({ useWatchlist: pressed })}
+                            variant="outline"
+                            size="sm"
+                            className="w-26"
+                        >
+                            {settings.useWatchlist ? <Bookmark className="size-4" /> : <Star className="size-4" />}
+                            {settings.useWatchlist ? "Watchlist" : "Favorites"}
+                        </Toggle>
+                    </div>
+
+                    <div className="grid grid-flow-col items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                                <div className="text-sm font-medium">Guest lending</div>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="size-4 p-0 hover:bg-transparent">
+                                            <Info className="size-3.5 text-muted-foreground cursor-help" />
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Guest Lending</DialogTitle>
+                                            <DialogDescription className="pt-2">
+                                                Allows people to join your session as guests without needing their own Jellyfin account.
+                                                They will use your connection to fetch movies and images for the duration of the session.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <DialogFooter className="sm:justify-start">
+                                            <DialogClose asChild>
+                                                <Button type="button" variant="secondary">
+                                                    Okay
+                                                </Button>
+                                            </DialogClose>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                            <div className="text-xs text-muted-foreground text-pretty">Let others join without an account</div>
+                        </div>
+                        <Toggle
+                            pressed={settings.allowGuestLending}
+                            onPressedChange={(pressed) => updateSettings({ allowGuestLending: pressed })}
+                            variant="outline"
+                            size="sm"
+                            className="w-26"
+                        >
+                            <Users className="size-4" />
+                            {settings.allowGuestLending ? "Enabled" : "Disabled"}
+                        </Toggle>
+                    </div>
+                </>
+            )}
         </SettingsSection>
     );
 }

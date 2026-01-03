@@ -4,10 +4,10 @@ import { sessionOptions } from "@/lib/session";
 import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
-import axios from "axios";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { SessionData, type JellyfinItem, type MergedLike } from "@/types/swiparr";
 import { events, EVENT_TYPES } from "@/lib/events";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
   const filter = searchParams.get("filter") || "all";
 
   try {
+    const { accessToken, deviceId } = await getEffectiveCredentials(session);
+
     const conditions = [eq(likesTable.jellyfinUserId, session.user.Id)];
 
     if (filter === "session") {
@@ -34,12 +36,12 @@ export async function GET(request: NextRequest) {
     if (likesResult.length === 0) return NextResponse.json([]);
 
     const ids = likesResult.map((l: Like) => l.jellyfinItemId).join(",");
-    const jellyfinRes = await axios.get(getJellyfinUrl(`/Items`), {
+    const jellyfinRes = await apiClient.get(getJellyfinUrl(`/Items`), {
         params: {
             Ids: ids,
             Fields: "ProductionYear,CommunityRating",
         },
-        headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+        headers: getAuthenticatedHeaders(accessToken!, deviceId!),
     });
 
     const items: JellyfinItem[] = jellyfinRes.data.Items;
@@ -106,12 +108,10 @@ export async function DELETE(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const itemId = searchParams.get("itemId");
-  const paramSessionCode = searchParams.get("sessionCode");
   
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
 
-  // Use session code from params if provided, otherwise from session cookie
-  const effectiveSessionCode = paramSessionCode !== null ? paramSessionCode : session.sessionCode;
+
 
   try {
     // Delete the user's like for this item
@@ -119,15 +119,15 @@ export async function DELETE(request: NextRequest) {
         and(
             eq(likesTable.jellyfinUserId, session.user.Id),
             eq(likesTable.jellyfinItemId, itemId),
-            effectiveSessionCode ? eq(likesTable.sessionCode, effectiveSessionCode as string) : isNull(likesTable.sessionCode)
+            session.sessionCode ? eq(likesTable.sessionCode, session.sessionCode as string) : isNull(likesTable.sessionCode)
         )
     );
 
     // If it was a session match, we might need to update other users' like.isMatch status
-    if (effectiveSessionCode) {
+    if (session.sessionCode) {
         const remainingLikes = await db.query.likes.findMany({
             where: and(
-                eq(likesTable.sessionCode, effectiveSessionCode as string),
+                eq(likesTable.sessionCode, session.sessionCode as string),
                 eq(likesTable.jellyfinItemId, itemId)
             )
         });
@@ -138,7 +138,7 @@ export async function DELETE(request: NextRequest) {
                 .set({ isMatch: false })
                 .where(
                     and(
-                        eq(likesTable.sessionCode, effectiveSessionCode as string),
+                        eq(likesTable.sessionCode, session.sessionCode as string),
                         eq(likesTable.jellyfinItemId, itemId)
                     )
                 );
@@ -146,7 +146,7 @@ export async function DELETE(request: NextRequest) {
 
         // Notify that matches might have changed
         events.emit(EVENT_TYPES.MATCH_REMOVED, {
-            sessionCode: effectiveSessionCode,
+            sessionCode: session.sessionCode,
             itemId: itemId,
             userId: session.user.Id
         });

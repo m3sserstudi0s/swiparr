@@ -5,6 +5,11 @@ import { SettingsSection } from "./SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Shield, ShieldAlert, ShieldCheck, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -141,32 +146,43 @@ export function AdminSettings() {
             ) : (
                 <div className="space-y-6">
                     <div className="space-y-3">
-                        <button
-                            onClick={() => setIsExpanded(!isExpanded)}
-                            className="flex items-center justify-between w-full group"
+                        <Collapsible
+                            open={isExpanded}
+                            onOpenChange={setIsExpanded}
+                            className="space-y-3"
                         >
-                            <div className="flex items-center gap-2 text-sm font-medium">
-                                <Library className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                Libraries
-                            </div>
-                            {isExpanded ? <ChevronDown className="size-4 text-muted-foreground" /> : <ChevronRight className="size-4 text-muted-foreground" />}
-                        </button>
+                            <CollapsibleTrigger asChild>
+                                <button className="flex items-center justify-between w-full group">
+                                    <div className="flex items-center gap-2 text-sm font-medium">
+                                        <Library className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                        Libraries
+                                    </div>
+                                    {isExpanded ? (
+                                        <ChevronDown className="size-4 text-muted-foreground" />
+                                    ) : (
+                                        <ChevronRight className="size-4 text-muted-foreground" />
+                                    )}
+                                </button>
+                            </CollapsibleTrigger>
 
-                        {isExpanded && (
-                            <div className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <CollapsibleContent className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex flex-row justify-between items-center gap-2">
                                     <p className="text-xs text-muted-foreground">
-                                        Select which libraries to include.
+                                        Select which libraries to include
                                     </p>
-                                    {!isLoadingLibs && <div className="flex items-center space-x-2 ml-auto">
-                                        <Label htmlFor="all-libraries" className="text-sm font-medium">All</Label>
-                                        <Switch
-                                            id="all-libraries"
-                                            checked={includedLibraries.length === 0}
-                                            disabled={includedLibraries.length === 0}
-                                            onCheckedChange={() => toggleLibrary("all")}
-                                        />
-                                    </div>}
+                                    {!isLoadingLibs && (
+                                        <div className="flex items-center space-x-2 ml-auto">
+                                            <Label htmlFor="all-libraries" className="text-sm font-medium">
+                                                All
+                                            </Label>
+                                            <Switch
+                                                id="all-libraries"
+                                                checked={includedLibraries.length === 0}
+                                                disabled={includedLibraries.length === 0}
+                                                onCheckedChange={() => toggleLibrary("all")}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                                 {isLoadingLibs ? (
                                     <div className="flex items-center justify-center py-4">
@@ -179,8 +195,7 @@ export function AdminSettings() {
                                                 No movie libraries found
                                             </div>
                                         ) : (
-
-                                            availableLibraries.map(lib => {
+                                            availableLibraries.map((lib) => {
                                                 const isIncluded = includedLibraries.includes(lib.Id);
                                                 return (
                                                     <button
@@ -203,7 +218,6 @@ export function AdminSettings() {
                                                     </button>
                                                 );
                                             })
-
                                         )}
                                     </div>
                                 )}
@@ -218,8 +232,8 @@ export function AdminSettings() {
                                     {isSavingLibs && <Spinner />}
                                     Save
                                 </Button>
-                            </div>
-                        )}
+                            </CollapsibleContent>
+                        </Collapsible>
 
                         {needsRefresh && (
                             <div className="animate-in zoom-in-95 duration-300">

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import axios from "axios";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types/swiparr";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const searchParams = request.nextUrl.searchParams;
@@ -18,8 +19,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   if (!accessToken) {
     if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
-    accessToken = session.user.AccessToken;
-    deviceId = session.user.DeviceId;
+    const creds = await getEffectiveCredentials(session);
+    accessToken = creds.accessToken || "";
+    deviceId = creds.deviceId;
   } else if (session.isLoggedIn && session.user.AccessToken === accessToken) {
     deviceId = session.user.DeviceId;
   }
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     // Stream the image from Jellyfin to the Browser
-    const response = await axios.get(imageUrl, {
+    const response = await apiClient.get(imageUrl, {
       responseType: "arraybuffer", // Important for images
       headers: (accessToken && deviceId) 
         ? getAuthenticatedHeaders(accessToken, deviceId)

@@ -38,15 +38,7 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
             </Empty>
           </div>
         ) : (
-          <div className="pt-6 pb-22">
-            {matches?.map((movie: JellyfinItem) => (
-              <MovieListItem
-                key={movie.Id}
-                movie={{ ...movie, isMatch: true } as any}
-                onClick={() => openMovie(movie.Id)}
-                variant="condensed"
-              />
-            ))}
+          <>
             {matches?.length === 0 && (
               <div className="text-center text-muted-foreground text-sm py-8">
                 <Empty>
@@ -64,7 +56,17 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
                 </Empty>
               </div>
             )}
-          </div>
+            <div className="pt-6 pb-22">
+              {matches?.map((movie: JellyfinItem) => (
+                <MovieListItem
+                  key={movie.Id}
+                  movie={{ ...movie, isMatch: true } as any}
+                  onClick={() => openMovie(movie.Id)}
+                  variant="condensed"
+                />
+              ))}
+            </div>
+          </>
         )}
       </ScrollArea>
     </div>

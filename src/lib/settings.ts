@@ -4,6 +4,8 @@ import { getRuntimeConfig } from './runtime-config';
 
 export interface Settings {
   useWatchlist: boolean;
+  allowGuestLending: boolean;
+  hasDismissedGuestLendingAlert: boolean;
 }
 
 interface SettingsState {
@@ -16,6 +18,8 @@ const config = getRuntimeConfig();
 
 export const DEFAULT_SETTINGS: Settings = {
   useWatchlist: config.useWatchlist,
+  allowGuestLending: false,
+  hasDismissedGuestLendingAlert: false,
 };
 
 export const useSettingsStore = create<SettingsState>()(

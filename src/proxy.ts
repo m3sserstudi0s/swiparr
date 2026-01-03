@@ -16,13 +16,18 @@ export async function proxy(request: NextRequest) {
   // - /login
   // - /api/auth (so the login fetch works)
   // - /_next (static assets)
-  // - /favicon.ico
+  // - /favicon.ico, manifest.json, etc.
   if (
     pathname.startsWith("/login") || 
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/_next") ||
-    pathname.includes("favicon.ico")
+    pathname.includes("favicon.ico") ||
+    pathname.includes("manifest.json") ||
+    pathname === "/sw.js" ||
+    pathname.endsWith(".png") ||
+    pathname.endsWith(".svg") ||
+    pathname.endsWith(".ico")
   ) {
     return response;
   }
@@ -41,5 +46,5 @@ if (!session.isLoggedIn) {
 
 export const config = {
   // Apply this middleware to everything except static assets
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json).*)"],
 };

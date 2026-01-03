@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
-import axios from "axios";
 import { SessionData } from "@/types/swiparr";
 import { db, likes, sessionMembers } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
@@ -17,8 +17,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
 
   try {
-    const jellyfinRes = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Items/${id}`), {
-      headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+    const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+
+    const jellyfinRes = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items/${id}`), {
+      headers: getAuthenticatedHeaders(accessToken!, deviceId!),
     });
 
     const item = jellyfinRes.data;

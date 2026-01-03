@@ -8,6 +8,7 @@ import { SessionData } from "@/types/swiparr";
 import { v4 as uuidv4 } from "uuid";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { isAdmin } from "@/lib/server/admin";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 
 
@@ -62,10 +63,14 @@ export async function POST(request: NextRequest) {
     // ACTION: CREATE
     if (body.action === "create") {
         const code = generateCode();
+        const allowLending = body.allowGuestLending === true;
+
         await db.insert(sessions).values({
             id: uuidv4(),
             code,
             hostUserId: session.user.Id,
+            hostAccessToken: allowLending ? session.user.AccessToken : null,
+            hostDeviceId: allowLending ? session.user.DeviceId : null,
         });
 
         // Register host as member
@@ -121,6 +126,8 @@ export async function GET() {
   
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
+  const { accessToken, userId: effectiveUserId } = await getEffectiveCredentials(session);
+
   let filters = session.soloFilters || null;
   if (session.sessionCode) {
     const currentSession = await db.query.sessions.findFirst({
@@ -132,8 +139,10 @@ export async function GET() {
   const response = { 
     code: session.sessionCode || null,
     userId: session.user.Id,
+    effectiveUserId,
+    isGuest: !!session.user.isGuest,
     isAdmin: await isAdmin(session.user.Id, session.user.Name),
-    accessToken: session.user.AccessToken,
+    accessToken,
     filters
   };
 

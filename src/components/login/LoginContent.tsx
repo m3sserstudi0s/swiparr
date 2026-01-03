@@ -1,23 +1,48 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ShieldCheck, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, ArrowRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [guestSessionCode, setGuestSessionCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [wasMadeAdmin, setWasMadeAdmin] = useState(false);
   const searchParams = useSearchParams();
+  const sessionCodeParam = useMemo(() => {
+    const directJoin = searchParams.get("join");
+    if (directJoin) return directJoin;
+
+    const callbackUrl = searchParams.get("callbackUrl");
+    if (callbackUrl) {
+      try {
+        const url = new URL(callbackUrl, "http://n");
+        return url.searchParams.get("join");
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [searchParams]);
+
+  const [activeTab, setActiveTab] = useState<string>("login");
+
+  useEffect(() => {
+    if (sessionCodeParam) {
+      setActiveTab("join");
+    }
+  }, [sessionCodeParam]);
 
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
@@ -79,6 +104,36 @@ export default function LoginContent() {
     });
   };
 
+  const handleGuestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = sessionCodeParam || guestSessionCode;
+    if (!guestName || !code) return;
+    setLoading(true);
+
+    const promise = async () => {
+      const res = await fetch("/api/auth/guest", {
+        method: "POST",
+        body: JSON.stringify({ username: guestName, sessionCode: code }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Guest login failed");
+      return data;
+    };
+
+    toast.promise(promise(), {
+      loading: "Joining as guest...",
+      success: (data) => {
+        window.location.href = "/";
+        return `Joined as ${data.user.Name}`;
+      },
+      error: (err) => {
+        setLoading(false);
+        return err.message;
+      },
+    });
+  };
+
   const continueToApp = () => {
     const callbackUrl = searchParams.get("callbackUrl") || "/";
     window.location.href = callbackUrl;
@@ -113,15 +168,12 @@ export default function LoginContent() {
 
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
-        <Image src={logo} alt="Logo" className="size-20 mx-auto mb-4"/>
+        <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2"/>
         <CardTitle className="text-center text-2xl font-bold text-primary font-mono">
           Swiparr
         </CardTitle>
-        <p className="text-center text-sm text-muted-foreground">
-          {qcCode ? "Authorize this code in Jellyfin" : "Enter your Jellyfin credentials"}
-        </p>
       </CardHeader>
-      <CardContent className="h-60">
+      <CardContent className="h-70">
         {wasMadeAdmin ? (
           <div className="flex flex-col space-y-4 h-full">
             <Alert className="bg-primary/10 border-primary/20">
@@ -131,76 +183,117 @@ export default function LoginContent() {
                 You are the first user and have been set as the administrator.
               </AlertDescription>
             </Alert>
-            <div className="flex-1 flex items-end">
+            <div className="flex-1 flex items-end pb-4">
               <Button onClick={continueToApp} className="w-full group">
                 Continue
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </div>
           </div>
-        ) : !qcCode ? (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <Input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="bg-muted border-input"
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-muted border-input"
-            />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Connecting..." : "Log in"}
-            </Button>
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full hover:bg-accent"
-              onClick={startQuickConnect}
-              disabled={loading}
-            >
-              Quick Connect
-            </Button>
-          </form>
         ) : (
-          <div className="flex flex-col items-center space-y-6 py-4">
-            <div className="relative group">
-              <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-6 rounded-lg border border-primary/20">
-                {qcCode}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={copyToClipboard}
-                  title="Copy to clipboard"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 " />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            <p className="text-xs text-center text-muted-foreground">
-              Go to <span className="text-foreground">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setQcCode(null)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Cancel
-            </Button>
-          </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="login">Log in</TabsTrigger>
+              <TabsTrigger value="join">Guest</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login" className="space-y-4">
+              {qcCode ? (
+                <div className="flex flex-col items-center space-y-6 py-4">
+                  <div className="relative group">
+                    <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
+                      {qcCode}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="ml-2"
+                        onClick={copyToClipboard}
+                        title="Copy to clipboard"
+                      >
+                        {copied ? (
+                          <Check className="h-4 w-4 " />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Go to <span className="text-foreground font-semibold">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setQcCode(null)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <Input
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="bg-muted border-input"
+                  />
+                  <Input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-muted border-input"
+                  />
+                  <Button type="submit" className="w-full mt-2" disabled={loading}>
+                    {loading ? "Connecting..." : "Log in"}
+                  </Button>
+                  <div className="relative py-1">
+                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+                    <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full hover:bg-accent h-9"
+                    onClick={startQuickConnect}
+                    disabled={loading}
+                  >
+                    Quick Connect
+                  </Button>
+                </form>
+              )}
+            </TabsContent>
+
+            <TabsContent value="join" className="space-y-4">
+              <form onSubmit={handleGuestLogin} className="space-y-3">
+                <Input
+                  placeholder="Display name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="bg-muted border-input"
+                  autoFocus
+                />
+                {!sessionCodeParam && (
+                  <Input
+                    placeholder="Session Code"
+                    value={guestSessionCode}
+                    onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
+                    className="bg-muted border-input font-mono tracking-widest uppercase"
+                    maxLength={4}
+                  />
+                )}
+                <div className="pt-2">
+                  <Button type="submit" className="w-full" disabled={loading || !guestName || (!sessionCodeParam && !guestSessionCode)}>
+                    {loading ? "Joining..." : "Join as Guest"}
+                  </Button>
+                </div>
+                <p className="text-xs text-center text-muted-foreground pt-2">
+                  Joining as a guest lets you swipe in a session without a Jellyfin account.
+                </p>
+              </form>
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>

@@ -22,6 +22,13 @@
       "when": 1767352460173,
       "tag": "0002_stormy_oracle",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1767463494387,
+      "tag": "0003_nappy_longshot",
+      "breakpoints": true
     }
   ]
 }

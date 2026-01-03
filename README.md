@@ -15,9 +15,24 @@ Open source and free forever.
 - **Swipe discovery:** Quickly browse your Jellyfin library with a card-based interface.
 - **Sessions:** Create or join a session with friends to find common likes (matches!).
 - **Native Jellyfin integration:** Pulls directly from your Jellyfin server.
+- **Guest Mode:** Let friends join your session without needing their own Jellyfin account by "lending" your connection temporarily.
 - **Mobile friendly:** Optimized for use on your phone.
 
 **Tip**: Download as a web app on mobile, and use the keyboard shortcuts on desktop.
+
+To make your final choice, use the **Random button** to pick a movie from your matches!
+
+## Guest Access & Account Lending
+
+Swiparr includes a **Guest Mode** designed for situations where some participants don't have a Jellyfin account. 
+
+### How it works:
+1. **Enable Lending**: A host (with a Jellyfin account) enables "Guest lending" in their Swiparr settings.
+2. **Proxy Connection**: When guests join that host's session, Swiparr uses the host's credentials to fetch movie data and images from Jellyfin.
+3. **Identity**: Guests choose a display name and get a unique ID. Their likes and matches are tracked separately from the host.
+4. **Security**: Guests can only swipe within the session. They cannot modify the host's Jellyfin account, favorites, or settings.
+
+This makes it easy to host movie nights with guests who aren't part of your home lab ecosystem.
 
 ## Quick start
 
@@ -75,6 +90,7 @@ docker run -d \
 | `USE_SECURE_COOKIES` | Set to `true` if you are accessing Swiparr over HTTPS. | `false` |
 | `DATABASE_URL` | Path to the SQLite database file. | `file:/app/data/swiparr.db` |
 | `PORT` | The port the container listens on. | `4321` |
+| `HOSTNAME` | The hostname the server binds to. | `0.0.0.0` |
 | `ADMIN_USERNAME` | Optional. A Jellyfin username that will always have admin privileges. | - |
 
 > **Note:** Watchlist is not a feature in vanilla Jellyfin, but available either through the Jellyfin Enhanced plugin or Kefwin Tweaks script.

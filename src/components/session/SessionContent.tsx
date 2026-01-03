@@ -2,26 +2,29 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Users } from "lucide-react";
+import { Info, Users, X } from "lucide-react";
 import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
 import { useUpdates } from "@/lib/use-updates";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
-
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { JellyfinItem } from "@/types/swiparr";
 import { SessionHeader } from "./SessionHeader";
 import { SessionCodeSection } from "./SessionCodeSection";
 import { MatchesList } from "./MatchesList";
+import { SessionAlert } from "./SessionAlert";
 
 import { useHotkeys } from "react-hotkeys-hook";
+import { useSettings } from "@/lib/settings";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
     const [isOpen, setIsOpen] = useState(false);
+    const { settings } = useSettings();
 
     useHotkeys("m, c", () => setIsOpen(prev => !prev), []);
     const { openMovie } = useMovieDetail();
@@ -55,7 +58,10 @@ export default function SessionContent() {
 
     // -- 3. MUTATIONS --
     const createSession = useMutation({
-        mutationFn: async () => axios.post("/api/session", { action: "create" }),
+        mutationFn: async () => axios.post("/api/session", {
+            action: "create",
+            allowGuestLending: settings.allowGuestLending
+        }),
         onSuccess: () => {
             mutate("/api/session");
             queryClient.invalidateQueries({ queryKey: ["deck"] });
@@ -74,6 +80,13 @@ export default function SessionContent() {
     const leaveSession = useMutation({
         mutationFn: async () => axios.delete("/api/session"),
         onSuccess: () => {
+            if (sessionStatus?.isGuest) {
+                // Guests are logged out when leaving
+                axios.post("/api/auth/logout").then(() => {
+                    window.location.href = "/login";
+                });
+                return;
+            }
             mutate("/api/session");
             if (activeCode) {
                 mutate(["/api/session/matches", activeCode], []);
@@ -146,7 +159,10 @@ export default function SessionContent() {
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-md w-full px-4">
                 <SessionHeader activeCode={activeCode} members={members} />
-                <div className="space-y-6 px-1 mt-4">
+                <div className="-my-10 px-1">
+                    <SessionAlert />
+                </div>
+                <div className="space-y-6 px-1 mt-10">
                     <SessionCodeSection
                         activeCode={activeCode}
                         inputCode={inputCode}
@@ -164,10 +180,13 @@ export default function SessionContent() {
                         matches={matches}
                         openMovie={openMovie}
                     />
+                    <div>
+
+                    </div>
                 </div>
-                <RandomMovieButton 
-                    items={matches} 
-                    className="absolute bottom-10 right-10" 
+                <RandomMovieButton
+                    items={matches}
+                    className="absolute bottom-10 right-10"
                 />
             </SheetContent>
         </Sheet>

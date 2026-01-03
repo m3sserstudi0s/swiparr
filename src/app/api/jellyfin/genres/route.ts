@@ -3,8 +3,8 @@ import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
-import axios from "axios";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -12,13 +12,15 @@ export async function GET(request: NextRequest) {
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const res = await axios.get(getJellyfinUrl(`/Genres`), {
+        const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+
+        const res = await apiClient.get(getJellyfinUrl(`/Genres`), {
             params: {
                 Recursive: true,
                 IncludeItemTypes: "Movie",
-                UserId: session.user.Id,
+                UserId: userId,
             },
-            headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+            headers: getAuthenticatedHeaders(accessToken!, deviceId!),
         });
 
         return NextResponse.json(res.data.Items || []);

@@ -4,9 +4,9 @@ import { sessionOptions } from "@/lib/session";
 import { db, likes, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, desc } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
-import axios from "axios";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { SessionData } from "@/types/swiparr";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
   if (!session.sessionCode) return NextResponse.json([]);
 
   try {
+    const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+
     const matches = await db.select().from(likes)
       .where(and(
         eq(likes.sessionCode, session.sessionCode as string),
@@ -28,12 +30,12 @@ export async function GET(request: NextRequest) {
 
     const ids = matches.map((m: Like) => m.jellyfinItemId).join(",");
     
-    const jellyfinRes = await axios.get(getJellyfinUrl(`/Items`), {
+    const jellyfinRes = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
       params: {
         Ids: ids,
         Fields: "ProductionYear,CommunityRating,Overview",
       },
-      headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+      headers: getAuthenticatedHeaders(accessToken!, deviceId!),
     });
 
     const items = jellyfinRes.data.Items;

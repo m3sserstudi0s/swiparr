@@ -52,12 +52,13 @@ export function MovieDetailView({ movieId, onClose }: Props) {
   const { data: sessionData, isLoading: isSessionLoading } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
-      const res = await axios.get<{ code: string | null; userId: string }>("/api/session");
+      const res = await axios.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
       return res.data;
     },
   });
 
   const isLoading = isMovieLoading || isSessionLoading;
+  const isGuest = sessionData?.isGuest || false;
 
   const queryClient = useQueryClient();
   const { settings } = useSettings();
@@ -91,6 +92,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
 
   const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
     mutationFn: async () => {
+      if (isGuest) return;
       await axios.post("/api/user/watchlist", {
         itemId: movie?.Id,
         action: isInList ? "remove" : "add",
@@ -103,6 +105,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
   });
 
   const handleToggleWatchlist = () => {
+    if (isGuest) return;
     const promise = toggleWatchlist();
     toast.promise(promise, {
       loading: "Updating...",
@@ -237,20 +240,22 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                       <Play className="w-4 h-4 mr-2 fill-current" /> Play
                     </Button>
                   </Link>
-                  <Button
-                    className="w-32"
-                    size="lg"
-                    variant={isInList ? "outline" : "secondary"}
-                    onClick={() => handleToggleWatchlist()}
-                    disabled={isTogglingWatchlist}
-                  >
-                    {isInList ? (
-                      <Minus className="w-4 h-4 mr-2" />
-                    ) : (
-                      <Plus className="w-4 h-4 mr-2" />
-                    )}
-                    {useWatchlist ? "Watchlist" : "Favorite"}
-                  </Button>
+                  {!isGuest && (
+                    <Button
+                      className="w-32"
+                      size="lg"
+                      variant={isInList ? "outline" : "secondary"}
+                      onClick={() => handleToggleWatchlist()}
+                      disabled={isTogglingWatchlist}
+                    >
+                      {isInList ? (
+                        <Minus className="w-4 h-4 mr-2" />
+                      ) : (
+                        <Plus className="w-4 h-4 mr-2" />
+                      )}
+                      {useWatchlist ? "Watchlist" : "Favorite"}
+                    </Button>
+                  )}
                   {movie.likedBy?.some(l => l.userId === sessionData?.userId) && <Button
                     variant="outline"
                     size="lg"

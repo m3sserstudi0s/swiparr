@@ -1,45 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
-import axios from "axios";
 import { SessionData } from "@/types/swiparr";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
+  if (session.user.isGuest) {
+    return NextResponse.json({ error: "Guests cannot modify watchlist/favorites" }, { status: 403 });
+  }
+
   const { itemId, action, useWatchlist } = await request.json();
 
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
 
   try {
-    const userId = session.user.Id;
-    const token = session.user.AccessToken;
-    const deviceId = session.user.DeviceId;
+    const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
 
     if (useWatchlist) {
       // Kefwin Tweaks / Jellyfin Enhanced Watchlist
       // This uses the Likes property via the Item Rating endpoint
       // POST /Users/{userId}/Items/{itemId}/Rating?Likes=true
       const url = getJellyfinUrl(`/Users/${userId}/Items/${itemId}/Rating`);
-      await axios.post(
+      await apiClient.post(
         url,
         null,
         { 
             params: { Likes: action === "add" },
-            headers: getAuthenticatedHeaders(token, deviceId)
+            headers: getAuthenticatedHeaders(accessToken!, deviceId!)
         }
       );
     } else {
       // Standard Favorites
       const url = getJellyfinUrl(`/Users/${userId}/FavoriteItems/${itemId}`);
       if (action === "add") {
-        await axios.post(url, null, { headers: getAuthenticatedHeaders(token, deviceId) });
+        await apiClient.post(url, null, { headers: getAuthenticatedHeaders(accessToken!, deviceId!) });
       } else {
-        await axios.delete(url, { headers: getAuthenticatedHeaders(token, deviceId) });
+        await apiClient.delete(url, { headers: getAuthenticatedHeaders(accessToken!, deviceId!) });
       }
     }
 

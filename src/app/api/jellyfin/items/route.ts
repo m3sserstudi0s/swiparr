@@ -10,6 +10,7 @@ import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyf
 import { SessionData, JellyfinItem } from "@/types/swiparr";
 import { shuffleWithSeed } from "@/lib/utils";
 import { getIncludedLibraries } from "@/lib/server/admin";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest) {
 
@@ -18,6 +19,8 @@ export async function GET(request: NextRequest) {
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
+        const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+
         // 0. Get admin-defined libraries
         const includedLibraries = await getIncludedLibraries();
 
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
                 : undefined;
 
             const fetchAllForLibrary = async (parentId?: string) => {
-                const res = await apiClient.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
                     params: {
                         IncludeItemTypes: "Movie",
                         Recursive: true,
@@ -72,7 +75,7 @@ export async function GET(request: NextRequest) {
                         Years: yearsStr,
                         MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
                     },
-                    headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+                    headers: getAuthenticatedHeaders(accessToken!, deviceId!),
                 });
                 return res.data.Items || [];
             };
@@ -97,12 +100,12 @@ export async function GET(request: NextRequest) {
  
             if (targetIds.length > 0) {
                 // Fetch full data for these specific IDs
-                const detailRes = await apiClient.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                const detailRes = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
                     params: {
                         Ids: targetIds.join(","),
                         Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
                     },
-                    headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+                    headers: getAuthenticatedHeaders(accessToken!, deviceId!),
                 });
                 // Sort them back to the shuffled order because Jellyfin might return them in different order
                 const detailItems = detailRes.data.Items || [];
@@ -116,7 +119,7 @@ export async function GET(request: NextRequest) {
                 : undefined;
  
             const fetchRandomForLibrary = async (parentId?: string) => {
-                const res = await apiClient.get(getJellyfinUrl(`/Users/${session.user.Id}/Items`), {
+                const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
                     params: {
                         IncludeItemTypes: "Movie",
                         Recursive: true,
@@ -129,7 +132,7 @@ export async function GET(request: NextRequest) {
                         Years: soloYearsStr,
                         MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
                     },
-                    headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+                    headers: getAuthenticatedHeaders(accessToken!, deviceId!),
                 });
                 return res.data.Items || [];
             };

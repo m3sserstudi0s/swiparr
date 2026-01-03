@@ -3,8 +3,8 @@ import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
-import axios from "axios";
-import { getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -15,8 +15,10 @@ export async function GET() {
     }
 
     try {
-        const res = await axios.get(getJellyfinUrl(`/Users/${session.user.Id}/Views`), {
-            headers: getAuthenticatedHeaders(session.user.AccessToken, session.user.DeviceId),
+        const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+
+        const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Views`), {
+            headers: getAuthenticatedHeaders(accessToken!, deviceId!),
         });
 
         // Filter to only include Movie libraries

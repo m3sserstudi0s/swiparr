@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, Plus, Share2, LogOut } from "lucide-react";
+import { UserPlus, Plus, Share2, LogOut, Info, X, Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface SessionCodeSectionProps {
   activeCode?: string;
@@ -27,73 +29,102 @@ export function SessionCodeSection({
   isCreating,
   isLeaving,
 }: SessionCodeSectionProps) {
+
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    if (activeCode) {
+      await navigator.clipboard.writeText(activeCode);
+      setCopied(true);
+      toast.success("Code copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col justify-between h-44">
-      <div className="h-6 flex items-center justify-center mb-2">
-        {!activeCode ? (
-          <span className="text-sm text-muted-foreground">
-            Enter code or create session
-          </span>
-        ) : (
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">
-            Session code
-          </span>
-        )}
-      </div>
-      <div className="flex items-center justify-center mb-4 h-12">
-        {!activeCode ? (
-          <Input
-            placeholder="Code"
-            value={inputCode}
-            onChange={(e) => setInputCode(e.target.value.toUpperCase())}
-            className="bg-background border-input font-mono tracking-widest text-center uppercase h-10 w-full"
-            maxLength={4}
-          />
-        ) : (
-          <div className="text-4xl font-black font-mono tracking-[0.2em] text-foreground">
-            {activeCode}
-          </div>
-        )}
-      </div>
-      <div className="flex gap-3">
-        {!activeCode ? (
-          <>
-            <Button
-              onClick={() => handleJoinSession(inputCode)}
-              className="flex-1 h-10"
-              variant="default"
-              disabled={inputCode.length !== 4 || isJoining}
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Join
-            </Button>
-            <Button
-              onClick={handleCreateSession}
-              variant="outline"
-              className="flex-1 h-10"
-              disabled={isCreating}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button onClick={handleShare} className="flex-1 h-10" variant="default">
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </Button>
-            <Button
-              onClick={handleLeaveSession}
-              variant="outline"
-              className="flex-1 h-10"
-              disabled={isLeaving}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Leave
-            </Button>
-          </>
-        )}
+    <div className="space-y-4">
+      <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col justify-between h-44">
+        <div className="h-6 flex items-center justify-center mb-2">
+          {!activeCode ? (
+            <span className="text-sm text-muted-foreground">
+              Enter code or create session
+            </span>
+          ) : (
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">
+              Session code
+            </span>
+          )}
+        </div>
+        <div className="flex items-center justify-center mb-4 h-12">
+          {!activeCode ? (
+            <Input
+              placeholder="Code"
+              value={inputCode}
+              onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+              className="bg-background border-input font-mono tracking-widest text-center uppercase h-10 w-full"
+              maxLength={4}
+            />
+          ) : (
+            <div className="flex flex-row items-center justify-center">
+              <div className="text-4xl font-black font-mono tracking-[0.2em] text-foreground">
+                {activeCode}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="ml-2"
+                onClick={copyToClipboard}
+                title="Copy to clipboard"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 " />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-3">
+          {!activeCode ? (
+            <>
+              <Button
+                onClick={() => handleJoinSession(inputCode)}
+                className="flex-1 h-10"
+                variant="default"
+                disabled={inputCode.length !== 4 || isJoining}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Join
+              </Button>
+              <Button
+                onClick={handleCreateSession}
+                variant="outline"
+                className="flex-1 h-10"
+                disabled={isCreating}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={handleShare} className="flex-1 h-10" variant="default">
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+              <Button
+                onClick={handleLeaveSession}
+                variant="outline"
+                className="flex-1 h-10"
+                disabled={isLeaving}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Leave
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
