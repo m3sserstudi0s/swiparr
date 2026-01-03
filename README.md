@@ -96,21 +96,6 @@ If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy, Nginx 
 3. Forward other standard headers: `X-Forwarded-For`, `X-Forwarded-Proto`.
 4. Swiparr runs on port `4321` by default.
 
-#### Nginx Proxy Manager (NPM) setup:
-- **Scheme:** http
-- **Forward Hostname:** swiparr (or your container name/IP)
-- **Forward Port:** 4321
-- **Websockets Support:** Enabled (required for match updates)
-- **Block Common Exploits:** Should be compatible, but try disabling if you encounter issues.
-- **Advanced Tab (Custom Nginx Configuration):**
-  If you still have issues logging in, try adding this to the Advanced tab:
-  ```nginx
-  proxy_set_header Host $host;
-  proxy_set_header X-Forwarded-Host $host;
-  proxy_set_header X-Forwarded-Proto $scheme;
-  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-  ```
-
 ### Internal vs public Jellyfin URL
 - **`JELLYFIN_URL`**: Internal URL used by the Swiparr backend to communicate with Jellyfin. 
   - If Jellyfin is in the same Docker network, use the container name: `http://jellyfin:8096`.
