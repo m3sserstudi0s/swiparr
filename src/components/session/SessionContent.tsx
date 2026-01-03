@@ -157,12 +157,12 @@ export default function SessionContent() {
                     <Users className="size-5" />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="sm:max-w-md w-full px-4">
+            <SheetContent side="left" className="sm:max-w-md w-full px-4 gap-2">
                 <SessionHeader activeCode={activeCode} members={members} />
-                <div className="-my-10 px-1">
+                <div className="px-1">
                     <SessionAlert />
                 </div>
-                <div className="space-y-6 px-1 mt-10">
+                <div className="space-y-6 px-1">
                     <SessionCodeSection
                         activeCode={activeCode}
                         inputCode={inputCode}

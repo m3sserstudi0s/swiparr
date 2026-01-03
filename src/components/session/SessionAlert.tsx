@@ -17,7 +17,7 @@ export function SessionAlert() {
 
     if (isGuest) {
         return (
-            <Alert className="py-1.75 px-4 h-18">
+            <Alert className="py-1.75 px-4 h-17 gap-y-1! gap-x-2!">
                 <AlertCircleIcon className="size-4 text-primary" />
                 <AlertTitle>Guest Session</AlertTitle>
                 <AlertDescription className="text-xs text-pretty">
@@ -29,11 +29,11 @@ export function SessionAlert() {
 
     if (!settings.hasDismissedGuestLendingAlert && !settings.allowGuestLending && !isGuest) {
         return (
-            <Alert className="relative py-1.75 px-3 h-18">
+            <Alert className="relative py-1.75 px-3 h-17 gap-y-1! gap-x-2!">
                 <Info className="size-4 text-primary" />
                 <AlertTitle>Guest Lending</AlertTitle>
                 <AlertDescription className="text-xs">
-                    Allow others to join your session without a Jellyfin account by enabling Guest Lending in Settings
+                    Allow others to join your session without a Jellyfin account by enabling Guest Lending in Settings.
                 </AlertDescription>
                 <Button
                     variant="ghost"
@@ -47,5 +47,5 @@ export function SessionAlert() {
         )
     }
 
-    return <div className="h-18"/>;
+    return <div className="h-17"/>;
 }

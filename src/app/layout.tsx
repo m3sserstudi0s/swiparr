@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Google_Sans_Flex } from 'next/font/google'
+import { Google_Sans_Flex, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { Toaster } from "@/components/ui/sonner"
@@ -10,7 +10,14 @@ export const dynamic = 'force-dynamic';
 const sansFlex = Google_Sans_Flex({ 
   subsets: ['latin'],
   display: 'swap',
-  adjustFontFallback: false 
+  adjustFontFallback: false,
+  variable: '--font-sans',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
 })
 
 export const metadata: Metadata = {
@@ -48,7 +55,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${sansFlex.className} min-h-screen`}>
+      <body className={`${sansFlex.variable} ${jetbrainsMono.variable} min-h-screen`}>
 
         <Providers
           attribute="class"

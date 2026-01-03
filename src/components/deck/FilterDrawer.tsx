@@ -144,7 +144,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         </DrawerHeader>
 
         <ScrollArea className="flex-1 h-[50vh]">
-          <div className="flex flex-col gap-8 py-6 pb-12 px-6">
+          <div className="flex flex-col gap-8 pt-8 pb-12 px-6">
 
             {/* Rating Section */}
             <div className="space-y-4">

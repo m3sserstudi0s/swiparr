@@ -11,6 +11,7 @@ import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
+import { Label } from "../ui/label";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
@@ -169,7 +170,7 @@ export default function LoginContent() {
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
         <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2"/>
-        <CardTitle className="text-center text-2xl font-bold text-primary font-mono">
+        <CardTitle className="text-center text-2xl font-bold text-primary">
           Swiparr
         </CardTitle>
       </CardHeader>
@@ -274,9 +275,10 @@ export default function LoginContent() {
                   className="bg-muted border-input"
                   autoFocus
                 />
+                <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
                 {!sessionCodeParam && (
                   <Input
-                    placeholder="Session Code"
+                    id="session-code"
                     value={guestSessionCode}
                     onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
                     className="bg-muted border-input font-mono tracking-widest uppercase"

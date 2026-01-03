@@ -55,7 +55,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                         </div>
                         <span>User guide</span>
                     </div>
-                    <FileText className="size-3 text-muted-foreground" />
+                    <FileText className="size-4 text-muted-foreground" />
                 </Button>
 
                 <Button
@@ -70,7 +70,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                             </div>
                             <span>Source code</span>
                         </div>
-                        <ExternalLink className="size-3 text-muted-foreground" />
+                        <ExternalLink className="size-4 text-muted-foreground" />
                     </a>
                 </Button>
 
@@ -87,7 +87,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                             </div>
                             <div className="flex flex-col items-start">
                                 <span>Version</span>
-                                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{currentVersion}</span>
+                                <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">{currentVersion}</span>
                             </div>
                         </div>
                         {isCheckingVersion ? (

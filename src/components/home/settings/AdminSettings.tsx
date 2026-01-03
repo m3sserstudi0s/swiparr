@@ -244,7 +244,7 @@ export function AdminSettings() {
                                     onClick={handleRefresh}
                                 >
                                     <RefreshCw className="size-4" />
-                                    Refresh to apply
+                                    Reload to apply
                                 </Button>
                             </div>
                         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Moon, Bookmark, Star, Users, Info } from "lucide-react";
+import { Sun, Moon, Bookmark, Star, Users, Info, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { useTheme } from "next-themes";
@@ -93,7 +93,7 @@ export function GeneralSettings() {
                             size="sm"
                             className="w-26"
                         >
-                            <Users className="size-4" />
+                            {settings.allowGuestLending ? <Users className="size-4" /> : <UserX className="size-4" />}
                             {settings.allowGuestLending ? "Enabled" : "Disabled"}
                         </Toggle>
                     </div>

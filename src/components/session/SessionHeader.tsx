@@ -8,8 +8,8 @@ interface SessionHeaderProps {
 
 export function SessionHeader({ activeCode, members }: SessionHeaderProps) {
   return (
-    <SheetHeader>
-      <SheetTitle className="mb-4 flex items-center gap-2 h-10">
+    <SheetHeader className="pb-0">
+      <SheetTitle className="flex items-center gap-2 h-10">
         {activeCode ? (
           <>
             Session
