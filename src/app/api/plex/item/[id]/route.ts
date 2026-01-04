@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { SessionData, PlexMetadata, plexToUnifiedItem } from "@/types/swiparr";
 import { db, likes, sessionMembers } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getEffectiveCredentials, GuestSessionExpiredError } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
@@ -59,6 +59,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(item);
   } catch (error) {
+    if (error instanceof GuestSessionExpiredError) {
+      session.destroy();
+      return NextResponse.json({ error: "Session expired", redirect: "/login" }, { status: 401 });
+    }
     console.error("Fetch Details Error", error);
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

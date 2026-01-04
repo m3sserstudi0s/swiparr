@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
 import { getPlexUrl, getPlexHeaders, apiClient } from "@/lib/plex/api";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getEffectiveCredentials, GuestSessionExpiredError } from "@/lib/server/auth-resolver";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -34,6 +34,10 @@ export async function GET() {
         
         return NextResponse.json(libraries);
     } catch (error) {
+        if (error instanceof GuestSessionExpiredError) {
+            session.destroy();
+            return NextResponse.json({ error: "Session expired", redirect: "/login" }, { status: 401 });
+        }
         console.error("Fetch Libraries Error", error);
         return NextResponse.json({ error: "Failed to fetch libraries" }, { status: 500 });
     }

@@ -5,7 +5,7 @@ import { getJellyfinUrl, getAuthenticatedHeaders, apiClient as jellyfinApiClient
 import { getPlexUrl, getPlexHeaders, apiClient as plexApiClient } from "@/lib/plex/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getEffectiveCredentials, GuestSessionExpiredError } from "@/lib/server/auth-resolver";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function POST(request: NextRequest) {
@@ -67,6 +67,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof GuestSessionExpiredError) {
+      session.destroy();
+      return NextResponse.json({ error: "Session expired", redirect: "/login" }, { status: 401 });
+    }
     console.error("Watchlist/Favorite Toggle Error", error);
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }

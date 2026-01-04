@@ -10,7 +10,7 @@ import { getPlexUrl, getPlexHeaders, apiClient } from "@/lib/plex/api";
 import { SessionData, PlexMetadata, plexToUnifiedItem, JellyfinItem } from "@/types/swiparr";
 import { shuffleWithSeed } from "@/lib/utils";
 import { getIncludedLibraries } from "@/lib/server/admin";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getEffectiveCredentials, GuestSessionExpiredError } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest) {
 
@@ -203,6 +203,11 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(items);
     } catch (error) {
+        if (error instanceof GuestSessionExpiredError) {
+            // Clear the guest's session and tell frontend to redirect
+            session.destroy();
+            return NextResponse.json({ error: "Session expired", redirect: "/login" }, { status: 401 });
+        }
         console.error("Fetch Items Error", error);
         return NextResponse.json({ error: "Failed to fetch deck" }, { status: 500 });
     }

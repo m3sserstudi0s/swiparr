@@ -41,7 +41,36 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
-        // Register member
+        // Guests can only join sessions with guest lending enabled
+        if (session.user.isGuest && !existingSession.hostAccessToken) {
+            return NextResponse.json({ error: "This session does not allow guests" }, { status: 403 });
+        }
+
+        // If already in a different session, leave it first
+        if (session.sessionCode && session.sessionCode !== code) {
+            const oldCode = session.sessionCode;
+            
+            // Remove from old session
+            await db.delete(sessionMembers).where(
+                and(
+                    eq(sessionMembers.sessionCode, oldCode),
+                    eq(sessionMembers.jellyfinUserId, session.user.Id)
+                )
+            );
+
+            // Check if old session is now empty
+            const remainingMembers = await db.query.sessionMembers.findMany({
+                where: eq(sessionMembers.sessionCode, oldCode),
+            });
+
+            if (remainingMembers.length === 0) {
+                await db.delete(sessions).where(eq(sessions.code, oldCode));
+            } else {
+                events.emit(EVENT_TYPES.SESSION_UPDATED, oldCode);
+            }
+        }
+
+        // Register member in new session
         try {
             await db.insert(sessionMembers).values({
                 sessionCode: code,
@@ -107,6 +136,14 @@ export async function PATCH(request: NextRequest) {
             where: eq(sessions.code, session.sessionCode)
         });
 
+        console.log("[Session PATCH] Guest lending toggle:", {
+            allowGuestLending: body.allowGuestLending,
+            sessionCode: session.sessionCode,
+            userId: session.user.Id,
+            hostUserId: currentSession?.hostUserId,
+            hasAccessToken: !!session.user.AccessToken
+        });
+
         // Only the host can toggle guest lending
         if (currentSession && currentSession.hostUserId === session.user.Id) {
             await db.update(sessions)
@@ -116,6 +153,7 @@ export async function PATCH(request: NextRequest) {
                 })
                 .where(eq(sessions.code, session.sessionCode));
 
+            console.log("[Session PATCH] Updated hostAccessToken:", body.allowGuestLending ? "set" : "cleared");
             return NextResponse.json({ success: true });
         } else {
             return NextResponse.json({ error: "Only the host can change guest lending" }, { status: 403 });

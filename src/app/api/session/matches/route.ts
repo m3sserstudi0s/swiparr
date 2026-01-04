@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient as jellyfinApiClient } from "@/lib/jellyfin/api";
 import { getPlexUrl, getPlexHeaders, apiClient as plexApiClient } from "@/lib/plex/api";
 import { SessionData, plexToUnifiedItem } from "@/types/swiparr";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getEffectiveCredentials, GuestSessionExpiredError } from "@/lib/server/auth-resolver";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET(request: NextRequest) {
@@ -95,6 +95,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(finalItems);
 
   } catch (error) {
+    if (error instanceof GuestSessionExpiredError) {
+      session.destroy();
+      return NextResponse.json({ error: "Session expired", redirect: "/login" }, { status: 401 });
+    }
     console.error("Error fetching matches", error);
     return NextResponse.json([], { status: 500 });
   }

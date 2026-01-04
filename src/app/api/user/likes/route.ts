@@ -8,7 +8,7 @@ import { getJellyfinUrl, getAuthenticatedHeaders, apiClient as jellyfinApiClient
 import { getPlexUrl, getPlexHeaders, apiClient as plexApiClient } from "@/lib/plex/api";
 import { SessionData, type JellyfinItem, type MergedLike, plexToUnifiedItem } from "@/types/swiparr";
 import { events, EVENT_TYPES } from "@/lib/events";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getEffectiveCredentials, GuestSessionExpiredError } from "@/lib/server/auth-resolver";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET(request: NextRequest) {
@@ -117,6 +117,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(merged);
   } catch (error) {
+    if (error instanceof GuestSessionExpiredError) {
+      session.destroy();
+      return NextResponse.json({ error: "Session expired", redirect: "/login" }, { status: 401 });
+    }
     console.error("Fetch User Likes Error", error);
     return NextResponse.json([], { status: 500 });
   }

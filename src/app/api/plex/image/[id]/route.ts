@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { getPlexUrl, getPlexHeaders, apiClient } from "@/lib/plex/api";
 import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types/swiparr";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getEffectiveCredentials, GuestSessionExpiredError } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const searchParams = request.nextUrl.searchParams;
@@ -17,8 +17,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   if (!accessToken) {
     if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
-    const creds = await getEffectiveCredentials(session);
-    accessToken = creds.accessToken || "";
+    try {
+      const creds = await getEffectiveCredentials(session);
+      accessToken = creds.accessToken || "";
+    } catch (error) {
+      if (error instanceof GuestSessionExpiredError) {
+        session.destroy();
+        return new NextResponse("Session expired", { status: 401 });
+      }
+      throw error;
+    }
   }
 
   const { id } = await params;

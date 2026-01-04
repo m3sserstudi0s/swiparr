@@ -104,7 +104,7 @@ export default function SessionContent() {
         toast.promise(joinSession.mutateAsync(code), {
             loading: "Joining session...",
             success: "Connected!",
-            error: "Invalid Code",
+            error: (err) => err?.response?.data?.error || "Invalid Code",
         });
     };
 
@@ -119,9 +119,12 @@ export default function SessionContent() {
     // -- 4. AUTO-JOIN LOGIC --
     useEffect(() => {
         const joinParam = searchParams.get("join");
-        if (joinParam && isSuccess && !activeCode) {
-            setIsOpen(true);
-            handleJoinSession(joinParam);
+        if (joinParam && isSuccess) {
+            // If not in any session, or if the join code differs from current session
+            if (!activeCode || activeCode.toUpperCase() !== joinParam.toUpperCase()) {
+                setIsOpen(true);
+                handleJoinSession(joinParam);
+            }
         }
     }, [searchParams, isSuccess, activeCode]);
 
