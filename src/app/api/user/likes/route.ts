@@ -4,10 +4,12 @@ import { sessionOptions } from "@/lib/session";
 import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
-import { SessionData, type JellyfinItem, type MergedLike } from "@/types/swiparr";
+import { getJellyfinUrl, getAuthenticatedHeaders, apiClient as jellyfinApiClient } from "@/lib/jellyfin/api";
+import { getPlexUrl, getPlexHeaders, apiClient as plexApiClient } from "@/lib/plex/api";
+import { SessionData, type JellyfinItem, type MergedLike, plexToUnifiedItem } from "@/types/swiparr";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -20,6 +22,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const { accessToken, deviceId } = await getEffectiveCredentials(session);
+    const config = getRuntimeConfig();
+    const isPlex = config.backend === 'plex';
 
     const conditions = [eq(likesTable.jellyfinUserId, session.user.Id)];
 
@@ -35,16 +39,33 @@ export async function GET(request: NextRequest) {
 
     if (likesResult.length === 0) return NextResponse.json([]);
 
-    const ids = likesResult.map((l: Like) => l.jellyfinItemId).join(",");
-    const jellyfinRes = await apiClient.get(getJellyfinUrl(`/Items`), {
-        params: {
-            Ids: ids,
-            Fields: "ProductionYear,CommunityRating",
-        },
-        headers: getAuthenticatedHeaders(accessToken!, deviceId!),
-    });
+    let items: JellyfinItem[];
 
-    const items: JellyfinItem[] = jellyfinRes.data.Items;
+    if (isPlex) {
+      // Fetch each item individually from Plex
+      const itemPromises = likesResult.map(async (l: Like) => {
+        try {
+          const res = await plexApiClient.get(getPlexUrl(`/library/metadata/${l.jellyfinItemId}`), {
+            headers: getPlexHeaders(accessToken!),
+          });
+          const metadata = res.data.MediaContainer.Metadata?.[0];
+          return metadata ? plexToUnifiedItem(metadata) : null;
+        } catch {
+          return null;
+        }
+      });
+      items = (await Promise.all(itemPromises)).filter(Boolean) as JellyfinItem[];
+    } else {
+      const ids = likesResult.map((l: Like) => l.jellyfinItemId).join(",");
+      const jellyfinRes = await jellyfinApiClient.get(getJellyfinUrl(`/Items`), {
+          params: {
+              Ids: ids,
+              Fields: "ProductionYear,CommunityRating",
+          },
+          headers: getAuthenticatedHeaders(accessToken!, deviceId!),
+      });
+      items = jellyfinRes.data.Items;
+    }
 
     // Fetch all likes in this session for these items to identify contributors
     // Only if we have session items
