@@ -17,11 +17,11 @@ export function SessionAlert() {
 
     if (isGuest) {
         return (
-            <Alert className="py-1.75 px-4 h-17 gap-y-1! gap-x-2!">
+            <Alert className="py-1.75 px-3 h-17 gap-y-1! gap-x-2!">
                 <AlertCircleIcon className="size-4 text-primary" />
                 <AlertTitle>Guest Session</AlertTitle>
                 <AlertDescription className="text-xs text-pretty">
-                    You are currently joined as a guest. Some features are unavailable.
+                    You are currently joined as a guest. Some features are unavailable due to the account lending.
                 </AlertDescription>
             </Alert>
         )

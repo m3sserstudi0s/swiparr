@@ -56,6 +56,16 @@ export async function GET(request: NextRequest) {
                 }
             };
 
+            const onSettingsUpdate = (payload: { sessionCode: string; userName: string; settings: any }) => {
+                if (!closed && session.sessionCode === payload.sessionCode) {
+                    try {
+                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.SETTINGS_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
+                    } catch (e) {
+                        cleanup();
+                    }
+                }
+            };
+
             const cleanup = () => {
                 if (closed) return;
                 closed = true;
@@ -63,6 +73,7 @@ export async function GET(request: NextRequest) {
                 events.off(EVENT_TYPES.MATCH_FOUND, onMatch);
                 events.off(EVENT_TYPES.MATCH_REMOVED, onMatchRemoved);
                 events.off(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
+                events.off(EVENT_TYPES.SETTINGS_UPDATED, onSettingsUpdate);
                 if (keepAlive) clearInterval(keepAlive);
                 try {
                     controller.close();
@@ -75,6 +86,7 @@ export async function GET(request: NextRequest) {
             events.on(EVENT_TYPES.MATCH_FOUND, onMatch);
             events.on(EVENT_TYPES.MATCH_REMOVED, onMatchRemoved);
             events.on(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
+            events.on(EVENT_TYPES.SETTINGS_UPDATED, onSettingsUpdate);
 
             keepAlive = setInterval(() => {
                 if (!closed) {

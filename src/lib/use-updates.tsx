@@ -74,6 +74,21 @@ export function useUpdates(sessionCode?: string | null) {
             }
         });
 
+        eventSource.addEventListener(EVENT_TYPES.SETTINGS_UPDATED, (event: any) => {
+            const data = JSON.parse(event.data);
+            if (data.sessionCode === sessionCode) {
+                // Invalidate session to get new settings
+                mutate('/api/session');
+                
+                // Show toast if another member changed the settings
+                if (sessionData && data.userId !== sessionData.userId) {
+                    toast.info(`${data.userName} updated session settings`, {
+                        description: "Rules and limits might have changed."
+                    });
+                }
+            }
+        });
+
         return () => {
             eventSource.close();
         };

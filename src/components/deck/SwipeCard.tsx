@@ -19,10 +19,11 @@ interface SwipeCardProps {
   onSwipe: (id: string, direction: "left" | "right") => void;
   onCardLeftScreen: (id: string) => void;
   onClick?: () => void;
+  preventSwipe?: Direction[];
 }
 
 export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
-  function SwipeCard({ item, index, onSwipe, onCardLeftScreen, onClick }, ref) {
+  function SwipeCard({ item, index, onSwipe, onCardLeftScreen, onClick, preventSwipe = [] }, ref) {
     const isFront = index === 0;
     const { settings } = useSettings();
 
@@ -58,7 +59,7 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
         {/* 2. Motion Component: Needs to be absolute to stack perfectly */}
         <FramerTinderCard
           ref={ref}
-          preventSwipe={["up", "down"]}
+          preventSwipe={[...preventSwipe, "up", "down"]}
           swipeThreshold={100}
           onSwipe={(dir) => {
             // Filter out 'up'/'down' before calling parent
@@ -100,7 +101,7 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
                   {item.Genres?.[0] && (
                     <Badge
                       variant="secondary"
-                      className="bg-primary/20 text-primary border border-primary/10 hover:bg-primary/30 backdrop-blur-md"
+                      className="text-neutral-100 bg-primary/20 border border-primary/10 hover:bg-primary/30 backdrop-blur-md"
                     >
                       {item.Genres[0]}
                     </Badge>

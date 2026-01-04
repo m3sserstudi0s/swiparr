@@ -158,7 +158,11 @@ export default function SessionContent() {
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-md w-full px-4 gap-2">
-                <SessionHeader activeCode={activeCode} members={members} />
+                <SessionHeader
+                    activeCode={activeCode}
+                    members={members}
+                    currentSettings={sessionStatus?.settings}
+                />
                 <div className="px-1">
                     <SessionAlert />
                 </div>

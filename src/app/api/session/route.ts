@@ -99,21 +99,36 @@ export async function PATCH(request: NextRequest) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { filters } = await request.json();
+    const { filters, settings } = await request.json();
 
     if (session.sessionCode) {
+        const updateData: any = {};
+        if (filters !== undefined) updateData.filters = JSON.stringify(filters);
+        if (settings !== undefined) updateData.settings = JSON.stringify(settings);
+
         await db.update(sessions)
-            .set({ filters: JSON.stringify(filters) })
+            .set(updateData)
             .where(eq(sessions.code, session.sessionCode));
 
-        events.emit(EVENT_TYPES.FILTERS_UPDATED, {
-            sessionCode: session.sessionCode,
-            userId: session.user.Id,
-            userName: session.user.Name,
-            filters
-        });
+        if (filters !== undefined) {
+            events.emit(EVENT_TYPES.FILTERS_UPDATED, {
+                sessionCode: session.sessionCode,
+                userId: session.user.Id,
+                userName: session.user.Name,
+                filters
+            });
+        }
+
+        if (settings !== undefined) {
+            events.emit(EVENT_TYPES.SETTINGS_UPDATED, {
+                sessionCode: session.sessionCode,
+                userId: session.user.Id,
+                userName: session.user.Name,
+                settings
+            });
+        }
     } else {
-        session.soloFilters = filters;
+        if (filters !== undefined) session.soloFilters = filters;
         await session.save();
     }
 
@@ -129,11 +144,13 @@ export async function GET() {
   const { accessToken, userId: effectiveUserId } = await getEffectiveCredentials(session);
 
   let filters = session.soloFilters || null;
+  let settings = null;
   if (session.sessionCode) {
     const currentSession = await db.query.sessions.findFirst({
         where: eq(sessions.code, session.sessionCode)
     });
     filters = currentSession?.filters ? JSON.parse(currentSession.filters) : null;
+    settings = currentSession?.settings ? JSON.parse(currentSession.settings) : null;
   }
 
   const response = { 
@@ -143,7 +160,8 @@ export async function GET() {
     isGuest: !!session.user.isGuest,
     isAdmin: await isAdmin(session.user.Id, session.user.Name),
     accessToken,
-    filters
+    filters,
+    settings
   };
 
   return NextResponse.json(response);

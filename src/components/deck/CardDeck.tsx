@@ -4,7 +4,7 @@ import useSWR, { useSWRConfig } from "swr";
 import { useUpdates } from "@/lib/use-updates";
 import React, { useRef, useState, useMemo } from "react";
 import axios from "axios";
-import { JellyfinItem, Filters } from "@/types/swiparr";
+import { JellyfinItem, Filters, SessionSettings, SessionStats } from "@/types/swiparr";
 import { Heart, X, GalleryHorizontalEnd, RefreshCcw, Rewind, SlidersHorizontal } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
@@ -16,21 +16,29 @@ import { DeckControls } from "./DeckControls";
 import { DeckEmpty } from "./DeckEmpty";
 import { DeckError } from "./DeckError";
 import { DeckLoading } from "./DeckLoading";
+import { toast } from "sonner";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
   const queryClient = useQueryClient();
   const { openMovie } = useMovieDetail();
 
-  const { data: sessionStatus } = useSWR<{ code: string | null; filters: Filters | null }>(
+  const { data: sessionStatus } = useSWR<{ code: string | null; filters: Filters | null; settings: SessionSettings | null }>(
     "/api/session",
     (url: string) => axios.get(url).then(res => res.data)
   );
 
   const sessionCode = sessionStatus?.code || null;
   const sessionFilters = sessionStatus?.filters || { genres: [] };
+  const sessionSettings = sessionStatus?.settings;
+
+  const { data: stats, mutate: mutateStats } = useSWR<SessionStats>(
+    sessionCode ? "/api/session/stats" : null,
+    (url: string) => axios.get(url).then(res => res.data)
+  );
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
 
   const [removedIds, setRemovedIds] = useState<string[]>([]);
@@ -152,6 +160,26 @@ export function CardDeck() {
   }, [activeDeck.length, isFetching, refetch]);
 
   const onSwipe = (id: string, direction: "left" | "right") => {
+    // Check limits
+    if (sessionSettings) {
+      if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
+        if (stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
+          toast.error("Like limit reached!");
+          // Try to snap back the card? 
+          // TinderCard ref doesn't easily support snapping back from here if we already triggered it
+          // But onSwipe is called by the component. 
+          // Actually, SwipeCard calls onSwipe.
+          return;
+        }
+      }
+      if (direction === "left" && sessionSettings.maxLeftSwipes && stats) {
+        if (stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
+          toast.error("Nope limit reached!");
+          return;
+        }
+      }
+    }
+
     // 1. Only fire API calls here
     if (swipedIdsRef.current.has(id)) return;
     swipedIdsRef.current.add(id);
@@ -163,6 +191,16 @@ export function CardDeck() {
 
     // Fire the mutation (which checks for matches)
     swipeMutation.mutate({ id, direction, item });
+    // Optimistically update stats
+    if (stats) {
+        mutateStats({
+            ...stats,
+            mySwipes: {
+                ...stats.mySwipes,
+                [direction]: stats.mySwipes[direction] + 1
+            }
+        }, false);
+    }
   };
 
   const onCardLeftScreen = (id: string) => {
@@ -276,6 +314,10 @@ export function CardDeck() {
         {activeDeck.slice(0, 4).reverse().map((item: JellyfinItem, i, arr) => {
           // Recalculate index so 0 is front
           const zIndex = arr.length - 1 - i;
+          const prevent: ("left" | "right")[] = [];
+          if (sessionSettings?.maxLeftSwipes && (stats?.mySwipes.left || 0) >= sessionSettings.maxLeftSwipes) prevent.push("left");
+          if (sessionSettings?.maxRightSwipes && (stats?.mySwipes.right || 0) >= sessionSettings.maxRightSwipes) prevent.push("right");
+
           return (
             <SwipeCard
               key={item.Id}
@@ -285,6 +327,7 @@ export function CardDeck() {
               onSwipe={onSwipe}
               onCardLeftScreen={onCardLeftScreen}
               onClick={() => openMovie(item.Id)}
+              preventSwipe={prevent}
             />
           );
         })}
@@ -297,6 +340,8 @@ export function CardDeck() {
         onOpenFilter={() => setIsFilterOpen(true)}
         canRewind={!!lastSwipe}
         hasAppliedFilters={hasAppliedFilters}
+        disableLeft={sessionSettings?.maxLeftSwipes ? (stats?.mySwipes.left || 0) >= sessionSettings.maxLeftSwipes : false}
+        disableRight={sessionSettings?.maxRightSwipes ? (stats?.mySwipes.right || 0) >= sessionSettings.maxRightSwipes : false}
       />
 
       <MatchOverlay

@@ -1,0 +1,1 @@
+ALTER TABLE `Session` ADD `settings` text;

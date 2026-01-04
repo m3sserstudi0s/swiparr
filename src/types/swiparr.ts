@@ -78,3 +78,18 @@ export interface MergedLike extends JellyfinItem {
   }[];
 }
 
+export interface SessionSettings {
+  matchStrategy: "atLeastTwo" | "allMembers";
+  maxLeftSwipes?: number;
+  maxRightSwipes?: number;
+  maxMatches?: number;
+}
+
+export interface SessionStats {
+  mySwipes: { left: number; right: number };
+  myLikeRate: number;
+  avgSwipes: { left: number; right: number };
+  avgLikeRate: number;
+  totalSwipes: { left: number; right: number };
+}
+

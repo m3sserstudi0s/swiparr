@@ -9,6 +9,8 @@ interface DeckControlsProps {
   onOpenFilter: () => void;
   canRewind: boolean;
   hasAppliedFilters: boolean;
+  disableLeft?: boolean;
+  disableRight?: boolean;
 }
 
 export function DeckControls({
@@ -18,6 +20,8 @@ export function DeckControls({
   onOpenFilter,
   canRewind,
   hasAppliedFilters,
+  disableLeft,
+  disableRight,
 }: DeckControlsProps) {
   return (
     <div className="flex space-x-6 z-1 mt-4 items-center">
@@ -35,6 +39,7 @@ export function DeckControls({
         variant="outline"
         className="h-18 w-18 rounded-full bg-background border-2"
         onClick={onSwipeLeft}
+        disabled={disableLeft}
       >
         <X className="size-9" />
       </Button>
@@ -42,6 +47,7 @@ export function DeckControls({
         size="icon"
         className="h-18 w-18 rounded-full shadow-lg"
         onClick={onSwipeRight}
+        disabled={disableRight}
       >
         <Heart className="size-9 fill-primary-foreground" />
       </Button>

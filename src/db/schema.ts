@@ -8,6 +8,7 @@ export const sessions = sqliteTable("Session", {
   hostAccessToken: text("hostAccessToken"),
   hostDeviceId: text("hostDeviceId"),
   filters: text("filters"),
+  settings: text("settings"),
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [

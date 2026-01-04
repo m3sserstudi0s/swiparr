@@ -28,4 +28,5 @@ export const EVENT_TYPES = {
     MATCH_REMOVED: 'match_removed',
     QUICK_CONNECT_AUTHORIZED: 'quick_connect_authorized',
     FILTERS_UPDATED: 'filters_updated',
+    SETTINGS_UPDATED: 'settings_updated',
 };

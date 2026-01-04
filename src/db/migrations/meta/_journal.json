@@ -29,6 +29,13 @@
       "when": 1767463494387,
       "tag": "0003_nappy_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1767542143026,
+      "tag": "0004_classy_bedlam",
+      "breakpoints": true
     }
   ]
 }
