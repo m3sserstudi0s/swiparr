@@ -35,7 +35,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                 if (!latest) return "Could not check version";
                 return currentVersion >= latest 
                     ? "You are on the latest version" 
-                    : `New version v${latest} available`;
+                    : `New version ${latest} available`;
             },
             error: "Failed to check for updates",
         });
@@ -113,7 +113,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
 
                 {!isLatest && latestVersion && (
                     <div className="text-xs text-muted-foreground">
-                        New version <span className="font-mono font-bold">v{latestVersion}</span> is available.
+                        New version <span className="font-mono font-bold">{latestVersion}</span> is available.
                     </div>
                 )}
             </div>

@@ -20,9 +20,17 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
 
   const handleSaveSettings = async (settings: any) => {
     // Only save if it's different from current to avoid unnecessary patches
-    if (JSON.stringify(settings) === JSON.stringify(currentSettings)) return;
+    const current = currentSettings || {};
+    const hasChanged =
+      settings.matchStrategy !== (current.matchStrategy || "atLeastTwo") ||
+      (settings.maxLeftSwipes || 100) !== (current.maxLeftSwipes || 100) ||
+      (settings.maxRightSwipes || 100) !== (current.maxRightSwipes || 100) ||
+      (settings.maxMatches || 10) !== (current.maxMatches || 10);
+
+    if (!hasChanged) return;
 
     try {
+
       await axios.patch("/api/session", { settings });
       mutate("/api/session");
       toast.success("Session settings updated");
@@ -35,14 +43,14 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
     <>
       <SheetHeader className="px-0 pb-0 pt-3.5">
         <SheetTitle className="flex items-center mr-10 h-10">
-          <Button
+          {activeCode && <Button
             variant="outline"
             size={"icon"}
             className="rounded-sm"
             onClick={() => setIsSettingsOpen(true)}
           >
             <Settings className="size-5" />
-          </Button>
+          </Button>}
           {activeCode && members && members.length > 0 && (
             <div className="mx-auto">
               <UserAvatarList

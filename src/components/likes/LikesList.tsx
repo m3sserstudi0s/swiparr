@@ -83,7 +83,7 @@ export function LikesList() {
 
             <RandomMovieButton 
                 items={likes} 
-                className="absolute -bottom-3 right-5 z-3" 
+                className="absolute bottom-0 right-5 z-3" 
             />
         </div>
     )

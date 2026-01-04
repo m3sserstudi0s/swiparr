@@ -45,11 +45,12 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
             {displayUsers.map((user, index) => (
                 <Tooltip key={user.userId}>
                     <TooltipTrigger asChild>
-                        <Avatar className={cn("inline-block border-2 border-background", sizeClasses[size])}>
+                        <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
                             <AvatarImage src={`/api/jellyfin/image/${user.userId}?type=user`} />
                             <AvatarFallback
                                 className={cn(
-                                    size === "sm" ? "text-[8px]" : "text-xs font-medium",
+                                    "font-semibold",
+                                    size === "sm" ? "text-[10px]" : "text-sm",
                                     grays[index % grays.length]
                                 )}
                             >
@@ -65,11 +66,11 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
             {remainingCount > 0 && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Avatar className={cn("inline-block border-2 border-background", sizeClasses[size])}>
+                        <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
                             <AvatarFallback
                                 className={cn(
-                                    "bg-neutral-800 text-neutral-50 font-medium",
-                                    size === "sm" ? "text-[8px]" : "text-xs"
+                                    "bg-neutral-800 text-neutral-50 font-semibold",
+                                    size === "sm" ? "text-[10px]" : "text-sm"
                                 )}
                             >
                                 +{remainingCount}

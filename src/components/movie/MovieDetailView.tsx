@@ -20,12 +20,12 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 import { ticksToTime } from "@/lib/utils";
 
 interface Props {
-
   movieId: string | null;
   onClose: () => void;
+  showLikedBy?: boolean;
 }
 
-export function MovieDetailView({ movieId, onClose }: Props) {
+export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props) {
   // 1. Create a manual motion value for scroll position
   const scrollY = useMotionValue(0);
 
@@ -115,6 +115,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
           : `Added to ${useWatchlist ? "watchlist" : "favorites"}`;
       },
       error: `Failed to update ${useWatchlist ? "watchlist" : "favorites"}`,
+      position: 'top-right'
     });
   };
 
@@ -127,6 +128,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
         label: 'Undo',
         onClick: () => relike()
       },
+      position: 'top-right'
     });
   };
 
@@ -234,7 +236,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                 )}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
-                  <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} target="_blank" className="w-32">
+                  <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
 
                     <Button className="w-32" size="lg">
                       <Play className="w-4 h-4 mr-2 fill-current" /> Play
@@ -271,7 +273,7 @@ export function MovieDetailView({ movieId, onClose }: Props) {
                 </div>
 
                 {/* LIKED BY */}
-                {movie.likedBy && movie.likedBy.length > 0 && sessionData?.code && (
+                {showLikedBy && movie.likedBy && movie.likedBy.length > 0 && sessionData?.code && (
                   <div className="mb-8 bg-muted/20 p-4 rounded-xl border border-border/50">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3" >Liked By</h3>
                     <UserAvatarList users={movie.likedBy} size="lg" />

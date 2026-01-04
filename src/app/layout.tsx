@@ -54,7 +54,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${sansFlex.variable} ${jetbrainsMono.variable} min-h-screen`}>
+      <body className={`${sansFlex.variable} ${jetbrainsMono.variable}`}>
 
         <Providers
           attribute="class"

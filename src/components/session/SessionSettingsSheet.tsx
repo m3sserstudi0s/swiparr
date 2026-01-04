@@ -39,6 +39,7 @@ export function SessionSettingsSheet({
 
   // Use a ref to store current values for the auto-save on close
   const valuesRef = useRef({ matchStrategy, maxLeftSwipes, maxRightSwipes, maxMatches });
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     valuesRef.current = { matchStrategy, maxLeftSwipes, maxRightSwipes, maxMatches };
@@ -55,6 +56,7 @@ export function SessionSettingsSheet({
 
   useEffect(() => {
     if (open) {
+      wasOpenRef.current = true;
       setMatchStrategy(currentSettings?.matchStrategy || "atLeastTwo");
       setMaxLeftSwipes(currentSettings?.maxLeftSwipes || 100);
       setMaxRightSwipes(currentSettings?.maxRightSwipes || 100);
@@ -66,21 +68,33 @@ export function SessionSettingsSheet({
   const handleSave = () => {
     const { matchStrategy, maxLeftSwipes, maxRightSwipes, maxMatches } = valuesRef.current;
 
-    // Only save if something changed or we want to ensure it's synced
-    onSave({
+    const newSettings = {
       matchStrategy,
       maxLeftSwipes: maxLeftSwipes < 100 ? maxLeftSwipes : undefined,
       maxRightSwipes: maxRightSwipes < 100 ? maxRightSwipes : undefined,
       maxMatches: maxMatches < 10 ? maxMatches : undefined,
-    });
+    };
+
+    const current = (currentSettings || {}) as SessionSettings;
+    const hasChanged =
+      newSettings.matchStrategy !== (current.matchStrategy || "atLeastTwo") ||
+      (newSettings.maxLeftSwipes || 100) !== (current.maxLeftSwipes || 100) ||
+      (newSettings.maxRightSwipes || 100) !== (current.maxRightSwipes || 100) ||
+      (newSettings.maxMatches || 10) !== (current.maxMatches || 10);
+
+    if (hasChanged) {
+      onSave(newSettings);
+    }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
+    if (!newOpen && wasOpenRef.current) {
       handleSave();
+      wasOpenRef.current = false;
     }
     onOpenChange(newOpen);
   };
+
 
   const resetAll = () => {
     setMatchStrategy("atLeastTwo");
@@ -174,7 +188,7 @@ export function SessionSettingsSheet({
                 onValueChange={(val) => setMatchStrategy(val as any)}
                 className="grid grid-cols-1 gap-3"
               >
-                <div className="flex items-center space-x-3 rounded-xl border p-4 has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:border-primary transition-colors cursor-pointer" onClick={() => setMatchStrategy("atLeastTwo")}>
+                <div className="flex items-center space-x-3 rounded-xl border p-4 has-data-[state=checked]:bg-primary/5 has-data-[state=checked]:border-primary transition-colors cursor-pointer" onClick={() => setMatchStrategy("atLeastTwo")}>
                   <RadioGroupItem value="atLeastTwo" id="atLeastTwo" />
                   <div className="flex-1 space-y-1">
                     <Label htmlFor="atLeastTwo" className="font-bold cursor-pointer">Two or more</Label>
@@ -183,7 +197,7 @@ export function SessionSettingsSheet({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3 rounded-xl border p-4 has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:border-primary transition-colors cursor-pointer" onClick={() => setMatchStrategy("allMembers")}>
+                <div className="flex items-center space-x-3 rounded-xl border p-4 has-data-[state=checked]:bg-primary/5 has-data-[state=checked]:border-primary transition-colors cursor-pointer" onClick={() => setMatchStrategy("allMembers")}>
                   <RadioGroupItem value="allMembers" id="allMembers" />
                   <div className="flex-1 space-y-1">
                     <Label htmlFor="allMembers" className="font-bold cursor-pointer">Unanimous</Label>

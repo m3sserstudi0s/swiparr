@@ -88,13 +88,19 @@ export function SettingsSidebar() {
 
                     <ScrollArea className="flex-1 px-6 h-[calc(100vh-80px)]">
                         <div className="space-y-8 py-8 pb-12">
-                            <Suspense fallback={<SettingsSkeleton />}>
+                            <Suspense fallback={<SectionSkeleton title="General" />}>
                                 <GeneralSettings />
+                            </Suspense>
+                            <Suspense fallback={<SectionSkeleton title="Admin" />}>
                                 <AdminSettings />
+                            </Suspense>
+                            <Suspense fallback={null}>
                                 <AboutSettings onShowUserGuide={() => {
                                     setShowUserGuide(true);
                                     setOpen(false);
                                 }} />
+                            </Suspense>
+                            <Suspense fallback={null}>
                                 <DangerZone 
                                     onClearData={() => setShowClearDialog(true)} 
                                     onLogout={handleLogout} 
@@ -102,6 +108,7 @@ export function SettingsSidebar() {
                             </Suspense>
                         </div>
                     </ScrollArea>
+
                 </SheetContent>
             </Sheet>
 
@@ -138,18 +145,18 @@ export function SettingsSidebar() {
     );
 }
 
-function SettingsSkeleton() {
+function SectionSkeleton({ title }: { title: string }) {
     return (
-        <div className="space-y-8">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className="space-y-4">
-                    <Skeleton className="h-4 w-24" />
-                    <div className="space-y-3">
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                    </div>
-                </div>
-            ))}
+        <div className="space-y-4">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                {title}
+            </h3>
+            <div className="space-y-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
         </div>
     );
 }
+

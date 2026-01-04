@@ -132,14 +132,6 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         <DrawerHeader className="border-b pb-4 shrink-0">
           <DrawerTitle>
             Filters
-            <Button
-              size={'icon'}
-              className="size-6 ml-2"
-              variant={'outline'}
-              onClick={resetAll}
-            >
-              <RotateCcw className="size-3" />
-            </Button>
           </DrawerTitle>
         </DrawerHeader>
 
@@ -149,16 +141,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             {/* Rating Section */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold flex items-center gap-2">
+                <Label className="text-base font-semibold">
                   Rating
-                  <Button
-                    size={'icon'}
-                    className="size-6"
-                    variant={'outline'}
-                    onClick={() => setMinRating(0)}
-                  >
-                    <RotateCcw className="size-3" />
-                  </Button>
                 </Label>
                 <span className="text-sm font-medium text-muted-foreground">
                   {minRating > 0 ? `At least ${minRating} stars` : "Any rating"}
@@ -186,16 +170,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             {/* Release Section (Years) */}
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold flex items-center gap-2">
+                <Label className="text-base font-semibold">
                   Release
-                  <Button
-                    size={'icon'}
-                    className="size-6"
-                    variant={'outline'}
-                    onClick={() => setYearRange([minYearLimit, maxYearLimit])}
-                  >
-                    <RotateCcw className="size-3" />
-                  </Button>
                 </Label>
                 <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                   {yearRange[0]} — {yearRange[1]}
@@ -219,16 +195,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
             {/* Genres Section */}
             <div className="space-y-4">
-              <Label className="text-base font-semibold flex items-center gap-2">
+              <Label className="text-base font-semibold">
                 Genres
-                <Button
-                  size={'icon'}
-                  className="size-6"
-                  variant={'outline'}
-                  onClick={() => setSelectedGenres([])}
-                >
-                  <RotateCcw className="size-3" />
-                </Button>
               </Label>
               <div className="flex flex-wrap gap-2">
                 {genres?.map((genre: { Id: string; Name: string }) => (
@@ -243,7 +211,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 ))}
               </div>
             </div>
-
+            <Button
+              variant="outline"
+              className="w-full gap-2 text-muted-foreground hover:text-foreground"
+              onClick={resetAll}
+            >
+              <RotateCcw className="size-4" />
+              Reset
+            </Button>
           </div>
         </ScrollArea>
       </DrawerContent>

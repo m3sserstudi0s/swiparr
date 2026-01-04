@@ -15,12 +15,17 @@ export default function Home() {
   useHotkeys("2", () => setTab("likes"), []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center px-6 md:p-0 overflow-hidden">
-      <div className="w-full flex items-top justify-between 3xl:max-w-md max-w-sm mt-8 md:mt-[5vh] 2xl:mt-[8vh] relative">
+    <main className="flex h-svh w-full flex-col items-center px-6 md:p-0 overflow-hidden bg-background">
+      
+      <div className="w-full flex flex-col items-center 3xl:max-w-md max-w-sm mt-6 md:mt-[4vh] 2xl:mt-[6vh] relative h-full">
         <SessionManager />
-        <Tabs value={tab} onValueChange={setTab} className="w-full flex flex-col h-full -mt-2">
-          <TabsList className="grid mx-auto w-fit h-fit grid-cols-2 bg-muted rounded-4xl">
-
+        
+        <Tabs 
+          value={tab} 
+          onValueChange={setTab} 
+          className="w-full flex flex-col h-full overflow-hidden gap-0 -mt-2"
+        >
+          <TabsList className="grid mx-auto w-fit h-fit grid-cols-2 bg-muted rounded-4xl shrink-0">
             <TabsTrigger value="swipe" className="h-11 w-15 group rounded-4xl">
               <GalleryHorizontalEnd
                 className="size-5 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
@@ -34,16 +39,18 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="swipe" className="w-full outline-none">
-            <CardDeck />
-          </TabsContent>
-          <TabsContent value="likes" className=" w-full outline-none">
-            <LikesList />
-          </TabsContent>
+          <div className="flex-1 w-full mt-2 overflow-hidden">
+            <TabsContent value="swipe" className="h-full w-full outline-none mt-0">
+              <CardDeck />
+            </TabsContent>
+            <TabsContent value="likes" className="h-full w-full outline-none mt-0">
+              <LikesList />
+            </TabsContent>
+          </div>
         </Tabs>
+        
         <SettingsSidebar />
       </div>
     </main>
-
   );
 }

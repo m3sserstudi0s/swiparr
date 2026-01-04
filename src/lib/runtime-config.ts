@@ -26,7 +26,7 @@ export function getRuntimeConfig(): RuntimeConfig {
   return {
     jellyfinPublicUrl,
     useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
-    version: process.env.APP_VERSION || process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version,
+    version: (process.env.APP_VERSION || process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version).replace(/^v/i, ''),
   };
 }
 

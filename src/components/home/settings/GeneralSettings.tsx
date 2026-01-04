@@ -9,11 +9,12 @@ import { SettingsSection } from "./SettingsSection";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import useSWR from "swr";
 import axios from "axios";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function GeneralSettings() {
-    const { setTheme, theme } = useTheme();
+    const { setTheme, resolvedTheme: theme } = useTheme();
     const { settings, updateSettings } = useSettings();
-    const { data: sessionStatus } = useSWR("/api/session", (url) => axios.get(url).then(res => res.data));
+    const { data: sessionStatus, isLoading } = useSWR("/api/session", (url) => axios.get(url).then(res => res.data));
     const isGuest = sessionStatus?.isGuest || false;
 
     return (
@@ -37,8 +38,33 @@ export function GeneralSettings() {
                 </Button>
             </div>
 
-            {!isGuest && (
+            {isLoading ? (
                 <>
+                    <div className="grid grid-flow-col items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-3 w-48" />
+                        </div>
+                        <Skeleton className="h-9 w-26 rounded-md" />
+                    </div>
+                    <div className="grid grid-flow-col items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-40" />
+                        </div>
+                        <Skeleton className="h-9 w-26 rounded-md" />
+                    </div>
+                    <div className="grid grid-flow-col items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-40" />
+                        </div>
+                        <Skeleton className="h-9 w-26 rounded-md" />
+                    </div>
+                </>
+            ) : !isGuest && (
+                <>
+
                     <div className="grid grid-flow-col items-center justify-between gap-2">
                         <div className="space-y-0.5">
                             <div className="text-sm font-medium">Collection type</div>

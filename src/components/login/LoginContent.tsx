@@ -53,7 +53,7 @@ export default function LoginContent() {
     if (qcCode) {
       await navigator.clipboard.writeText(qcCode);
       setCopied(true);
-      toast.success("Code copied to clipboard");
+      toast.success("Code copied to clipboard", {position: 'top-right'});
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -102,6 +102,7 @@ export default function LoginContent() {
         setLoading(false);
         return "Login Failed: Check your credentials";
       },
+      position: 'top-right'
     });
   };
 
@@ -132,6 +133,7 @@ export default function LoginContent() {
         setLoading(false);
         return err.message;
       },
+      position: 'top-right'
     });
   };
 
@@ -162,6 +164,7 @@ export default function LoginContent() {
         setLoading(false);
         return "Quick connect failed to initialize";
       },
+      position: 'top-right'
     });
   };
 

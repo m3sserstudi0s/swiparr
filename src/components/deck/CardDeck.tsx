@@ -1,7 +1,6 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
-import { useUpdates } from "@/lib/use-updates";
 import React, { useRef, useState, useMemo } from "react";
 import axios from "axios";
 import { JellyfinItem, Filters, SessionSettings, SessionStats } from "@/types/swiparr";
@@ -60,8 +59,6 @@ export function CardDeck() {
       }
     };
   }, [queryClient, sessionCode]);
-
-  useUpdates(sessionCode);
 
   const { data: members } = useSWR<{ jellyfinUserId: string; jellyfinUserName: string }[]>(
     sessionCode ? ["/api/session/members", sessionCode] : null,
@@ -128,7 +125,7 @@ export function CardDeck() {
     return genresApplied || ratingApplied || yearApplied;
   }, [sessionStatus?.filters]);
 
-  // --- MULTIPLAYER LOGIC INTEGRATION HERE ---
+  // --- MULTIPLAYER LOGIC INTEGRATION ---
   const swipeMutation = useMutation({
     mutationFn: async ({ id, direction, item }: { id: string; direction: "left" | "right"; item: JellyfinItem }) => {
       const res = await axios.post("/api/swipe", { itemId: id, direction, item });
@@ -164,17 +161,13 @@ export function CardDeck() {
     if (sessionSettings) {
       if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
         if (stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
-          toast.error("Like limit reached!");
-          // Try to snap back the card? 
-          // TinderCard ref doesn't easily support snapping back from here if we already triggered it
-          // But onSwipe is called by the component. 
-          // Actually, SwipeCard calls onSwipe.
+          toast.error("Like limit reached", {position: 'top-right'});
           return;
         }
       }
       if (direction === "left" && sessionSettings.maxLeftSwipes && stats) {
         if (stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
-          toast.error("Nope limit reached!");
+          toast.error("Nope limit reached", {position: 'top-right'});
           return;
         }
       }
@@ -267,7 +260,7 @@ export function CardDeck() {
   useHotkeys("right, d", () => swipeTop("right"), [swipeTop]);
   useHotkeys("enter, space", () => {
     if (activeDeck.length > 0) {
-      openMovie(activeDeck[0].Id);
+      openMovie(activeDeck[0].Id, false); // Don't show liked by from swipe deck (no spoilers)
     }
   }, [activeDeck, openMovie]);
   useHotkeys("r, backspace", () => rewind(), [rewind]);
@@ -326,7 +319,7 @@ export function CardDeck() {
               index={zIndex}
               onSwipe={onSwipe}
               onCardLeftScreen={onCardLeftScreen}
-              onClick={() => openMovie(item.Id)}
+              onClick={() => openMovie(item.Id, false)} // Don't show liked by from swipe deck (no spoilers)
               preventSwipe={prevent}
             />
           );

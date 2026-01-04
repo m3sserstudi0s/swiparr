@@ -1,8 +1,8 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Star, Calendar, HeartOff } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Play, Star, Calendar, HeartOff, Clock } from "lucide-react";
+import { cn, ticksToTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/ui/optimized-image";
@@ -100,13 +100,19 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
           )}>
             {movie.Name}
           </h3>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground h-6">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground h-6">
             <span>{movie.ProductionYear}</span>
             •
             {movie.CommunityRating && (
               <span className="flex items-center">
-                <Star className="w-3 h-3 mr-0.5" />
+                <Star className="size-2.5 mr-0.5" />
                 {movie.CommunityRating.toFixed(1)}
+              </span>
+            )}
+            •
+            {movie.RunTimeTicks && (
+              <span className="flex items-center">
+                <Clock className="size-2.5 mr-0.5" /> {ticksToTime(movie.RunTimeTicks)}
               </span>
             )}
             <div className="ml-auto">
@@ -125,13 +131,13 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
           {/* Only show date in full view */}
           {movie.swipedAt && (
             <div className="text-xs text-muted-foreground flex items-center">
-              <Calendar className="w-3 h-3 mr-1" />
+              <Calendar className="size-2.5 mr-1" />
               {formattedDateText}
             </div>
           )}
 
           <div className="flex gap-2">
-            <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} target="_blank" onClick={e => e.stopPropagation()} className="flex-1">
+            <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"

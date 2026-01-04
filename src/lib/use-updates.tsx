@@ -8,12 +8,13 @@ import { useMovieDetail } from '@/components/movie/MovieDetailProvider';
 import React from 'react';
 import axios from 'axios';
 
-export function useUpdates(sessionCode?: string | null) {
+export function useUpdates() {
     const { mutate } = useSWRConfig();
     const queryClient = useQueryClient();
     const { openMovie } = useMovieDetail();
 
     const { data: sessionData } = useSWR<{ code: string | null; userId: string }>('/api/session', (url: string) => axios.get(url).then(res => res.data));
+    const sessionCode = sessionData?.code;
 
     useEffect(() => {
         if (!sessionCode) return;
@@ -43,7 +44,8 @@ export function useUpdates(sessionCode?: string | null) {
                         action: {
                             label: "View",
                             onClick: () => openMovie(data.itemId)
-                        }
+                        },
+                        position: 'top-right'
                     });
                 }
             }
@@ -68,7 +70,8 @@ export function useUpdates(sessionCode?: string | null) {
                 // Show toast if another member changed the filters
                 if (sessionData && data.userId !== sessionData.userId) {
                     toast.info(`${data.userName} changed the filters`, {
-                        description: "The cards have been updated."
+                        description: "The cards have been updated.",
+                        position: 'top-right'
                     });
                 }
             }
@@ -83,7 +86,8 @@ export function useUpdates(sessionCode?: string | null) {
                 // Show toast if another member changed the settings
                 if (sessionData && data.userId !== sessionData.userId) {
                     toast.info(`${data.userName} updated session settings`, {
-                        description: "Rules and limits might have changed."
+                        description: "Rules and limits might have changed.",
+                        position: 'top-right'
                     });
                 }
             }

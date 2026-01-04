@@ -6,7 +6,6 @@ import { Info, Users, X } from "lucide-react";
 import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
-import { useUpdates } from "@/lib/use-updates";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -40,9 +39,6 @@ export default function SessionContent() {
     );
     const isSuccess = !isSessionLoading && !!sessionStatus;
     const activeCode = sessionStatus?.code;
-
-    // -- 1.6 SUBSCRIBE TO EVENTS --
-    useUpdates(activeCode);
 
     // -- 1.5 FETCH MEMBERS (Using SWR) --
     const { data: members } = useSWR<any[]>(
@@ -152,7 +148,7 @@ export default function SessionContent() {
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="absolute">
+            <SheetTrigger asChild className="absolute left-0">
                 <Button variant="ghost" size="icon" className="text-foreground">
                     <Users className="size-5" />
                 </Button>

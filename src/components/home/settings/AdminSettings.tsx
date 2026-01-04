@@ -16,8 +16,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface JellyfinLibrary {
+
     Name: string;
     Id: string;
     CollectionType?: string;
@@ -112,9 +114,16 @@ export function AdminSettings() {
         window.location.reload();
     };
 
-    if (isLoading) return null;
+    if (isLoading) {
+        return (
+            <SettingsSection title="Admin">
+                <Skeleton className="h-5 w-full rounded-sm" />
+            </SettingsSection>
+        );
+    }
 
     // Only show if no admin exists or if current user IS admin
+
     if (status?.hasAdmin && !status.isAdmin) {
         return null;
     }

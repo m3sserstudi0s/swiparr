@@ -15,7 +15,7 @@ export async function GET() {
         }
 
         const data = await response.json();
-        const latestVersion = data.version;
+        const latestVersion = data.version.replace(/^v/i, '');
 
         return NextResponse.json({
             version: latestVersion,
