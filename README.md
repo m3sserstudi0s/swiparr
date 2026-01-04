@@ -34,7 +34,21 @@ Swiparr includes a **Guest Mode** designed for situations where some participant
 
 This makes it easy to host movie nights with guests who aren't part of your home lab ecosystem.
 
+## Session Settings
+
+When you create a session, you can customize how it behaves to fit your group's movie night:
+
+### Match Strategies
+- **Two or more**: A match is created as soon as any two people in the session like the same movie. Great for larger groups.
+- **Unanimous**: Every single person in the session must like the movie for it to appear in the matches list.
+
+### Restrictions
+- **Max Likes**: Limit how many "Right Swipes" each person gets. This forces everyone to be more selective.
+- **Max Nopes**: Limit how many "Left Swipes" each person gets. Useful if you want to prevent people from just saying no to everything!
+- **Max Matches**: Automatically stop the session once a certain number of matches have been found.
+
 ## Quick start
+
 
 The easiest way to run Swiparr is with Docker Compose.
 
