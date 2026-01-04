@@ -28,14 +28,31 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
         lg: "-space-x-3",
     };
 
+    const grays = [
+        "bg-neutral-200 text-neutral-800",
+        "bg-neutral-300 text-neutral-900",
+        "bg-neutral-400 text-neutral-50",
+        "bg-neutral-500 text-neutral-50",
+        "bg-neutral-600 text-neutral-50",
+    ];
+
+    const maxVisible = 5;
+    const displayUsers = users.slice(0, maxVisible);
+    const remainingCount = users.length - maxVisible;
+
     return (
         <div className={cn("flex overflow-hidden", overlapClasses[size], className)}>
-            {users.map((user) => (
+            {displayUsers.map((user, index) => (
                 <Tooltip key={user.userId}>
                     <TooltipTrigger asChild>
-                        <Avatar className={cn("inline-block", sizeClasses[size])}>
+                        <Avatar className={cn("inline-block border-2 border-background", sizeClasses[size])}>
                             <AvatarImage src={`/api/jellyfin/image/${user.userId}?type=user`} />
-                            <AvatarFallback className={size === "sm" ? "text-[8px]" : "text-default"}>
+                            <AvatarFallback
+                                className={cn(
+                                    size === "sm" ? "text-[8px]" : "text-xs font-medium",
+                                    grays[index % grays.length]
+                                )}
+                            >
                                 {user.userName.substring(0, 1).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
@@ -45,6 +62,25 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                     </TooltipContent>
                 </Tooltip>
             ))}
+            {remainingCount > 0 && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Avatar className={cn("inline-block border-2 border-background", sizeClasses[size])}>
+                            <AvatarFallback
+                                className={cn(
+                                    "bg-neutral-800 text-neutral-50 font-medium",
+                                    size === "sm" ? "text-[8px]" : "text-xs"
+                                )}
+                            >
+                                +{remainingCount}
+                            </AvatarFallback>
+                        </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{users.slice(maxVisible).map(u => u.userName).join(", ")}</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
         </div>
     );
 }
