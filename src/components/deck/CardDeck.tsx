@@ -16,6 +16,7 @@ import { DeckEmpty } from "./DeckEmpty";
 import { DeckError } from "./DeckError";
 import { DeckLoading } from "./DeckLoading";
 import { toast } from "sonner";
+import { API_PATHS } from "@/lib/api-paths";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
@@ -82,7 +83,7 @@ export function CardDeck() {
   const { data: deck, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["deck", sessionCode],
     queryFn: async () => {
-      const res = await axios.get<JellyfinItem[]>("/api/jellyfin/items");
+      const res = await axios.get<JellyfinItem[]>(API_PATHS.items);
       return res.data;
     },
     staleTime: 1000 * 60 * 5,

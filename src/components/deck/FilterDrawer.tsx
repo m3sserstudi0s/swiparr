@@ -16,6 +16,7 @@ import { Filters } from "@/types/swiparr";
 import { RotateCcw, Star } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
+import { API_PATHS } from "@/lib/api-paths";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -38,7 +39,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: years, isLoading: isLoadingYears } = useQuery({
     queryKey: ["years"],
     queryFn: async () => {
-      const res = await axios.get("/api/jellyfin/years");
+      const res = await axios.get(API_PATHS.years);
       return res.data;
     },
     enabled: open,
@@ -62,7 +63,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: genres, isLoading: isLoadingGenres } = useQuery({
     queryKey: ["genres"],
     queryFn: async () => {
-      const res = await axios.get("/api/jellyfin/genres");
+      const res = await axios.get(API_PATHS.genres);
       return res.data;
     },
     enabled: open,

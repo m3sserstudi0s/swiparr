@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 import { Skeleton } from "@/components/ui/skeleton";
+import { API_PATHS } from "@/lib/api-paths";
 
 interface JellyfinLibrary {
 
@@ -67,6 +68,16 @@ export function AdminSettings() {
             try {
                 const statusRes = await axios.get("/api/admin/status");
                 setStatus(statusRes.data);
+
+                if (statusRes.data.isAdmin) {
+                    setIsLoadingLibs(true);
+                    const [availRes, inclRes] = await Promise.all([
+                        axios.get(API_PATHS.libraries),
+                        axios.get("/api/admin/libraries")
+                    ]);
+                    setAvailableLibraries(availRes.data);
+                    setIncludedLibraries(inclRes.data);
+                }
             } catch (err) {
                 console.error("Failed to fetch admin status", err);
             } finally {
@@ -82,6 +93,13 @@ export function AdminSettings() {
             await axios.post("/api/admin/claim");
             toast.success("You are now the admin");
             setStatus({ hasAdmin: true, isAdmin: true });
+
+            // Fetch libraries after claiming
+            setIsLoadingLibs(true);
+            const availRes = await axios.get(API_PATHS.libraries);
+            setAvailableLibraries(availRes.data);
+            setIncludedLibraries([]);
+
             router.refresh();
         } catch (err) {
             toast.error("Failed to claim admin role");

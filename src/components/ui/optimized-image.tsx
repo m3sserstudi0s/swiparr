@@ -25,14 +25,16 @@ export function OptimizedImage({
   const [isLoading, setIsLoading] = useState(true);
 
   const isFill = fill ?? (!width && !height);
-  const isJellyfinImage = typeof src === "string" && src.startsWith("/api/jellyfin/image");
+  // Check for both Jellyfin and Plex image API routes
+  const isMediaServerImage = typeof src === "string" && 
+    (src.startsWith("/api/jellyfin/image") || src.startsWith("/api/plex/image"));
 
   return (
     <div 
       className={cn("relative overflow-hidden bg-muted/20", containerClassName || className)}
     >
       {/* Real-image blur placeholder */}
-      {isJellyfinImage && isLoading && (
+      {isMediaServerImage && isLoading && (
         <img 
           src={`${src}${src.includes("?") ? "&" : "?"}width=40&quality=10`} 
           alt=""
@@ -42,13 +44,13 @@ export function OptimizedImage({
       )}
       
       {/* Loading Skeleton fallback if no blurSrc */}
-      {isLoading && !isJellyfinImage && (
+      {isLoading && !isMediaServerImage && (
         <Skeleton className="absolute inset-0" />
       )}
 
       <Image
         {...props}
-        loader={isJellyfinImage ? ({ src, width, quality }) => {
+        loader={isMediaServerImage ? ({ src, width, quality }) => {
           return `${src}${src.includes("?") ? "&" : "?"}width=${width}&quality=${quality || 80}`;
         } : undefined}
         src={src}

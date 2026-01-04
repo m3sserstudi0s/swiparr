@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSettings } from "@/lib/settings";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { ticksToTime } from "@/lib/utils";
+import { API_PATHS, isPlex } from "@/lib/api-paths";
 
 interface Props {
   movieId: string | null;
@@ -43,7 +44,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
     queryKey: ["movie", movieId],
     queryFn: async () => {
       if (!movieId) return null;
-      const res = await axios.get<JellyfinItem>(`/api/jellyfin/item/${movieId}`);
+      const res = await axios.get<JellyfinItem>(API_PATHS.item(movieId));
       return res.data;
     },
     enabled: !!movieId,
@@ -132,7 +133,18 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
     });
   };
 
-  const { jellyfinPublicUrl } = useRuntimeConfig();
+  const { jellyfinPublicUrl, plexPublicUrl } = useRuntimeConfig();
+  
+  // Generate play URL based on backend
+  const getPlayUrl = () => {
+    if (!movie) return '#';
+    if (isPlex()) {
+      // Plex web app URL format
+      return `${plexPublicUrl}/web/index.html#!/server/library/metadata/${movie.Id}`;
+    }
+    // Jellyfin web app URL format
+    return `${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`;
+  };
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -164,8 +176,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
 
                   <OptimizedImage
                     src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0
-                      ? `/api/jellyfin/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
-                      : `/api/jellyfin/image/${movie.Id}`
+                      ? API_PATHS.image(movie.Id, { imageType: 'Backdrop', tag: movie.BackdropImageTags[0] })
+                      : API_PATHS.image(movie.Id)
                     }
                     className="w-full h-full object-cover"
                     alt="Backdrop"
@@ -178,7 +190,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                 {/* Header Content */}
                 <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
                   <OptimizedImage
-                    src={`/api/jellyfin/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
+                    src={API_PATHS.image(movie.Id, { tag: movie.ImageTags?.Primary })}
                     className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0"
                     alt="Poster"
                   />
@@ -236,8 +248,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                 )}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
-                  <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
-
+                  <Link href={getPlayUrl()} target="_blank" className="w-32">
                     <Button className="w-32" size="lg">
                       <Play className="w-4 h-4 mr-2 fill-current" /> Play
                     </Button>
@@ -318,7 +329,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                         <div key={person.Id} className="flex flex-col items-center gap-2 min-w-20 text-center">
                           <Avatar className="w-16 h-16 border border-border shadow-sm">
                             <AvatarImage
-                              src={`/api/jellyfin/image/${person.Id}?tag=${person.PrimaryImageTag}`}
+                              src={API_PATHS.image(person.Id, { tag: person.PrimaryImageTag })}
                               className="object-cover"
                             />
                             <AvatarFallback className="bg-muted text-muted-foreground text-xs">

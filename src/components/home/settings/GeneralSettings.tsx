@@ -10,6 +10,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import useSWR from "swr";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getBackendName } from "@/lib/api-paths";
 
 export function GeneralSettings() {
     const { setTheme, resolvedTheme: theme } = useTheme();
@@ -96,7 +97,7 @@ export function GeneralSettings() {
                                         <DialogHeader>
                                             <DialogTitle>Guest Lending</DialogTitle>
                                             <DialogDescription className="pt-2">
-                                                Allows people to join your session as guests without needing their own Jellyfin account.
+                                                Allows people to join your session as guests without needing their own {getBackendName()} account.
                                                 They will use your connection to fetch movies and images for the duration of the session.
                                             </DialogDescription>
                                         </DialogHeader>
