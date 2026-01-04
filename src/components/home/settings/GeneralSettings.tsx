@@ -17,6 +17,19 @@ export function GeneralSettings() {
     const { settings, updateSettings } = useSettings();
     const { data: sessionStatus, isLoading } = useSWR("/api/session", (url) => axios.get(url).then(res => res.data));
     const isGuest = sessionStatus?.isGuest || false;
+    const isInSession = !!sessionStatus?.code;
+
+    const handleGuestLendingToggle = async (pressed: boolean) => {
+        updateSettings({ allowGuestLending: pressed });
+        // If in a session, update the session's guest lending status on the server
+        if (isInSession) {
+            try {
+                await axios.patch("/api/session", { allowGuestLending: pressed });
+            } catch (error) {
+                console.error("Failed to update guest lending on session:", error);
+            }
+        }
+    };
 
     return (
         <SettingsSection title="General">
@@ -115,7 +128,7 @@ export function GeneralSettings() {
                         </div>
                         <Toggle
                             pressed={settings.allowGuestLending}
-                            onPressedChange={(pressed) => updateSettings({ allowGuestLending: pressed })}
+                            onPressedChange={handleGuestLendingToggle}
                             variant="outline"
                             size="sm"
                             className="w-26"

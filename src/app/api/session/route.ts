@@ -99,40 +99,66 @@ export async function PATCH(request: NextRequest) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { filters, settings } = await request.json();
+    const body = await request.json();
 
-    if (session.sessionCode) {
-        const updateData: any = {};
-        if (filters !== undefined) updateData.filters = JSON.stringify(filters);
-        if (settings !== undefined) updateData.settings = JSON.stringify(settings);
+    // Handle guest lending toggle
+    if (body.allowGuestLending !== undefined && session.sessionCode) {
+        const currentSession = await db.query.sessions.findFirst({
+            where: eq(sessions.code, session.sessionCode)
+        });
 
-        await db.update(sessions)
-            .set(updateData)
-            .where(eq(sessions.code, session.sessionCode));
+        // Only the host can toggle guest lending
+        if (currentSession && currentSession.hostUserId === session.user.Id) {
+            await db.update(sessions)
+                .set({
+                    hostAccessToken: body.allowGuestLending ? session.user.AccessToken : null,
+                    hostDeviceId: body.allowGuestLending ? session.user.DeviceId : null,
+                })
+                .where(eq(sessions.code, session.sessionCode));
 
-        if (filters !== undefined) {
-            events.emit(EVENT_TYPES.FILTERS_UPDATED, {
-                sessionCode: session.sessionCode,
-                userId: session.user.Id,
-                userName: session.user.Name,
-                filters
-            });
+            return NextResponse.json({ success: true });
+        } else {
+            return NextResponse.json({ error: "Only the host can change guest lending" }, { status: 403 });
         }
-
-        if (settings !== undefined) {
-            events.emit(EVENT_TYPES.SETTINGS_UPDATED, {
-                sessionCode: session.sessionCode,
-                userId: session.user.Id,
-                userName: session.user.Name,
-                settings
-            });
-        }
-    } else {
-        if (filters !== undefined) session.soloFilters = filters;
-        await session.save();
     }
 
-    return NextResponse.json({ success: true });
+    // Handle filters and settings update
+    if (body.filters !== undefined || body.settings !== undefined) {
+        if (session.sessionCode) {
+            const updateData: Record<string, string> = {};
+            if (body.filters !== undefined) updateData.filters = JSON.stringify(body.filters);
+            if (body.settings !== undefined) updateData.settings = JSON.stringify(body.settings);
+
+            await db.update(sessions)
+                .set(updateData)
+                .where(eq(sessions.code, session.sessionCode));
+
+            if (body.filters !== undefined) {
+                events.emit(EVENT_TYPES.FILTERS_UPDATED, {
+                    sessionCode: session.sessionCode,
+                    userId: session.user.Id,
+                    userName: session.user.Name,
+                    filters: body.filters
+                });
+            }
+
+            if (body.settings !== undefined) {
+                events.emit(EVENT_TYPES.SETTINGS_UPDATED, {
+                    sessionCode: session.sessionCode,
+                    userId: session.user.Id,
+                    userName: session.user.Name,
+                    settings: body.settings
+                });
+            }
+        } else {
+            if (body.filters !== undefined) session.soloFilters = body.filters;
+            await session.save();
+        }
+
+        return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: "No valid update provided" }, { status: 400 });
 }
 
 export async function GET() {
