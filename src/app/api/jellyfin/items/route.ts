@@ -74,7 +74,9 @@ export async function GET(request: NextRequest) {
                         Genres: sessionFilters?.genres?.join(",") || undefined,
                         Years: yearsStr,
                         MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
+                        OfficialRatings: sessionFilters?.officialRatings?.join(",") || undefined,
                     },
+
                     headers: getAuthenticatedHeaders(accessToken!, deviceId!),
                 });
                 return res.data.Items || [];
@@ -131,7 +133,9 @@ export async function GET(request: NextRequest) {
                         Genres: session.soloFilters?.genres?.join(",") || undefined,
                         Years: soloYearsStr,
                         MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
+                        OfficialRatings: session.soloFilters?.officialRatings?.join(",") || undefined,
                     },
+
                     headers: getAuthenticatedHeaders(accessToken!, deviceId!),
                 });
                 return res.data.Items || [];

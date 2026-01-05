@@ -3,8 +3,9 @@ import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
-import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getCachedGenres } from "@/lib/jellyfin/cached-queries";
+
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -14,17 +15,10 @@ export async function GET(request: NextRequest) {
     try {
         const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
 
-        const res = await apiClient.get(getJellyfinUrl(`/Genres`), {
-            params: {
-                Recursive: true,
-                IncludeItemTypes: "Movie",
-                UserId: userId,
-            },
-            headers: getAuthenticatedHeaders(accessToken!, deviceId!),
-        });
-
-        return NextResponse.json(res.data.Items || []);
+        const genres = await getCachedGenres(accessToken!, deviceId!, userId!);
+        return NextResponse.json(genres);
     } catch (error) {
+
         console.error("Fetch Genres Error", error);
         return NextResponse.json({ error: "Failed to fetch genres" }, { status: 500 });
     }

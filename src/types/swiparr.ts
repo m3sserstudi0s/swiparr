@@ -2,7 +2,9 @@ export interface Filters {
   genres: string[];
   yearRange?: [number, number];
   minCommunityRating?: number;
+  officialRatings?: string[];
 }
+
 
 export interface JellyfinItem {
   Name: string;

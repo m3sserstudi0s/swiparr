@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/collapsible"
 import { Shield, ShieldAlert, ShieldCheck, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
@@ -29,37 +31,49 @@ export function AdminSettings() {
     const [status, setStatus] = useState<{ hasAdmin: boolean; isAdmin: boolean } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isClaiming, setIsClaiming] = useState(false);
-    const [availableLibraries, setAvailableLibraries] = useState<JellyfinLibrary[]>([]);
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
-    const [isLoadingLibs, setIsLoadingLibs] = useState(false);
     const [isSavingLibs, setIsSavingLibs] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [needsRefresh, setNeedsRefresh] = useState(false);
     const router = useRouter();
 
+    const { data: availableLibraries = [], isLoading: isLoadingLibs } = useQuery({
+        queryKey: ["jellyfin-libraries"],
+        queryFn: async () => {
+            const res = await axios.get("/api/jellyfin/libraries");
+            return res.data;
+        },
+        enabled: !!status?.isAdmin,
+        staleTime: 1000 * 60 * 60, // 1 hour
+    });
+
+    const { data: adminLibraries } = useQuery({
+        queryKey: ["admin-libraries"],
+        queryFn: async () => {
+            const res = await axios.get("/api/admin/libraries");
+            return res.data;
+        },
+        enabled: !!status?.isAdmin,
+    });
+
     useEffect(() => {
-        const fetchData = async () => {
+        if (adminLibraries) {
+            setIncludedLibraries(adminLibraries);
+        }
+    }, [adminLibraries]);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
             try {
                 const statusRes = await axios.get("/api/admin/status");
                 setStatus(statusRes.data);
-
-                if (statusRes.data.isAdmin) {
-                    setIsLoadingLibs(true);
-                    const [availRes, inclRes] = await Promise.all([
-                        axios.get("/api/jellyfin/libraries"),
-                        axios.get("/api/admin/libraries")
-                    ]);
-                    setAvailableLibraries(availRes.data);
-                    setIncludedLibraries(inclRes.data);
-                }
             } catch (err) {
-                console.error("Failed to fetch admin data", err);
+                console.error("Failed to fetch admin status", err);
             } finally {
                 setIsLoading(false);
-                setIsLoadingLibs(false);
             }
         };
-        fetchData();
+        fetchStatus();
     }, []);
 
     const handleClaim = async () => {
@@ -68,22 +82,15 @@ export function AdminSettings() {
             await axios.post("/api/admin/claim");
             toast.success("You are now the admin");
             setStatus({ hasAdmin: true, isAdmin: true });
-
-            // Fetch libraries after claiming
-            setIsLoadingLibs(true);
-            const availRes = await axios.get("/api/jellyfin/libraries");
-            setAvailableLibraries(availRes.data);
-            setIncludedLibraries([]);
-
             router.refresh();
         } catch (err) {
             toast.error("Failed to claim admin role");
             console.error(err);
         } finally {
             setIsClaiming(false);
-            setIsLoadingLibs(false);
         }
     };
+
 
     const toggleLibrary = (id: string) => {
         if (id === "all") {
@@ -204,9 +211,10 @@ export function AdminSettings() {
                                                 No movie libraries found
                                             </div>
                                         ) : (
-                                            availableLibraries.map((lib) => {
+                                            availableLibraries.map((lib: JellyfinLibrary) => {
                                                 const isIncluded = includedLibraries.includes(lib.Id);
                                                 return (
+
                                                     <button
                                                         key={lib.Id}
                                                         onClick={() => toggleLibrary(lib.Id)}

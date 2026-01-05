@@ -26,8 +26,10 @@ interface FilterDrawerProps {
 
 export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: FilterDrawerProps) {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [minRating, setMinRating] = useState<number>(0);
+
 
   const lastSavedFiltersRef = useRef<string>(JSON.stringify(currentFilters));
   const hasInitializedRef = useRef(false);
@@ -40,6 +42,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       return res.data;
     },
     enabled: open,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 
   const minYearLimit = useMemo(() => {
@@ -62,6 +66,20 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       return res.data;
     },
     enabled: open,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+
+  // Fetch available ratings
+  const { data: ratings, isLoading: isLoadingRatings } = useQuery({
+    queryKey: ["ratings"],
+    queryFn: async () => {
+      const res = await axios.get("/api/jellyfin/ratings");
+      return res.data;
+    },
+    enabled: open,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 
   useEffect(() => {
@@ -69,6 +87,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       const filtersStr = JSON.stringify(currentFilters);
       if (filtersStr !== lastSavedFiltersRef.current || !hasInitializedRef.current) {
         setSelectedGenres(currentFilters?.genres || []);
+        setSelectedRatings(currentFilters?.officialRatings || []);
         setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
         setMinRating(currentFilters?.minCommunityRating || 0);
         lastSavedFiltersRef.current = filtersStr;
@@ -80,6 +99,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         const isYearDefault = !isLoadingYears && yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
         const newFilters: Filters = {
           genres: selectedGenres,
+          officialRatings: selectedRatings,
           yearRange: isYearDefault ? undefined : yearRange,
           minCommunityRating: minRating > 0 ? minRating : undefined
         };
@@ -100,13 +120,23 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     );
   };
 
+  const toggleRating = (rating: string) => {
+    setSelectedRatings((prev) =>
+      prev.includes(rating)
+        ? prev.filter((r) => r !== rating)
+        : [...prev, rating]
+    );
+  };
+
   const resetAll = () => {
     setSelectedGenres([]);
+    setSelectedRatings([]);
     setYearRange([minYearLimit, maxYearLimit]);
     setMinRating(0);
   };
 
-  if (isLoadingYears || isLoadingGenres) {
+  if (isLoadingYears || isLoadingGenres || isLoadingRatings) {
+
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="h-[66vh]">
@@ -211,6 +241,28 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 ))}
               </div>
             </div>
+
+            {/* Official Ratings Section */}
+            {ratings && ratings.length > 0 && (
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">
+                  Maturity Ratings
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {ratings.map((rating: string) => (
+                    <Badge
+                      key={rating}
+                      variant={selectedRatings.includes(rating) ? "default" : "outline"}
+                      className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
+                      onClick={() => toggleRating(rating)}
+                    >
+                      {rating}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <Button
               variant="outline"
               className="w-full gap-2 text-muted-foreground hover:text-foreground"
