@@ -6,6 +6,7 @@ import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
+import { API_PATHS } from "@/lib/api-paths";
 
 interface MatchOverlayProps {
   item: JellyfinItem | null;
@@ -60,7 +61,7 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               onClick={() => { openMovie(item.Id); onClose(); }}
             >
               <OptimizedImage
-                src={`/api/jellyfin/image/${item.Id}`}
+                src={API_PATHS.image(item.Id)}
                 alt={item.Name}
                 className="w-full h-full object-cover"
               />

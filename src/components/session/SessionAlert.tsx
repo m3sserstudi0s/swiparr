@@ -8,6 +8,7 @@ import { useSettings } from "@/lib/settings"
 import useSWR from "swr"
 import axios from "axios"
 import { Button } from "@/components/ui/button"
+import { getBackendName } from "@/lib/api-paths"
 
 export function SessionAlert() {
     const { settings, updateSettings } = useSettings();
@@ -33,7 +34,7 @@ export function SessionAlert() {
                 <Info className="size-4 text-primary" />
                 <AlertTitle>Guest Lending</AlertTitle>
                 <AlertDescription className="text-xs">
-                    Allow others to join your session without a Jellyfin account by enabling Guest Lending in Settings.
+                    Allow others to join your session without a {getBackendName()} account by enabling Guest Lending in Settings.
                 </AlertDescription>
                 <Button
                     variant="ghost"

@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { API_PATHS } from "@/lib/api-paths";
 
 interface Member {
     userId: string;
@@ -46,7 +47,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                 <Tooltip key={user.userId}>
                     <TooltipTrigger asChild>
                         <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
-                            <AvatarImage src={`/api/jellyfin/image/${user.userId}?type=user`} />
+                            <AvatarImage src={API_PATHS.image(user.userId, { type: 'user' })} />
                             <AvatarFallback
                                 className={cn(
                                     "font-semibold",

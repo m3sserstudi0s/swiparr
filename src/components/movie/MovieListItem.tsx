@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { MergedLike } from "@/types/swiparr";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { API_PATHS, isPlex } from "@/lib/api-paths";
 
 interface MovieListItemProps {
 
@@ -63,7 +64,15 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
-  const { jellyfinPublicUrl } = useRuntimeConfig();
+  const { jellyfinPublicUrl, plexPublicUrl } = useRuntimeConfig();
+  
+  // Generate play URL based on backend
+  const getPlayUrl = () => {
+    if (isPlex()) {
+      return `${plexPublicUrl}/web/index.html#!/server/library/metadata/${movie.Id}`;
+    }
+    return `${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`;
+  };
 
   const isCondensed = variant === "condensed";
 
@@ -79,7 +88,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
         isCondensed ? "relative shrink-0 w-15 h-22" : "relative shrink-0 w-20 h-28",
       )}>
         <OptimizedImage
-          src={`/api/jellyfin/image/${movie.Id}`}
+          src={API_PATHS.image(movie.Id)}
           alt={movie.Name}
           className="w-full h-full object-cover rounded-md"
           sizes="(max-width: 768px) 100px, 150px"
@@ -137,8 +146,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
           )}
 
           <div className="flex gap-2">
-            <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
-
+            <Link href={getPlayUrl()} target="_blank" onClick={e => e.stopPropagation()} className="flex-1">
               <Button
                 size="sm"
                 variant="secondary"

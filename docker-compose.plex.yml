@@ -1,0 +1,35 @@
+# Swiparr for Plex - Docker Compose Example
+# A Tinder-like movie selection interface for Plex
+
+services:
+  swiparr:
+    image: ghcr.io/m3sserstudi0s/swiparr:latest
+    container_name: swiparr
+    restart: unless-stopped
+    environment:
+      # Required: Your Plex server URL (internal URL accessible from container)
+      - PLEX_URL=http://your-plex-internal-ip:32400
+      
+      # Optional: Public URL for your Plex server (for play links in browser)
+      # - PLEX_PUBLIC_URL=https://plex.yourdomain.com
+      
+      # Optional: Explicitly set backend to Plex (auto-detected from PLEX_URL)
+      # - MEDIA_BACKEND=plex
+      
+      # Optional: Set to 'true' if accessing Swiparr over HTTPS
+      # - USE_SECURE_COOKIES=true
+      
+      # Optional: A Plex username that will always have admin privileges
+      # - ADMIN_USERNAME=your-plex-username
+      
+    volumes:
+      # Persistent storage for database
+      - ./swiparr-data:/app/data
+    ports:
+      - 4321:4321
+
+# Notes:
+# 1. Make sure ./swiparr-data is owned by UID 1001:65533 or is writable by this user
+# 2. Run with: docker compose -f docker-compose.plex.yml up -d
+# 3. Access at: http://your-server-ip:4321
+# 4. Login with your Plex account credentials or use "Sign in with Plex"

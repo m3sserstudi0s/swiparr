@@ -8,6 +8,7 @@ import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { useSettings } from "@/lib/settings";
 import { ticksToTime } from "@/lib/utils";
+import { API_PATHS } from "@/lib/api-paths";
 
 
 export type { TinderCardHandle };
@@ -81,7 +82,7 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
             <Card className="relative h-full w-full overflow-hidden rounded-3xl border-border shadow-2xl select-none isolate transform-gpu">
               <div className="absolute inset-0 bg-muted pointer-events-none rounded-3xl">
                 <OptimizedImage
-                  src={`/api/jellyfin/image/${item.Id}`}
+                  src={API_PATHS.image(item.Id)}
                   alt={item.Name}
                   className="h-full w-full object-cover rounded-3xl"
                   draggable={false} // Native drag must be disabled

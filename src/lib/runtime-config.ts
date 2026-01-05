@@ -6,10 +6,31 @@
 
 import packageJson from "../../package.json";
 
+export type MediaBackend = 'jellyfin' | 'plex';
+
 export interface RuntimeConfig {
   jellyfinPublicUrl: string;
+  plexPublicUrl: string;
   useWatchlist: boolean;
   version: string;
+  backend: MediaBackend;
+}
+
+/**
+ * Detect which backend to use based on environment variables.
+ */
+function detectBackend(): MediaBackend {
+  // Explicit setting takes priority
+  const explicit = process.env.MEDIA_BACKEND || process.env.NEXT_PUBLIC_MEDIA_BACKEND;
+  if (explicit === 'plex') return 'plex';
+  if (explicit === 'jellyfin') return 'jellyfin';
+  
+  // Auto-detect based on which URL is set
+  if (process.env.PLEX_URL || process.env.NEXT_PUBLIC_PLEX_URL) return 'plex';
+  if (process.env.JELLYFIN_URL || process.env.NEXT_PUBLIC_JELLYFIN_URL) return 'jellyfin';
+  
+  // Default to plex for this fork
+  return 'plex';
 }
 
 /**
@@ -22,11 +43,14 @@ export function getRuntimeConfig(): RuntimeConfig {
   }
   
   const jellyfinPublicUrl = (process.env.JELLYFIN_PUBLIC_URL || process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || process.env.NEXT_PUBLIC_JELLYFIN_URL || '').replace(/\/$/, '');
+  const plexPublicUrl = (process.env.PLEX_PUBLIC_URL || process.env.NEXT_PUBLIC_PLEX_PUBLIC_URL || process.env.PLEX_URL || process.env.NEXT_PUBLIC_PLEX_URL || '').replace(/\/$/, '');
   
   return {
     jellyfinPublicUrl,
+    plexPublicUrl,
     useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
     version: (process.env.APP_VERSION || process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version).replace(/^v/i, ''),
+    backend: detectBackend(),
   };
 }
 

@@ -104,7 +104,7 @@ export default function SessionContent() {
         toast.promise(joinSession.mutateAsync(code), {
             loading: "Joining session...",
             success: "Connected!",
-            error: "Invalid Code",
+            error: (err) => err?.response?.data?.error || "Invalid Code",
         });
     };
 
@@ -119,9 +119,12 @@ export default function SessionContent() {
     // -- 4. AUTO-JOIN LOGIC --
     useEffect(() => {
         const joinParam = searchParams.get("join");
-        if (joinParam && isSuccess && !activeCode) {
-            setIsOpen(true);
-            handleJoinSession(joinParam);
+        if (joinParam && isSuccess) {
+            // If not in any session, or if the join code differs from current session
+            if (!activeCode || activeCode.toUpperCase() !== joinParam.toUpperCase()) {
+                setIsOpen(true);
+                handleJoinSession(joinParam);
+            }
         }
     }, [searchParams, isSuccess, activeCode]);
 
@@ -134,16 +137,46 @@ export default function SessionContent() {
             text: `Join with code: ${activeCode}`,
             url: shareUrl
         };
-        if (navigator.share) {
+        
+        const isSecureContext = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        
+        // Try native share first (mobile)
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
             try {
                 await navigator.share(shareData);
-            } catch (err) {
-                console.log("Share cancelled");
+                return;
+            } catch (err: any) {
+                // User cancelled or share failed - fall through to clipboard
+                if (err.name !== 'AbortError') {
+                    console.log("Share failed, falling back to clipboard:", err);
+                }
             }
-        } else {
-            await navigator.clipboard.writeText(shareUrl);
-            toast.success("Link copied to clipboard");
         }
+        
+        // HTTPS: Use clipboard API
+        if (isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                toast.success("Link copied to clipboard!");
+                return;
+            } catch (err) {
+                console.log("Clipboard write failed:", err);
+            }
+        }
+        
+        // HTTP: Show a dialog with the link that user can copy manually
+        toast(
+            <div className="flex flex-col gap-2">
+                <span className="font-medium">Share this link:</span>
+                <code className="bg-muted px-2 py-1 rounded text-xs break-all select-all">
+                    {shareUrl}
+                </code>
+                <span className="text-xs text-muted-foreground">
+                    Select and copy (Ctrl+C / Cmd+C)
+                </span>
+            </div>,
+            { duration: 15000 }
+        );
     };
 
     return (

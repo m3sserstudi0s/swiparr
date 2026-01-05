@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
-import { Copy, Check, ShieldCheck, ArrowRight } from "lucide-react";
+import { Copy, Check, ShieldCheck, ArrowRight, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
 import { Label } from "../ui/label";
+import { API_PATHS, isPlex, getBackendName } from "@/lib/api-paths";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
@@ -48,6 +49,15 @@ export default function LoginContent() {
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  
+  // Plex PIN auth state
+  const [plexPinId, setPlexPinId] = useState<string | null>(null);
+  const [plexClientId, setPlexClientId] = useState<string | null>(null);
+  const [plexAuthUrl, setPlexAuthUrl] = useState<string | null>(null);
+  const [isCheckingPlexPin, setIsCheckingPlexPin] = useState(false);
+  
+  const usingPlex = isPlex();
+  const backendName = getBackendName();
 
   const copyToClipboard = async () => {
     if (qcCode) {
@@ -76,7 +86,7 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(API_PATHS.login, {
         method: "POST",
         body: JSON.stringify({ username, password }),
         headers: { "Content-Type": "application/json" },
@@ -113,7 +123,7 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/guest", {
+      const res = await fetch(API_PATHS.guest, {
         method: "POST",
         body: JSON.stringify({ username: guestName, sessionCode: code }),
         headers: { "Content-Type": "application/json" },
@@ -145,28 +155,82 @@ export default function LoginContent() {
   const startQuickConnect = async () => {
     setLoading(true);
 
-    const promise = async () => {
-      const res = await fetch("/api/auth/quick-connect");
-      const data = await res.json();
-      if (!data.Code) throw new Error("Quick connect failed");
-      return data;
-    };
+    if (usingPlex) {
+      // Plex PIN-based authentication
+      const promise = async () => {
+        const res = await fetch(API_PATHS.plexPin);
+        const data = await res.json();
+        if (!data.pin) throw new Error("Failed to get Plex PIN");
+        return data;
+      };
 
-    toast.promise(promise(), {
-      loading: "Starting quick connect...",
-      success: (data) => {
-        setQcCode(data.Code);
-        setQcSecret(data.Secret);
-        setLoading(false);
-        return "Quick connect started";
-      },
-      error: () => {
-        setLoading(false);
-        return "Quick connect failed to initialize";
-      },
-      position: 'top-right'
-    });
+      toast.promise(promise(), {
+        loading: "Starting Plex authentication...",
+        success: (data) => {
+          setPlexPinId(data.pinId);
+          setPlexClientId(data.clientId);
+          setPlexAuthUrl(data.authUrl);
+          setQcCode(data.pin);
+          setLoading(false);
+          return "Please authorize in Plex";
+        },
+        error: () => {
+          setLoading(false);
+          return "Failed to start Plex authentication";
+        },
+      });
+    } else {
+      // Jellyfin Quick Connect
+      const promise = async () => {
+        const res = await fetch(API_PATHS.quickConnect);
+        const data = await res.json();
+        if (!data.Code) throw new Error("Quick connect failed");
+        return data;
+      };
+
+      toast.promise(promise(), {
+        loading: "Starting quick connect...",
+        success: (data) => {
+          setQcCode(data.Code);
+          setQcSecret(data.Secret);
+          setLoading(false);
+          return "Quick connect started";
+        },
+        error: () => {
+          setLoading(false);
+          return "Quick connect failed to initialize";
+        },
+      });
+    }
   };
+  
+  // Poll for Plex PIN authorization
+  useEffect(() => {
+    if (!usingPlex || !plexPinId || !plexClientId) return;
+    
+    const checkPlexPin = async () => {
+      setIsCheckingPlexPin(true);
+      try {
+        const res = await fetch(API_PATHS.plexPin, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pinId: plexPinId, clientId: plexClientId }),
+        });
+        const data = await res.json();
+        
+        if (data.authorized) {
+          onAuthorized(data);
+        }
+      } catch (err) {
+        console.error('Error checking Plex PIN:', err);
+      } finally {
+        setIsCheckingPlexPin(false);
+      }
+    };
+    
+    const interval = setInterval(checkPlexPin, 3000);
+    return () => clearInterval(interval);
+  }, [plexPinId, plexClientId, usingPlex, onAuthorized]);
 
   return (
 
@@ -204,31 +268,55 @@ export default function LoginContent() {
             <TabsContent value="login" className="space-y-4">
               {qcCode ? (
                 <div className="flex flex-col items-center space-y-6 py-4">
-                  <div className="relative group">
-                    <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
-                      {qcCode}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="ml-2"
-                        onClick={copyToClipboard}
-                        title="Copy to clipboard"
-                      >
-                        {copied ? (
-                          <Check className="h-4 w-4 " />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Go to <span className="text-foreground font-semibold">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
-                  </p>
+                  {usingPlex && plexAuthUrl ? (
+                    <>
+                      <p className="text-sm text-center text-muted-foreground">
+                        Click the button below to authorize with Plex
+                      </p>
+                      <a href={plexAuthUrl} target="_blank" rel="noopener noreferrer">
+                        <Button className="gap-2">
+                          <ExternalLink className="h-4 w-4" />
+                          Open Plex to Authorize
+                        </Button>
+                      </a>
+                      <p className="text-xs text-center text-muted-foreground">
+                        {isCheckingPlexPin ? "Checking authorization..." : "Waiting for authorization..."}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative group">
+                        <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
+                          {qcCode}
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="ml-2"
+                            onClick={copyToClipboard}
+                            title="Copy to clipboard"
+                          >
+                            {copied ? (
+                              <Check className="h-4 w-4 " />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-center text-muted-foreground">
+                        Go to <span className="text-foreground font-semibold">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
+                      </p>
+                    </>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setQcCode(null)}
+                    onClick={() => {
+                      setQcCode(null);
+                      setPlexPinId(null);
+                      setPlexClientId(null);
+                      setPlexAuthUrl(null);
+                    }}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     Cancel
@@ -237,7 +325,7 @@ export default function LoginContent() {
               ) : (
                 <form onSubmit={handleLogin} className="space-y-3">
                   <Input
-                    placeholder="Username"
+                    placeholder={usingPlex ? "Plex Email or Username" : "Username"}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="bg-muted border-input"
@@ -263,7 +351,7 @@ export default function LoginContent() {
                     onClick={startQuickConnect}
                     disabled={loading}
                   >
-                    Quick Connect
+                    {usingPlex ? "Sign in with Plex" : "Quick Connect"}
                   </Button>
                 </form>
               )}
@@ -294,7 +382,7 @@ export default function LoginContent() {
                   </Button>
                 </div>
                 <p className="text-xs text-center text-muted-foreground pt-2">
-                  Joining as a guest lets you swipe in a session without a Jellyfin account.
+                  Joining as a guest lets you swipe in a session without a {backendName} account.
                 </p>
               </form>
             </TabsContent>
