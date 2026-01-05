@@ -117,12 +117,14 @@ export function CardDeck() {
   // Check if filters are non-default
   const hasAppliedFilters = useMemo(() => {
     if (!sessionStatus?.filters) return false;
-    const { genres, yearRange, minCommunityRating } = sessionStatus.filters;
+    const { genres, yearRange, minCommunityRating, officialRatings, runtimeRange } = sessionStatus.filters;
     const genresApplied = genres && genres.length > 0;
     const ratingApplied = minCommunityRating !== undefined && minCommunityRating > 0;
     const yearApplied = yearRange !== undefined;
+    const officialRatingApplied = officialRatings && officialRatings.length > 0;
+    const runtimeApplied = runtimeRange !== undefined;
 
-    return genresApplied || ratingApplied || yearApplied;
+    return genresApplied || ratingApplied || yearApplied || officialRatingApplied || runtimeApplied;
   }, [sessionStatus?.filters]);
 
   // --- MULTIPLAYER LOGIC INTEGRATION ---

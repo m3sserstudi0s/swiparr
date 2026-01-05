@@ -3,6 +3,7 @@ export interface Filters {
   yearRange?: [number, number];
   minCommunityRating?: number;
   officialRatings?: string[];
+  runtimeRange?: [number, number];
 }
 
 

@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
                 ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange[0] + i).join(",") 
                 : undefined;
 
+            const runtimeTicksMin = sessionFilters?.runtimeRange ? sessionFilters.runtimeRange[0] * 600000000 : undefined;
+            const runtimeTicksMax = (sessionFilters?.runtimeRange && sessionFilters.runtimeRange[1] < 240) ? sessionFilters.runtimeRange[1] * 600000000 : undefined;
+
             const fetchAllForLibrary = async (parentId?: string) => {
                 const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
                     params: {
@@ -75,6 +78,8 @@ export async function GET(request: NextRequest) {
                         Years: yearsStr,
                         MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
                         OfficialRatings: sessionFilters?.officialRatings?.join(",") || undefined,
+                        MinRunTimeTicks: runtimeTicksMin,
+                        MaxRunTimeTicks: runtimeTicksMax,
                     },
 
                     headers: getAuthenticatedHeaders(accessToken!, deviceId!),
@@ -120,6 +125,9 @@ export async function GET(request: NextRequest) {
                 ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
                 : undefined;
  
+            const soloRuntimeTicksMin = session.soloFilters?.runtimeRange ? session.soloFilters.runtimeRange[0] * 600000000 : undefined;
+            const soloRuntimeTicksMax = (session.soloFilters?.runtimeRange && session.soloFilters.runtimeRange[1] < 240) ? session.soloFilters.runtimeRange[1] * 600000000 : undefined;
+
             const fetchRandomForLibrary = async (parentId?: string) => {
                 const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
                     params: {
@@ -134,6 +142,8 @@ export async function GET(request: NextRequest) {
                         Years: soloYearsStr,
                         MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
                         OfficialRatings: session.soloFilters?.officialRatings?.join(",") || undefined,
+                        MinRunTimeTicks: soloRuntimeTicksMin,
+                        MaxRunTimeTicks: soloRuntimeTicksMax,
                     },
 
                     headers: getAuthenticatedHeaders(accessToken!, deviceId!),

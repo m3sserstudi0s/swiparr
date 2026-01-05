@@ -28,6 +28,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
+  const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
 
 
@@ -89,6 +90,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         setSelectedGenres(currentFilters?.genres || []);
         setSelectedRatings(currentFilters?.officialRatings || []);
         setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
+        setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
         setMinRating(currentFilters?.minCommunityRating || 0);
         lastSavedFiltersRef.current = filtersStr;
         hasInitializedRef.current = true;
@@ -97,10 +99,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       if (hasInitializedRef.current) {
         // Only save if we actually had valid limits to compare against
         const isYearDefault = !isLoadingYears && yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
+        const isRuntimeDefault = runtimeRange[0] === 0 && runtimeRange[1] === 240;
         const newFilters: Filters = {
           genres: selectedGenres,
           officialRatings: selectedRatings,
           yearRange: isYearDefault ? undefined : yearRange,
+          runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
           minCommunityRating: minRating > 0 ? minRating : undefined
         };
         if (JSON.stringify(newFilters) !== lastSavedFiltersRef.current) {
@@ -132,6 +136,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setSelectedGenres([]);
     setSelectedRatings([]);
     setYearRange([minYearLimit, maxYearLimit]);
+    setRuntimeRange([0, 240]);
     setMinRating(0);
   };
 
@@ -220,6 +225,32 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               <div className="flex justify-between text-xs text-muted-foreground font-medium">
                 <span>{minYearLimit}</span>
                 <span>{maxYearLimit}</span>
+              </div>
+            </div>
+
+            {/* Runtime Section */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <Label className="text-base font-semibold">
+                  Runtime
+                </Label>
+                <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                  {runtimeRange[0]}m — {runtimeRange[1] === 240 ? "240m+" : `${runtimeRange[1]}m`}
+                </span>
+              </div>
+              <div className="px-2">
+                <Slider
+                  value={runtimeRange}
+                  min={0}
+                  max={240}
+                  step={5}
+                  onValueChange={(val) => setRuntimeRange(val as [number, number])}
+                  className="py-4"
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                <span>0m</span>
+                <span>240m+</span>
               </div>
             </div>
 

@@ -59,8 +59,8 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
 
     // --- OVERLAYS ---
     // Only show "Like" or "Nope" if moving mostly Horizontally
-    const nopeOpacity = useTransform(x, [-150, -50], [1, 0]);
-    const likeOpacity = useTransform(x, [50, 150], [0, 1]);
+    const nopeOpacity = useTransform(x, [-100, -20], [1, 0]);
+    const likeOpacity = useTransform(x, [20, 100], [0, 1]);
 
     useImperativeHandle(ref, () => ({
       async swipe(dir: Direction) {
@@ -225,10 +225,12 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
         onDragEnd={handleDragEnd}
         whileTap={{ cursor: "grabbing" }}
       >
+        {children}
+
         {/* --- LIKE STAMP --- */}
         <motion.div
           style={{ opacity: likeOpacity }}
-          className="absolute top-8 left-8 z-2 pointer-events-none"
+          className="absolute top-8 left-8 z-10 pointer-events-none"
         >
            <div className="border-4 border-green-500 rounded-lg p-2 px-4 -rotate-12 bg-black/20 backdrop-blur-sm">
             <span className="text-4xl font-black text-green-500 tracking-widest uppercase shadow-black drop-shadow-sm">
@@ -240,7 +242,7 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
         {/* --- NOPE STAMP --- */}
         <motion.div
           style={{ opacity: nopeOpacity }}
-          className="absolute top-8 right-8 z-2 pointer-events-none"
+          className="absolute top-8 right-8 z-10 pointer-events-none"
         >
           <div className="border-4 border-red-500 rounded-lg p-2 px-4 rotate-12 bg-black/20 backdrop-blur-sm">
              <span className="text-4xl font-black text-red-500 tracking-widest uppercase shadow-black drop-shadow-sm">
@@ -249,7 +251,6 @@ export const FramerTinderCard = forwardRef<TinderCardHandle, TinderCardProps>(
           </div>
         </motion.div>
 
-        {children}
       </motion.div>
     );
   }
