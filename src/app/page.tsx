@@ -23,7 +23,7 @@ export default function Home() {
         <Tabs 
           value={tab} 
           onValueChange={setTab} 
-          className="w-full flex flex-col h-full overflow-hidden gap-0 -mt-2"
+          className="w-full flex flex-col h-full gap-0 -mt-2"
         >
           <TabsList className="grid mx-auto w-fit h-fit grid-cols-2 bg-muted rounded-4xl shrink-0">
             <TabsTrigger value="swipe" className="h-11 w-15 group rounded-4xl">
@@ -39,7 +39,7 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 w-full mt-2 overflow-hidden">
+          <div className="flex-1 w-full mt-2">
             <TabsContent value="swipe" className="h-full w-full outline-none mt-0">
               <CardDeck />
             </TabsContent>
