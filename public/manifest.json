@@ -1,22 +1,22 @@
 {
   "name": "Swiparr",
   "short_name": "Swiparr",
-  "id": "/",
+  "id": "./",
   "icons": [
     {
-      "src": "/web-app-manifest-192x192.png",
+      "src": "web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/web-app-manifest-512x512.png",
+      "src": "web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/apple-icon.png",
+      "src": "apple-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
@@ -27,8 +27,8 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "handle_links": "auto",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "launch_handler": {
     "client_mode": ["focus-existing", "auto"]
   }

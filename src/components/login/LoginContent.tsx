@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
 import { Label } from "../ui/label";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
@@ -21,6 +22,8 @@ export default function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [wasMadeAdmin, setWasMadeAdmin] = useState(false);
   const searchParams = useSearchParams();
+  const config = useRuntimeConfig();
+
   const sessionCodeParam = useMemo(() => {
     const directJoin = searchParams.get("join");
     if (directJoin) return directJoin;
@@ -64,9 +67,11 @@ export default function LoginContent() {
       setLoading(false);
     } else {
       const callbackUrl = searchParams.get("callbackUrl") || "/";
-      window.location.href = callbackUrl;
+      window.location.href = callbackUrl.startsWith("/") && !callbackUrl.startsWith(config.basePath) 
+        ? `${config.basePath}${callbackUrl}` 
+        : callbackUrl;
     }
-  }, [searchParams]);
+  }, [searchParams, config.basePath]);
 
   useQuickConnectUpdates(qcSecret, onAuthorized);
 
@@ -76,7 +81,7 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(`${config.basePath}/api/auth/login`, {
         method: "POST",
         body: JSON.stringify({ username, password }),
         headers: { "Content-Type": "application/json" },
@@ -94,7 +99,9 @@ export default function LoginContent() {
           return "Admin account initialized";
         }
         const callbackUrl = searchParams.get("callbackUrl") || "/";
-        window.location.href = callbackUrl;
+        window.location.href = callbackUrl.startsWith("/") && !callbackUrl.startsWith(config.basePath) 
+          ? `${config.basePath}${callbackUrl}` 
+          : callbackUrl;
         setLoading(false);
         return "Logged in successfully";
       },
@@ -113,7 +120,7 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/guest", {
+      const res = await fetch(`${config.basePath}/api/auth/guest`, {
         method: "POST",
         body: JSON.stringify({ username: guestName, sessionCode: code }),
         headers: { "Content-Type": "application/json" },
@@ -126,7 +133,7 @@ export default function LoginContent() {
     toast.promise(promise(), {
       loading: "Joining as guest...",
       success: (data) => {
-        window.location.href = "/";
+        window.location.href = config.basePath || "/";
         return `Joined as ${data.user.Name}`;
       },
       error: (err) => {
@@ -139,14 +146,16 @@ export default function LoginContent() {
 
   const continueToApp = () => {
     const callbackUrl = searchParams.get("callbackUrl") || "/";
-    window.location.href = callbackUrl;
+    window.location.href = callbackUrl.startsWith("/") && !callbackUrl.startsWith(config.basePath) 
+      ? `${config.basePath}${callbackUrl}` 
+      : callbackUrl;
   };
 
   const startQuickConnect = async () => {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/quick-connect");
+      const res = await fetch(`${config.basePath}/api/auth/quick-connect`);
       const data = await res.json();
       if (!data.Code) throw new Error("Quick connect failed");
       return data;
@@ -169,7 +178,6 @@ export default function LoginContent() {
   };
 
   return (
-
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
         <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2"/>

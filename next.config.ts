@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  basePath: process.env.URL_BASE_PATH || "",
   /* config options here */
   reactCompiler: true,
   output: "standalone",
