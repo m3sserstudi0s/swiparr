@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, X, Rewind, SlidersHorizontal } from "lucide-react";
+import { Badge } from "../ui/badge";
 
 interface DeckControlsProps {
   onRewind: () => void;
@@ -9,8 +10,8 @@ interface DeckControlsProps {
   onOpenFilter: () => void;
   canRewind: boolean;
   hasAppliedFilters: boolean;
-  disableLeft?: boolean;
-  disableRight?: boolean;
+  leftSwipesRemaining?: number;
+  rightSwipesRemaining?: number;
 }
 
 export function DeckControls({
@@ -20,8 +21,8 @@ export function DeckControls({
   onOpenFilter,
   canRewind,
   hasAppliedFilters,
-  disableLeft,
-  disableRight,
+  leftSwipesRemaining,
+  rightSwipesRemaining,
 }: DeckControlsProps) {
   return (
     <div className="flex space-x-6 z-1 mt-4 items-center">
@@ -37,19 +38,27 @@ export function DeckControls({
       <Button
         size="icon"
         variant="outline"
-        className="h-18 w-18 rounded-full bg-background border-2"
+        className="h-18 w-18 rounded-full bg-background border-2 relative"
         onClick={onSwipeLeft}
-        disabled={disableLeft}
       >
         <X className="size-9" />
+        {leftSwipesRemaining !== undefined && (
+          <Badge variant='secondary' className="rounded-full absolute -top-2 -right-2">
+            {leftSwipesRemaining}
+          </Badge>
+        )}
       </Button>
       <Button
         size="icon"
-        className="h-18 w-18 rounded-full shadow-lg"
+        className="h-18 w-18 rounded-full shadow-lg relative"
         onClick={onSwipeRight}
-        disabled={disableRight}
       >
         <Heart className="size-9 fill-primary-foreground" />
+        {rightSwipesRemaining !== undefined && (
+          <Badge variant='secondary' className="rounded-full absolute -top-2 -right-2">
+            {rightSwipesRemaining}
+          </Badge>
+        )}
       </Button>
       <Button
         size="icon"

@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
 
   const body: SwipePayload = await request.json();
   let isMatch = false;
+  let matchBlockedByLimit = false;
 
   try {
     const sessionCode = session.sessionCode;
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
             const uniqueMatches = await db.select({ value: sql`count(distinct ${likes.jellyfinItemId})` }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.isMatch, true)));
             if ((uniqueMatches[0] as any).value >= settings.maxMatches) {
                 isMatch = false; // Block match creation
+                matchBlockedByLimit = true;
             }
         }
 
@@ -154,7 +156,7 @@ export async function POST(request: NextRequest) {
         }));
     }
 
-    return NextResponse.json({ success: true, isMatch, likedBy });
+    return NextResponse.json({ success: true, isMatch, likedBy, matchBlockedByLimit });
 
 
   } catch (error) {

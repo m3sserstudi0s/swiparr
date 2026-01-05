@@ -137,6 +137,12 @@ export function CardDeck() {
         setMatchedItem(item);
         // 2. Refresh the Sidebar match list immediately via SWR
         mutate(["/api/session/matches", sessionCode]);
+      } else if (data.matchBlockedByLimit) {
+        toast.error("Match not registered", { 
+          description: "Max number of matches reached in session",
+          position: "top-center",
+          duration: 5000 
+        });
       }
     },
     onError: (err) => {
@@ -161,13 +167,13 @@ export function CardDeck() {
     if (sessionSettings) {
       if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
         if (stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
-          toast.error("Like limit reached", {position: 'top-right'});
+          toast.error("Right swipe limit reached (Session settings restriction)", {position: 'top-right'});
           return;
         }
       }
       if (direction === "left" && sessionSettings.maxLeftSwipes && stats) {
         if (stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
-          toast.error("Nope limit reached", {position: 'top-right'});
+          toast.error("Left swipe limit reached (Session settings restriction)", {position: 'top-right'});
           return;
         }
       }
@@ -207,6 +213,22 @@ export function CardDeck() {
   const swipeTop = React.useCallback(async (direction: "left" | "right") => {
     if (activeDeck.length === 0) return;
 
+    // Check limits for buttons
+    if (sessionSettings) {
+        if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
+            if (stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
+                toast.error("Right swipe limit reached (Session settings restriction)", { position: 'top-right' });
+                return;
+            }
+        }
+        if (direction === "left" && sessionSettings.maxLeftSwipes && stats) {
+            if (stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
+                toast.error("Left swipe limit reached (Session settings restriction)", { position: 'top-right' });
+                return;
+            }
+        }
+    }
+
     // Active deck is filtered, so index 0 is always the visual top
     const topCard = activeDeck[0];
     const ref = cardRefs.current[topCard.Id];
@@ -215,7 +237,7 @@ export function CardDeck() {
     if (ref && ref.current) {
       await ref.current.swipe(direction);
     }
-  }, [activeDeck]);
+  }, [activeDeck, sessionSettings, stats]);
 
   const rewind = async () => {
     if (!lastSwipe) return;
@@ -265,6 +287,18 @@ export function CardDeck() {
   }, [activeDeck, openMovie]);
   useHotkeys("r, backspace", () => rewind(), [rewind]);
   useHotkeys("f", () => setIsFilterOpen(prev => !prev), []);
+
+  const leftSwipesRemaining = useMemo(() => {
+    if (!sessionSettings?.maxLeftSwipes) return undefined;
+    const remaining = sessionSettings.maxLeftSwipes - (stats?.mySwipes.left || 0);
+    return Math.max(0, remaining);
+  }, [sessionSettings?.maxLeftSwipes, stats?.mySwipes.left]);
+
+  const rightSwipesRemaining = useMemo(() => {
+    if (!sessionSettings?.maxRightSwipes) return undefined;
+    const remaining = sessionSettings.maxRightSwipes - (stats?.mySwipes.right || 0);
+    return Math.max(0, remaining);
+  }, [sessionSettings?.maxRightSwipes, stats?.mySwipes.right]);
 
   const showLoader = (isFetching && activeDeck.length === 0) || isApplyingFilters;
   if (showLoader) return <DeckLoading />;
@@ -333,8 +367,8 @@ export function CardDeck() {
         onOpenFilter={() => setIsFilterOpen(true)}
         canRewind={!!lastSwipe}
         hasAppliedFilters={hasAppliedFilters}
-        disableLeft={sessionSettings?.maxLeftSwipes ? (stats?.mySwipes.left || 0) >= sessionSettings.maxLeftSwipes : false}
-        disableRight={sessionSettings?.maxRightSwipes ? (stats?.mySwipes.right || 0) >= sessionSettings.maxRightSwipes : false}
+        leftSwipesRemaining={leftSwipesRemaining}
+        rightSwipesRemaining={rightSwipesRemaining}
       />
 
       <MatchOverlay
