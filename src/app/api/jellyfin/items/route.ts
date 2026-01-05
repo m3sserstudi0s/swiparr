@@ -71,15 +71,13 @@ export async function GET(request: NextRequest) {
                     params: {
                         IncludeItemTypes: "Movie",
                         Recursive: true,
-                        Fields: "Id,UserData",
+                        Fields: "Id,UserData,RunTimeTicks", // Added RunTimeTicks
                         SortBy: "Id", // Deterministic starting point
                         ParentId: parentId,
                         Genres: sessionFilters?.genres?.join(",") || undefined,
                         Years: yearsStr,
                         MinCommunityRating: sessionFilters?.minCommunityRating || undefined,
                         OfficialRatings: sessionFilters?.officialRatings?.join(",") || undefined,
-                        MinRunTimeTicks: runtimeTicksMin,
-                        MaxRunTimeTicks: runtimeTicksMax,
                     },
 
                     headers: getAuthenticatedHeaders(accessToken!, deviceId!),
@@ -87,16 +85,26 @@ export async function GET(request: NextRequest) {
                 return res.data.Items || [];
             };
 
-            // Fetch ALL movies (IDs + UserData) to ensure a consistent shuffle across users
-            let allItems = [];
+            // Fetch ALL movies (IDs + UserData + RunTimeTicks) to ensure a consistent shuffle across users
+            let allItems: JellyfinItem[] = [];
             if (includedLibraries.length > 0) {
                 const results = await Promise.all(includedLibraries.map(libId => fetchAllForLibrary(libId)));
                 allItems = results.flat();
             } else {
                 allItems = await fetchAllForLibrary();
             }
+
+            // Client-side filtering for Runtime (since Jellyfin /Items doesn't support MinRunTimeTicks/MaxRunTimeTicks as query params)
+            if (runtimeTicksMin !== undefined || runtimeTicksMax !== undefined) {
+                allItems = allItems.filter(item => {
+                    const ticks = item.RunTimeTicks || 0;
+                    if (runtimeTicksMin !== undefined && ticks < runtimeTicksMin) return false;
+                    if (runtimeTicksMax !== undefined && ticks > runtimeTicksMax) return false;
+                    return true;
+                });
+            }
             
-            // Seeded shuffle of the entire library
+            // Seeded shuffle of the filtered library
             const shuffledItems = shuffleWithSeed(allItems, session.sessionCode) as JellyfinItem[];
             
             // Pick first 50 not excluded for the current user
@@ -120,7 +128,7 @@ export async function GET(request: NextRequest) {
             }
         } else {
             // SOLO MODE: Normal random
-            const limitPerLib = includedLibraries.length > 0 ? Math.ceil(100 / includedLibraries.length) : 100;
+            const limitPerLib = includedLibraries.length > 0 ? Math.ceil(200 / includedLibraries.length) : 200; // Increased to 200 to account for filtering
             const soloYearsStr = session.soloFilters?.yearRange 
                 ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
                 : undefined;
@@ -142,13 +150,23 @@ export async function GET(request: NextRequest) {
                         Years: soloYearsStr,
                         MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
                         OfficialRatings: session.soloFilters?.officialRatings?.join(",") || undefined,
-                        MinRunTimeTicks: soloRuntimeTicksMin,
-                        MaxRunTimeTicks: soloRuntimeTicksMax,
                     },
 
                     headers: getAuthenticatedHeaders(accessToken!, deviceId!),
                 });
-                return res.data.Items || [];
+                let items = res.data.Items || [];
+
+                // Client-side filtering for Runtime
+                if (soloRuntimeTicksMin !== undefined || soloRuntimeTicksMax !== undefined) {
+                    items = items.filter((item: JellyfinItem) => {
+                        const ticks = item.RunTimeTicks || 0;
+                        if (soloRuntimeTicksMin !== undefined && ticks < soloRuntimeTicksMin) return false;
+                        if (soloRuntimeTicksMax !== undefined && ticks > soloRuntimeTicksMax) return false;
+                        return true;
+                    });
+                }
+
+                return items;
             };
 
             if (includedLibraries.length > 0) {
