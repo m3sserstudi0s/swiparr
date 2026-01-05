@@ -104,6 +104,9 @@ docker run -d \
 | `PORT` | The port the container listens on. | `4321` |
 | `HOSTNAME` | The hostname the server binds to. | `0.0.0.0` |
 | `ADMIN_USERNAME` | Optional. A Jellyfin username that will always have admin privileges. | - |
+| `PUID` | Optional. User ID to run the application as. | `1001` |
+| `PGID` | Optional. Group ID to run the application as. | `1001` |
+
 
 > **Note:** Watchlist is not a feature in vanilla Jellyfin, but available either through the Jellyfin Enhanced plugin or Kefwin Tweaks script.
 

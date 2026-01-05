@@ -37,8 +37,14 @@ services:
       # OPTIONAL: The hostname the server binds to
       # Default: 0.0.0.0 (listens on all interfaces)
       - HOSTNAME=0.0.0.0
+
+      # OPTIONAL: Run as a specific user/group ID
+      # Useful for matching host permissions on mounted volumes
+      # - PUID=1000
+      # - PGID=1000
     volumes:
       # Persist database and other data
+
       - ./swiparr-data:/app/data
     ports:
       - 4321:4321
