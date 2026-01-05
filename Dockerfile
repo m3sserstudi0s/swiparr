@@ -29,7 +29,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=4321
 ENV HOSTNAME="0.0.0.0"
 
-RUN apk add --no-cache libc6-compat curl
+RUN apk add --no-cache libc6-compat curl su-exec
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -53,8 +53,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_m
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/dotenv ./node_modules/dotenv
 
-USER nextjs
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+
 EXPOSE 4321
+
 
 # Healthcheck to verify the app is running
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
