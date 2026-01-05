@@ -10,7 +10,6 @@ export interface RuntimeConfig {
   jellyfinPublicUrl: string;
   useWatchlist: boolean;
   version: string;
-  basePath: string;
 }
 
 /**
@@ -23,13 +22,11 @@ export function getRuntimeConfig(): RuntimeConfig {
   }
   
   const jellyfinPublicUrl = (process.env.JELLYFIN_PUBLIC_URL || process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || process.env.NEXT_PUBLIC_JELLYFIN_URL || '').replace(/\/$/, '');
-  const basePath = process.env.URL_BASE_PATH || '';
   
   return {
     jellyfinPublicUrl,
     useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
     version: (process.env.APP_VERSION || process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version).replace(/^v/i, ''),
-    basePath,
   };
 }
 

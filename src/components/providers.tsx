@@ -7,8 +7,6 @@ import { TooltipProvider } from "./ui/tooltip";
 import { MovieDetailProvider } from "./movie/MovieDetailProvider";
 import { Toaster } from "@/components/ui/sonner"
 import { useUpdates } from "@/lib/use-updates";
-import axios from "axios";
-import { useRuntimeConfig } from "@/lib/runtime-config";
 
 function UpdatesSubscriber() {
   useUpdates();
@@ -19,14 +17,7 @@ export function Providers({
   children,
   ...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
-  const config = useRuntimeConfig();
   const [queryClient] = React.useState(() => new QueryClient());
-
-  React.useMemo(() => {
-    if (config.basePath) {
-      axios.defaults.baseURL = config.basePath;
-    }
-  }, [config.basePath]);
 
   return (
     <QueryClientProvider client={queryClient}>

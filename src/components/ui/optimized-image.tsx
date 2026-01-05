@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image, { ImageProps } from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useRuntimeConfig } from "@/lib/runtime-config";
 
 interface OptimizedImageProps extends Omit<ImageProps, "onLoad"> {
   containerClassName?: string;
@@ -24,7 +23,6 @@ export function OptimizedImage({
   ...props 
 }: OptimizedImageProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const config = useRuntimeConfig();
 
   const isFill = fill ?? (!width && !height);
   const isJellyfinImage = typeof src === "string" && src.startsWith("/api/jellyfin/image");
@@ -36,7 +34,7 @@ export function OptimizedImage({
       {/* Real-image blur placeholder */}
       {isJellyfinImage && isLoading && (
         <img 
-          src={`${config.basePath}${src}${src.includes("?") ? "&" : "?"}width=40&quality=10`} 
+          src={`${src}${src.includes("?") ? "&" : "?"}width=40&quality=10`} 
           alt=""
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-50"

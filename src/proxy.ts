@@ -12,8 +12,6 @@ export async function proxy(request: NextRequest) {
 
   const { pathname, search } = request.nextUrl; // Get search params
 
-  const basePath = process.env.URL_BASE_PATH || "";
-
   // 2. Define Public Paths (Don't block these!)
   // - /login
   // - /api/auth (so the login fetch works)
@@ -34,12 +32,12 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  if (!session.isLoggedIn) {
+if (!session.isLoggedIn) {
     // Include the current URL (with query params) as the callback
     // browse to /?join=ABCD -> Login -> Back to /?join=ABCD
-    const loginUrl = new URL(basePath + "/login", request.url);
-    // Encode the full original URL including base path
-    loginUrl.searchParams.set("callbackUrl", basePath + pathname + search); 
+    const loginUrl = new URL("/login", request.url);
+    // Encode the full original URL
+    loginUrl.searchParams.set("callbackUrl", pathname + search); 
     return NextResponse.redirect(loginUrl);
   }
 

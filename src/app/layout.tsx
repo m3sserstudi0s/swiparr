@@ -19,17 +19,15 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 })
 
-const basePath = process.env.URL_BASE_PATH || '';
-
 export const metadata: Metadata = {
   title: "Swiparr",
   description: "Swipe on your Jellyfin media",
   appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
-  manifest: `${basePath}/manifest.json`,
+  manifest: '/manifest.json',
   icons: {
-    icon: `${basePath}/favicon.ico`,
-    shortcut: `${basePath}/icon1.png`,
-    apple: `${basePath}/apple-icon.png`,
+    icon: '/favicon.ico',
+    shortcut: '/icon1.png',
+    apple: '/apple-icon.png',
   },
 };
 
@@ -49,7 +47,7 @@ export default function RootLayout({
               window.__SWIPARR_CONFIG__ = ${JSON.stringify(config)};
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('${config.basePath}/sw.js');
+                  navigator.serviceWorker.register('/sw.js');
                 });
               }
             `,

@@ -13,7 +13,6 @@ export function useUpdates() {
     const { mutate } = useSWRConfig();
     const queryClient = useQueryClient();
     const { openMovie } = useMovieDetail();
-    const config = useRuntimeConfig();
 
     const { data: sessionData } = useSWR<{ code: string | null; userId: string }>('/api/session', (url: string) => axios.get(url).then(res => res.data));
     const sessionCode = sessionData?.code;
@@ -21,7 +20,7 @@ export function useUpdates() {
     useEffect(() => {
         if (!sessionCode) return;
 
-        const eventSource = new EventSource(`${config.basePath}/api/events`);
+        const eventSource = new EventSource('/api/events');
 
         eventSource.addEventListener(EVENT_TYPES.SESSION_UPDATED, (event: any) => {
             const data = JSON.parse(event.data);
@@ -122,7 +121,6 @@ export function useUpdates() {
 }
 
 export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: (data: any) => void) {
-    const config = useRuntimeConfig();
     useEffect(() => {
         if (!qcSecret) return;
 
@@ -130,7 +128,7 @@ export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: 
         // and because it's more reliable across different environments.
         const poll = async () => {
             try {
-                const res = await fetch(`${config.basePath}/api/auth/quick-connect`, {
+                const res = await fetch("/api/auth/quick-connect", {
                     method: "POST",
                     body: JSON.stringify({ secret: qcSecret }),
                     headers: { "Content-Type": "application/json" },
