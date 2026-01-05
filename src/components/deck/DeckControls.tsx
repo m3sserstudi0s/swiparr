@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, X, Rewind, SlidersHorizontal } from "lucide-react";
 import { Badge } from "../ui/badge";
+import { cn } from "@/lib/utils";
 
 interface DeckControlsProps {
   onRewind: () => void;
@@ -38,7 +39,7 @@ export function DeckControls({
       <Button
         size="icon"
         variant="outline"
-        className="h-18 w-18 rounded-full bg-background border-2 relative"
+        className={cn("h-18 w-18 rounded-full bg-background border-2 relative", leftSwipesRemaining && leftSwipesRemaining < 1 && "opacity-75")}
         onClick={onSwipeLeft}
       >
         <X className="size-9" />
@@ -50,7 +51,7 @@ export function DeckControls({
       </Button>
       <Button
         size="icon"
-        className="h-18 w-18 rounded-full shadow-lg relative"
+        className={cn("h-18 w-18 rounded-full relative", rightSwipesRemaining && rightSwipesRemaining < 1 && "opacity-75")}
         onClick={onSwipeRight}
       >
         <Heart className="size-9 fill-primary-foreground" />

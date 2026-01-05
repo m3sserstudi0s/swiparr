@@ -121,7 +121,7 @@ export function CardDeck() {
     const genresApplied = genres && genres.length > 0;
     const ratingApplied = minCommunityRating !== undefined && minCommunityRating > 0;
     const yearApplied = yearRange !== undefined;
-    
+
     return genresApplied || ratingApplied || yearApplied;
   }, [sessionStatus?.filters]);
 
@@ -138,10 +138,10 @@ export function CardDeck() {
         // 2. Refresh the Sidebar match list immediately via SWR
         mutate(["/api/session/matches", sessionCode]);
       } else if (data.matchBlockedByLimit) {
-        toast.error("Match not registered", { 
-          description: "Max number of matches reached in session",
+        toast.error("Match not registered", {
+          description: "Max number of matches reached as per session restrictions",
           position: "top-center",
-          duration: 5000 
+          duration: 5000
         });
       }
     },
@@ -167,13 +167,13 @@ export function CardDeck() {
     if (sessionSettings) {
       if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
         if (stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
-          toast.error("Right swipe limit reached (Session settings restriction)", {position: 'top-right'});
+          toast.error("No likes left", { position: 'top-right', description: "Max number of likes reached as per session restrictions" });
           return;
         }
       }
       if (direction === "left" && sessionSettings.maxLeftSwipes && stats) {
         if (stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
-          toast.error("Left swipe limit reached (Session settings restriction)", {position: 'top-right'});
+          toast.error("No dislikes left", { position: 'top-right', description: "Max number of dislikes reached as per session restrictions" });
           return;
         }
       }
@@ -192,13 +192,13 @@ export function CardDeck() {
     swipeMutation.mutate({ id, direction, item });
     // Optimistically update stats
     if (stats) {
-        mutateStats({
-            ...stats,
-            mySwipes: {
-                ...stats.mySwipes,
-                [direction]: stats.mySwipes[direction] + 1
-            }
-        }, false);
+      mutateStats({
+        ...stats,
+        mySwipes: {
+          ...stats.mySwipes,
+          [direction]: stats.mySwipes[direction] + 1
+        }
+      }, false);
     }
   };
 
@@ -215,18 +215,18 @@ export function CardDeck() {
 
     // Check limits for buttons
     if (sessionSettings) {
-        if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
-            if (stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
-                toast.error("Right swipe limit reached (Session settings restriction)", { position: 'top-right' });
-                return;
-            }
+      if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
+        if (stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
+          toast.error("No likes left", { position: 'top-right', description: "Max number of likes reached per session restrictions" });
+          return;
         }
-        if (direction === "left" && sessionSettings.maxLeftSwipes && stats) {
-            if (stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
-                toast.error("Left swipe limit reached (Session settings restriction)", { position: 'top-right' });
-                return;
-            }
+      }
+      if (direction === "left" && sessionSettings.maxLeftSwipes && stats) {
+        if (stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
+          toast.error("No dislikes left", { position: 'top-right', description: "Max number of dislikes reached per session restrictions" });
+          return;
         }
+      }
     }
 
     // Active deck is filtered, so index 0 is always the visual top
