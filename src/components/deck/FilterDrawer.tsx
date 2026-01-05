@@ -31,6 +31,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
 
+  const formatRuntime = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ""}` : `${m}m`;
+  };
+
 
   const lastSavedFiltersRef = useRef<string>(JSON.stringify(currentFilters));
   const hasInitializedRef = useRef(false);
@@ -235,7 +241,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                   Runtime
                 </Label>
                 <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                  {runtimeRange[0]}m — {runtimeRange[1] === 240 ? "240m+" : `${runtimeRange[1]}m`}
+                  {formatRuntime(runtimeRange[0])} — {runtimeRange[1] === 240 ? `${formatRuntime(240)}+` : formatRuntime(runtimeRange[1])}
                 </span>
               </div>
               <div className="px-2">
@@ -249,8 +255,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                <span>0m</span>
-                <span>240m+</span>
+                <span>{formatRuntime(0)}</span>
+                <span>{formatRuntime(240)}+</span>
               </div>
             </div>
 
