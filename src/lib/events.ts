@@ -29,4 +29,5 @@ export const EVENT_TYPES = {
     QUICK_CONNECT_AUTHORIZED: 'quick_connect_authorized',
     FILTERS_UPDATED: 'filters_updated',
     SETTINGS_UPDATED: 'settings_updated',
+    STATS_RESET: 'stats_reset',
 };

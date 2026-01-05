@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Badge } from "../ui/badge";
+import { toast } from "sonner";
 
 interface SessionSettingsSheetProps {
   open: boolean;
@@ -35,7 +36,9 @@ export function SessionSettingsSheet({
   const [matchStrategy, setMatchStrategy] = useState<"atLeastTwo" | "allMembers">("atLeastTwo");
   const [maxLeftSwipes, setMaxLeftSwipes] = useState<number>(100);
   const [maxRightSwipes, setMaxRightSwipes] = useState<number>(100);
-  const [maxMatches, setMaxMatches] = useState<number>(10);
+  const [maxMatches, setMaxMatches] = useState<number>(25);
+  const [isResettingStats, setIsResettingStats] = useState(false);
+  const [confirmResetStats, setConfirmResetStats] = useState(false);
 
   // Use a ref to store current values for the auto-save on close
   const valuesRef = useRef({ matchStrategy, maxLeftSwipes, maxRightSwipes, maxMatches });
@@ -60,7 +63,7 @@ export function SessionSettingsSheet({
       setMatchStrategy(currentSettings?.matchStrategy || "atLeastTwo");
       setMaxLeftSwipes(currentSettings?.maxLeftSwipes || 100);
       setMaxRightSwipes(currentSettings?.maxRightSwipes || 100);
-      setMaxMatches(currentSettings?.maxMatches || 10);
+      setMaxMatches(currentSettings?.maxMatches || 25);
       refetchStats();
     }
   }, [open, currentSettings, refetchStats]);
@@ -72,7 +75,7 @@ export function SessionSettingsSheet({
       matchStrategy,
       maxLeftSwipes: maxLeftSwipes < 100 ? maxLeftSwipes : undefined,
       maxRightSwipes: maxRightSwipes < 100 ? maxRightSwipes : undefined,
-      maxMatches: maxMatches < 10 ? maxMatches : undefined,
+      maxMatches: maxMatches < 25 ? maxMatches : undefined,
     };
 
     const current = (currentSettings || {}) as SessionSettings;
@@ -80,7 +83,7 @@ export function SessionSettingsSheet({
       newSettings.matchStrategy !== (current.matchStrategy || "atLeastTwo") ||
       (newSettings.maxLeftSwipes || 100) !== (current.maxLeftSwipes || 100) ||
       (newSettings.maxRightSwipes || 100) !== (current.maxRightSwipes || 100) ||
-      (newSettings.maxMatches || 10) !== (current.maxMatches || 10);
+      (newSettings.maxMatches || 25) !== (current.maxMatches || 25);
 
     if (hasChanged) {
       onSave(newSettings);
@@ -100,7 +103,27 @@ export function SessionSettingsSheet({
     setMatchStrategy("atLeastTwo");
     setMaxLeftSwipes(100);
     setMaxRightSwipes(100);
-    setMaxMatches(10);
+    setMaxMatches(25);
+  };
+
+  const handleResetStats = async () => {
+    if (!confirmResetStats) {
+      setConfirmResetStats(true);
+      setTimeout(() => setConfirmResetStats(false), 5000);
+      return;
+    }
+
+    setIsResettingStats(true);
+    try {
+      await axios.delete("/api/session/stats");
+      refetchStats();
+      toast.success("Session stats reset successfully");
+      setConfirmResetStats(false);
+    } catch (error) {
+      toast.error("Failed to reset stats");
+    } finally {
+      setIsResettingStats(false);
+    }
   };
 
   return (
@@ -143,7 +166,7 @@ export function SessionSettingsSheet({
                   <CardHeader className="flex flex-row items-center gap-0 mb-2">
                     Group
                     <Badge variant='outline' className="font-mono scale-75">AVERAGE</Badge>
-                    </CardHeader>
+                  </CardHeader>
                   <CardContent className="space-y-1">
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-black font-mono"><span className="text-lg font-sans font-normal">~ </span>{(stats?.avgSwipes.right || 0).toFixed(1)}</span>
@@ -175,6 +198,18 @@ export function SessionSettingsSheet({
                     <X className="size-3 mx-auto" />
                   </div>
                 </div>
+              </div>
+              <div className="flex justify-end w-full ">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`w-40 gap-2 transition-all ${confirmResetStats ? "text-destructive border-destructive bg-destructive/5" : "text-muted-foreground"}`}
+                  onClick={handleResetStats}
+                  disabled={isResettingStats}
+                >
+                  <RotateCcw className={`size-3 ${isResettingStats ? "animate-spin" : ""}`} />
+                  {isResettingStats ? "Resetting..." : confirmResetStats ? "Confirm reset" : "Reset stats"}
+                </Button>
               </div>
             </div>
 
@@ -225,7 +260,7 @@ export function SessionSettingsSheet({
                       <p className="text-xs text-muted-foreground">Max right swipes per user</p>
                     </div>
                     <span className="text-sm font-semibold bg-muted px-2 py-0.5 rounded-md min-w-10 h-6.5 text-center">
-                      {maxRightSwipes === 100 ? <Infinity className="mx-auto mt-0.5 size-4.5"/> : maxRightSwipes}
+                      {maxRightSwipes === 100 ? <Infinity className="mx-auto mt-0.5 size-4.5" /> : maxRightSwipes}
                     </span>
                   </div>
                   <Slider
@@ -244,7 +279,7 @@ export function SessionSettingsSheet({
                       <p className="text-xs text-muted-foreground">Max left swipes per user</p>
                     </div>
                     <span className="text-sm font-semibold bg-muted px-2 py-0.5 rounded-md min-w-10 h-6.5 text-center">
-                      {maxLeftSwipes === 100 ? <Infinity className="mx-auto mt-0.5 size-4.5"/> : maxLeftSwipes}
+                      {maxLeftSwipes === 100 ? <Infinity className="mx-auto mt-0.5 size-4.5" /> : maxLeftSwipes}
                     </span>
                   </div>
                   <Slider
@@ -263,13 +298,13 @@ export function SessionSettingsSheet({
                       <p className="text-xs text-muted-foreground">Max total matches for the session</p>
                     </div>
                     <span className="text-sm font-semibold bg-muted px-2 py-0.5 rounded-md min-w-10 h-6.5 text-center">
-                      {maxMatches === 10 ? <Infinity className="mx-auto mt-0.5 size-4.5"/> : maxMatches}
+                      {maxMatches === 25 ? <Infinity className="mx-auto mt-0.5 size-4.5" /> : maxMatches}
                     </span>
                   </div>
                   <Slider
                     value={[maxMatches]}
                     min={1}
-                    max={10}
+                    max={25}
                     step={1}
                     onValueChange={(val) => setMaxMatches(val[0])}
                   />
@@ -278,15 +313,16 @@ export function SessionSettingsSheet({
             </div>
 
             <hr className="border-muted" />
-
-            <Button
-              variant="outline"
-              className="w-full gap-2 text-muted-foreground hover:text-foreground"
-              onClick={resetAll}
-            >
-              <RotateCcw className="size-4" />
-              Reset
-            </Button>
+            <div className="flex justify-end w-full ">
+              <Button
+                variant="outline"
+                className="w-40 gap-2 text-muted-foreground hover:text-foreground"
+                onClick={resetAll}
+              >
+                <RotateCcw className="size-4" />
+                Reset settings
+              </Button>
+            </div>
 
           </div>
         </ScrollArea>

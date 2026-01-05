@@ -93,6 +93,26 @@ export function useUpdates() {
             }
         });
 
+        eventSource.addEventListener(EVENT_TYPES.STATS_RESET, (event: any) => {
+            const data = JSON.parse(event.data);
+            if (data.sessionCode === sessionCode) {
+                // Invalidate stats
+                queryClient.invalidateQueries({ queryKey: ['session-stats'] });
+                // Invalidate matches
+                mutate(['/api/session/matches', sessionCode]);
+                // Invalidate deck to refresh swipes
+                queryClient.invalidateQueries({ queryKey: ['deck', sessionCode] });
+                
+                // Show toast
+                if (sessionData && data.userId !== sessionData.userId) {
+                    toast.info(`${data.userName} reset session stats`, {
+                        description: "All swipes and matches have been cleared.",
+                        position: 'top-right'
+                    });
+                }
+            }
+        });
+
         return () => {
             eventSource.close();
         };

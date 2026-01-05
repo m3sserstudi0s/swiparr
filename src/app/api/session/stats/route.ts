@@ -64,3 +64,27 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(stats);
 }
+
+export async function DELETE(request: NextRequest) {
+    const cookieStore = await cookies();
+    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    if (!session.isLoggedIn || !session.sessionCode) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const sessionCode = session.sessionCode;
+
+    // Delete all likes and hiddens for this session
+    await db.delete(likes).where(eq(likes.sessionCode, sessionCode));
+    await db.delete(hiddens).where(eq(hiddens.sessionCode, sessionCode));
+
+    // Emit event
+    const { events, EVENT_TYPES } = await import("@/lib/events");
+    events.emit(EVENT_TYPES.STATS_RESET, {
+        sessionCode,
+        userId: session.user.Id,
+        userName: session.user.Name,
+    });
+
+    return NextResponse.json({ success: true });
+}
