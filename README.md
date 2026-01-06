@@ -13,39 +13,39 @@ Open source and free forever.
 ## Features
 
 - **Swipe discovery:** Quickly browse your Jellyfin library with a card-based interface.
-- **Sessions:** Create or join a session with friends to find common likes (matches!).
+- **Sessions:** Create or join a session with friends to find common likes (matches).
 - **Native Jellyfin integration:** Pulls directly from your Jellyfin server.
 - **Guest Mode:** Let friends join your session without needing their own Jellyfin account by "lending" your connection temporarily.
 - **Mobile friendly:** Optimized for use on your phone.
 
 **Highly recommended**: Download as a web app on mobile, and use the keyboard shortcuts on desktop.
 
-To make your final choice, use the **Random button** to pick a movie from your matches!
+To make your final choice, use the **Random button** to pick a movie from your matches.
 
-## Guest Access & Account Lending
+## Guest access (Account lending)
 
-Swiparr includes a **Guest Mode** designed for situations where some participants don't have a Jellyfin account. 
+Swiparr includes a **Guest mode** designed for situations where some participants don't have a Jellyfin account. 
 
 ### How it works:
-1. **Enable Lending**: A host (with a Jellyfin account) enables "Guest lending" in their Swiparr settings.
-2. **Proxy Connection**: When guests join that host's session, Swiparr uses the host's credentials to fetch movie data and images from Jellyfin.
+1. **Enable lending**: A host (with a Jellyfin account) enables "Guest lending" in their Swiparr settings.
+2. **Proxy connection**: When guests join that host's session, Swiparr uses the host's credentials to fetch movie data and images from Jellyfin.
 3. **Identity**: Guests choose a display name and get a unique ID. Their likes and matches are tracked separately from the host.
 4. **Security**: Guests can only swipe within the session. They cannot modify the host's Jellyfin account, favorites, or settings.
 
-This makes it easy to host movie nights with guests who aren't part of your home lab ecosystem.
+This makes it easy to host sessions with guests who aren't part of your home lab ecosystem.
 
 ## Session Settings
 
-When you create a session, you can customize how it behaves to fit your group's movie night:
+When you create a session, you can customize how it behaves to fit your group's preferences:
 
 ### Match Strategies
-- **Two or more**: A match is created as soon as any two people in the session like the same movie. Great for larger groups.
-- **Unanimous**: Every single person in the session must like the movie for it to appear in the matches list.
+- **Two or more**: A match is created as soon as any two members in the session like the same movie. Great for larger groups.
+- **Unanimous**: Every single member in the session must like the movie for it to appear in the matches list.
 
 ### Restrictions
-- **Max Likes**: Limit how many "Right Swipes" each person gets. This forces everyone to be more selective.
-- **Max Nopes**: Limit how many "Left Swipes" each person gets. Useful if you want to prevent people from just saying no to everything!
-- **Max Matches**: Automatically stop the session once a certain number of matches have been found.
+- **Max likes**: Limit how many right swipes each person gets. This forces everyone to be more selective.
+- **Max nopes**: Limit how many left swipes each person gets. Useful if you want to prevent members from just saying no to everything.
+- **Max matches**: Stop registering matches once a the set max number of matches have been found.
 
 ## Quick start
 
@@ -124,7 +124,7 @@ Alternatively, you can manually assign an admin by setting the `ADMIN_USERNAME` 
 ### Reverse proxy
 If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy, Nginx Proxy Manager), ensure you:
 1. Set `USE_SECURE_COOKIES=true` in your environment variables if using HTTPS.
-2. **CRITICAL:** Ensure your proxy passes the `Host` header to Swiparr. In Nginx, this is `proxy_set_header Host $host;`. Without this, authentication will fail due to Next.js 15 security checks.
+2. Ensure your proxy passes the `Host` header to Swiparr. In Nginx, this is `proxy_set_header Host $host;`. Without this, authentication will fail due to Next.js 15 security checks.
 3. Forward other standard headers: `X-Forwarded-For`, `X-Forwarded-Proto`.
 4. Swiparr runs on port `4321` by default.
 
