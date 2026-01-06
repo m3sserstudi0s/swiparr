@@ -69,9 +69,9 @@ services:
       - ./swiparr-data:/app/data
     ports:
       - 4321:4321
+```
 
 2. Run the container:
-
 ```bash
 docker compose up -d
 ```
