@@ -8,13 +8,19 @@ import { SessionData, SwipePayload, SessionSettings } from "@/types/swiparr";
 import { events, EVENT_TYPES } from "@/lib/events";
 
 
+import { swipeSchema } from "@/lib/validations";
+
 export async function POST(request: NextRequest) {
 
     const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body: SwipePayload = await request.json();
+  const bodyRaw = await request.json();
+  const validated = swipeSchema.safeParse(bodyRaw);
+  if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  
+  const body = validated.data;
   let isMatch = false;
   let matchBlockedByLimit = false;
 

@@ -8,13 +8,19 @@ import { SessionData } from "@/types/swiparr";
 import { v4 as uuidv4 } from "uuid";
 import { events, EVENT_TYPES } from "@/lib/events";
 
+import { guestLoginSchema } from "@/lib/validations";
+
 export async function POST(request: NextRequest) {
     try {
-        const { username, sessionCode } = await request.json();
+        const body = await request.json();
+        const validated = guestLoginSchema.safeParse(body);
 
-        if (!username || !sessionCode) {
-            return NextResponse.json({ message: "Username and session code are required" }, { status: 400 });
+        if (!validated.success) {
+            return NextResponse.json({ message: "Invalid input" }, { status: 400 });
         }
+
+        const { username, sessionCode } = validated.data;
+
 
         const code = sessionCode.toUpperCase();
         const existingSession = await db.query.sessions.findFirst({

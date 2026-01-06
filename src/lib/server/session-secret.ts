@@ -26,7 +26,8 @@ export function getAuthSecret(): string {
     return newSecret;
   } catch (e) {
     // Fallback if DB is not ready or fails
-    console.warn("[Auth] Failed to get/set persistent AUTH_SECRET from DB, using insecure default.");
-    return "complex_password_at_least_32_characters_long";
+    console.warn("[Auth] Failed to get/set persistent AUTH_SECRET from DB, generating temporary session secret.");
+    return crypto.randomBytes(32).toString("hex");
   }
 }
+

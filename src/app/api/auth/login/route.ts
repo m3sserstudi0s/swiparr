@@ -8,9 +8,21 @@ import { isAdmin, setAdminUserId } from "@/lib/server/admin";
 import { apiClient } from "@/lib/jellyfin/api";
 import axios from "axios";
 
+import { loginSchema } from "@/lib/validations";
+
 export async function POST(request: NextRequest) {
+    let usernameForLog = "unknown";
     try {
-        const { username, password } = await request.json();
+        const body = await request.json();
+        const validated = loginSchema.safeParse(body);
+        
+        if (!validated.success) {
+            return NextResponse.json({ message: "Invalid input" }, { status: 400 });
+        }
+
+        const { username, password } = validated.data;
+        usernameForLog = username;
+
         // Create a unique deviceId for this user-device combination
         // Using a hash or simply appending username to a base device ID
         const baseDeviceId = crypto.randomUUID();
@@ -48,8 +60,8 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const { username } = await request.json().catch(() => ({ username: "unknown" }));
-    console.error(`[Auth] Login Failed for user ${username}:`, errorMessage);
+    console.error(`[Auth] Login Failed for user ${usernameForLog}:`, errorMessage);
+
     
     // Check for specific Axios error response from Jellyfin
     if (axios.isAxiosError(error)) {

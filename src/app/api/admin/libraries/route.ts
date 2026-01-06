@@ -9,13 +9,16 @@ export async function GET() {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
 
-    if (!session.isLoggedIn || !session.user.Id) {
+    if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id))) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
+
 
     const libraries = await getIncludedLibraries();
     return NextResponse.json(libraries);
 }
+
+import { libraryUpdateSchema } from "@/lib/validations";
 
 export async function PATCH(request: NextRequest) {
     const cookieStore = await cookies();
@@ -26,10 +29,15 @@ export async function PATCH(request: NextRequest) {
     }
 
     try {
-        const libraries = await request.json();
-        if (!Array.isArray(libraries)) {
+        const body = await request.json();
+        const validated = libraryUpdateSchema.safeParse(body);
+        
+        if (!validated.success) {
             return NextResponse.json({ error: "Invalid data" }, { status: 400 });
         }
+
+        const libraries = validated.data;
+
 
         await setIncludedLibraries(libraries);
         return NextResponse.json({ success: true });

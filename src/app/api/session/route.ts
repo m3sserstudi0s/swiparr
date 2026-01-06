@@ -22,16 +22,24 @@ function generateCode() {
     return result;
 }
 
+import { sessionActionSchema, sessionSettingsSchema } from "@/lib/validations";
+
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
     if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
     const body = await request.json();
+    const validated = sessionActionSchema.safeParse(body);
+    if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    
+    const { action, code: bodyCode, allowGuestLending } = validated.data;
 
     // ACTION: JOIN
-    if (body.action === "join") {
-        const code = body.code.toUpperCase();
+    if (action === "join") {
+        if (!bodyCode) return NextResponse.json({ error: "Code required" }, { status: 400 });
+        const code = bodyCode.toUpperCase();
+
         const existingSession = await db.query.sessions.findFirst({
             where: eq(sessions.code, code),
         });
@@ -61,9 +69,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ACTION: CREATE
-    if (body.action === "create") {
+    if (action === "create") {
         const code = generateCode();
-        const allowLending = body.allowGuestLending === true;
+        const allowLending = allowGuestLending === true;
+
 
         await db.insert(sessions).values({
             id: uuidv4(),
@@ -99,10 +108,24 @@ export async function PATCH(request: NextRequest) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { filters, settings } = await request.json();
+    const body = await request.json();
+    const validated = sessionSettingsSchema.safeParse(body);
+    if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+
+    const { filters, settings } = validated.data;
 
     if (session.sessionCode) {
+        // Enforce that only the host can update session settings
+        const currentSession = await db.query.sessions.findFirst({
+            where: eq(sessions.code, session.sessionCode)
+        });
+
+        if (!currentSession || (settings !== undefined && currentSession.hostUserId !== session.user.Id)) {
+            return NextResponse.json({ error: "Only the host can modify session settings" }, { status: 403 });
+        }
+
         const updateData: any = {};
+
         if (filters !== undefined) updateData.filters = JSON.stringify(filters);
         if (settings !== undefined) updateData.settings = JSON.stringify(settings);
 
@@ -141,7 +164,8 @@ export async function GET() {
   
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
-  const { accessToken, userId: effectiveUserId } = await getEffectiveCredentials(session);
+  const { userId: effectiveUserId } = await getEffectiveCredentials(session);
+
 
   let filters = session.soloFilters || null;
   let settings = null;
@@ -159,10 +183,10 @@ export async function GET() {
     effectiveUserId,
     isGuest: !!session.user.isGuest,
     isAdmin: await isAdmin(session.user.Id, session.user.Name),
-    accessToken,
     filters,
     settings
   };
+
 
   return NextResponse.json(response);
 }

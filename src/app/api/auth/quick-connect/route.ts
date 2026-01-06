@@ -23,9 +23,16 @@ export async function GET() {
   }
 }
 
+import { quickConnectSchema } from "@/lib/validations";
+
 export async function POST(request: NextRequest) {
   try {
-    const { secret } = await request.json();
+    const body = await request.json();
+    const validated = quickConnectSchema.safeParse(body);
+    if (!validated.success) return NextResponse.json({ success: false, message: "Invalid input" }, { status: 400 });
+    
+    const { secret } = validated.data;
+
     
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
