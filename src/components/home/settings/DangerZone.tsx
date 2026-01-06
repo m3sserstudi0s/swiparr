@@ -22,9 +22,9 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                         <div className="text-xs text-muted-foreground">Restore default preferences</div>
                     </div>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         size="sm"
-                        className="w-22 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        className="w-22 border border-destructive/50 text-destructive bg-background/50 hover:text-background/80"
                         onClick={resetSettings}
                     >
                         <RotateCcw className="mr-2 size-4" /> Reset
@@ -39,7 +39,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                     <Button
                         variant="destructive"
                         size="sm"
-                        className="w-22"
+                        className="w-22 border border-destructive/50 text-destructive bg-background/50 hover:text-background/80"
                         onClick={onClearData}
                     >
                         <Trash2 className="mr-2 size-4" /> Clear
@@ -52,10 +52,10 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                         <div className="text-xs text-muted-foreground">End your current session</div>
                     </div>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         size="sm"
                         onClick={onLogout}
-                        className="w-22 border-destructive/20 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        className="w-22 border border-destructive/50 text-destructive bg-background/50 hover:text-background/80"
                     >
                         <LogOut className="mr-2 size-4" /> Exit
                     </Button>

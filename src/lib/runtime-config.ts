@@ -23,7 +23,8 @@ export function getRuntimeConfig(): RuntimeConfig {
   }
   
   const jellyfinPublicUrl = (process.env.JELLYFIN_PUBLIC_URL || process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || process.env.NEXT_PUBLIC_JELLYFIN_URL || '').replace(/\/$/, '');
-  const basePath = (process.env.URL_BASE_PATH || process.env.NEXT_PUBLIC_URL_BASE_PATH || '').replace(/\/$/, '');
+  const rawBasePath = (process.env.URL_BASE_PATH || process.env.NEXT_PUBLIC_URL_BASE_PATH || '').replace(/\/$/, '');
+  const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
   
   return {
     jellyfinPublicUrl,

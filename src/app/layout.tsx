@@ -19,17 +19,20 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 })
 
-export const metadata: Metadata = {
-  title: "Swiparr",
-  description: "Swipe on your Jellyfin media",
-  appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
-  manifest: '/manifest.json', 
-  icons: {
-    icon: '/favicon.ico',     
-    shortcut: '/icon1.png',   
-    apple: '/apple-icon.png',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { basePath } = getRuntimeConfig();
+  return {
+    title: "Swiparr",
+    description: "Swipe on your Jellyfin media",
+    appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
+    manifest: `${basePath}/manifest.json`, 
+    icons: {
+      icon: `${basePath}/favicon.ico`,     
+      shortcut: `${basePath}/icon1.png`,   
+      apple: `${basePath}/apple-icon.png`,
+    },
+  };
+}
 
 export default function RootLayout({
   children,

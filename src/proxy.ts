@@ -11,9 +11,10 @@ export async function proxy(request: NextRequest) {
   // In Next.js middleware, request.nextUrl.pathname 
   // already includes the basePath if it's matched.
   const { pathname, search } = request.nextUrl; 
+  const basePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
 
   // 1. Define public paths. 
-  // We check for the path WITH the base path.
+  // We check for the path with and without the base path.
   const isPublicPath = 
     pathname.endsWith("/login") || 
     pathname.includes("/api/auth") ||
@@ -36,13 +37,16 @@ export async function proxy(request: NextRequest) {
       });
     }
 
-    // Next.js automatically prepends basePath to internal URLs
-    // if basePath is defined in next.config.js.
-    // Use a relative path to the root of the app.
-    const loginUrl = new URL("/login", request.url);
+    // Redirect to login within the base path
+    const loginUrl = new URL(`${basePath}/login`, request.url);
     
     // searchParams.set automatically handles URL encoding
-    loginUrl.searchParams.set("callbackUrl", pathname + search); 
+    // If pathname already starts with basePath, don't double it
+    const callbackPath = (basePath && pathname.startsWith(basePath)) 
+      ? pathname 
+      : `${basePath}${pathname}`;
+    
+    loginUrl.searchParams.set("callbackUrl", callbackPath + search); 
 
     return NextResponse.redirect(loginUrl);
   }

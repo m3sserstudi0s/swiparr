@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
 import { Label } from "../ui/label";
 import { apiClient } from "@/lib/api-client";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
@@ -60,11 +61,12 @@ export default function LoginContent() {
   };
 
   const onAuthorized = useCallback((data?: any) => {
+    const { basePath } = getRuntimeConfig();
     if (data?.wasMadeAdmin) {
       setWasMadeAdmin(true);
       setLoading(false);
     } else {
-      const callbackUrl = searchParams.get("callbackUrl") || "/";
+      const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
       window.location.href = callbackUrl;
     }
   }, [searchParams]);
@@ -75,6 +77,7 @@ export default function LoginContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    const { basePath } = getRuntimeConfig();
 
     const promise = async () => {
       const res = await apiClient.post("/api/auth/login", { username, password });
@@ -89,7 +92,7 @@ export default function LoginContent() {
           setLoading(false);
           return "Admin account initialized";
         }
-        const callbackUrl = searchParams.get("callbackUrl") || "/";
+        const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
         window.location.href = callbackUrl;
         setLoading(false);
         return "Logged in successfully";
@@ -104,6 +107,7 @@ export default function LoginContent() {
 
   const handleGuestLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { basePath } = getRuntimeConfig();
     const code = sessionCodeParam || guestSessionCode;
     if (!guestName || !code) return;
     setLoading(true);
@@ -116,7 +120,7 @@ export default function LoginContent() {
     toast.promise(promise(), {
       loading: "Joining as guest...",
       success: (data) => {
-        window.location.href = "/";
+        window.location.href = `${basePath}/`;
         return `Joined as ${data.user.Name}`;
       },
       error: (err) => {
@@ -128,7 +132,8 @@ export default function LoginContent() {
   };
 
   const continueToApp = () => {
-    const callbackUrl = searchParams.get("callbackUrl") || "/";
+    const { basePath } = getRuntimeConfig();
+    const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
     window.location.href = callbackUrl;
   };
 

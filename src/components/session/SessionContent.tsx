@@ -16,6 +16,7 @@ import { SessionCodeSection } from "./SessionCodeSection";
 import { MatchesList } from "./MatchesList";
 import { SessionAlert } from "./SessionAlert";
 import { apiClient, fetcher } from "@/lib/api-client";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 import { useHotkeys } from "react-hotkeys-hook";
 import { useSettings } from "@/lib/settings";
@@ -67,19 +68,21 @@ export default function SessionContent() {
     const joinSession = useMutation({
         mutationFn: async (codeToJoin: string) => apiClient.post("/api/session", { action: "join", code: codeToJoin }),
         onSuccess: () => {
+            const { basePath } = getRuntimeConfig();
             mutate("/api/session");
             queryClient.invalidateQueries({ queryKey: ["deck"] });
-            router.replace("/");
+            router.replace(`${basePath}/`);
         },
     });
 
     const leaveSession = useMutation({
         mutationFn: async () => apiClient.delete("/api/session"),
         onSuccess: () => {
+            const { basePath } = getRuntimeConfig();
             if (sessionStatus?.isGuest) {
                 // Guests are logged out when leaving
                 apiClient.post("/api/auth/logout").then(() => {
-                    window.location.href = "/login";
+                    window.location.href = `${basePath}/login`;
                 });
                 return;
             }
@@ -128,7 +131,8 @@ export default function SessionContent() {
     // -- 5. SHARE LOGIC --
     const handleShare = async () => {
         if (!activeCode) return;
-        const shareUrl = `${window.location.origin}/?join=${activeCode}`;
+        const { basePath } = getRuntimeConfig();
+        const shareUrl = `${window.location.origin}${basePath}/?join=${activeCode}`;
         const shareData = {
             title: 'Swiparr session invite',
             text: `Join with code: ${activeCode}`,
