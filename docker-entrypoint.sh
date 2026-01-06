@@ -19,6 +19,21 @@ if [ "$(id -u)" = "0" ]; then
     # We check ownership of /app/data and if it's not owned by nextjs, we chown it.
     # This is necessary because when mounting volumes, the directory might be owned by root.
     chown -R nextjs:nodejs /app/data
+
+    # Handle custom base path at runtime
+    if [ -n "$URL_BASE_PATH" ]; then
+        echo "Configuring custom base path: $URL_BASE_PATH"
+        # Ensure it starts with / and remove trailing slash
+        BASE_PATH=$(echo "/$URL_BASE_PATH" | sed 's/\/\//\//g' | sed 's/\/$//')
+        
+        # Update Next.js manifests
+        if [ -f ".next/required-server-files.json" ]; then
+            sed -i "s|\"basePath\":\"\"|\"basePath\":\"$BASE_PATH\"|g" .next/required-server-files.json
+        fi
+        if [ -f ".next/routes-manifest.json" ]; then
+            sed -i "s|\"basePath\":\"\"|\"basePath\":\"$BASE_PATH\"|g" .next/routes-manifest.json
+        fi
+    fi
     
     exec su-exec nextjs "$@"
 fi
