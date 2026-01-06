@@ -16,7 +16,7 @@ import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSettings } from "@/lib/settings";
 import { useRuntimeConfig } from "@/lib/runtime-config";
-import { ticksToTime } from "@/lib/utils";
+import { ticksToTime, getErrorMessage } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 
 interface Props {
@@ -114,7 +114,9 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
           ? `Removed from ${useWatchlist ? "watchlist" : "favorites"}`
           : `Added to ${useWatchlist ? "watchlist" : "favorites"}`;
       },
-      error: `Failed to update ${useWatchlist ? "watchlist" : "favorites"}`,
+      error: (err) => {
+        return { message: `Failed to update ${useWatchlist ? "watchlist" : "favorites"}`, description: getErrorMessage(err) }
+      },
       position: 'top-right'
     });
   };
@@ -123,7 +125,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
     toast.promise(unlike(), {
       loading: "Removing from likes...",
       success: "Movie removed from likes",
-      error: "Failed to remove from likes",
+      error: (err) => getErrorMessage(err, "Failed to remove from likes"),
       action: !isUnliking && {
         label: 'Undo',
         onClick: () => relike()
@@ -131,6 +133,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
       position: 'top-right'
     });
   };
+
 
   const { jellyfinPublicUrl } = useRuntimeConfig();
 

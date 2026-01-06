@@ -16,6 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { SessionSettings, SessionStats } from "@/types/swiparr";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { toast } from "sonner";
@@ -120,7 +121,9 @@ export function SessionSettingsSheet({
       toast.success("Session stats reset successfully");
       setConfirmResetStats(false);
     } catch (error) {
-      toast.error("Failed to reset stats");
+      toast.error("Failed to reset stats", {
+        description: getErrorMessage(error)
+      });
     } finally {
       setIsResettingStats(false);
     }

@@ -14,6 +14,7 @@ import { Shield, ShieldAlert, ShieldCheck, Library, Check, Loader2, ChevronDown,
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils";
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -84,7 +85,9 @@ export function AdminSettings() {
             setStatus({ hasAdmin: true, isAdmin: true });
             router.refresh();
         } catch (err) {
-            toast.error("Failed to claim admin role");
+            toast.error("Failed to claim admin role", {
+                description: getErrorMessage(err)
+            });
             console.error(err);
         } finally {
             setIsClaiming(false);
@@ -110,7 +113,9 @@ export function AdminSettings() {
             toast.success("Libraries updated successfully");
             setNeedsRefresh(true);
         } catch (err) {
-            toast.error("Failed to update libraries");
+            toast.error("Failed to update libraries", {
+                description: getErrorMessage(err)
+            });
             console.error(err);
         } finally {
             setIsSavingLibs(false);

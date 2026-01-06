@@ -16,6 +16,7 @@ import { SessionCodeSection } from "./SessionCodeSection";
 import { MatchesList } from "./MatchesList";
 import { SessionAlert } from "./SessionAlert";
 import { apiClient, fetcher } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 import { useHotkeys } from "react-hotkeys-hook";
@@ -99,7 +100,12 @@ export default function SessionContent() {
         toast.promise(createSession.mutateAsync(), {
             loading: "Creating session...",
             success: "Session created",
-            error: "Failed to create session",
+            error: (err) => {
+                return {
+                    message: "Failed to create session",
+                    description: getErrorMessage(err)
+                }
+            },
         });
     };
 
@@ -107,7 +113,12 @@ export default function SessionContent() {
         toast.promise(joinSession.mutateAsync(code), {
             loading: "Joining session...",
             success: "Connected!",
-            error: "Invalid Code",
+            error: (err) => {
+                return {
+                    message: "Invalid code",
+                    description: getErrorMessage(err)
+                }
+            },
         });
     };
 
@@ -115,9 +126,15 @@ export default function SessionContent() {
         toast.promise(leaveSession.mutateAsync(), {
             loading: "Leaving session...",
             success: "Left session",
-            error: "Failed to leave session",
+            error: (err) => {
+                return {
+                    message: "Failed to leave session",
+                    description: getErrorMessage(err)
+                }
+            },
         });
     };
+
 
     // -- 4. AUTO-JOIN LOGIC --
     useEffect(() => {

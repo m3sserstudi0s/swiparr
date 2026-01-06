@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
 import { Label } from "../ui/label";
 import { apiClient } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export default function LoginContent() {
@@ -97,9 +98,9 @@ export default function LoginContent() {
         setLoading(false);
         return "Logged in successfully";
       },
-      error: () => {
+      error: (err) => {
         setLoading(false);
-        return "Login Failed: Check your credentials";
+        return {message: "Login failed", description: getErrorMessage(err, "Check your credentials")};
       },
       position: 'top-right'
     });
@@ -125,7 +126,7 @@ export default function LoginContent() {
       },
       error: (err) => {
         setLoading(false);
-        return err.response?.data?.message || err.message;
+        return {message: "Failed to join as guest", description: getErrorMessage(err)};
       },
       position: 'top-right'
     });
@@ -155,9 +156,9 @@ export default function LoginContent() {
         setLoading(false);
         return "Quick connect started";
       },
-      error: () => {
+      error: (err) => {
         setLoading(false);
-        return "Quick connect failed to initialize";
+        return { message: "Quick connect failed to initialize", description: getErrorMessage(err)} ;
       },
       position: 'top-right'
     });

@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Play, Star, Calendar, HeartOff, Clock } from "lucide-react";
-import { cn, ticksToTime } from "@/lib/utils";
+import { cn, ticksToTime, getErrorMessage } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/ui/optimized-image";
@@ -34,6 +34,11 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });
+    },
+    onError: (err) => {
+      toast.error("Failed to re-like movie", {
+        description: getErrorMessage(err)
+      });
     }
   });
 
@@ -51,7 +56,9 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
     toast.promise(unlike(), {
       loading: "Removing from likes...",
       success: "Movie removed from likes",
-      error: "Failed to remove from likes",
+      error: (err) => {
+        return { message: "Failed to remove from likes", description: getErrorMessage(err)}
+      },
       action: !isUnliking && {
         label: 'Undo',
         onClick: () => relike()

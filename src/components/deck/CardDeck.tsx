@@ -16,6 +16,7 @@ import { DeckError } from "./DeckError";
 import { DeckLoading } from "./DeckLoading";
 import { toast } from "sonner";
 import { apiClient, fetcher } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
@@ -149,6 +150,9 @@ export function CardDeck() {
     },
     onError: (err) => {
       console.error("Swipe sync failed", err);
+      toast.error("Swipe sync failed", {
+        description: getErrorMessage(err)
+      });
     }
   });
 
@@ -254,6 +258,9 @@ export function CardDeck() {
       await apiClient.delete("/api/swipe", { data: { itemId: id } });
     } catch (err) {
       console.error("Failed to undo swipe", err);
+      toast.error("Failed to undo swipe", {
+        description: getErrorMessage(err)
+      });
     }
   }, [lastSwipe]);
 
@@ -274,6 +281,10 @@ export function CardDeck() {
       await apiClient.patch("/api/session", { filters: newFilters });
       await mutate("/api/session"); // Refresh session status to get new filters
       await queryClient.invalidateQueries({ queryKey: ["deck", sessionCode] });
+    } catch (err) {
+      toast.error("Failed to update filters", {
+        description: getErrorMessage(err)
+      });
     } finally {
       setIsApplyingFilters(false);
     }

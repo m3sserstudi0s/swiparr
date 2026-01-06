@@ -35,3 +35,15 @@ export const ticksToTime = (ticks?: number) => {
   const m = minutes % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
+
+export function getErrorMessage(error: any, fallback: string = "An unexpected error occurred") {
+  if (typeof error === "string") return error;
+  if (error?.response?.data?.error) {
+    return error.response.data.error;
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  return fallback;
+}
+

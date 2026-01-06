@@ -10,6 +10,7 @@ import {
 import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { Button } from "../ui/button";
 import { useState, Suspense, lazy } from "react";
@@ -47,7 +48,9 @@ export function SettingsSidebar() {
             router.push(`${basePath}/login`);
         } catch (error) {
             console.error("Logout failed:", error);
-            toast.error("Logout failed");
+            toast.error("Logout failed", {
+                description: getErrorMessage(error)
+            });
         }
     };
 
@@ -63,9 +66,9 @@ export function SettingsSidebar() {
                 setIsClearing(false);
                 return "All data cleared successfully";
             },
-            error: () => {
+            error: (err) => {
                 setIsClearing(false);
-                return "Failed to clear data";
+                return { message: "Failed to clear data", description: getErrorMessage(err) };
             },
         });
     };

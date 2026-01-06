@@ -7,6 +7,8 @@ import { SessionSettingsSheet } from "./SessionSettingsSheet";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/utils";
+
 
 interface SessionHeaderProps {
   activeCode?: string;
@@ -30,14 +32,16 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
     if (!hasChanged) return;
 
     try {
-
       await apiClient.patch("/api/session", { settings });
       mutate("/api/session");
       toast.success("Session settings updated");
     } catch (err) {
-      toast.error("Failed to update settings");
+      toast.error("Failed to update settings", {
+        description: getErrorMessage(err)
+      });
     }
   };
+
 
   return (
     <>
