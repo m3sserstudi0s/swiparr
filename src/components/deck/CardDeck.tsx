@@ -127,7 +127,7 @@ export function CardDeck() {
     return genresApplied || ratingApplied || yearApplied || officialRatingApplied || runtimeApplied;
   }, [sessionStatus?.filters]);
 
-  // --- MULTIPLAYER LOGIC INTEGRATION ---
+  // "MULTIPLAYER"/SESSION LOGIC
   const swipeMutation = useMutation({
     mutationFn: async ({ id, direction, item }: { id: string; direction: "left" | "right"; item: JellyfinItem }) => {
       const res = await apiClient.post("/api/swipe", { itemId: id, direction, item });

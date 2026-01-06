@@ -38,7 +38,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   };
 
 
-  const lastSavedFiltersRef = useRef<string>(JSON.stringify(currentFilters));
+  const initialFiltersRef = useRef<string>("");
   const hasInitializedRef = useRef(false);
 
   // Fetch available years to determine min/max
@@ -56,13 +56,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const minYearLimit = useMemo(() => {
     if (!years || years.length === 0) return 1900;
     const yearNums = years.map((y: any) => parseInt(y.Name)).filter((n: any) => !isNaN(n));
-    return Math.min(...yearNums);
+    return yearNums.length > 0 ? Math.min(...yearNums) : 1900;
   }, [years]);
 
   const maxYearLimit = useMemo(() => {
     if (!years || years.length === 0) return new Date().getFullYear();
     const yearNums = years.map((y: any) => parseInt(y.Name)).filter((n: any) => !isNaN(n));
-    return Math.max(...yearNums);
+    return yearNums.length > 0 ? Math.max(...yearNums) : new Date().getFullYear();
   }, [years]);
 
   // Fetch available genres
@@ -91,36 +91,52 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
   useEffect(() => {
     if (open && !isLoadingYears) {
-      const filtersStr = JSON.stringify(currentFilters);
-      if (filtersStr !== lastSavedFiltersRef.current || !hasInitializedRef.current) {
-        setSelectedGenres(currentFilters?.genres || []);
-        setSelectedRatings(currentFilters?.officialRatings || []);
-        setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
-        setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
-        setMinRating(currentFilters?.minCommunityRating || 0);
-        lastSavedFiltersRef.current = filtersStr;
-        hasInitializedRef.current = true;
+      const genres = currentFilters?.genres || [];
+      const officialRatings = currentFilters?.officialRatings || [];
+      const yearRange = currentFilters?.yearRange || [minYearLimit, maxYearLimit];
+      const runtimeRange = currentFilters?.runtimeRange || [0, 240];
+      const minCommunityRating = currentFilters?.minCommunityRating || 0;
+
+      setSelectedGenres(genres);
+      setSelectedRatings(officialRatings);
+      setYearRange(yearRange);
+      setRuntimeRange(runtimeRange);
+      setMinRating(minCommunityRating);
+
+      // Store a normalized version of currentFilters for comparison
+      const normalizedInitial = {
+        genres,
+        officialRatings,
+        yearRange: currentFilters?.yearRange,
+        runtimeRange: currentFilters?.runtimeRange,
+        minCommunityRating: minCommunityRating > 0 ? minCommunityRating : undefined
+      };
+      initialFiltersRef.current = JSON.stringify(normalizedInitial);
+      hasInitializedRef.current = true;
+    }
+  }, [open, isLoadingYears, minYearLimit, maxYearLimit, currentFilters]);
+
+  useEffect(() => {
+    if (!open && hasInitializedRef.current) {
+      const isYearDefault = yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
+      const isRuntimeDefault = runtimeRange[0] === 0 && runtimeRange[1] === 240;
+
+      const newFilters: Filters = {
+        genres: selectedGenres,
+        officialRatings: selectedRatings,
+        yearRange: isYearDefault ? undefined : yearRange,
+        runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
+        minCommunityRating: minRating > 0 ? minRating : undefined
+      };
+
+      if (JSON.stringify(newFilters) !== initialFiltersRef.current) {
+        onSave(newFilters);
       }
-    } else if (!open) {
-      if (hasInitializedRef.current) {
-        // Only save if we actually had valid limits to compare against
-        const isYearDefault = !isLoadingYears && yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
-        const isRuntimeDefault = runtimeRange[0] === 0 && runtimeRange[1] === 240;
-        const newFilters: Filters = {
-          genres: selectedGenres,
-          officialRatings: selectedRatings,
-          yearRange: isYearDefault ? undefined : yearRange,
-          runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
-          minCommunityRating: minRating > 0 ? minRating : undefined
-        };
-        if (JSON.stringify(newFilters) !== lastSavedFiltersRef.current) {
-          onSave(newFilters);
-        }
-        hasInitializedRef.current = false;
-      }
+      hasInitializedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, minYearLimit, maxYearLimit, currentFilters, isLoadingYears]);
+  }, [open, minYearLimit, maxYearLimit, onSave, selectedGenres, selectedRatings, yearRange, runtimeRange, minRating]);
+
 
   const toggleGenre = (genreName: string) => {
     setSelectedGenres((prev) =>

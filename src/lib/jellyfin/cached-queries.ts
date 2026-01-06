@@ -50,10 +50,7 @@ export const getCachedLibraries = unstable_cache(
 
 export const getCachedRatings = unstable_cache(
     async (accessToken: string, deviceId: string, userId: string) => {
-        // Jellyfin doesn't have a direct "ratings" endpoint, 
-        // but we can get unique official ratings from items.
-        // For now, we'll return a sensible default or fetch from items if needed.
-        // To be performant, let's just return unique OfficialRating from all movies.
+        // Official ratings from items
         const res = await apiClient.get(getJellyfinUrl(`/Items`), {
             params: {
                 Recursive: true,

@@ -33,7 +33,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
         <Drawer open={open} onOpenChange={onOpenChange}>
             <DrawerContent>
                 <DrawerHeader className="border-b">
-                    <DrawerTitle>User Guide</DrawerTitle>
+                    <DrawerTitle>User guide</DrawerTitle>
                     <DrawerDescription>Learn how to use Swiparr</DrawerDescription>
                 </DrawerHeader>
                 <div className="px-6 py-4">
@@ -44,7 +44,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                             <TabsTrigger value="guest">Guest</TabsTrigger>
                             <TabsTrigger value="shortcuts">Hotkeys</TabsTrigger>
                         </TabsList>
-                        <ScrollArea className="h-[50vh] pr-4">
+                        <ScrollArea className="h-[50vh] leading-3 text-pretty">
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -93,30 +93,30 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                     <section className="space-y-4">
                                         <div className="flex items-center gap-2">
                                             <Users className="size-5" />
-                                            <h3 className="text-lg font-semibold">Group Sessions</h3>
+                                            <h3 className="text-lg font-semibold">Group sessions</h3>
                                         </div>
                                         <div className="space-y-4 text-sm">
                                             <div className="flex gap-4">
-                                                <div className="font-mono text-muted-foreground">01</div>
+                                                <div className="font-mono text-muted-foreground text-base mt-px">01</div>
                                                 <div>
-                                                    <h4 className="font-medium">Setup</h4>
+                                                    <h4 className="font-medium text-base">Setup</h4>
                                                     <p className="text-muted-foreground">Create a session and share the generated URL with other users.</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-4">
-                                                <div className="font-mono text-muted-foreground">02</div>
+                                                <div className="font-mono text-muted-foreground text-base mt-px">02</div>
                                                 <div>
-                                                    <h4 className="font-medium">Matching Logic</h4>
+                                                    <h4 className="font-medium text-base">Matching Logic</h4>
                                                     <ul className="mt-1 space-y-1 text-muted-foreground">
-                                                        <li>• <strong>Unanimous:</strong> Requires all participants to like the title.</li>
-                                                        <li>• <strong>Majority:</strong> Matches when two or more participants agree.</li>
+                                                        <li><strong>Unanimous:</strong> Requires all participants to like the title.</li>
+                                                        <li><strong>Majority:</strong> Matches when two or more participants agree.</li>
                                                     </ul>
                                                 </div>
                                             </div>
                                             <div className="flex gap-4">
-                                                <div className="font-mono text-muted-foreground">03</div>
+                                                <div className="font-mono text-muted-foreground text-base mt-px">03</div>
                                                 <div>
-                                                    <h4 className="font-medium">Limits</h4>
+                                                    <h4 className="font-medium text-base">Limits</h4>
                                                     <p className="text-muted-foreground">Configure maximum likes or matches per session to expedite selection.</p>
                                                 </div>
                                             </div>
@@ -134,10 +134,10 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                     <section className="space-y-4">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="size-5" />
-                                            <h3 className="text-lg font-semibold">Guest Access</h3>
+                                            <h3 className="text-lg font-semibold">Guest access</h3>
                                         </div>
                                         <div className="p-4 rounded-xl border bg-muted/30 text-sm space-y-3">
-                                            <p className="text-muted-foreground">Enable this to allow users without Jellyfin accounts to join your session.</p>
+                                            <p className="font-medium">Enable this to allow users without Jellyfin accounts to join your session.</p>
                                             <ul className="space-y-2 list-disc pl-4 text-muted-foreground">
                                                 <li>Guests connect via proxy (no direct account access).</li>
                                                 <li>Likes are isolated to the specific session.</li>
@@ -160,9 +160,9 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                             { label: "Nav Tabs", keys: ["1", "2"] },
                                         ].map((item) => (
                                             <div key={item.label} className="flex items-center justify-between border-b border-border pb-2">
-                                                <span className="text-sm text-muted-foreground">{item.label}</span>
+                                                <span className="text-base">{item.label}</span>
                                                 <div className="flex gap-1">
-                                                    {item.keys.map(k => <Kbd key={k}>{k}</Kbd>)}
+                                                    {item.keys.map(k => <Kbd size={'lg'} key={k}>{k}</Kbd>)}
                                                 </div>
                                             </div>
                                         ))}

@@ -43,14 +43,16 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
     <>
       <SheetHeader className="px-0 pb-0 pt-3.5">
         <SheetTitle className="flex items-center mr-10 h-10">
-          {activeCode && <Button
+          {activeCode ? <Button
             variant="outline"
             size={"icon"}
             className="rounded-sm"
             onClick={() => setIsSettingsOpen(true)}
           >
             <Settings className="size-5" />
-          </Button>}
+          </Button>
+            : <p className="ml-2">Session</p>
+          }
           {activeCode && members && members.length > 0 && (
             <div className="mx-auto">
               <UserAvatarList
