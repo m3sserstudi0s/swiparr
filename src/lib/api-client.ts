@@ -7,7 +7,13 @@ const basePath = config.basePath || "";
 export const apiClient = axios.create();
 
 apiClient.interceptors.request.use((config) => {
-  if (config.url?.startsWith("/") && basePath && !config.url.startsWith(basePath)) {
+  // Only prepend if it's a relative path and NOT already prepended
+  if (
+    config.url?.startsWith("/") && 
+    basePath && 
+    !config.url.startsWith(basePath + "/") && 
+    config.url !== basePath
+  ) {
     config.url = `${basePath}${config.url}`;
   }
   return config;

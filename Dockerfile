@@ -60,7 +60,6 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 4321
 
-
 # Healthcheck to verify the app is running
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:4321${URL_BASE_PATH:-}/api/health || exit 1

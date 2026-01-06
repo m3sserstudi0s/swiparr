@@ -8,44 +8,40 @@ export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const session = await getIronSession<SessionData>(request, response, sessionOptions);
   
-  const { pathname, search } = request.nextUrl;
-  const basePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
+  // In Next.js middleware, request.nextUrl.pathname 
+  // already includes the basePath if it's matched.
+  const { pathname, search } = request.nextUrl; 
 
-  // 1. Normalize the pathname by removing the basePath for checking
-  // If pathname is "/swipe/login" and basePath is "/swipe", normalized is "/login"
-  const normalizedPathname = pathname.startsWith(basePath) 
-    ? pathname.replace(basePath, "") 
-    : pathname;
-
-  // 2. Define public paths (using normalized path)
+  // 1. Define public paths. 
+  // We check for the path WITH the base path.
   const isPublicPath = 
-    normalizedPathname.startsWith("/login") || 
-    normalizedPathname.startsWith("/api/auth") ||
-    normalizedPathname.startsWith("/api/health") ||
-    normalizedPathname.startsWith("/_next") ||
-    normalizedPathname.includes("favicon.ico") ||
-    normalizedPathname.includes("manifest.json") ||
-    normalizedPathname === "/sw.js" ||
-    [".png", ".svg", ".ico"].some(ext => normalizedPathname.endsWith(ext));
+    pathname.endsWith("/login") || 
+    pathname.includes("/api/auth") ||
+    pathname.includes("/api/health") ||
+    pathname.includes("/_next") ||
+    pathname.includes("favicon.ico") ||
+    pathname.includes("manifest.json") ||
+    pathname.endsWith("/sw.js") ||
+    [".png", ".svg", ".ico"].some(ext => pathname.endsWith(ext));
 
   if (isPublicPath) {
     return response;
   }
 
-  // 3. Handle Unauthorized
   if (!session.isLoggedIn) {
-    if (normalizedPathname.startsWith("/api/")) {
+    if (pathname.includes("/api/")) {
       return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Use URL object to construct the login redirect safely
-    const loginUrl = new URL(`${basePath}/login`, request.url);
+    // Next.js automatically prepends basePath to internal URLs
+    // if basePath is defined in next.config.js.
+    // Use a relative path to the root of the app.
+    const loginUrl = new URL("/login", request.url);
     
-    // Construct the full callback path
-    // We use the original pathname + search so the user returns exactly where they were
+    // searchParams.set automatically handles URL encoding
     loginUrl.searchParams.set("callbackUrl", pathname + search); 
 
     return NextResponse.redirect(loginUrl);

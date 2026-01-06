@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   title: "Swiparr",
   description: "Swipe on your Jellyfin media",
   appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
-  manifest: './manifest.json',
+  manifest: '/manifest.json', 
   icons: {
-    icon: './favicon.ico',
-    shortcut: './icon1.png',
-    apple: './apple-icon.png',
+    icon: '/favicon.ico',     
+    shortcut: '/icon1.png',   
+    apple: '/apple-icon.png',
   },
 };
 
