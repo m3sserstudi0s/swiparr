@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { SessionSettings, SessionStats } from "@/types/swiparr";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { apiClient } from "@/lib/api-client";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { toast } from "sonner";
@@ -51,7 +51,7 @@ export function SessionSettingsSheet({
   const { data: stats, refetch: refetchStats } = useQuery<SessionStats>({
     queryKey: ["session-stats"],
     queryFn: async () => {
-      const res = await axios.get("/api/session/stats");
+      const res = await apiClient.get("/api/session/stats");
       return res.data;
     },
     enabled: open,
@@ -115,7 +115,7 @@ export function SessionSettingsSheet({
 
     setIsResettingStats(true);
     try {
-      await axios.delete("/api/session/stats");
+      await apiClient.delete("/api/session/stats");
       refetchStats();
       toast.success("Session stats reset successfully");
       setConfirmResetStats(false);

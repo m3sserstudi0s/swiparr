@@ -12,11 +12,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname, search } = request.nextUrl; // Get search params
 
-  // 2. Define Public Paths (Don't block these!)
-  // - /login
-  // - /api/auth (so the login fetch works)
-  // - /_next (static assets)
-  // - /favicon.ico, manifest.json, etc.
+  // 2. Define public paths
   if (
     pathname.startsWith("/login") || 
     pathname.startsWith("/api/auth") ||
@@ -32,12 +28,22 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-if (!session.isLoggedIn) {
+  if (!session.isLoggedIn) {
+    // 3. Handle Unauthorized API requests
+    if (pathname.startsWith("/api/")) {
+      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Include the current URL (with query params) as the callback
     // browse to /?join=ABCD -> Login -> Back to /?join=ABCD
-    const loginUrl = new URL("/login", request.url);
+    const basePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
+    const loginUrl = new URL(`${basePath}/login`, request.url);
     // Encode the full original URL
-    loginUrl.searchParams.set("callbackUrl", pathname + search); 
+    // pathname here does not include basePath
+    loginUrl.searchParams.set("callbackUrl", basePath + pathname + search); 
     return NextResponse.redirect(loginUrl);
   }
 
@@ -45,6 +51,6 @@ if (!session.isLoggedIn) {
 }
 
 export const config = {
-  // Apply this middleware to everything except static assets
+  // Apply this proxy to everything except static assets
   matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json).*)"],
 };

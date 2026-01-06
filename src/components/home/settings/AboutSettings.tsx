@@ -7,10 +7,9 @@ import useSWR from "swr";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { GITHUB_URL } from "@/lib/constants";
 import { SettingsSection } from "./SettingsSection";
+import { apiClient, fetcher } from "@/lib/api-client";
 
 import { toast } from "sonner";
-
-const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface AboutSettingsProps {
     onShowUserGuide: () => void;

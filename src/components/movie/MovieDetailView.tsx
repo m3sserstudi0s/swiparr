@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Clock, Star, Users, HeartOff, Plus, Minus, Info } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { JellyfinItem } from "@/types/swiparr";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -18,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSettings } from "@/lib/settings";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { ticksToTime } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface Props {
   movieId: string | null;
@@ -43,7 +43,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
     queryKey: ["movie", movieId],
     queryFn: async () => {
       if (!movieId) return null;
-      const res = await axios.get<JellyfinItem>(`/api/jellyfin/item/${movieId}`);
+      const res = await apiClient.get<JellyfinItem>(`/api/jellyfin/item/${movieId}`);
       return res.data;
     },
     enabled: !!movieId,
@@ -52,7 +52,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
   const { data: sessionData, isLoading: isSessionLoading } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
-      const res = await axios.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
+      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
       return res.data;
     },
   });
@@ -66,7 +66,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
 
     mutationFn: async () => {
-      await axios.delete(`/api/user/likes?itemId=${movieId}`);
+      await apiClient.delete(`/api/user/likes?itemId=${movieId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });
@@ -76,7 +76,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
 
   const { mutate: relike } = useMutation({
     mutationFn: async () => {
-      movie && await axios.post("/api/swipe", {
+      movie && await apiClient.post("/api/swipe", {
         itemId: movie.Id,
         direction: "right"
       });
@@ -93,7 +93,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
   const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
     mutationFn: async () => {
       if (isGuest) return;
-      await axios.post("/api/user/watchlist", {
+      await apiClient.post("/api/user/watchlist", {
         itemId: movie?.Id,
         action: isInList ? "remove" : "add",
         useWatchlist

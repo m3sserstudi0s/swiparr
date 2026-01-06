@@ -11,11 +11,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { Filters } from "@/types/swiparr";
 import { RotateCcw, Star } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
+import { apiClient } from "@/lib/api-client";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -45,7 +45,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: years, isLoading: isLoadingYears } = useQuery({
     queryKey: ["years"],
     queryFn: async () => {
-      const res = await axios.get("/api/jellyfin/years");
+      const res = await apiClient.get("/api/jellyfin/years");
       return res.data;
     },
     enabled: open,
@@ -69,7 +69,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: genres, isLoading: isLoadingGenres } = useQuery({
     queryKey: ["genres"],
     queryFn: async () => {
-      const res = await axios.get("/api/jellyfin/genres");
+      const res = await apiClient.get("/api/jellyfin/genres");
       return res.data;
     },
     enabled: open,
@@ -81,7 +81,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: ratings, isLoading: isLoadingRatings } = useQuery({
     queryKey: ["ratings"],
     queryFn: async () => {
-      const res = await axios.get("/api/jellyfin/ratings");
+      const res = await apiClient.get("/api/jellyfin/ratings");
       return res.data;
     },
     enabled: open,

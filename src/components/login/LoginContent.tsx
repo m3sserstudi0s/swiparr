@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
 import { Label } from "../ui/label";
+import { apiClient } from "@/lib/api-client";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");
@@ -76,13 +77,8 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) throw new Error("Login failed");
-      return res.json();
+      const res = await apiClient.post("/api/auth/login", { username, password });
+      return res.data;
     };
 
     toast.promise(promise(), {
@@ -113,14 +109,8 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/guest", {
-        method: "POST",
-        body: JSON.stringify({ username: guestName, sessionCode: code }),
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Guest login failed");
-      return data;
+      const res = await apiClient.post("/api/auth/guest", { username: guestName, sessionCode: code });
+      return res.data;
     };
 
     toast.promise(promise(), {
@@ -131,7 +121,7 @@ export default function LoginContent() {
       },
       error: (err) => {
         setLoading(false);
-        return err.message;
+        return err.response?.data?.message || err.message;
       },
       position: 'top-right'
     });
@@ -146,8 +136,8 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await fetch("/api/auth/quick-connect");
-      const data = await res.json();
+      const res = await apiClient.get("/api/auth/quick-connect");
+      const data = res.data;
       if (!data.Code) throw new Error("Quick connect failed");
       return data;
     };

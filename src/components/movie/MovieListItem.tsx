@@ -8,8 +8,8 @@ import Link from "next/link";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
 
 import { MergedLike } from "@/types/swiparr";
 import { useRuntimeConfig } from "@/lib/runtime-config";
@@ -27,7 +27,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
 
   const { mutate: relike } = useMutation({
     mutationFn: async () => {
-      await axios.post("/api/swipe", {
+      await apiClient.post("/api/swipe", {
         itemId: movie.Id,
         direction: "right"
       });
@@ -40,7 +40,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
     mutationFn: async () => {
       const sessionParam = movie.sessionCode ? `&sessionCode=${movie.sessionCode}` : "";
-      await axios.delete(`/api/user/likes?itemId=${movie.Id}${sessionParam}`);
+      await apiClient.delete(`/api/user/likes?itemId=${movie.Id}${sessionParam}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });

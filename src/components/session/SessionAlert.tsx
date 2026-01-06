@@ -6,12 +6,12 @@ import {
 } from "@/components/ui/alert"
 import { useSettings } from "@/lib/settings"
 import useSWR from "swr"
-import axios from "axios"
+import { apiClient, fetcher } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 
 export function SessionAlert() {
     const { settings, updateSettings } = useSettings();
-    const { data: sessionStatus } = useSWR("/api/session", (url) => axios.get(url).then(res => res.data));
+    const { data: sessionStatus } = useSWR("/api/session", fetcher);
 
     const isGuest = sessionStatus?.isGuest || false;
 

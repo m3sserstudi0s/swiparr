@@ -63,7 +63,7 @@ EXPOSE 4321
 
 # Healthcheck to verify the app is running
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:4321/api/health || exit 1
+  CMD curl -f http://localhost:4321${URL_BASE_PATH:-}/api/health || exit 1
 
 # Run migrations then start Next standalone server
 CMD ["sh", "-c", "node src/db/migrate.js && node server.js"]

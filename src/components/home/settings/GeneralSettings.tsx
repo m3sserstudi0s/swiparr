@@ -8,13 +8,13 @@ import { useSettings } from "@/lib/settings";
 import { SettingsSection } from "./SettingsSection";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import useSWR from "swr";
-import axios from "axios";
+import { apiClient, fetcher } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function GeneralSettings() {
     const { setTheme, resolvedTheme: theme } = useTheme();
     const { settings, updateSettings } = useSettings();
-    const { data: sessionStatus, isLoading } = useSWR("/api/session", (url) => axios.get(url).then(res => res.data));
+    const { data: sessionStatus, isLoading } = useSWR("/api/session", fetcher);
     const isGuest = sessionStatus?.isGuest || false;
 
     return (

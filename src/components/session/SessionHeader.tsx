@@ -4,9 +4,9 @@ import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
 import { useState } from "react";
 import { SessionSettingsSheet } from "./SessionSettingsSheet";
-import axios from "axios";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
 
 interface SessionHeaderProps {
   activeCode?: string;
@@ -31,7 +31,7 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
 
     try {
 
-      await axios.patch("/api/session", { settings });
+      await apiClient.patch("/api/session", { settings });
       mutate("/api/session");
       toast.success("Session settings updated");
     } catch (err) {

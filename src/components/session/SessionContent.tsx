@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Info, Users, X } from "lucide-react";
-import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
@@ -16,6 +15,7 @@ import { SessionHeader } from "./SessionHeader";
 import { SessionCodeSection } from "./SessionCodeSection";
 import { MatchesList } from "./MatchesList";
 import { SessionAlert } from "./SessionAlert";
+import { apiClient, fetcher } from "@/lib/api-client";
 
 import { useHotkeys } from "react-hotkeys-hook";
 import { useSettings } from "@/lib/settings";
@@ -35,7 +35,7 @@ export default function SessionContent() {
     // -- 1. CHECK CURRENT STATUS --
     const { data: sessionStatus, isLoading: isSessionLoading } = useSWR(
         "/api/session",
-        url => axios.get(url).then(res => res.data)
+        fetcher
     );
     const isSuccess = !isSessionLoading && !!sessionStatus;
     const activeCode = sessionStatus?.code;
@@ -43,18 +43,18 @@ export default function SessionContent() {
     // -- 1.5 FETCH MEMBERS (Using SWR) --
     const { data: members } = useSWR<any[]>(
         activeCode ? ["/api/session/members", activeCode] : null,
-        ([url]: [string]) => axios.get(url).then(res => res.data)
+        ([url]: [string]) => apiClient.get(url).then(res => res.data)
     );
 
     // -- 2. HANDLE MATCHES (Using SWR) --
     const { data: matches } = useSWR<JellyfinItem[]>(
         activeCode ? ["/api/session/matches", activeCode] : null,
-        ([url]: [string]) => axios.get(url).then(res => res.data)
+        ([url]: [string]) => apiClient.get(url).then(res => res.data)
     );
 
     // -- 3. MUTATIONS --
     const createSession = useMutation({
-        mutationFn: async () => axios.post("/api/session", {
+        mutationFn: async () => apiClient.post("/api/session", {
             action: "create",
             allowGuestLending: settings.allowGuestLending
         }),
@@ -65,7 +65,7 @@ export default function SessionContent() {
     });
 
     const joinSession = useMutation({
-        mutationFn: async (codeToJoin: string) => axios.post("/api/session", { action: "join", code: codeToJoin }),
+        mutationFn: async (codeToJoin: string) => apiClient.post("/api/session", { action: "join", code: codeToJoin }),
         onSuccess: () => {
             mutate("/api/session");
             queryClient.invalidateQueries({ queryKey: ["deck"] });
@@ -74,11 +74,11 @@ export default function SessionContent() {
     });
 
     const leaveSession = useMutation({
-        mutationFn: async () => axios.delete("/api/session"),
+        mutationFn: async () => apiClient.delete("/api/session"),
         onSuccess: () => {
             if (sessionStatus?.isGuest) {
                 // Guests are logged out when leaving
-                axios.post("/api/auth/logout").then(() => {
+                apiClient.post("/api/auth/logout").then(() => {
                     window.location.href = "/login";
                 });
                 return;

@@ -6,21 +6,22 @@ import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useMovieDetail } from '@/components/movie/MovieDetailProvider';
 import React from 'react';
-import axios from 'axios';
 import { useRuntimeConfig } from './runtime-config';
+import { apiClient } from './api-client';
 
 export function useUpdates() {
     const { mutate } = useSWRConfig();
     const queryClient = useQueryClient();
     const { openMovie } = useMovieDetail();
+    const { basePath } = useRuntimeConfig();
 
-    const { data: sessionData } = useSWR<{ code: string | null; userId: string }>('/api/session', (url: string) => axios.get(url).then(res => res.data));
+    const { data: sessionData } = useSWR<{ code: string | null; userId: string }>('/api/session', (url: string) => apiClient.get(url).then(res => res.data));
     const sessionCode = sessionData?.code;
 
     useEffect(() => {
         if (!sessionCode) return;
 
-        const eventSource = new EventSource('/api/events');
+        const eventSource = new EventSource(`${basePath}/api/events`);
 
         eventSource.addEventListener(EVENT_TYPES.SESSION_UPDATED, (event: any) => {
             const data = JSON.parse(event.data);
@@ -128,12 +129,8 @@ export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: 
         // and because it's more reliable across different environments.
         const poll = async () => {
             try {
-                const res = await fetch("/api/auth/quick-connect", {
-                    method: "POST",
-                    body: JSON.stringify({ secret: qcSecret }),
-                    headers: { "Content-Type": "application/json" },
-                });
-                const data = await res.json();
+                const res = await apiClient.post("/api/auth/quick-connect", { secret: qcSecret });
+                const data = res.data;
                 if (data.success) {
                     onAuthorized?.(data);
                     return true;

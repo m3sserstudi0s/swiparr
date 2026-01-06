@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { useState } from "react";
 import { LikesFilter } from "./LikesFilter";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +10,7 @@ import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { MovieListItem } from "../movie/MovieListItem";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
 import { type MergedLike } from "@/types/swiparr";
+import { apiClient } from "@/lib/api-client";
 
 import {
     Empty,
@@ -30,7 +30,7 @@ export function LikesList() {
     const { data: likes, isLoading } = useQuery<MergedLike[]>({
         queryKey: ["likes", sortBy, filterMode],
         queryFn: async () => {
-            const res = await axios.get<MergedLike[]>("/api/user/likes", {
+            const res = await apiClient.get<MergedLike[]>("/api/user/likes", {
                 params: { sortBy, filter: filterMode }
             });
             return res.data;

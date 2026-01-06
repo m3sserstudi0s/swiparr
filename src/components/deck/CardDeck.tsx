@@ -2,7 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
 import React, { useRef, useState, useMemo } from "react";
-import axios from "axios";
 import { JellyfinItem, Filters, SessionSettings, SessionStats } from "@/types/swiparr";
 import { Heart, X, GalleryHorizontalEnd, RefreshCcw, Rewind, SlidersHorizontal } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
@@ -16,6 +15,7 @@ import { DeckEmpty } from "./DeckEmpty";
 import { DeckError } from "./DeckError";
 import { DeckLoading } from "./DeckLoading";
 import { toast } from "sonner";
+import { apiClient, fetcher } from "@/lib/api-client";
 
 export function CardDeck() {
   const { mutate } = useSWRConfig();
@@ -24,7 +24,7 @@ export function CardDeck() {
 
   const { data: sessionStatus } = useSWR<{ code: string | null; filters: Filters | null; settings: SessionSettings | null }>(
     "/api/session",
-    (url: string) => axios.get(url).then(res => res.data)
+    fetcher
   );
 
   const sessionCode = sessionStatus?.code || null;
@@ -33,7 +33,7 @@ export function CardDeck() {
 
   const { data: stats, mutate: mutateStats } = useSWR<SessionStats>(
     sessionCode ? "/api/session/stats" : null,
-    (url: string) => axios.get(url).then(res => res.data)
+    fetcher
   );
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -62,7 +62,7 @@ export function CardDeck() {
 
   const { data: members } = useSWR<{ jellyfinUserId: string; jellyfinUserName: string }[]>(
     sessionCode ? ["/api/session/members", sessionCode] : null,
-    ([url]: [string]) => axios.get(url).then(res => res.data)
+    ([url]: [string]) => apiClient.get(url).then(res => res.data)
   );
 
   const filtersJson = JSON.stringify(sessionStatus?.filters);
@@ -82,7 +82,7 @@ export function CardDeck() {
   const { data: deck, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["deck", sessionCode],
     queryFn: async () => {
-      const res = await axios.get<JellyfinItem[]>("/api/jellyfin/items");
+      const res = await apiClient.get<JellyfinItem[]>("/api/jellyfin/items");
       return res.data;
     },
     staleTime: 1000 * 60 * 5,
@@ -90,7 +90,7 @@ export function CardDeck() {
 
   // Update displayDeck when new items are fetched
   React.useEffect(() => {
-    if (deck) {
+    if (deck && Array.isArray(deck)) {
       setDisplayDeck((prev) => {
         const existingIds = new Set(prev.map((i) => i.Id));
         const newItems = deck.filter((item) => !existingIds.has(item.Id));
@@ -130,7 +130,7 @@ export function CardDeck() {
   // --- MULTIPLAYER LOGIC INTEGRATION ---
   const swipeMutation = useMutation({
     mutationFn: async ({ id, direction, item }: { id: string; direction: "left" | "right"; item: JellyfinItem }) => {
-      const res = await axios.post("/api/swipe", { itemId: id, direction, item });
+      const res = await apiClient.post("/api/swipe", { itemId: id, direction, item });
       return { data: res.data, id, item };
     },
     onSuccess: ({ data, item }) => {
@@ -251,7 +251,7 @@ export function CardDeck() {
     setLastSwipe(null);
 
     try {
-      await axios.delete("/api/swipe", { data: { itemId: id } });
+      await apiClient.delete("/api/swipe", { data: { itemId: id } });
     } catch (err) {
       console.error("Failed to undo swipe", err);
     }
@@ -271,7 +271,7 @@ export function CardDeck() {
   const updateFilters = async (newFilters: Filters) => {
     setIsApplyingFilters(true);
     try {
-      await axios.patch("/api/session", { filters: newFilters });
+      await apiClient.patch("/api/session", { filters: newFilters });
       await mutate("/api/session"); // Refresh session status to get new filters
       await queryClient.invalidateQueries({ queryKey: ["deck", sessionCode] });
     } finally {

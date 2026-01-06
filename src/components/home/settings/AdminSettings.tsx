@@ -11,9 +11,9 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Shield, ShieldAlert, ShieldCheck, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
-import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api-client";
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ export function AdminSettings() {
     const { data: availableLibraries = [], isLoading: isLoadingLibs } = useQuery({
         queryKey: ["jellyfin-libraries"],
         queryFn: async () => {
-            const res = await axios.get("/api/jellyfin/libraries");
+            const res = await apiClient.get("/api/jellyfin/libraries");
             return res.data;
         },
         enabled: !!status?.isAdmin,
@@ -50,7 +50,7 @@ export function AdminSettings() {
     const { data: adminLibraries } = useQuery({
         queryKey: ["admin-libraries"],
         queryFn: async () => {
-            const res = await axios.get("/api/admin/libraries");
+            const res = await apiClient.get("/api/admin/libraries");
             return res.data;
         },
         enabled: !!status?.isAdmin,
@@ -65,7 +65,7 @@ export function AdminSettings() {
     useEffect(() => {
         const fetchStatus = async () => {
             try {
-                const statusRes = await axios.get("/api/admin/status");
+                const statusRes = await apiClient.get("/api/admin/status");
                 setStatus(statusRes.data);
             } catch (err) {
                 console.error("Failed to fetch admin status", err);
@@ -79,7 +79,7 @@ export function AdminSettings() {
     const handleClaim = async () => {
         setIsClaiming(true);
         try {
-            await axios.post("/api/admin/claim");
+            await apiClient.post("/api/admin/claim");
             toast.success("You are now the admin");
             setStatus({ hasAdmin: true, isAdmin: true });
             router.refresh();
@@ -106,7 +106,7 @@ export function AdminSettings() {
     const saveLibraries = async () => {
         setIsSavingLibs(true);
         try {
-            await axios.patch("/api/admin/libraries", includedLibraries);
+            await apiClient.patch("/api/admin/libraries", includedLibraries);
             toast.success("Libraries updated successfully");
             setNeedsRefresh(true);
         } catch (err) {

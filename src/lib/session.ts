@@ -10,5 +10,6 @@ export const sessionOptions: SessionOptions = {
     secure: process.env.USE_SECURE_COOKIES?.toLowerCase() === "true",
     httpOnly: true,
     sameSite: "lax",
+    path: (process.env.URL_BASE_PATH || process.env.NEXT_PUBLIC_URL_BASE_PATH || "").replace(/\/$/, "") || "/",
   },
 };

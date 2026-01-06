@@ -31,6 +31,10 @@ services:
       # IMPORTANT: When using a reverse proxy, ensure it passes the "Host" header.
       - USE_SECURE_COOKIES=false
       
+      # OPTIONAL: Custom base path for the application
+      # Example: /swipe
+      # - URL_BASE_PATH=
+      
       # OPTIONAL: The hostname the server binds to
       # Default: 0.0.0.0 (listens on all interfaces)
       - HOSTNAME=0.0.0.0

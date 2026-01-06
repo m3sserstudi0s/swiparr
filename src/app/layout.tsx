@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   title: "Swiparr",
   description: "Swipe on your Jellyfin media",
   appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
-  manifest: '/manifest.json',
+  manifest: './manifest.json',
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/icon1.png',
-    apple: '/apple-icon.png',
+    icon: './favicon.ico',
+    shortcut: './icon1.png',
+    apple: './apple-icon.png',
   },
 };
 
@@ -37,6 +37,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const config = getRuntimeConfig();
+  const basePath = config.basePath || "";
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -47,7 +48,7 @@ export default function RootLayout({
               window.__SWIPARR_CONFIG__ = ${JSON.stringify(config)};
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
+                  navigator.serviceWorker.register('${basePath}/sw.js');
                 });
               }
             `,

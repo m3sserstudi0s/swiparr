@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { apiClient } from "@/lib/api-client";
 import { Button } from "../ui/button";
 import { useState, Suspense, lazy } from "react";
 import { UserGuide } from "./UserGuide";
@@ -44,7 +44,7 @@ export function SettingsSidebar() {
 
     const handleLogout = async () => {
         try {
-            await axios.post("/api/auth/logout");
+            await apiClient.post("/api/auth/logout");
             router.push("/login");
         } catch (error) {
             console.error("Logout failed:", error);
@@ -54,7 +54,7 @@ export function SettingsSidebar() {
 
     const handleClearData = async () => {
         setIsClearing(true);
-        const promise = axios.post("/api/user/clear");
+        const promise = apiClient.post("/api/user/clear");
 
         toast.promise(promise, {
             loading: "Clearing all data...",
