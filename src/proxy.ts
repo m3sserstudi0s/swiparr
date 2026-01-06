@@ -6,44 +6,48 @@ import { SessionData } from "@/types/swiparr";
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
-  
-  // 1. Check existing session
   const session = await getIronSession<SessionData>(request, response, sessionOptions);
+  
+  const { pathname, search } = request.nextUrl;
+  const basePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
 
-  const { pathname, search } = request.nextUrl; // Get search params
+  // 1. Normalize the pathname by removing the basePath for checking
+  // If pathname is "/swipe/login" and basePath is "/swipe", normalized is "/login"
+  const normalizedPathname = pathname.startsWith(basePath) 
+    ? pathname.replace(basePath, "") 
+    : pathname;
 
-  // 2. Define public paths
-  if (
-    pathname.startsWith("/login") || 
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/api/health") ||
-    pathname.startsWith("/_next") ||
-    pathname.includes("favicon.ico") ||
-    pathname.includes("manifest.json") ||
-    pathname === "/sw.js" ||
-    pathname.endsWith(".png") ||
-    pathname.endsWith(".svg") ||
-    pathname.endsWith(".ico")
-  ) {
+  // 2. Define public paths (using normalized path)
+  const isPublicPath = 
+    normalizedPathname.startsWith("/login") || 
+    normalizedPathname.startsWith("/api/auth") ||
+    normalizedPathname.startsWith("/api/health") ||
+    normalizedPathname.startsWith("/_next") ||
+    normalizedPathname.includes("favicon.ico") ||
+    normalizedPathname.includes("manifest.json") ||
+    normalizedPathname === "/sw.js" ||
+    [".png", ".svg", ".ico"].some(ext => normalizedPathname.endsWith(ext));
+
+  if (isPublicPath) {
     return response;
   }
 
+  // 3. Handle Unauthorized
   if (!session.isLoggedIn) {
-    // 3. Handle Unauthorized API requests
-    if (pathname.startsWith("/api/")) {
+    if (normalizedPathname.startsWith("/api/")) {
       return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Include the current URL (with query params) as the callback
-    // browse to /?join=ABCD -> Login -> Back to /?join=ABCD
-    const basePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
+    // Use URL object to construct the login redirect safely
     const loginUrl = new URL(`${basePath}/login`, request.url);
-    // Encode the full original URL
-    // pathname here does not include basePath
-    loginUrl.searchParams.set("callbackUrl", basePath + pathname + search); 
+    
+    // Construct the full callback path
+    // We use the original pathname + search so the user returns exactly where they were
+    loginUrl.searchParams.set("callbackUrl", pathname + search); 
+
     return NextResponse.redirect(loginUrl);
   }
 
@@ -51,6 +55,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Apply this proxy to everything except static assets
   matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json).*)"],
 };
