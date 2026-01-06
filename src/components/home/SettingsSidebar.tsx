@@ -10,6 +10,7 @@ import {
 import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 import { Button } from "../ui/button";
 import { useState, Suspense, lazy } from "react";
 import { UserGuide } from "./UserGuide";
@@ -42,10 +43,11 @@ export function SettingsSidebar() {
 
     useHotkeys("s, ,", () => setOpen(prev => !prev), []);
 
+    const { basePath } = useRuntimeConfig();
     const handleLogout = async () => {
         try {
             await apiClient.post("/api/auth/logout");
-            router.push("/login");
+            router.push(`${basePath}/login`);
         } catch (error) {
             console.error("Logout failed:", error);
             toast.error("Logout failed");

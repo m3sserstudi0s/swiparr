@@ -22,14 +22,14 @@ export function getRuntimeConfig(): RuntimeConfig {
     return window.__SWIPARR_CONFIG__;
   }
   
-  const jellyfinPublicUrl = (process.env.JELLYFIN_PUBLIC_URL || process.env.NEXT_PUBLIC_JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || process.env.NEXT_PUBLIC_JELLYFIN_URL || '').replace(/\/$/, '');
-  const rawBasePath = (process.env.URL_BASE_PATH || process.env.NEXT_PUBLIC_URL_BASE_PATH || '').replace(/\/$/, '');
+  const jellyfinPublicUrl = (process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || '').replace(/\/$/, '');
+  const rawBasePath = (process.env.URL_BASE_PATH || '').replace(/\/$/, '');
   const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
   
   return {
     jellyfinPublicUrl,
-    useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.NEXT_PUBLIC_JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
-    version: (process.env.APP_VERSION || process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version).replace(/^v/i, ''),
+    useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
+    version: (process.env.APP_VERSION || packageJson.version).replace(/^v/i, ''),
     basePath,
   };
 }

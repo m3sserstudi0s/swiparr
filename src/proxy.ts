@@ -5,21 +5,30 @@ import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types/swiparr";
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next();
+  const { search } = request.nextUrl;
+  let pathname = request.nextUrl.pathname;
+  const rawBasePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
+  const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
+  let isRewritten = false;
+
+  // Handle base path stripping for routing
+  if (basePath && (pathname === basePath || pathname.startsWith(basePath + "/"))) {
+    pathname = pathname.substring(basePath.length) || "/";
+    isRewritten = true;
+  }
+
+  const response = isRewritten
+    ? NextResponse.rewrite(new URL(pathname + search, request.url))
+    : NextResponse.next();
+
   const session = await getIronSession<SessionData>(request, response, sessionOptions);
   
-  // In Next.js middleware, request.nextUrl.pathname 
-  // already includes the basePath if it's matched.
-  const { pathname, search } = request.nextUrl; 
-  const basePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
-
   // 1. Define public paths. 
-  // We check for the path with and without the base path.
   const isPublicPath = 
-    pathname.endsWith("/login") || 
-    pathname.includes("/api/auth") ||
-    pathname.includes("/api/health") ||
-    pathname.includes("/_next") ||
+    pathname === "/login" || 
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/health") ||
+    pathname.startsWith("/_next") ||
     pathname.includes("favicon.ico") ||
     pathname.includes("manifest.json") ||
     pathname.endsWith("/sw.js") ||
@@ -41,10 +50,8 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL(`${basePath}/login`, request.url);
     
     // searchParams.set automatically handles URL encoding
-    // If pathname already starts with basePath, don't double it
-    const callbackPath = (basePath && pathname.startsWith(basePath)) 
-      ? pathname 
-      : `${basePath}${pathname}`;
+    // Always use the version with basePath for the callback URL so the browser can return correctly
+    const callbackPath = `${basePath}${pathname}`;
     
     loginUrl.searchParams.set("callbackUrl", callbackPath + search); 
 
@@ -55,5 +62,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json).*)"],
+  matcher: ["/:path*"],
 };
