@@ -1,5 +1,6 @@
 "use client";
-import React, { forwardRef, useRef } from "react";
+import React, { forwardRef, useRef, memo } from "react";
+
 import { JellyfinItem } from "@/types/swiparr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +23,9 @@ interface SwipeCardProps {
   preventSwipe?: Direction[];
 }
 
-export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
+export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
   function SwipeCard({ item, index, onSwipe, onCardLeftScreen, onClick, preventSwipe = [] }, ref) {
+
     const isFront = index === 0;
     const { settings } = useSettings();
 
@@ -138,4 +140,4 @@ export const SwipeCard = forwardRef<TinderCardHandle, SwipeCardProps>(
       </div>
     );
   }
-);
+));

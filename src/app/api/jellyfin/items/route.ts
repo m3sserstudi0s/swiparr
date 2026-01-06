@@ -12,7 +12,10 @@ import { shuffleWithSeed } from "@/lib/utils";
 import { getIncludedLibraries } from "@/lib/server/admin";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
+import { getCache, setCache } from "@/lib/server/cache";
+
 export async function GET(request: NextRequest) {
+
 
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
@@ -67,6 +70,10 @@ export async function GET(request: NextRequest) {
             const runtimeTicksMax = (sessionFilters?.runtimeRange && sessionFilters.runtimeRange[1] < 240) ? sessionFilters.runtimeRange[1] * 600000000 : undefined;
 
             const fetchAllForLibrary = async (parentId?: string) => {
+                const cacheKey = `lib_${userId}_${parentId || 'all'}_${JSON.stringify(sessionFilters)}`;
+                const cached = getCache<JellyfinItem[]>(cacheKey);
+                if (cached) return cached;
+
                 const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
                     params: {
                         IncludeItemTypes: "Movie",
@@ -82,7 +89,9 @@ export async function GET(request: NextRequest) {
 
                     headers: getAuthenticatedHeaders(accessToken!, deviceId!),
                 });
-                return res.data.Items || [];
+                const items = res.data.Items || [];
+                setCache(cacheKey, items, 1000 * 60 * 5); // 5 min cache
+                return items;
             };
 
             // Fetch ALL movies (IDs + UserData + RunTimeTicks) to ensure a consistent shuffle across users

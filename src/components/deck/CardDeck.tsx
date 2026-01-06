@@ -1,7 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useSWR, { useSWRConfig } from "swr";
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { JellyfinItem, Filters, SessionSettings, SessionStats } from "@/types/swiparr";
 import { Heart, X, GalleryHorizontalEnd, RefreshCcw, Rewind, SlidersHorizontal } from "lucide-react";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
@@ -48,7 +48,7 @@ export function CardDeck() {
   const [displayDeck, setDisplayDeck] = useState<JellyfinItem[]>([]);
 
   // Sync swipes to cache on unmount to handle fast tab switching
-  React.useEffect(() => {
+  useEffect(() => {
     const currentSwipedIds = swipedIdsRef.current;
     return () => {
       if (currentSwipedIds.size > 0) {
@@ -67,7 +67,7 @@ export function CardDeck() {
 
   const filtersJson = JSON.stringify(sessionStatus?.filters);
   // Clear local state when session or filters change to get a fresh start
-  React.useEffect(() => {
+  useEffect(() => {
     setRemovedIds([]);
     swipedIdsRef.current.clear();
     setLastSwipe(null);
@@ -89,7 +89,7 @@ export function CardDeck() {
   });
 
   // Update displayDeck when new items are fetched
-  React.useEffect(() => {
+  useEffect(() => {
     if (deck && Array.isArray(deck)) {
       setDisplayDeck((prev) => {
         const existingIds = new Set(prev.map((i) => i.Id));
@@ -158,13 +158,13 @@ export function CardDeck() {
   }, [displayDeck, removedIds]);
 
   // Auto-refresh when deck is low
-  React.useEffect(() => {
-    if (!isFetching && activeDeck.length > 0 && activeDeck.length <= 5) {
+  useEffect(() => {
+    if (!isFetching && activeDeck.length > 0 && activeDeck.length <= 15) {
       refetch();
     }
   }, [activeDeck.length, isFetching, refetch]);
 
-  const onSwipe = (id: string, direction: "left" | "right") => {
+  const onSwipe = useCallback((id: string, direction: "left" | "right") => {
     // Check limits
     if (sessionSettings) {
       if (direction === "right" && sessionSettings.maxRightSwipes && stats) {
@@ -202,17 +202,17 @@ export function CardDeck() {
         }
       }, false);
     }
-  };
+  }, [sessionSettings, stats, displayDeck, swipeMutation, mutateStats]);
 
-  const onCardLeftScreen = (id: string) => {
+  const onCardLeftScreen = useCallback((id: string) => {
     // If the card was rewound, don't remove it
     if (!swipedIdsRef.current.has(id)) return;
 
     // 2. Remove from state here (after animation is done)
     setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-  };
+  }, []);
 
-  const swipeTop = React.useCallback(async (direction: "left" | "right") => {
+  const swipeTop = useCallback(async (direction: "left" | "right") => {
     if (activeDeck.length === 0) return;
 
     // Check limits for buttons
@@ -241,7 +241,7 @@ export function CardDeck() {
     }
   }, [activeDeck, sessionSettings, stats]);
 
-  const rewind = async () => {
+  const rewind = useCallback(async () => {
     if (!lastSwipe) return;
     const { id, direction } = lastSwipe;
 
@@ -255,10 +255,10 @@ export function CardDeck() {
     } catch (err) {
       console.error("Failed to undo swipe", err);
     }
-  };
+  }, [lastSwipe]);
 
   // Effect to trigger animation after card is re-mounted
-  React.useEffect(() => {
+  useEffect(() => {
     if (rewindingId) {
       const ref = cardRefs.current[rewindingId.id];
       if (ref && ref.current) {
