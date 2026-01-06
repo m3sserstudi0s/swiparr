@@ -11,17 +11,7 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "**", // Allow dynamic Jellyfin hosts
       },
-      {
-        protocol: "https",
-        hostname: "**",
-      },
     ],
-  },
-  experimental: {
-    // This helps with Next.js 15 CSRF protection behind reverse proxies
-    serverActions: {
-      allowedOrigins: ["*"],
-    },
   },
 };
 
