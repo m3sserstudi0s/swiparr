@@ -90,6 +90,8 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                   loading={index == 0 ? 'eager' : undefined}
                   className="h-full w-full object-cover rounded-3xl"
                   draggable={false} // Native drag must be disabled
+                  height={700}
+                  width={500}
                   sizes="(max-width: 768px) 100vw, 400px"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-neutral-950 via-neutral-950/60 to-transparent" />

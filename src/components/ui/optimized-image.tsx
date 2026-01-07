@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import useSWR from "swr";
 import { apiClient } from "@/lib/api-client";
+import { Skeleton } from "./skeleton";
 
 interface OptimizedImageProps extends Omit<ImageProps, "onLoad"> {
   containerClassName?: string;
@@ -61,27 +62,30 @@ export function OptimizedImage({
     <div
       className={cn("relative overflow-hidden bg-muted/20", containerClassName || className)}
     >
-      <Image
-        {...props}
-        loader={isJellyfinImage ? imageLoader : undefined}
-        src={resolvedSrc}
-        alt={alt}
-        width={isFill ? undefined : width}
-        height={isFill ? undefined : height}
-        fill={isFill}
-        priority={priority}
-        placeholder={resolvedPlaceholder}
-        blurDataURL={blurDataURL}
-        className={cn(
-          "duration-700 ease-in-out transition-transform",
-          isLoading ? "scale-102" : "scale-100",
-          className
-        )}
-        onLoad={(e) => {
-          setIsLoading(false);
-          onLoad?.(e);
-        }}
-      />
+      {isLoading && !blurDataURL ?
+        <Skeleton className="w-full h-full"/>
+        : <Image
+          {...props}
+          loader={isJellyfinImage ? imageLoader : undefined}
+          src={resolvedSrc}
+          alt={alt}
+          width={isFill ? undefined : width}
+          height={isFill ? undefined : height}
+          fill={isFill}
+          priority={priority}
+          placeholder={resolvedPlaceholder}
+          blurDataURL={blurDataURL}
+          className={cn(
+            "duration-700 ease-in-out transition-transform",
+            isLoading ? "scale-102" : "scale-100",
+            className
+          )}
+          onLoad={(e) => {
+            setIsLoading(false);
+            onLoad?.(e);
+          }}
+        />
+      }
     </div>
   );
 }

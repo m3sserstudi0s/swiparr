@@ -172,6 +172,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                     }
                     jellyfinItemId={movie.Id}
                     jellyfinImageType="Backdrop"
+                    width={400}
+                    height={225}
                     className="w-full h-full object-cover"
                     alt="Backdrop"
                   />
@@ -186,6 +188,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                     src={`/api/jellyfin/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
                     jellyfinItemId={movie.Id}
                     jellyfinImageType="Primary"
+                    width={75}
+                    height={125}
                     className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0"
                     alt="Poster"
                   />

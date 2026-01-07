@@ -89,9 +89,11 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
           src={`/api/jellyfin/image/${movie.Id}`}
           alt={movie.Name}
           jellyfinItemId={movie.Id}
+          height={100}
+          width={50}
           blurDataURL={movie.BlurDataURL}
           className="w-full h-full object-cover rounded-md"
-          sizes="(max-width: 768px) 100px, 150px"
+          sizes="(max-width: 768px) 75px, 100px"
         />
         {/* Match Indicator */}
         {!isCondensed && movie.isMatch && (

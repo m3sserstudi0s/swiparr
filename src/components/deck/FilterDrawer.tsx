@@ -16,6 +16,7 @@ import { RotateCcw, Star } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { apiClient } from "@/lib/api-client";
+import { Skeleton } from "../ui/skeleton";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -170,11 +171,11 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
           <DrawerHeader className="border-b pb-4">
             <DrawerTitle>Filters</DrawerTitle>
           </DrawerHeader>
-          <div className="flex-1 px-6 py-6 space-y-8 animate-pulse">
+          <div className="flex-1 px-6 py-6 space-y-8">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-4">
-                <div className="h-6 w-24 bg-muted rounded-xl" />
-                <div className="h-12 w-full bg-muted rounded-xl" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-12 w-full" />
               </div>
             ))}
           </div>

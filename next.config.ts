@@ -33,11 +33,16 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-
+    unoptimized: false,
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "http",
-        hostname: "**", // Allow dynamic Jellyfin hosts
+        hostname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "**",
       },
     ],
   },
