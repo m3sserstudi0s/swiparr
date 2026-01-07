@@ -134,3 +134,15 @@
     scrollbar-width: none;
   }
 }
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer base {
+  *:focus {
+    @apply outline-none;
+  }
+}

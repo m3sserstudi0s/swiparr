@@ -31,7 +31,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
 
   // 2. Define transforms based on that value (0 to 300px of scroll)
   const imgY = useTransform(scrollY, [0, 300], [0, 100]);
-  const imgOpacity = useTransform(scrollY, [0, 200], [0.6, 0.2]);
+  const imgOpacity = useTransform(scrollY, [0, 200], [0.7, 0.2]);
   const imgScale = useTransform(scrollY, [0, 300], [1, 1.1]);
 
   // Handle scroll event manually to update the motion value
@@ -141,7 +141,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
       <DrawerContent>
         <DrawerTitle className="sr-only">Movie Details</DrawerTitle>
-        <div className="h-20 w-full bg-linear-to-t to-background absolute top-10 z-1" />
+        <div className="h-50 w-full bg-linear-to-t to-background via-background/10 absolute top-9 z-15" />
         <div
           onScroll={handleScroll} // Update motion value here
           className="p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-4 no-scrollbar">
@@ -165,7 +165,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                   className="absolute inset-0 w-full h-[120%]"
                 >
 
-                   <OptimizedImage
+                  <OptimizedImage
                     src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0
                       ? `/api/jellyfin/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
                       : `/api/jellyfin/image/${movie.Id}`
@@ -180,10 +180,10 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                 </motion.div>
 
                 {/* Overlays */}
-                <div className="absolute inset-0 bg-linear-to-t from-background via-background/40 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent" />
 
                 {/* Header Content */}
-                 <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
+                <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
                   <OptimizedImage
                     src={`/api/jellyfin/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
                     jellyfinItemId={movie.Id}
@@ -349,6 +349,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
             </div>
           ) : null}
         </div>
+        <div className="h-20 w-full bg-linear-to-t from-background via-background/10 absolute bottom-0 z-20" />
       </DrawerContent>
     </Drawer>
   );
