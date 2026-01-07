@@ -67,7 +67,7 @@ export function GeneralSettings() {
 
                     <div className="grid grid-flow-col items-center justify-between gap-2">
                         <div className="space-y-0.5">
-                            <div className="text-sm font-medium">Collection type</div>
+                            <div className="text-sm font-medium">Collection Type</div>
                             <div className="text-xs text-muted-foreground text-pretty">Toggle between Watchlist and Favorites</div>
                         </div>
                         <Toggle
@@ -85,7 +85,7 @@ export function GeneralSettings() {
                     <div className="grid grid-flow-col items-center justify-between gap-2">
                         <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5">
-                                <div className="text-sm font-medium">Guest lending</div>
+                                <div className="text-sm font-medium">Guest Lending</div>
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <Button variant="ghost" size="icon" className="size-4 p-0 hover:bg-transparent">

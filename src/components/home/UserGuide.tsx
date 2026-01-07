@@ -55,23 +55,23 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                         <div className="p-4 rounded-xl bg-muted/50 border border-border">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <Heart className="size-4" />
-                                                <span className="font-semibold text-sm tracking-wide">Swipe Right</span>
+                                                <span className="font-semibold text-sm tracking-wide">Swipe right</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground font-medium">Add to your likes. A match is created if other participants also swipe right.</p>
                                         </div>
                                         <div className="p-4 rounded-xl bg-muted/50 border border-border">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <X className="size-4" />
-                                                <span className="font-semibold text-sm tracking-wide">Swipe Left</span>
+                                                <span className="font-semibold text-sm tracking-wide">Swipe left</span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground font-medium">Discard the current title and move to the next.</p>
+                                            <p className="text-sm text-muted-foreground font-medium">Discard the current title and ignore it. The card won't show up again.</p>
                                         </div>
                                         <div className="p-4 rounded-xl bg-muted/50 border border-border">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <RotateCcw className="size-4" />
                                                 <span className="font-semibold text-sm tracking-wide">Rewind</span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground font-medium">Revert the last swipe action.</p>
+                                            <p className="text-sm text-muted-foreground font-medium">Revert the last swipe action and put the last card in front.</p>
                                         </div>
                                         <div className="p-4 rounded-xl bg-muted/50 border border-border">
                                             <div className="flex items-center gap-2 mb-2">

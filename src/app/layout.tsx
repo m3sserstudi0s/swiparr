@@ -25,7 +25,6 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Swiparr",
     description: "Swipe on your Jellyfin media",
     appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
-    manifest: `${basePath}/manifest.json`, 
     icons: {
       icon: `${basePath}/favicon.ico`,     
       shortcut: `${basePath}/icon1.png`,   
@@ -49,11 +48,6 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               window.__SWIPARR_CONFIG__ = ${JSON.stringify(config)};
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('${basePath}/sw.js');
-                });
-              }
             `,
           }}
         />
