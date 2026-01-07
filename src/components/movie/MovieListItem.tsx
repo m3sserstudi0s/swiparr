@@ -88,6 +88,8 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
         <OptimizedImage
           src={`/api/jellyfin/image/${movie.Id}`}
           alt={movie.Name}
+          jellyfinItemId={movie.Id}
+          blurDataURL={movie.BlurDataURL}
           className="w-full h-full object-cover rounded-md"
           sizes="(max-width: 768px) 100px, 150px"
         />

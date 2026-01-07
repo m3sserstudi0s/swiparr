@@ -85,6 +85,9 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                 <OptimizedImage
                   src={`/api/jellyfin/image/${item.Id}`}
                   alt={item.Name}
+                  jellyfinItemId={item.Id}
+                  blurDataURL={item.BlurDataURL}
+                  loading={index == 0 ? 'eager' : undefined}
                   className="h-full w-full object-cover rounded-3xl"
                   draggable={false} // Native drag must be disabled
                   sizes="(max-width: 768px) 100vw, 400px"

@@ -62,6 +62,8 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               <OptimizedImage
                 src={`/api/jellyfin/image/${item.Id}`}
                 alt={item.Name}
+                jellyfinItemId={item.Id}
+                blurDataURL={item.BlurDataURL}
                 className="w-full h-full object-cover"
               />
             </motion.div>

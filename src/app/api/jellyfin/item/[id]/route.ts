@@ -7,6 +7,7 @@ import { SessionData } from "@/types/swiparr";
 import { db, likes, sessionMembers } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getBlurDataURL } from "@/lib/server/image-blur";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
@@ -51,6 +52,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 : (l.jellyfinUserId === session.user.Id ? session.user.Name : "Unknown")
         }));
     }
+
+    item.BlurDataURL = await getBlurDataURL(id, accessToken!, deviceId!);
 
     return NextResponse.json(item);
   } catch (error) {

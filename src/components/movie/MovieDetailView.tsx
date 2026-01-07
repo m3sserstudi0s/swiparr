@@ -165,11 +165,13 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                   className="absolute inset-0 w-full h-[120%]"
                 >
 
-                  <OptimizedImage
+                   <OptimizedImage
                     src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0
                       ? `/api/jellyfin/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
                       : `/api/jellyfin/image/${movie.Id}`
                     }
+                    jellyfinItemId={movie.Id}
+                    jellyfinImageType="Backdrop"
                     className="w-full h-full object-cover"
                     alt="Backdrop"
                   />
@@ -179,9 +181,11 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
                 <div className="absolute inset-0 bg-linear-to-t from-background via-background/40 to-transparent" />
 
                 {/* Header Content */}
-                <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
+                 <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
                   <OptimizedImage
                     src={`/api/jellyfin/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
+                    jellyfinItemId={movie.Id}
+                    jellyfinImageType="Primary"
                     className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0"
                     alt="Poster"
                   />

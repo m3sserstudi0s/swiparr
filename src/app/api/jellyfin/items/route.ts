@@ -13,6 +13,7 @@ import { getIncludedLibraries } from "@/lib/server/admin";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 import { getCache, setCache } from "@/lib/server/cache";
+import { getBlurDataURL } from "@/lib/server/image-blur";
 
 export async function GET(request: NextRequest) {
 
@@ -113,82 +114,94 @@ export async function GET(request: NextRequest) {
                 });
             }
             
-            // Seeded shuffle of the filtered library
-            const shuffledItems = shuffleWithSeed(allItems, session.sessionCode) as JellyfinItem[];
-            
-            // Pick first 50 not excluded for the current user
-            const targetIds = shuffledItems
-                .filter((item: JellyfinItem) => !excludeIds.has(item.Id))
-                .slice(0, 50)
-                .map((item: JellyfinItem) => item.Id);
- 
-            if (targetIds.length > 0) {
-                // Fetch full data for these specific IDs
-                const detailRes = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
-                    params: {
-                        Ids: targetIds.join(","),
-                        Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
-                    },
-                    headers: getAuthenticatedHeaders(accessToken!, deviceId!),
-                });
-                // Sort them back to the shuffled order because Jellyfin might return them in different order
-                const detailItems = detailRes.data.Items || [];
-                items = targetIds.map(id => detailItems.find((item: JellyfinItem) => item.Id === id)).filter((item): item is JellyfinItem => !!item);
-            }
-        } else {
-            // SOLO MODE: Normal random
-            const limitPerLib = includedLibraries.length > 0 ? Math.ceil(200 / includedLibraries.length) : 200; // Increased to 200 to account for filtering
-            const soloYearsStr = session.soloFilters?.yearRange 
-                ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
-                : undefined;
- 
-            const soloRuntimeTicksMin = session.soloFilters?.runtimeRange ? session.soloFilters.runtimeRange[0] * 600000000 : undefined;
-            const soloRuntimeTicksMax = (session.soloFilters?.runtimeRange && session.soloFilters.runtimeRange[1] < 240) ? session.soloFilters.runtimeRange[1] * 600000000 : undefined;
+        // Seeded shuffle of the filtered library
+        const shuffledItems = shuffleWithSeed(allItems, session.sessionCode) as JellyfinItem[];
+        
+        // Pick first 50 not excluded for the current user
+        const targetIds = shuffledItems
+            .filter((item: JellyfinItem) => !excludeIds.has(item.Id))
+            .slice(0, 50)
+            .map((item: JellyfinItem) => item.Id);
 
-            const fetchRandomForLibrary = async (parentId?: string) => {
-                const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
-                    params: {
-                        IncludeItemTypes: "Movie",
-                        Recursive: true,
-                        SortBy: "Random",
-                        Limit: limitPerLib,
-                        Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
-                        Filters: "IsUnplayed",
-                        ParentId: parentId,
-                        Genres: session.soloFilters?.genres?.join(",") || undefined,
-                        Years: soloYearsStr,
-                        MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
-                        OfficialRatings: session.soloFilters?.officialRatings?.join(",") || undefined,
-                    },
+        if (targetIds.length > 0) {
+            // Fetch full data for these specific IDs
+            const detailRes = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
+                params: {
+                    Ids: targetIds.join(","),
+                    Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
+                },
+                headers: getAuthenticatedHeaders(accessToken!, deviceId!),
+            });
+            // Sort them back to the shuffled order because Jellyfin might return them in different order
+            const detailItems = detailRes.data.Items || [];
+            items = targetIds.map(id => detailItems.find((item: JellyfinItem) => item.Id === id)).filter((item): item is JellyfinItem => !!item);
 
-                    headers: getAuthenticatedHeaders(accessToken!, deviceId!),
-                });
-                let items = res.data.Items || [];
-
-                // Client-side filtering for Runtime
-                if (soloRuntimeTicksMin !== undefined || soloRuntimeTicksMax !== undefined) {
-                    items = items.filter((item: JellyfinItem) => {
-                        const ticks = item.RunTimeTicks || 0;
-                        if (soloRuntimeTicksMin !== undefined && ticks < soloRuntimeTicksMin) return false;
-                        if (soloRuntimeTicksMax !== undefined && ticks > soloRuntimeTicksMax) return false;
-                        return true;
-                    });
-                }
-
-                return items;
-            };
-
-            if (includedLibraries.length > 0) {
-                const results = await Promise.all(includedLibraries.map(libId => fetchRandomForLibrary(libId)));
-                const combined = results.flat();
-                items = combined.filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
-            } else {
-                items = (await fetchRandomForLibrary()).filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
+            // Enrich ONLY the first item with BlurDataURL for immediate display
+            if (items.length > 0) {
+                const blurDataURL = await getBlurDataURL(items[0].Id, accessToken!, deviceId!);
+                items[0].BlurDataURL = blurDataURL;
             }
         }
+    } else {
+        // SOLO MODE: Normal random
+        const limitPerLib = includedLibraries.length > 0 ? Math.ceil(200 / includedLibraries.length) : 200; // Increased to 200 to account for filtering
+        const soloYearsStr = session.soloFilters?.yearRange 
+            ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters?.yearRange && session.soloFilters?.yearRange[0] + i).join(",") 
+            : undefined;
 
+        const soloRuntimeTicksMin = session.soloFilters?.runtimeRange ? session.soloFilters.runtimeRange[0] * 600000000 : undefined;
+        const soloRuntimeTicksMax = (session.soloFilters?.runtimeRange && session.soloFilters.runtimeRange[1] < 240) ? session.soloFilters.runtimeRange[1] * 600000000 : undefined;
 
-        return NextResponse.json(items);
+        const fetchRandomForLibrary = async (parentId?: string) => {
+            const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
+                params: {
+                    IncludeItemTypes: "Movie",
+                    Recursive: true,
+                    SortBy: "Random",
+                    Limit: limitPerLib,
+                    Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres",
+                    Filters: "IsUnplayed",
+                    ParentId: parentId,
+                    Genres: session.soloFilters?.genres?.join(",") || undefined,
+                    Years: soloYearsStr,
+                    MinCommunityRating: session.soloFilters?.minCommunityRating || undefined,
+                    OfficialRatings: session.soloFilters?.officialRatings?.join(",") || undefined,
+                },
+
+                headers: getAuthenticatedHeaders(accessToken!, deviceId!),
+            });
+            let items = res.data.Items || [];
+
+            // Client-side filtering for Runtime
+            if (soloRuntimeTicksMin !== undefined || soloRuntimeTicksMax !== undefined) {
+                items = items.filter((item: JellyfinItem) => {
+                    const ticks = item.RunTimeTicks || 0;
+                    if (soloRuntimeTicksMin !== undefined && ticks < soloRuntimeTicksMin) return false;
+                    if (soloRuntimeTicksMax !== undefined && ticks > soloRuntimeTicksMax) return false;
+                    return true;
+                });
+            }
+
+            return items;
+        };
+
+        if (includedLibraries.length > 0) {
+            const results = await Promise.all(includedLibraries.map(libId => fetchRandomForLibrary(libId)));
+            const combined = results.flat();
+            items = combined.filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
+        } else {
+            items = (await fetchRandomForLibrary()).filter((item: JellyfinItem) => !excludeIds.has(item.Id)).slice(0, 50);
+        }
+
+        // Enrich ONLY the first item with BlurDataURL for immediate display (first card in stack)
+        if (items.length > 0) {
+            const blurDataURL = await getBlurDataURL(items[0].Id, accessToken!, deviceId!);
+            items[0].BlurDataURL = blurDataURL;
+        }
+    }
+
+    return NextResponse.json(items);
+
     } catch (error) {
         console.error("Fetch Items Error", error);
         return NextResponse.json({ error: "Failed to fetch deck" }, { status: 500 });

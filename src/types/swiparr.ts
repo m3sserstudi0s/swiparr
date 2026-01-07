@@ -42,6 +42,7 @@ export interface JellyfinItem {
     IsFavorite: boolean;
     Likes?: boolean;
   };
+  BlurDataURL?: string;
   likedBy?: {
     userId: string;
     userName: string;

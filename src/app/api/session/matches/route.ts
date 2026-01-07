@@ -9,7 +9,7 @@ import { SessionData } from "@/types/swiparr";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest) {
-    const cookieStore = await cookies();
+  const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
