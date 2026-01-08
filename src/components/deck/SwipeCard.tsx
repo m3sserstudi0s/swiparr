@@ -69,7 +69,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
           }}
           onCardLeftScreen={() => onCardLeftScreen(item.Id)}
           // 3. Important: absolute positioning + width constraint
-          className={`absolute w-full h-[65vh] rounded-3xl ${isFront ? "cursor-grab pointer-events-auto" : ""}`}
+          className={`absolute w-full h-[68svh] rounded-3xl ${isFront ? "cursor-grab pointer-events-auto" : ""}`}
         >
           {/* 4. Scale Wrapper: Handles the background card "stack" effect */}
           <div

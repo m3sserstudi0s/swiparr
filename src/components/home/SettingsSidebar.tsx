@@ -78,8 +78,8 @@ export function SettingsSidebar() {
         <>
             <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
-                    <Button className="absolute right-6 size-12" variant="ghost" size="icon">
-                        <Menu className="size-6" />
+                    <Button className="absolute right-6 size-10" variant="ghost" size="icon">
+                        <Menu className="size-5.5" />
                     </Button>
                 </SheetTrigger>
                 <SheetContent className="flex flex-col p-0 overflow-hidden">

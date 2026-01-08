@@ -341,14 +341,14 @@ export function CardDeck() {
   return (
     <div className="relative flex flex-col items-center justify-center w-full">
       {sessionStatus?.code && members && members.length > 0 ? (
-        <div className="h-10">
+        <div className="h-8.75">
           <UserAvatarList
             users={members.map((m) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
             size="md"
           />
         </div>
-      ) : <div className="h-10" />}
-      <div className="relative w-full h-[65vh] flex justify-center items-center select-none">
+      ) : <div className="h-8.75" />}
+      <div className="relative w-full h-[68svh] flex justify-center items-center select-none">
 
         {/* Render bottom card first, then top card (Reverse order visually) */}
         {activeDeck.slice(0, 4).reverse().map((item: JellyfinItem, i, arr) => {

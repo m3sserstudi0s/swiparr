@@ -17,9 +17,9 @@ export default function Home() {
   useHotkeys("2", () => setTab("likes"), []);
 
   return (
-    <main className="h-svh overflow-y-hidden overflow-hidden">
-      <div className="grid justify-center my-[3vh] md:my-[5vh] relative">
-        <div className="w-full md:max-w-md min-w-0 relative">
+    <main className="overflow-hidden">
+      <div className="grid justify-center my-[3svh] relative">
+        <div className="w-full mt-2 md:max-w-md min-w-0 relative">
           <SessionManager />
           <SettingsSidebar />
         </div>
@@ -27,27 +27,27 @@ export default function Home() {
         <Tabs
           value={tab}
           onValueChange={setTab}
-          className="gap-0 -mt-1 w-full sm:max-w-md min-w-0"
+          className="gap-0 w-full sm:max-w-md min-w-0 -mt-0.75"
         >
           <TabsList className="grid mx-auto h-fit grid-cols-2 bg-muted rounded-full z-0">
-            <TabsTrigger value="swipe" className="h-12 w-20 group rounded-full z-0">
+            <TabsTrigger value="swipe" className="h-11 w-16 group rounded-full z-0">
               <GalleryHorizontalEnd
-                className="size-5.5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
+                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
               />
             </TabsTrigger>
 
-            <TabsTrigger value="likes" className="h-12 w-20 group rounded-full z-0">
+            <TabsTrigger value="likes" className="h-11 w-16 group rounded-full z-0">
               <Heart
-                className="size-5.5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
+                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
               />
             </TabsTrigger>
           </TabsList>
 
           <TabsContents className="grid max-h-screen">
-            <TabsContent value="swipe" className={cn("h-full px-6 outline-none mt-2 w-full sm:max-w-md min-w-0 transition-opacity duration ease-in-out", tab != "swipe" && "opacity-100")}>
+            <TabsContent value="swipe" className={cn("h-full px-6 outline-none mt-1 w-full sm:max-w-md min-w-0 transition-opacity duration ease-in-out opacity-100", tab != "swipe" && "opacity-0")}>
               <CardDeck />
             </TabsContent>
-            <TabsContent value="likes" className={cn("h-full px-6 outline-none mt-4 w-full sm:max-w-md min-w-0 transition-opacity duration ease-in-out", tab != "likes" && "opacity-100")}>
+            <TabsContent value="likes" className={cn("h-full px-6 outline-none mt-4 w-full sm:max-w-md min-w-0 transition-opacity duration ease-in-out opacity-100", tab != "likes" && "opacity-0")}>
                <LikesList />
             </TabsContent>
           </TabsContents>

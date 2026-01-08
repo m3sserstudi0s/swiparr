@@ -27,8 +27,8 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="outline" size="icon" className=" gap-2 text-xs border-border bg-muted/50">
-          <SlidersHorizontal className="size-5" />
+        <Button variant="outline" size="icon" className="size-10 gap-2 text-xs border-border bg-muted/50">
+          <SlidersHorizontal className="size-5.5" />
         </Button>
       </DrawerTrigger>
       <DrawerContent>

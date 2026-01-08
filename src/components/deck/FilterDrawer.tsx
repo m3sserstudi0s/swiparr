@@ -181,7 +181,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
           <DrawerHeader className="border-b pb-4">
             <DrawerTitle>Filters</DrawerTitle>
           </DrawerHeader>
-          <div className="flex-1 px-6 py-6 space-y-8">
+          <div className="flex-1 px-6 py-6 space-y-10">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-4">
                 <Skeleton className="h-6 w-24" />

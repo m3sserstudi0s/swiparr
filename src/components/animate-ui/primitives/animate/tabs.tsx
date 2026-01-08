@@ -281,7 +281,7 @@ function TabsContents({
       {...props}
     >
       <motion.div
-        className="flex max-w-full"
+        className="flex md:max-w-screen max-w-full"
         animate={{ x: activeIndex * -50 + '%' }}
         transition={transition}
       >
@@ -291,7 +291,7 @@ function TabsContents({
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className="w-screen shrink-0 h-full"
+            className="md:w-md w-screen shrink-0 h-full"
           >
             {child}
           </div>

@@ -4,8 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function DeckLoading() {
   return (
     <div className="relative flex flex-col items-center justify-center w-full">
-      <div className="h-10" />
-      <div className="relative w-full h-[65vh] flex justify-center items-center">
+      <div className="h-8.75" />
+      <div className="relative w-full h-[68svh] flex justify-center items-center">
         <Skeleton className="relative w-full h-full rounded-3xl" />
       </div>
       <div className="flex space-x-6 mt-4 items-center">
