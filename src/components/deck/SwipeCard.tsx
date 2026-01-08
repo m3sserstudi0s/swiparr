@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Clock } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { useSettings } from "@/lib/settings";
 import { ticksToTime } from "@/lib/utils";
 
 
@@ -27,7 +26,6 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
   function SwipeCard({ item, index, onSwipe, onCardLeftScreen, onClick, preventSwipe = [] }, ref) {
 
     const isFront = index === 0;
-    const { settings } = useSettings();
 
     // Track the start position of the click/touch
 

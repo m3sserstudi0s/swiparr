@@ -18,8 +18,8 @@ export default function Home() {
 
   return (
     <main className="h-svh overflow-y-hidden overflow-hidden">
-      <div className="grid justify-center mt-[5vh] relative">
-        <div className="min-w-xs relative">
+      <div className="grid justify-center my-[3vh] md:my-[5vh] relative">
+        <div className="w-full md:max-w-md min-w-0 relative">
           <SessionManager />
           <SettingsSidebar />
         </div>
@@ -27,7 +27,7 @@ export default function Home() {
         <Tabs
           value={tab}
           onValueChange={setTab}
-          className="gap-0 -mt-1 md:w-md w-xs max-w-md"
+          className="gap-0 -mt-1 w-full sm:max-w-md min-w-0"
         >
           <TabsList className="grid mx-auto h-fit grid-cols-2 bg-muted rounded-full z-0">
             <TabsTrigger value="swipe" className="h-12 w-20 group rounded-full z-0">
@@ -43,11 +43,11 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContents className="grid">
-            <TabsContent value="swipe" className={cn("h-full outline-none mt-2 md:w-md w-xs max-w-md transition-opacity duration ease-in-out", tab != "swipe" && "opacity-0")}>
+          <TabsContents className="grid max-h-screen">
+            <TabsContent value="swipe" className={cn("h-full px-6 outline-none mt-2 w-full sm:max-w-md min-w-0 transition-opacity duration ease-in-out", tab != "swipe" && "opacity-100")}>
               <CardDeck />
             </TabsContent>
-            <TabsContent value="likes" className={cn("h-full outline-none mt-4 md:w-md w-xs max-w-md transition-opacity duration ease-in-out", tab != "likes" && "opacity-0")}>
+            <TabsContent value="likes" className={cn("h-full px-6 outline-none mt-4 w-full sm:max-w-md min-w-0 transition-opacity duration ease-in-out", tab != "likes" && "opacity-100")}>
                <LikesList />
             </TabsContent>
           </TabsContents>

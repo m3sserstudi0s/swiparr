@@ -277,12 +277,11 @@ function TabsContents({
       ref={containerRef}
       data-slot="tabs-contents"
       style={{ overflow: 'visible' }}
-      animate={{ height }}
       transition={transition}
       {...props}
     >
       <motion.div
-        className="flex -mx-2 max-w-fit"
+        className="flex max-w-full"
         animate={{ x: activeIndex * -50 + '%' }}
         transition={transition}
       >
@@ -292,7 +291,7 @@ function TabsContents({
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className="w-fit shrink-0 px-2 h-full"
+            className="w-screen shrink-0 h-full"
           >
             {child}
           </div>

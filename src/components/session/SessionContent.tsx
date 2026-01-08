@@ -169,7 +169,7 @@ export default function SessionContent() {
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="absolute left-0">
+            <SheetTrigger asChild className="absolute left-6">
                 <Button variant="ghost" size="icon" className="text-foreground size-12">
                     <Users className="size-5.5" />
                 </Button>
