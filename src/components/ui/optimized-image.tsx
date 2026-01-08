@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import Image, { ImageLoaderProps, ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import useSWR from "swr";
 import { apiClient } from "@/lib/api-client";
 import { Skeleton } from "./skeleton";
+
+// 1. Create a global set to track loaded images outside the component
+const loadedImageCache = new Set<string>();
 
 interface OptimizedImageProps extends Omit<ImageProps, "onLoad"> {
   containerClassName?: string;
@@ -31,8 +34,18 @@ export function OptimizedImage({
   jellyfinImageType,
   ...props
 }: OptimizedImageProps) {
-  const [isLoading, setIsLoading] = useState(true);
   const { basePath } = useRuntimeConfig();
+
+  // Helper to get string version of src
+  const srcString = typeof src === "string" ? src : "";
+  const resolvedSrc = srcString.startsWith("/") && !srcString.startsWith(basePath)
+    ? `${basePath}${srcString}`
+    : src;
+
+  // 2. Initialize state based on whether the image is in our global cache
+  const cacheKey = typeof resolvedSrc === "string" ? resolvedSrc : "";
+  const [isLoading, setIsLoading] = useState(!loadedImageCache.has(cacheKey));
+
 
   const isFill = fill ?? (!width && !height);
   const isJellyfinImage = !!jellyfinItemId || (typeof src === "string" && (src.startsWith("/api/jellyfin/image") || src.startsWith(`${basePath}/api/jellyfin/image`)));
@@ -47,18 +60,21 @@ export function OptimizedImage({
 
   const blurDataURL = initialBlurDataURL || blurData;
 
-  const resolvedSrc = typeof src === "string" && src.startsWith("/") && !src.startsWith(basePath)
-    ? `${basePath}${src}`
-    : src;
-
   const imageLoader = ({ src, width, quality }: ImageLoaderProps) => {
     return `${src}${src.includes("?") ? "&" : "?"}width=${width}&quality=${quality || 75}`;
-  }
+  };
 
-   return (
-    <div
-      className={cn("relative overflow-hidden bg-muted/20", containerClassName || className)}
-    >
+  const handleLoad = (e: any) => {
+    // 4. Add to cache once loaded
+    if (cacheKey) {
+      loadedImageCache.add(cacheKey);
+    }
+    setIsLoading(false);
+    onLoad?.(e);
+  };
+
+  return (
+    <div className={cn("relative overflow-hidden bg-muted/20", containerClassName || className)}>
       <div
         className={cn(
           "absolute inset-0 transition-opacity duration-400",
@@ -88,10 +104,7 @@ export function OptimizedImage({
           isLoading ? "opacity-0 scale-102" : "opacity-100 scale-100",
           className
         )}
-        onLoad={(e) => {
-          setIsLoading(false);
-          onLoad?.(e);
-        }}
+        onLoad={handleLoad}
       />
     </div>
   );
