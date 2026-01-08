@@ -66,25 +66,37 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
     mutationFn: async () => {
-      const sessionParam = sessionCode !== undefined ? `&sessionCode=${sessionCode ?? ""}` : "";
+      // Find the specific like record for this user and movie
+      const userLike = movie?.likedBy?.find(l => l.userId === sessionData?.userId);
+      // Fallback to the current view's sessionCode if no record found (though it should be)
+      const targetSessionCode = userLike?.sessionCode !== undefined ? userLike.sessionCode : sessionCode;
+      
+      const sessionParam = targetSessionCode !== undefined ? `&sessionCode=${targetSessionCode ?? ""}` : "";
       await apiClient.delete(`/api/user/likes?itemId=${movieId}${sessionParam}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });
+      queryClient.invalidateQueries({ queryKey: ["movie", movieId] });
       onClose();
     },
   });
 
   const { mutate: relike } = useMutation({
     mutationFn: async () => {
-      movie && await apiClient.post("/api/swipe", {
+      if (!movie) return;
+      const userLike = movie.likedBy?.find(l => l.userId === sessionData?.userId);
+      const targetSessionCode = userLike?.sessionCode !== undefined ? userLike.sessionCode : sessionCode;
+
+      await apiClient.post("/api/swipe", {
         itemId: movie.Id,
         direction: "right",
-        sessionCode: sessionCode
+        item: movie,
+        sessionCode: targetSessionCode || null
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });
+      queryClient.invalidateQueries({ queryKey: ["movie", movieId] });
     }
   });
 
@@ -124,13 +136,32 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   };
 
   const handleUnlike = () => {
+    // Capture the state needed for undo BEFORE unliking
+    const userLike = movie?.likedBy?.find(l => l.userId === sessionData?.userId);
+    const targetSessionCode = userLike?.sessionCode !== undefined ? userLike.sessionCode : sessionCode;
+    const movieData = movie;
+
     toast.promise(unlike(), {
       loading: "Removing from likes...",
       success: "Movie removed from likes",
       error: (err) => getErrorMessage(err, "Failed to remove from likes"),
       action: !isUnliking && {
         label: 'Undo',
-        onClick: () => relike()
+        onClick: async () => {
+          if (!movieData) return;
+          try {
+            await apiClient.post("/api/swipe", {
+              itemId: movieData.Id,
+              direction: "right",
+              item: movieData,
+              sessionCode: targetSessionCode || null
+            });
+            queryClient.invalidateQueries({ queryKey: ["likes"] });
+            queryClient.invalidateQueries({ queryKey: ["movie", movieId] });
+          } catch (err) {
+            toast.error("Failed to restore like");
+          }
+        }
       },
       position: 'top-right'
     });

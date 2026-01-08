@@ -7,7 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
@@ -50,6 +50,14 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });
+    },
+  });
+
+    const { data: sessionData} = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
+      return res.data;
     },
   });
 
@@ -162,7 +170,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
                 Play
               </Button>
             </Link>
-            <Button
+            {movie.likedBy?.some(l => l.userId === sessionData?.userId) && <Button
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -173,7 +181,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
               disabled={isUnliking}
             >
               <HeartOff className="w-3.5 h-3.5" />
-            </Button>
+            </Button>}
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyf
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
 import { db, likes, sessionMembers } from "@/lib/db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, or, sql } from "drizzle-orm";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getBlurDataURL } from "@/lib/server/image-blur";
 
@@ -27,12 +27,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const item = jellyfinRes.data;
 
     // Add likes info
+    // Fetch likes from BOTH the current session and solo mode
     const itemLikes = await db.query.likes.findMany({
         where: and(
+            eq(likes.jellyfinItemId, id),
             session.sessionCode 
-                ? eq(likes.sessionCode, session.sessionCode) 
-                : isNull(likes.sessionCode),
-            eq(likes.jellyfinItemId, id)
+                ? or(eq(likes.sessionCode, session.sessionCode), isNull(likes.sessionCode))
+                : isNull(likes.sessionCode)
         )
     });
 
@@ -49,7 +50,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             userId: l.jellyfinUserId,
             userName: session.sessionCode 
                 ? (members.find(m => m.jellyfinUserId === l.jellyfinUserId)?.jellyfinUserName || "Unknown")
-                : (l.jellyfinUserId === session.user.Id ? session.user.Name : "Unknown")
+                : (l.jellyfinUserId === session.user.Id ? session.user.Name : "Unknown"),
+            sessionCode: l.sessionCode
         }));
     }
 

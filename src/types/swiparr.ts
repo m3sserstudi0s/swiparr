@@ -46,6 +46,7 @@ export interface JellyfinItem {
   likedBy?: {
     userId: string;
     userName: string;
+    sessionCode?: string | null;
   }[];
 }
 
@@ -79,6 +80,7 @@ export interface MergedLike extends JellyfinItem {
   likedBy?: {
     userId: string;
     userName: string;
+    sessionCode?: string | null;
   }[];
 }
 

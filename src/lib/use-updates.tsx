@@ -104,6 +104,8 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 // Invalidate stats
                 queryClient.invalidateQueries({ queryKey: ['session-stats'] });
+                // Invalidate SWR stats cache
+                mutate('/api/session/stats');
                 // Invalidate matches
                 mutate(['/api/session/matches', sessionCode]);
                 // Invalidate deck to refresh swipes
