@@ -13,8 +13,13 @@ const getDefaultDbPath = () => {
 };
 
 const connectionString = process.env.DATABASE_URL?.replace("file:", "") || getDefaultDbPath();
-console.log("DB connecting to:", path.resolve(connectionString));
 
-const sqlite = new Database(connectionString);
-sqlite.pragma('foreign_keys = ON');
-export const db = drizzle(sqlite, { schema });
+const globalForDb = global as unknown as { sqlite: Database.Database | undefined };
+
+if (!globalForDb.sqlite) {
+  console.log("DB connecting to:", path.resolve(connectionString));
+  globalForDb.sqlite = new Database(connectionString);
+  globalForDb.sqlite.pragma('foreign_keys = ON');
+}
+
+export const db = drizzle(globalForDb.sqlite, { schema });

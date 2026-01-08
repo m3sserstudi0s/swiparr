@@ -55,37 +55,44 @@ export function OptimizedImage({
     return `${src}${src.includes("?") ? "&" : "?"}width=${width}&quality=${quality || 75}`;
   }
 
-  // Use blur placeholder if blurDataURL is provided, or if specifically requested
-  const resolvedPlaceholder = blurDataURL ? "blur" : placeholder;
-
-  return (
+   return (
     <div
       className={cn("relative overflow-hidden bg-muted/20", containerClassName || className)}
     >
-      {isLoading && !blurDataURL ?
-        <Skeleton className="w-full h-full"/>
-        : <Image
-          {...props}
-          loader={isJellyfinImage ? imageLoader : undefined}
-          src={resolvedSrc}
-          alt={alt}
-          width={isFill ? undefined : width}
-          height={isFill ? undefined : height}
-          fill={isFill}
-          priority={priority}
-          placeholder={resolvedPlaceholder}
-          blurDataURL={blurDataURL}
-          className={cn(
-            "duration-700 ease-in-out transition-transform",
-            isLoading ? "scale-102" : "scale-100",
-            className
-          )}
-          onLoad={(e) => {
-            setIsLoading(false);
-            onLoad?.(e);
-          }}
-        />
-      }
+      <div
+        className={cn(
+          "absolute inset-0 transition-opacity duration-400",
+          isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+      >
+        {blurDataURL ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center blur-2xl scale-102"
+            style={{ backgroundImage: `url(${blurDataURL})` }}
+          />
+        ) : (
+          <Skeleton className="w-full h-full" />
+        )}
+      </div>
+      <Image
+        {...props}
+        loader={isJellyfinImage ? imageLoader : undefined}
+        src={resolvedSrc}
+        alt={alt}
+        width={isFill ? undefined : width}
+        height={isFill ? undefined : height}
+        fill={isFill}
+        priority={priority}
+        className={cn(
+          "duration-400 ease-in-out transition-all",
+          isLoading ? "opacity-0 scale-102" : "opacity-100 scale-100",
+          className
+        )}
+        onLoad={(e) => {
+          setIsLoading(false);
+          onLoad?.(e);
+        }}
+      />
     </div>
   );
 }
