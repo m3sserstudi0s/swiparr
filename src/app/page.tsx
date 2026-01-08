@@ -44,7 +44,7 @@ export default function Home() {
           </TabsList>
 
           <TabsContents className="grid">
-            <TabsContent value="swipe" className={cn("h-full outline-none mt-0 w-sm transition-opacity duration ease-in-out", tab != "swipe" && "opacity-0")}>
+            <TabsContent value="swipe" className={cn("h-full outline-none mt-2 w-sm transition-opacity duration ease-in-out", tab != "swipe" && "opacity-0")}>
               <CardDeck />
             </TabsContent>
             <TabsContent value="likes" className={cn("h-full outline-none mt-4 w-sm transition-opacity duration ease-in-out", tab != "likes" && "opacity-0")}>
