@@ -18,7 +18,7 @@ export default function Home() {
 
   return (
     <main className="h-svh overflow-y-hidden overflow-hidden">
-      <div className="grid justify-center mt-[5%] relative">
+      <div className="grid justify-center mt-[5vh] relative">
         <div className="min-w-xs relative">
           <SessionManager />
           <SettingsSidebar />
@@ -27,18 +27,18 @@ export default function Home() {
         <Tabs
           value={tab}
           onValueChange={setTab}
-          className="gap-0 -mt-2 md:w-md w-xs max-w-md"
+          className="gap-0 -mt-1 md:w-md w-xs max-w-md"
         >
           <TabsList className="grid mx-auto h-fit grid-cols-2 bg-muted rounded-full z-0">
-            <TabsTrigger value="swipe" className="h-11 w-15 group rounded-full z-0">
+            <TabsTrigger value="swipe" className="h-12 w-20 group rounded-full z-0">
               <GalleryHorizontalEnd
-                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
+                className="size-5.5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
               />
             </TabsTrigger>
 
-            <TabsTrigger value="likes" className="h-11 w-15 group rounded-full z-0">
+            <TabsTrigger value="likes" className="h-12 w-20 group rounded-full z-0">
               <Heart
-                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
+                className="size-5.5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
               />
             </TabsTrigger>
           </TabsList>

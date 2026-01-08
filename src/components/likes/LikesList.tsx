@@ -38,7 +38,7 @@ export function LikesList() {
     });
 
     return (
-        <div className="relative w-full mx-auto h-[83vh] flex flex-col">
+        <div className="relative w-full mx-auto h-[calc(95vh-100px)] flex flex-col">
             {/* Header w/ Filter */}
             <div className="flex items-center justify-between">
                 <h2 className="text-sm text-muted-foreground font-medium">Showing {isLoading ? '?' : likes?.length || 0} {likes?.length == 1 ? 'like' : 'likes'}</h2>
@@ -51,7 +51,7 @@ export function LikesList() {
             </div>
 
             {/* List Content */}
-            <ScrollArea className="flex-1 h-[calc(100vh-135px)] -mr-5 pr-5 mt-1">
+            <ScrollArea className="flex-1 h-[calc(95vh-100px)] -mr-5 pr-5">
                 {isLoading && <LikesSkeleton />}
 
                 {!isLoading && likes?.length === 0 && (
@@ -70,7 +70,7 @@ export function LikesList() {
                         </Empty>
                     </div>
                 )}
-                <div className="mt-8 mb-14">
+                <div className="mt-5 mb-14">
                 {likes?.map((movie: MergedLike) => (
                     <MovieListItem
                         key={movie.Id}
@@ -91,7 +91,7 @@ export function LikesList() {
 
 function LikesSkeleton() {
     return (
-        <div className="space-y-4 mt-8">
+        <div className="space-y-4 mt-5">
             {[1, 2, 3].map(i => (
                 <div key={i} className="flex gap-4 p-3">
                     <Skeleton className="w-20 h-28 rounded-md" />
