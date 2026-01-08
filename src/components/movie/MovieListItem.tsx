@@ -29,7 +29,8 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
     mutationFn: async () => {
       await apiClient.post("/api/swipe", {
         itemId: movie.Id,
-        direction: "right"
+        direction: "right",
+        sessionCode: movie.sessionCode
       });
     },
     onSuccess: () => {
@@ -44,7 +45,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
 
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
     mutationFn: async () => {
-      const sessionParam = movie.sessionCode ? `&sessionCode=${movie.sessionCode}` : "";
+      const sessionParam = movie.sessionCode !== undefined ? `&sessionCode=${movie.sessionCode ?? ""}` : "";
       await apiClient.delete(`/api/user/likes?itemId=${movie.Id}${sessionParam}`);
     },
     onSuccess: () => {

@@ -14,6 +14,7 @@ export const swipeSchema = z.object({
   itemId: z.string().min(1),
   direction: z.enum(["left", "right"]),
   item: z.any().optional(),
+  sessionCode: z.string().length(4).optional().nullable(),
 });
 
 export const sessionActionSchema = z.object({

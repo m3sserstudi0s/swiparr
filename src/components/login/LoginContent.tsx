@@ -168,7 +168,7 @@ export default function LoginContent() {
 
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
-        <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2"/>
+        <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager"/>
         <CardTitle className="text-center text-2xl font-bold text-primary">
           Swiparr
         </CardTitle>

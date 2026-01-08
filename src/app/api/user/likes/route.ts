@@ -108,10 +108,13 @@ export async function DELETE(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const itemId = searchParams.get("itemId");
+  const sessionCodeQuery = searchParams.get("sessionCode");
   
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
 
-
+  const targetSessionCode = sessionCodeQuery !== null 
+    ? (sessionCodeQuery === "" ? null : sessionCodeQuery)
+    : (session.sessionCode || null);
 
   try {
     // Delete the user's like for this item
@@ -119,15 +122,15 @@ export async function DELETE(request: NextRequest) {
         and(
             eq(likesTable.jellyfinUserId, session.user.Id),
             eq(likesTable.jellyfinItemId, itemId),
-            session.sessionCode ? eq(likesTable.sessionCode, session.sessionCode as string) : isNull(likesTable.sessionCode)
+            targetSessionCode ? eq(likesTable.sessionCode, targetSessionCode) : isNull(likesTable.sessionCode)
         )
     );
 
     // If it was a session match, we might need to update other users' like.isMatch status
-    if (session.sessionCode) {
+    if (targetSessionCode) {
         const remainingLikes = await db.query.likes.findMany({
             where: and(
-                eq(likesTable.sessionCode, session.sessionCode as string),
+                eq(likesTable.sessionCode, targetSessionCode),
                 eq(likesTable.jellyfinItemId, itemId)
             )
         });
@@ -138,7 +141,7 @@ export async function DELETE(request: NextRequest) {
                 .set({ isMatch: false })
                 .where(
                     and(
-                        eq(likesTable.sessionCode, session.sessionCode as string),
+                        eq(likesTable.sessionCode, targetSessionCode),
                         eq(likesTable.jellyfinItemId, itemId)
                     )
                 );
@@ -146,7 +149,7 @@ export async function DELETE(request: NextRequest) {
 
         // Notify that matches might have changed
         events.emit(EVENT_TYPES.MATCH_REMOVED, {
-            sessionCode: session.sessionCode,
+            sessionCode: targetSessionCode,
             itemId: itemId,
             userId: session.user.Id
         });

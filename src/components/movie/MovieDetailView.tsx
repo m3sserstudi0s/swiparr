@@ -23,9 +23,10 @@ interface Props {
   movieId: string | null;
   onClose: () => void;
   showLikedBy?: boolean;
+  sessionCode?: string | null;
 }
 
-export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props) {
+export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionCode }: Props) {
   // 1. Create a manual motion value for scroll position
   const scrollY = useMotionValue(0);
 
@@ -64,9 +65,9 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
   const { settings } = useSettings();
 
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
-
     mutationFn: async () => {
-      await apiClient.delete(`/api/user/likes?itemId=${movieId}`);
+      const sessionParam = sessionCode !== undefined ? `&sessionCode=${sessionCode ?? ""}` : "";
+      await apiClient.delete(`/api/user/likes?itemId=${movieId}${sessionParam}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["likes"] });
@@ -78,7 +79,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
     mutationFn: async () => {
       movie && await apiClient.post("/api/swipe", {
         itemId: movie.Id,
-        direction: "right"
+        direction: "right",
+        sessionCode: sessionCode
       });
     },
     onSuccess: () => {
@@ -147,11 +149,21 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true }: Props)
           className="p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-4 no-scrollbar">
 
           {isLoading ? (
-            <div className="p-6 space-y-4">
-              <Skeleton className="h-64 w-full rounded-lg" />
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-20 w-full" />
-            </div>
+            <>
+              <Skeleton className="h-64 w-full rounded-none relative">
+                <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent" />
+                <div className="absolute -bottom-12 left-4 flex items-end gap-3">
+                  <Skeleton className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0" />
+                </div>
+              </Skeleton>
+              <div className="space-y-4 px-6 mt-20">
+                <Skeleton className="h-11 w-3/4" />
+                <div className="flex flex-row w-2/3 gap-2">
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </div>
+            </>
           ) : movie ? (
             <div className="relative">
               {/* PARALLAX BACKGROUND */}

@@ -75,7 +75,7 @@ export function LikesList() {
                     <MovieListItem
                         key={movie.Id}
                         movie={movie}
-                        onClick={() => openMovie(movie.Id)}
+                        onClick={() => openMovie(movie.Id, { sessionCode: movie.sessionCode })}
                     />
                 ))}
                 </div>

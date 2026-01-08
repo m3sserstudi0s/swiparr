@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   let matchBlockedByLimit = false;
 
   try {
-    const sessionCode = session.sessionCode;
+    const sessionCode = body.sessionCode !== undefined ? body.sessionCode : session.sessionCode;
     let settings: SessionSettings | null = null;
     
     // Fetch session and other data in parallel

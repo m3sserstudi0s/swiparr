@@ -39,8 +39,6 @@ interface JellyfinLibrary {
 }
 
 export function AdminSettings() {
-    const [status, setStatus] = useState<{ hasAdmin: boolean; isAdmin: boolean } | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [isClaiming, setIsClaiming] = useState(false);
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
     const [isSavingLibs, setIsSavingLibs] = useState(false);
@@ -49,13 +47,23 @@ export function AdminSettings() {
     const router = useRouter();
     const queryClient = useQueryClient();
 
+    const { data: adminStatus, refetch: refetchAdminStatus } = useQuery({
+        queryKey: ["admin-status"],
+        queryFn: async () => {
+            const res = await apiClient.get<{ hasAdmin: boolean; isAdmin: boolean } | null>("/api/admin/status");
+            return res.data;
+        },
+    });
+
+    console.log(adminStatus)
+
     const { data: config, isLoading: isLoadingConfig } = useQuery({
         queryKey: ["admin-config"],
         queryFn: async () => {
             const res = await apiClient.get("/api/admin/config");
             return res.data;
         },
-        enabled: !!status?.isAdmin,
+        enabled: !!adminStatus?.isAdmin,
     });
 
     const updateConfigMutation = useMutation({
@@ -80,7 +88,7 @@ export function AdminSettings() {
             const res = await apiClient.get("/api/jellyfin/libraries");
             return res.data;
         },
-        enabled: !!status?.isAdmin,
+        enabled: !!adminStatus?.isAdmin,
         staleTime: 1000 * 60 * 60, // 1 hour
     });
 
@@ -90,8 +98,10 @@ export function AdminSettings() {
             const res = await apiClient.get("/api/admin/libraries");
             return res.data;
         },
-        enabled: !!status?.isAdmin,
+        enabled: !!adminStatus?.isAdmin,
     });
+
+
 
     useEffect(() => {
         if (adminLibraries) {
@@ -99,36 +109,25 @@ export function AdminSettings() {
         }
     }, [adminLibraries]);
 
-    useEffect(() => {
-        const fetchStatus = async () => {
-            try {
-                const statusRes = await apiClient.get("/api/admin/status");
-                setStatus(statusRes.data);
-            } catch (err) {
-                console.error("Failed to fetch admin status", err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchStatus();
-    }, []);
-
-    const handleClaim = async () => {
-        setIsClaiming(true);
-        try {
+    const claimMulation = useMutation({
+        mutationFn: async () => {
+            setIsClaiming(true);
             await apiClient.post("/api/admin/claim");
+        },
+        onSuccess: () => {
+            refetchAdminStatus()
+            queryClient.invalidateQueries({ queryKey: ["admin-status"] });
             toast.success("You are now the admin");
-            setStatus({ hasAdmin: true, isAdmin: true });
-            router.refresh();
-        } catch (err) {
+        },
+        onError: (err) => {
             toast.error("Failed to claim admin role", {
                 description: getErrorMessage(err)
             });
-            console.error(err);
-        } finally {
+        },
+        onSettled: () => {
             setIsClaiming(false);
         }
-    };
+    });
 
 
     const toggleLibrary = (id: string) => {
@@ -162,23 +161,15 @@ export function AdminSettings() {
         window.location.reload();
     };
 
-    if (isLoading) {
-        return (
-            <SettingsSection title="Admin">
-                <Skeleton className="h-5 w-full rounded-sm" />
-            </SettingsSection>
-        );
-    }
-
     // Only show if no admin exists or if current user IS admin
 
-    if (status?.hasAdmin && !status.isAdmin) {
+    if (adminStatus?.hasAdmin && !adminStatus.isAdmin) {
         return null;
     }
 
     return (
         <SettingsSection title="Admin">
-            {!status?.hasAdmin ? (
+            {!adminStatus?.hasAdmin ? (
                 <div className="space-y-4">
                     <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
                         <Shield className="size-5 text-warning shrink-0 mt-0.5" />
@@ -194,7 +185,7 @@ export function AdminSettings() {
                         variant="default"
                         size="sm"
                         className="w-full"
-                        onClick={handleClaim}
+                        onClick={() => claimMulation.mutate()}
                         disabled={isClaiming}
                     >
                         {isClaiming ? "Claiming..." : "Claim admin"}
@@ -217,10 +208,10 @@ export function AdminSettings() {
                                             <DialogHeader>
                                                 <DialogTitle>Static Filter Values</DialogTitle>
                                                 <DialogDescription className="pt-2">
-                                                    Instead of fetching years, genres, and ratings from your Jellyfin server, 
+                                                    Instead of fetching years, genres, and ratings from your Jellyfin server,
                                                     Swiparr will use a predefined list of values.
                                                     <br /><br />
-                                                    This is <strong>only</strong>, and highly recommended for large libraries (3000+ items) 
+                                                    This is <strong>only</strong>, and highly recommended for large libraries (3000+ items)
                                                     to significantly speed up the filter sheet loading.
                                                     <br /><br />
                                                 </DialogDescription>
