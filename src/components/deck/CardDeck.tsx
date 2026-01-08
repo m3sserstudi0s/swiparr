@@ -147,6 +147,8 @@ export function CardDeck() {
           duration: 5000
         });
       }
+      // 3. Invalidate likes list
+      queryClient.invalidateQueries({ queryKey: ["likes"] });
     },
     onError: (err) => {
       console.error("Swipe sync failed", err);

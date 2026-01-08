@@ -96,6 +96,16 @@ export async function GET(request: NextRequest) {
                 }
             };
 
+            const onLike = (payload: { sessionCode: string; itemId: string }) => {
+                if (!closed && session.sessionCode === payload.sessionCode) {
+                    try {
+                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.LIKE_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
+                    } catch (e) {
+                        cleanup();
+                    }
+                }
+            };
+
             const cleanup = () => {
                 if (closed) return;
                 closed = true;
@@ -107,6 +117,7 @@ export async function GET(request: NextRequest) {
                 events.off(EVENT_TYPES.STATS_RESET, onStatsReset);
                 events.off(EVENT_TYPES.USER_JOINED, onUserJoined);
                 events.off(EVENT_TYPES.USER_LEFT, onUserLeft);
+                events.off(EVENT_TYPES.LIKE_UPDATED, onLike);
                 if (keepAlive) clearInterval(keepAlive);
                 try {
                     controller.close();
@@ -123,6 +134,7 @@ export async function GET(request: NextRequest) {
             events.on(EVENT_TYPES.STATS_RESET, onStatsReset);
             events.on(EVENT_TYPES.USER_JOINED, onUserJoined);
             events.on(EVENT_TYPES.USER_LEFT, onUserLeft);
+            events.on(EVENT_TYPES.LIKE_UPDATED, onLike);
 
             keepAlive = setInterval(() => {
                 if (!closed) {

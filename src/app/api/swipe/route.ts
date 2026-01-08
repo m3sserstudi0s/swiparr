@@ -102,6 +102,15 @@ export async function POST(request: NextRequest) {
           sessionCode: sessionCode,
           isMatch: isMatch,
       });
+
+      if (sessionCode && !isMatch) {
+        // Notify other members of the like (even if not a match yet, to update contributor lists)
+        events.emit(EVENT_TYPES.LIKE_UPDATED, {
+          sessionCode: sessionCode,
+          itemId: body.itemId,
+          userId: session.user.Id,
+        });
+      }
       
     } else {
       // Dislike logic (Hidden)

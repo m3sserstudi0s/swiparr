@@ -17,7 +17,7 @@ export default function Home() {
   useHotkeys("2", () => setTab("likes"), []);
 
   return (
-    <main className="overflow-hidden">
+    <main className="overflow-hidden h-svh">
       <div className="grid justify-center my-[3svh] relative">
         <div className="w-full mt-2 md:max-w-md min-w-0 relative">
           <SessionManager />

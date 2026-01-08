@@ -38,6 +38,8 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 // Invalidate matches
                 mutate(['/api/session/matches', sessionCode]);
+                // Invalidate likes list
+                queryClient.invalidateQueries({ queryKey: ['likes'] });
 
                 // If it's not the current user who swiped, show a toast
                 if (sessionData && data.swiperId !== sessionData.userId) {
@@ -58,6 +60,8 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 // Invalidate matches
                 mutate(['/api/session/matches', sessionCode]);
+                // Invalidate likes list
+                queryClient.invalidateQueries({ queryKey: ['likes'] });
             }
         });
 
@@ -148,6 +152,14 @@ export function useUpdates() {
                         position: 'top-right'
                     });
                 }
+            }
+        });
+
+        eventSource.addEventListener(EVENT_TYPES.LIKE_UPDATED, (event: any) => {
+            const data = JSON.parse(event.data);
+            if (data.sessionCode === sessionCode) {
+                // Invalidate likes list to update "liked by" avatars/counts
+                queryClient.invalidateQueries({ queryKey: ['likes'] });
             }
         });
 
