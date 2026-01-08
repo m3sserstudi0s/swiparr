@@ -64,16 +64,17 @@ export const initiateQuickConnect = async (deviceId: string) => {
 
 export const checkQuickConnect = async (secret: string, deviceId: string) => {
   const url = getJellyfinUrl('Users/AuthenticateWithQuickConnect');
-  const res = await apiClient.post(
-    url,
-    {
-      Secret: secret,
-      App: "Swiparr",
-      Version: "1.0.0",
-      Device: "Web",
-      DeviceId: deviceId
-    },
-    { headers: getAuthHeaders(deviceId) }
-  );
-  return res.data; // { User, AccessToken, ... } when authenticated
+  try {
+    const res = await apiClient.post(
+      url,
+      { Secret: secret },
+      { headers: getAuthHeaders(deviceId) }
+    );
+    return res.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      return {};
+    }
+    throw error;
+  }
 };
