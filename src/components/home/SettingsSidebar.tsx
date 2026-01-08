@@ -28,6 +28,7 @@ import { ScrollArea } from "../ui/scroll-area";
 
 import { useHotkeys } from "react-hotkeys-hook";
 import { AboutSettings } from "./settings/AboutSettings";
+import { AccountSettings } from "./settings/AccountSettings";
 import { AdminSettings } from "./settings/AdminSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
 import { DangerZone } from "./settings/DangerZone";
@@ -90,6 +91,7 @@ export function SettingsSidebar() {
 
                     <ScrollArea className="flex-1 px-6 h-[calc(100vh-80px)]">
                         <div className="space-y-8 py-8 pb-12">
+                            <AccountSettings />
                             <GeneralSettings />
                             <AdminSettings />
                             <AboutSettings onShowUserGuide={() => {

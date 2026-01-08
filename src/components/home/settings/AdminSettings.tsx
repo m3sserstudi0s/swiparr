@@ -55,8 +55,6 @@ export function AdminSettings() {
         },
     });
 
-    console.log(adminStatus)
-
     const { data: config, isLoading: isLoadingConfig } = useQuery({
         queryKey: ["admin-config"],
         queryFn: async () => {

@@ -181,6 +181,7 @@ export async function GET() {
   const response = { 
     code: session.sessionCode || null,
     userId: session.user.Id,
+    userName: session.user.Name,
     effectiveUserId,
     isGuest: !!session.user.isGuest,
     isAdmin: await isAdmin(session.user.Id, session.user.Name),
