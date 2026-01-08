@@ -143,7 +143,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
       <DrawerContent>
         <DrawerTitle className="sr-only">Movie Details</DrawerTitle>
-        <div className="h-50 w-full bg-linear-to-t to-background via-background/10 absolute top-9 z-15" />
+        <div className="h-50 w-full bg-linear-to-t to-background via-background/10 absolute top-9 z-50" />
         <div
           onScroll={handleScroll} // Update motion value here
           className="p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-4 no-scrollbar">

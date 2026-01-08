@@ -108,7 +108,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                   {item.Genres?.[0] && (
                     <Badge
                       variant="secondary"
-                      className="text-neutral-100 bg-primary/20 border border-primary/10 hover:bg-primary/30 backdrop-blur-md"
+                      className="text-neutral-100 bg-primary/20 border border-primary/10 hover:bg-primary/30"
                     >
                       {item.Genres[0]}
                     </Badge>

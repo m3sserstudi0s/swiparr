@@ -56,7 +56,7 @@ export default function LoginContent() {
     if (qcCode) {
       await navigator.clipboard.writeText(qcCode);
       setCopied(true);
-      toast.success("Code copied to clipboard", {position: 'top-right'});
+      toast.success("Code copied to clipboard", { position: 'top-right' });
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -100,7 +100,7 @@ export default function LoginContent() {
       },
       error: (err) => {
         setLoading(false);
-        return {message: "Login failed", description: getErrorMessage(err, "Check your credentials")};
+        return { message: "Login failed", description: getErrorMessage(err, "Check your credentials") };
       },
       position: 'top-right'
     });
@@ -126,7 +126,7 @@ export default function LoginContent() {
       },
       error: (err) => {
         setLoading(false);
-        return {message: "Failed to join as guest", description: getErrorMessage(err)};
+        return { message: "Failed to join as guest", description: getErrorMessage(err) };
       },
       position: 'top-right'
     });
@@ -158,7 +158,7 @@ export default function LoginContent() {
       },
       error: (err) => {
         setLoading(false);
-        return { message: "Quick connect failed to initialize", description: getErrorMessage(err)} ;
+        return { message: "Quick connect failed to initialize", description: getErrorMessage(err) };
       },
       position: 'top-right'
     });
@@ -196,104 +196,103 @@ export default function LoginContent() {
               <TabsTrigger value="login">Log in</TabsTrigger>
               <TabsTrigger value="join">Guest</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="login" className="space-y-4">
-              {qcCode ? (
-                <div className="flex flex-col items-center space-y-6 py-4">
-                  <div className="relative group">
-                    <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
-                      {qcCode}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="ml-2"
-                        onClick={copyToClipboard}
-                        title="Copy to clipboard"
-                      >
-                        {copied ? (
-                          <Check className="h-4 w-4 " />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+              <TabsContent value="login" className="space-y-4">
+                {qcCode ? (
+                  <div className="flex flex-col items-center space-y-6 py-4">
+                    <div className="relative group">
+                      <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
+                        {qcCode}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="ml-2"
+                          onClick={copyToClipboard}
+                          title="Copy to clipboard"
+                        >
+                          {copied ? (
+                            <Check className="h-4 w-4 " />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Go to <span className="text-foreground font-semibold">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQcCode(null)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Cancel
+                    </Button>
                   </div>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Go to <span className="text-foreground font-semibold">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setQcCode(null)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleLogin} className="space-y-3">
-                  <Input
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="bg-muted border-input"
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-muted border-input"
-                  />
-                  <Button type="submit" className="w-full mt-2" disabled={loading}>
-                    {loading ? "Connecting..." : "Log in"}
-                  </Button>
-                  <div className="relative py-1">
-                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-                    <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full hover:bg-accent h-9"
-                    onClick={startQuickConnect}
-                    disabled={loading}
-                  >
-                    Quick Connect
-                  </Button>
-                </form>
-              )}
-            </TabsContent>
-
-            <TabsContent value="join" className="space-y-4">
-              <form onSubmit={handleGuestLogin} className="space-y-3">
-                <Input
-                  placeholder="Display name"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  className="bg-muted border-input"
-                  autoFocus
-                />
-                <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
-                {!sessionCodeParam && (
-                  <Input
-                    id="session-code"
-                    value={guestSessionCode}
-                    onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
-                    className="bg-muted border-input font-mono tracking-widest uppercase"
-                    maxLength={4}
-                  />
+                ) : (
+                  <form onSubmit={handleLogin} className="space-y-3">
+                    <Input
+                      placeholder="Username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="bg-muted border-input"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="bg-muted border-input"
+                    />
+                    <Button type="submit" className="w-full mt-2" disabled={loading}>
+                      {loading ? "Connecting..." : "Log in"}
+                    </Button>
+                    <div className="relative py-1">
+                      <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+                      <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full hover:bg-accent h-9"
+                      onClick={startQuickConnect}
+                      disabled={loading}
+                    >
+                      Quick Connect
+                    </Button>
+                  </form>
                 )}
-                <div className="pt-2">
-                  <Button type="submit" className="w-full" disabled={loading || !guestName || (!sessionCodeParam && !guestSessionCode)}>
-                    {loading ? "Joining..." : "Join as Guest"}
-                  </Button>
-                </div>
-                <p className="text-xs text-center text-muted-foreground pt-2">
-                  Joining as a guest lets you swipe in a session without a Jellyfin account.
-                </p>
-              </form>
-            </TabsContent>
+              </TabsContent>
+
+              <TabsContent value="join" className="space-y-4">
+                <form onSubmit={handleGuestLogin} className="space-y-3">
+                  <Input
+                    placeholder="Display name"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="bg-muted border-input"
+                    autoFocus
+                  />
+                  <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
+                  {!sessionCodeParam && (
+                    <Input
+                      id="session-code"
+                      value={guestSessionCode}
+                      onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
+                      className="bg-muted border-input font-mono tracking-widest uppercase"
+                      maxLength={4}
+                    />
+                  )}
+                  <div className="pt-2">
+                    <Button type="submit" className="w-full" disabled={loading || !guestName || (!sessionCodeParam && !guestSessionCode)}>
+                      {loading ? "Joining..." : "Join as Guest"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground pt-2">
+                    Joining as a guest lets you swipe in a session without a Jellyfin account.
+                  </p>
+                </form>
+              </TabsContent>
           </Tabs>
         )}
       </CardContent>

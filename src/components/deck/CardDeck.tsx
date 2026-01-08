@@ -295,7 +295,7 @@ export function CardDeck() {
   useHotkeys("right, d", () => swipeTop("right"), [swipeTop]);
   useHotkeys("enter, space", () => {
     if (activeDeck.length > 0) {
-      openMovie(activeDeck[0].Id, false); // Don't show liked by from swipe deck (no spoilers)
+      openMovie(activeDeck[0].Id, {showLikedBy: false}); // Don't show liked by from swipe deck (no spoilers)
     }
   }, [activeDeck, openMovie]);
   useHotkeys("r, backspace", () => rewind(), [rewind]);
@@ -366,7 +366,7 @@ export function CardDeck() {
               index={zIndex}
               onSwipe={onSwipe}
               onCardLeftScreen={onCardLeftScreen}
-              onClick={() => openMovie(item.Id, false)} // Don't show liked by from swipe deck (no spoilers)
+              onClick={() => openMovie(item.Id, {showLikedBy: false} )} // Don't show liked by from swipe deck (no spoilers)
               preventSwipe={prevent}
             />
           );
