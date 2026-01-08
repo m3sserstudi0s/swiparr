@@ -9,6 +9,7 @@ import packageJson from "../../package.json";
 export interface RuntimeConfig {
   jellyfinPublicUrl: string;
   useWatchlist: boolean;
+  useStaticFilterValues: boolean;
   version: string;
   basePath: string;
 }
@@ -17,7 +18,7 @@ export interface RuntimeConfig {
  * Server-only function to collect environment variables.
  * This should only be called in Server Components or API routes.
  */
-export function getRuntimeConfig(): RuntimeConfig {
+export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeConfig {
   if (typeof window !== 'undefined' && window.__SWIPARR_CONFIG__) {
     return window.__SWIPARR_CONFIG__;
   }
@@ -29,8 +30,10 @@ export function getRuntimeConfig(): RuntimeConfig {
   return {
     jellyfinPublicUrl,
     useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
+    useStaticFilterValues: false,
     version: (process.env.APP_VERSION || packageJson.version).replace(/^v/i, ''),
     basePath,
+    ...overrides
   };
 }
 

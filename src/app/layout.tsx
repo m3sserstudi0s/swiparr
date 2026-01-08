@@ -3,6 +3,7 @@ import { Google_Sans_Flex, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { getRuntimeConfig } from '@/lib/runtime-config'
+import { getUseStaticFilterValues } from '@/lib/server/admin'
 
 export const dynamic = 'force-dynamic';
 
@@ -33,12 +34,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const config = getRuntimeConfig();
+  const useStaticFilterValues = await getUseStaticFilterValues();
+  const config = getRuntimeConfig({ useStaticFilterValues });
   const basePath = config.basePath || "";
 
   return (

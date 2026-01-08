@@ -76,6 +76,26 @@ export async function GET(request: NextRequest) {
                 }
             };
 
+            const onUserJoined = (payload: { sessionCode: string; userName: string }) => {
+                if (!closed && session.sessionCode === payload.sessionCode) {
+                    try {
+                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.USER_JOINED}\ndata: ${JSON.stringify(payload)}\n\n`));
+                    } catch (e) {
+                        cleanup();
+                    }
+                }
+            };
+
+            const onUserLeft = (payload: { sessionCode: string; userName: string }) => {
+                if (!closed && session.sessionCode === payload.sessionCode) {
+                    try {
+                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.USER_LEFT}\ndata: ${JSON.stringify(payload)}\n\n`));
+                    } catch (e) {
+                        cleanup();
+                    }
+                }
+            };
+
             const cleanup = () => {
                 if (closed) return;
                 closed = true;
@@ -85,6 +105,8 @@ export async function GET(request: NextRequest) {
                 events.off(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
                 events.off(EVENT_TYPES.SETTINGS_UPDATED, onSettingsUpdate);
                 events.off(EVENT_TYPES.STATS_RESET, onStatsReset);
+                events.off(EVENT_TYPES.USER_JOINED, onUserJoined);
+                events.off(EVENT_TYPES.USER_LEFT, onUserLeft);
                 if (keepAlive) clearInterval(keepAlive);
                 try {
                     controller.close();
@@ -99,6 +121,8 @@ export async function GET(request: NextRequest) {
             events.on(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
             events.on(EVENT_TYPES.SETTINGS_UPDATED, onSettingsUpdate);
             events.on(EVENT_TYPES.STATS_RESET, onStatsReset);
+            events.on(EVENT_TYPES.USER_JOINED, onUserJoined);
+            events.on(EVENT_TYPES.USER_LEFT, onUserLeft);
 
             keepAlive = setInterval(() => {
                 if (!closed) {

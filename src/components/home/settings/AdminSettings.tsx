@@ -10,8 +10,8 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Shield, ShieldAlert, ShieldCheck, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw, Info } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";
@@ -20,6 +20,16 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface JellyfinLibrary {
 
@@ -37,6 +47,32 @@ export function AdminSettings() {
     const [isExpanded, setIsExpanded] = useState(false);
     const [needsRefresh, setNeedsRefresh] = useState(false);
     const router = useRouter();
+    const queryClient = useQueryClient();
+
+    const { data: config, isLoading: isLoadingConfig } = useQuery({
+        queryKey: ["admin-config"],
+        queryFn: async () => {
+            const res = await apiClient.get("/api/admin/config");
+            return res.data;
+        },
+        enabled: !!status?.isAdmin,
+    });
+
+    const updateConfigMutation = useMutation({
+        mutationFn: async (updates: { useStaticFilterValues: boolean }) => {
+            await apiClient.patch("/api/admin/config", updates);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-config"] });
+            toast.success("Settings updated successfully");
+            setNeedsRefresh(true);
+        },
+        onError: (err) => {
+            toast.error("Failed to update settings", {
+                description: getErrorMessage(err)
+            });
+        }
+    });
 
     const { data: availableLibraries = [], isLoading: isLoadingLibs } = useQuery({
         queryKey: ["jellyfin-libraries"],
@@ -145,7 +181,7 @@ export function AdminSettings() {
             {!status?.hasAdmin ? (
                 <div className="space-y-4">
                     <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
-                        <ShieldAlert className="size-5 text-warning shrink-0 mt-0.5" />
+                        <Shield className="size-5 text-warning shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <div className="text-sm font-medium">No admin appointed</div>
                             <div className="text-xs text-muted-foreground">
@@ -166,7 +202,50 @@ export function AdminSettings() {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <div className="space-y-3">
+                    <div className="space-y-4">
+                        <div className="grid grid-flow-col items-center justify-between gap-2">
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="text-sm font-medium">Static Filters</div>
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="size-4 p-0 hover:bg-transparent">
+                                                <Info className="size-3.5 text-muted-foreground cursor-help" />
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Static Filter Values</DialogTitle>
+                                                <DialogDescription className="pt-2">
+                                                    Instead of fetching years, genres, and ratings from your Jellyfin server, 
+                                                    Swiparr will use a predefined list of values.
+                                                    <br /><br />
+                                                    This is <strong>only</strong>, and highly recommended for large libraries (3000+ items) 
+                                                    to significantly speed up the filter sheet loading.
+                                                    <br /><br />
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <DialogFooter className="sm:justify-start">
+                                                <DialogClose asChild>
+                                                    <Button type="button" variant="secondary">
+                                                        Okay
+                                                    </Button>
+                                                </DialogClose>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                                <div className="text-xs text-muted-foreground text-pretty">Speed up filtering for extremely large libraries</div>
+                            </div>
+                            <Switch
+                                checked={config?.useStaticFilterValues || false}
+                                onCheckedChange={(checked) => updateConfigMutation.mutate({ useStaticFilterValues: checked })}
+                                disabled={isLoadingConfig || updateConfigMutation.isPending}
+                            />
+                        </div>
+
+                        <div className="h-px bg-border my-2" />
+
                         <Collapsible
                             open={isExpanded}
                             onOpenChange={setIsExpanded}

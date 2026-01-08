@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { apiClient } from "@/lib/api-client";
 import { Skeleton } from "../ui/skeleton";
+import { useRuntimeConfig } from "@/lib/runtime-config";
+import { DEFAULT_GENRES, DEFAULT_RATINGS } from "@/lib/constants";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -31,6 +33,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
+  const { useStaticFilterValues } = useRuntimeConfig();
 
   const formatRuntime = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -46,6 +49,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: years, isLoading: isLoadingYears } = useQuery({
     queryKey: ["years"],
     queryFn: async () => {
+      if (useStaticFilterValues) {
+        return Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => ({ Name: (1900 + i).toString() }));
+      }
       const res = await apiClient.get("/api/jellyfin/years");
       return res.data;
     },
@@ -55,21 +61,24 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   });
 
   const minYearLimit = useMemo(() => {
+    if (useStaticFilterValues) return 1900;
     if (!years || years.length === 0) return 1900;
     const yearNums = years.map((y: any) => parseInt(y.Name)).filter((n: any) => !isNaN(n));
     return yearNums.length > 0 ? Math.min(...yearNums) : 1900;
-  }, [years]);
+  }, [years, useStaticFilterValues]);
 
   const maxYearLimit = useMemo(() => {
+    if (useStaticFilterValues) return new Date().getFullYear();
     if (!years || years.length === 0) return new Date().getFullYear();
     const yearNums = years.map((y: any) => parseInt(y.Name)).filter((n: any) => !isNaN(n));
     return yearNums.length > 0 ? Math.max(...yearNums) : new Date().getFullYear();
-  }, [years]);
+  }, [years, useStaticFilterValues]);
 
   // Fetch available genres
   const { data: genres, isLoading: isLoadingGenres } = useQuery({
     queryKey: ["genres"],
     queryFn: async () => {
+      if (useStaticFilterValues) return DEFAULT_GENRES;
       const res = await apiClient.get("/api/jellyfin/genres");
       return res.data;
     },
@@ -82,6 +91,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: ratings, isLoading: isLoadingRatings } = useQuery({
     queryKey: ["ratings"],
     queryFn: async () => {
+      if (useStaticFilterValues) return DEFAULT_RATINGS;
       const res = await apiClient.get("/api/jellyfin/ratings");
       return res.data;
     },

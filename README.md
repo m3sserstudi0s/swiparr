@@ -13,7 +13,7 @@ Open source and free forever.
 ## Features
 
 - **Swipe discovery:** Quickly browse your Jellyfin library with a card-based interface.
-- **Sessions:** Create or join a session with friends to find common likes (matches).
+- **Sessions:** Create or join a session with friends to find common likes (matches). Sessions are fundamentally temporary "in-the-moment" experiences; when you leave a session, your swipes and matches for that session are cleared.
 - **Native Jellyfin integration:** Pulls directly from your Jellyfin server.
 - **Guest Mode:** Let friends join your session without needing their own Jellyfin account by "lending" your connection temporarily.
 - **Mobile friendly:** Optimized for use on your phone.
@@ -96,17 +96,19 @@ docker run -d \
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `JELLYFIN_URL` | **Required.** Internal URL to your Jellyfin server. | - |
-| `JELLYFIN_PUBLIC_URL` | Optional. Public URL to your Jellyfin server. Defaults to `JELLYFIN_URL`. | - |
-| `AUTH_SECRET` | Optional. Random string (min 32 chars). Generated automatically if not set. | - |
-| `JELLYFIN_USE_WATCHLIST` | Set to `true` to use "Watchlist" instead of "Favorites". | `false` |
-| `USE_SECURE_COOKIES` | Set to `true` if you are accessing Swiparr over HTTPS. | `false` |
-| `DATABASE_URL` | Path to the SQLite database file. | `file:/app/data/swiparr.db` |
-| `PORT` | The port the container listens on. | `4321` |
-| `HOSTNAME` | The hostname the server binds to. | `0.0.0.0` |
-| `ADMIN_USERNAME` | Optional. A Jellyfin username that will always have admin privileges. | - |
-| `PUID` | Optional. User ID to run the application as. | `1001` |
-| `PGID` | Optional. Group ID to run the application as. | `1001` |
+| `JELLYFIN_URL` | **Required:** Internal URL to your Jellyfin server. | - |
+| `JELLYFIN_PUBLIC_URL` | _Optional:_  Public URL to your Jellyfin server. Defaults to `JELLYFIN_URL`. | - |
+| `AUTH_SECRET` | _Optional:_  Random string (min 32 chars). Generated automatically if not set. | - |
+| `JELLYFIN_USE_WATCHLIST` | _Optional:_ Set to `true` to use "Watchlist" instead of "Favorites". | `false` |
+| `USE_SECURE_COOKIES` | _Optional:_ Security: Set to `true` if you are accessing Swiparr over HTTPS. | `false` |
+| `DATABASE_URL` | _Optional:_ Path to the SQLite database file. | `file:/app/data/swiparr.db` |
+| `PORT` | _Optional:_ The port the container listens on. | `4321` |
+| `HOSTNAME` | _Optional:_ The hostname the server binds to. | `0.0.0.0` |
+| `ADMIN_USERNAME` | _Optional:_ A Jellyfin username that will always have admin privileges. | - |
+| `X_FRAME_OPTIONS` | _Optional:_ Security: `X-Frame-Options` header. Set to `DISABLED` to remove. | `DENY` |
+| `CSP_FRAME_ANCESTORS` | _Optional:_ Security: `Content-Security-Policy: frame-ancestors` directive. | `none` |
+| `PUID` | _Optional:_ User ID to run the application as. | `1001` |
+| `PGID` | _Optional:_ Group ID to run the application as. | `1001` |
 
 
 > **Note:** Watchlist is not a feature in vanilla Jellyfin, but available either through the Jellyfin Enhanced plugin or Kefwin Tweaks script.

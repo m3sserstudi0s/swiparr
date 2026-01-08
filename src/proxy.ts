@@ -22,10 +22,10 @@ export async function proxy(request: NextRequest) {
     : NextResponse.next();
 
   const session = await getIronSession<SessionData>(request, response, sessionOptions);
-  
+
   // 1. Define public paths. 
-  const isPublicPath = 
-    pathname === "/login" || 
+  const isPublicPath =
+    pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/_next") ||
@@ -48,15 +48,24 @@ export async function proxy(request: NextRequest) {
 
     // Redirect to login within the base path
     const loginUrl = new URL(`${basePath}/login`, request.url);
-    
+
     // searchParams.set automatically handles URL encoding
     // Always use the version with basePath for the callback URL so the browser can return correctly
     const callbackPath = `${basePath}${pathname}`;
-    
-    loginUrl.searchParams.set("callbackUrl", callbackPath + search); 
+
+    loginUrl.searchParams.set("callbackUrl", callbackPath + search);
 
     return NextResponse.redirect(loginUrl);
   }
+
+  // Configurable Iframe Headers
+  const xFrameOptions = process.env.X_FRAME_OPTIONS || 'DENY';
+  if (xFrameOptions.toUpperCase() !== 'DISABLED') {
+    response.headers.set('X-Frame-Options', xFrameOptions);
+  }
+
+  const cspFrameAncestors = process.env.CSP_FRAME_ANCESTORS || 'none';
+  response.headers.set('Content-Security-Policy', `frame-ancestors ${cspFrameAncestors}`);
 
   return response;
 }

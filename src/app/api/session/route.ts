@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { db, sessions, sessionMembers } from "@/lib/db";
-import { eq, and } from "drizzle-orm";
+import { db, sessions, sessionMembers, likes, hiddens } from "@/lib/db";
+import { eq, and, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types/swiparr";
 import { v4 as uuidv4 } from "uuid";
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         session.sessionCode = code;
         await session.save();
 
+        events.emit(EVENT_TYPES.USER_JOINED, { sessionCode: code, userName: session.user.Name, userId: session.user.Id });
         events.emit(EVENT_TYPES.SESSION_UPDATED, code);
 
         return NextResponse.json({ success: true, code });
@@ -198,12 +199,36 @@ export async function DELETE() {
     if (session.isLoggedIn && session.user && session.sessionCode) {
         const code = session.sessionCode;
         const userId = session.user.Id;
+        const userName = session.user.Name;
+
+        // 0. Find items this user liked in this session
+        const userLikes = await db.query.likes.findMany({
+            where: and(
+                eq(likes.sessionCode, code),
+                eq(likes.jellyfinUserId, userId)
+            )
+        });
+        const likedItemIds = userLikes.map(l => l.jellyfinItemId);
 
         // 1. Remove member from session
         await db.delete(sessionMembers).where(
             and(
                 eq(sessionMembers.sessionCode, code),
                 eq(sessionMembers.jellyfinUserId, userId)
+            )
+        );
+
+        // 1.1 Clear user's traces (likes and hiddens) for this session
+        await db.delete(likes).where(
+            and(
+                eq(likes.sessionCode, code),
+                eq(likes.jellyfinUserId, userId)
+            )
+        );
+        await db.delete(hiddens).where(
+            and(
+                eq(hiddens.sessionCode, code),
+                eq(hiddens.jellyfinUserId, userId)
             )
         );
 
@@ -216,6 +241,42 @@ export async function DELETE() {
             // 3. Delete session if no members left (will cascade to likes/hiddens)
             await db.delete(sessions).where(eq(sessions.code, code));
         } else {
+            // 4. Re-evaluate matches for the items the user liked
+            if (likedItemIds.length > 0) {
+                const currentSession = await db.query.sessions.findFirst({
+                    where: eq(sessions.code, code)
+                });
+                const settings = currentSession?.settings ? JSON.parse(currentSession.settings) : {};
+                const matchStrategy = settings.matchStrategy || "atLeastTwo";
+                const numMembers = remainingMembers.length;
+
+                for (const itemId of likedItemIds) {
+                    const remainingItemLikes = await db.query.likes.findMany({
+                        where: and(
+                            eq(likes.sessionCode, code),
+                            eq(likes.jellyfinItemId, itemId)
+                        )
+                    });
+
+                    let stillAMatch = false;
+                    if (matchStrategy === "atLeastTwo") {
+                        stillAMatch = remainingItemLikes.length >= 2;
+                    } else if (matchStrategy === "allMembers") {
+                        stillAMatch = remainingItemLikes.length >= numMembers && numMembers > 0;
+                    }
+
+                    if (!stillAMatch) {
+                        await db.update(likes)
+                            .set({ isMatch: false })
+                            .where(and(
+                                eq(likes.sessionCode, code),
+                                eq(likes.jellyfinItemId, itemId)
+                            ));
+                    }
+                }
+            }
+
+            events.emit(EVENT_TYPES.USER_LEFT, { sessionCode: code, userName, userId });
             events.emit(EVENT_TYPES.SESSION_UPDATED, code);
         }
     }

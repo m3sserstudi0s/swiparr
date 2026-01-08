@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 
 const ADMIN_USER_ID_KEY = "admin_user_id";
 const INCLUDED_LIBRARIES_KEY = "included_libraries";
+const USE_STATIC_FILTER_VALUES_KEY = "use_static_filter_values";
 
 export async function getAdminUserId(): Promise<string | null> {
     const adminConfig = await db.query.config.findFirst({
@@ -58,5 +59,22 @@ export async function setIncludedLibraries(libraries: string[]): Promise<void> {
     }).onConflictDoUpdate({
         target: configTable.key,
         set: { value: JSON.stringify(libraries) },
+    });
+}
+
+export async function getUseStaticFilterValues(): Promise<boolean> {
+    const config = await db.query.config.findFirst({
+        where: eq(configTable.key, USE_STATIC_FILTER_VALUES_KEY),
+    });
+    return config?.value === "true";
+}
+
+export async function setUseStaticFilterValues(useStatic: boolean): Promise<void> {
+    await db.insert(configTable).values({
+        key: USE_STATIC_FILTER_VALUES_KEY,
+        value: useStatic ? "true" : "false",
+    }).onConflictDoUpdate({
+        target: configTable.key,
+        set: { value: useStatic ? "true" : "false" },
     });
 }

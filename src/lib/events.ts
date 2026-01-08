@@ -30,4 +30,6 @@ export const EVENT_TYPES = {
     FILTERS_UPDATED: 'filters_updated',
     SETTINGS_UPDATED: 'settings_updated',
     STATS_RESET: 'stats_reset',
+    USER_JOINED: 'user_joined',
+    USER_LEFT: 'user_left',
 };
