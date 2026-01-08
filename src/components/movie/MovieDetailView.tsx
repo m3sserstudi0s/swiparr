@@ -215,7 +215,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         ))}
                       </div>
                     )}
-                    <h2 className="text-3xl font-bold leading-tight drop-shadow-lg text-foreground mb-1 truncate">
+                    <h2 className="text-3xl font-bold leading-tight drop-shadow-lg text-foreground mb-1 line-clamp-2">
                       {movie.Name}
                     </h2>
                     {movie.OriginalTitle && movie.OriginalTitle !== movie.Name && (
