@@ -22,10 +22,10 @@ export function DynamicBackground({ show = true }: { show?: boolean }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.2, ease: "easeInOut" }}
-            className="absolute inset-0"
+            className="absolute inset-0 transform-gpu will-change-opacity"
           >
              <div 
-               className="absolute inset-0 bg-cover bg-center scale-110 blur-[100px] saturate-[1.8] opacity-60"
+               className="absolute inset-0 bg-cover bg-center scale-110 blur-xl saturate-[1.8] opacity-60 transform-gpu"
                style={{ backgroundImage: `url(${activeBlurURL})` }}
              />
              <div className="absolute inset-0 bg-linear-to-b from-background/20 via-background/40 to-background/80" />

@@ -17,7 +17,7 @@ interface SwipeCardProps {
   item: JellyfinItem;
   index: number;
   onSwipe: (id: string, direction: "left" | "right") => void;
-  onCardLeftScreen: (id: string) => void;
+  onCardLeftScreen: (id: string, direction: "left" | "right") => void;
   onClick?: () => void;
   preventSwipe?: Direction[];
 }
@@ -67,7 +67,11 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
               onSwipe(item.Id, dir);
             }
           }}
-          onCardLeftScreen={() => onCardLeftScreen(item.Id)}
+          onCardLeftScreen={(dir) => {
+             if (dir === "left" || dir === "right") {
+               onCardLeftScreen(item.Id, dir);
+             }
+          }}
           // 3. Important: absolute positioning + width constraint
           className={`absolute w-full h-[68svh] rounded-3xl ${isFront ? "cursor-grab pointer-events-auto" : ""}`}
         >

@@ -26,7 +26,7 @@ export function DeckControls({
   rightSwipesRemaining,
 }: DeckControlsProps) {
   return (
-    <div className="flex space-x-6 z-5 mt-4 items-center">
+    <div className="flex space-x-6 z-2 mt-4 items-center">
       <Button
         size="icon"
         variant="secondary"

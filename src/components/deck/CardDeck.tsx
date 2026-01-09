@@ -111,15 +111,13 @@ export function CardDeck() {
     if (swipedIdsRef.current.has(id)) return;
     swipedIdsRef.current.add(id);
     setLastSwipe({ id, direction });
+  }, [sessionSettings, stats]);
 
-    // Update background immediately to the next card
-    if (activeDeck.length > 1) {
-      const nextItem = activeDeck[1];
-      setBackgroundItem({ id: nextItem.Id, blurDataURL: nextItem.BlurDataURL });
-    }
+  const onCardLeftScreen = useCallback((id: string, direction: "left" | "right") => {
+    if (!swipedIdsRef.current.has(id)) return;
+    setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
 
     const item = displayDeck.find((i) => i.Id === id);
-
     if (!item) return;
 
     swipeMutation.mutate({ itemId: id, direction, item }, {
@@ -135,15 +133,11 @@ export function CardDeck() {
       },
       onError: (err) => {
         swipedIdsRef.current.delete(id);
+        setRemovedIds(prev => prev.filter(rid => rid !== id));
         toast.error("Swipe failed", { description: getErrorMessage(err) });
       }
     });
-  }, [sessionSettings, stats, displayDeck, swipeMutation]);
-
-  const onCardLeftScreen = useCallback((id: string) => {
-    if (!swipedIdsRef.current.has(id)) return;
-    setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-  }, []);
+  }, [displayDeck, swipeMutation]);
 
   const activeDeck = useMemo(() => {
     return displayDeck.filter((item: JellyfinItem) => !removedIds.includes(item.Id));
