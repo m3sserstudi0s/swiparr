@@ -19,10 +19,11 @@ interface MovieListItemProps {
   movie: MergedLike;
   onClick?: () => void;
   variant?: "full" | "condensed";
+  isLiked?: boolean;
 }
 
 
-export function MovieListItem({ movie, onClick, variant = "full" }: MovieListItemProps) {
+export function MovieListItem({ movie, onClick, variant = "full", isLiked }: MovieListItemProps) {
   const queryClient = useQueryClient();
 
   const { mutate: relike } = useMutation({
@@ -170,7 +171,7 @@ export function MovieListItem({ movie, onClick, variant = "full" }: MovieListIte
                 Play
               </Button>
             </Link>
-            {movie.likedBy?.some(l => l.userId === sessionData?.userId) && <Button
+            {(movie.likedBy?.some(l => l.userId === sessionData?.userId) || isLiked) && <Button
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"

@@ -76,6 +76,7 @@ export function LikesList() {
                         key={movie.Id}
                         movie={movie}
                         onClick={() => openMovie(movie.Id, { sessionCode: movie.sessionCode })}
+                        isLiked={true}
                     />
                 ))}
                 </div>
