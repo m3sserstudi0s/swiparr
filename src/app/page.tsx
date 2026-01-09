@@ -9,8 +9,10 @@ import { useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { TabsContents } from "@/components/animate-ui/primitives/animate/tabs";
 import { cn } from "@/lib/utils";
+import { DynamicBackground } from "@/components/deck/DynamicBackground";
 
 export default function Home() {
+
   const [tab, setTab] = useState("swipe");
 
   useHotkeys("1", () => setTab("swipe"), []);
@@ -18,7 +20,9 @@ export default function Home() {
 
   return (
     <main className="overflow-hidden h-svh">
+      <DynamicBackground show={tab === "swipe"} />
       <div className="grid justify-center my-[3svh] relative">
+
         <div className="w-full mt-2 md:max-w-md min-w-0 relative">
           <SessionManager />
           <SettingsSidebar />
@@ -27,9 +31,9 @@ export default function Home() {
         <Tabs
           value={tab}
           onValueChange={setTab}
-          className="gap-0 w-full sm:max-w-md min-w-0 -mt-0.75"
+          className="gap-0 w-full sm:max-w-md min-w-0 -mt-1.5"
         >
-          <TabsList className="grid mx-auto h-fit grid-cols-2 bg-muted rounded-full z-0">
+          <TabsList className="grid mx-auto h-fit grid-cols-2 bg-muted/30 rounded-full z-0">
             <TabsTrigger value="swipe" className="h-11 w-16 group rounded-full z-0">
               <GalleryHorizontalEnd
                 className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"

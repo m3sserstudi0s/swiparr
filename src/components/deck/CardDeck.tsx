@@ -22,8 +22,10 @@ import {
   useUndoSwipe, 
   useUpdateSession 
 } from "@/hooks/api";
+import { useBackgroundStore } from "@/lib/background-store";
 
 export function CardDeck() {
+
   const { openMovie } = useMovieDetail();
 
   const { data: sessionStatus, isLoading: isLoadingSession, isError: isErrorSession } = useSession();
@@ -110,7 +112,14 @@ export function CardDeck() {
     swipedIdsRef.current.add(id);
     setLastSwipe({ id, direction });
 
+    // Update background immediately to the next card
+    if (activeDeck.length > 1) {
+      const nextItem = activeDeck[1];
+      setBackgroundItem({ id: nextItem.Id, blurDataURL: nextItem.BlurDataURL });
+    }
+
     const item = displayDeck.find((i) => i.Id === id);
+
     if (!item) return;
 
     swipeMutation.mutate({ itemId: id, direction, item }, {
@@ -139,6 +148,14 @@ export function CardDeck() {
   const activeDeck = useMemo(() => {
     return displayDeck.filter((item: JellyfinItem) => !removedIds.includes(item.Id));
   }, [displayDeck, removedIds]);
+
+  const setBackgroundItem = useBackgroundStore((state) => state.setBackgroundItem);
+  useEffect(() => {
+    if (activeDeck.length > 0) {
+      const topItem = activeDeck[0];
+      setBackgroundItem({ id: topItem.Id, blurDataURL: topItem.BlurDataURL });
+    }
+  }, [activeDeck, setBackgroundItem]);
 
   useEffect(() => {
     if (!isFetching && activeDeck.length > 0 && activeDeck.length <= 15) {
@@ -213,6 +230,7 @@ export function CardDeck() {
   }, [sessionSettings?.maxRightSwipes, stats?.mySwipes.right]);
 
   const showLoader = isLoadingSession || (isFetching && activeDeck.length === 0) || updateSessionMutation.isPending;
+
   if (showLoader) return <DeckLoading />;
   if ((isError || isErrorSession) && activeDeck.length === 0) return <DeckError />;
   

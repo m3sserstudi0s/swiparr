@@ -78,7 +78,7 @@ export function SettingsSidebar() {
         <>
             <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
-                    <Button className="absolute right-6 size-10" variant="ghost" size="icon">
+                    <Button className="absolute right-6 size-10 hover:bg-muted/30!" variant="ghost" size="icon">
                         <Menu className="size-5.5" />
                     </Button>
                 </SheetTrigger>

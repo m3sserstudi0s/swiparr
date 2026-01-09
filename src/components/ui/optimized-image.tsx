@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"; // Added useEffect
 import Image, { ImageLoaderProps, ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
-import { useQuery } from "@tanstack/react-query";
+import { useBlurData } from "@/hooks/use-blur-data";
 
-import { apiClient } from "@/lib/api-client";
 import { Skeleton } from "./skeleton";
 
 // 1. Create a global set to track loaded images outside the component
@@ -51,22 +50,7 @@ export function OptimizedImage({
   const isFill = fill ?? (!width && !height);
   const isJellyfinImage = !!jellyfinItemId || (typeof src === "string" && (src.startsWith("/api/jellyfin/image") || src.startsWith(`${basePath}/api/jellyfin/image`)));
 
-  const blurUrl = isJellyfinImage && !initialBlurDataURL && jellyfinItemId
-    ? `/api/jellyfin/image/${jellyfinItemId}/blur${jellyfinImageType ? `?imageType=${jellyfinImageType}` : ""}`
-    : null;
-
-  const { data: blurData } = useQuery({
-    queryKey: ["blur", blurUrl],
-    queryFn: async () => {
-      const res = await apiClient.get(blurUrl!);
-      return res.data.blurDataURL;
-    },
-    enabled: !!blurUrl,
-    staleTime: Infinity,
-  });
-
-
-  const blurDataURL = initialBlurDataURL || blurData;
+  const blurDataURL = useBlurData(jellyfinItemId, initialBlurDataURL, jellyfinImageType);
 
   const imageLoader = ({ src, width, quality }: ImageLoaderProps) => {
     return `${src}${src.includes("?") ? "&" : "?"}width=${width}&quality=${quality || 75}`;

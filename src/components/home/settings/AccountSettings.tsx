@@ -38,10 +38,10 @@ export function AccountSettings() {
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <span className="text-base font-medium truncate">{userName}</span>
                         {isAdmin && (
-                            <Badge variant="secondary" className="px-1 py-0 h-4 text-[10px] uppercase font-bold tracking-tighter">
+                            <Badge variant='outline' className="text-[10px] h-4 px-1.5 uppercase tracking-wider">
                                 Admin
                             </Badge>
                         )}

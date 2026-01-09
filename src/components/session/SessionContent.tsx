@@ -121,7 +121,7 @@ export default function SessionContent() {
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="absolute left-6">
-                <Button variant="ghost" size="icon" className="text-foreground size-10">
+                <Button variant="ghost" size="icon" className="text-foreground size-10 hover:bg-muted/30!">
                     <Users className="size-5" />
                 </Button>
             </SheetTrigger>

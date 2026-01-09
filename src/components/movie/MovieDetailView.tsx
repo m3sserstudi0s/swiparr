@@ -16,7 +16,7 @@ import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSettings } from "@/lib/settings";
 import { useRuntimeConfig } from "@/lib/runtime-config";
-import { ticksToTime, getErrorMessage } from "@/lib/utils";
+import { ticksToTime, getErrorMessage, cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 
 interface Props {
@@ -70,7 +70,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
       const userLike = movie?.likedBy?.find(l => l.userId === sessionData?.userId);
       // Fallback to the current view's sessionCode if no record found (though it should be)
       const targetSessionCode = userLike?.sessionCode !== undefined ? userLike.sessionCode : sessionCode;
-      
+
       const sessionParam = targetSessionCode !== undefined ? `&sessionCode=${targetSessionCode ?? ""}` : "";
       await apiClient.delete(`/api/user/likes?itemId=${movieId}${sessionParam}`);
     },
@@ -174,19 +174,19 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
       <DrawerContent>
         <DrawerTitle className="sr-only">Movie Details</DrawerTitle>
-        <div className="h-50 w-full bg-linear-to-t to-background via-background/10 absolute top-9 z-50" />
         <div
           onScroll={handleScroll} // Update motion value here
-          className="p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-4 no-scrollbar">
+          className={cn(
+            "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-3 no-scrollbar relative",
+            "mask-[linear-gradient(to_bottom,transparent_0%,black_60px,black_calc(100%-80px),transparent_100%)]"
+          )}>
 
           {isLoading ? (
-            <>
-              <Skeleton className="h-64 w-full rounded-none relative">
-                <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent" />
-                <div className="absolute -bottom-12 left-4 flex items-end gap-3">
-                  <Skeleton className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0" />
-                </div>
-              </Skeleton>
+            <div className="h-64 w-full relative">
+              <div className="absolute -bottom-12 left-4 flex items-end gap-3">
+                <Skeleton className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0" />
+              </div>
+              <Skeleton className="h-full w-full rounded-none relative mask-[linear-gradient(to_bottom,black_60%,transparent_100%)]" />
               <div className="space-y-4 px-6 mt-20">
                 <Skeleton className="h-11 w-3/4" />
                 <div className="flex flex-row w-2/3 gap-2">
@@ -194,7 +194,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   <Skeleton className="h-10 w-32" />
                 </div>
               </div>
-            </>
+            </div>
           ) : movie ? (
             <div className="relative">
               {/* PARALLAX BACKGROUND */}
@@ -205,7 +205,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     opacity: imgOpacity,
                     scale: imgScale
                   }}
-                  className="absolute inset-0 w-full h-[120%]"
+                  className="absolute inset-x-0 w-full h-full mask-[linear-gradient(to_bottom,black_40%,transparent_100%)]"
                 >
 
                   <OptimizedImage
@@ -221,9 +221,6 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     alt="Backdrop"
                   />
                 </motion.div>
-
-                {/* Overlays */}
-                <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent" />
 
                 {/* Header Content */}
                 <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
@@ -392,7 +389,6 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
             </div>
           ) : null}
         </div>
-        <div className="h-20 w-full bg-linear-to-t from-background via-background/10 absolute bottom-0 z-20" />
       </DrawerContent>
     </Drawer>
   );
