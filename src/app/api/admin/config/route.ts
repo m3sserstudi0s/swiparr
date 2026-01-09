@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { isAdmin, getUseStaticFilterValues, setUseStaticFilterValues } from "@/lib/server/admin";
 import { z } from "zod";
 

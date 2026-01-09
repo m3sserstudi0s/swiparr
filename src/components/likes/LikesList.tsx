@@ -1,24 +1,21 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { LikesFilter } from "./LikesFilter";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { MovieListItem } from "../movie/MovieListItem";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
-import { type MergedLike } from "@/types/swiparr";
-import { apiClient } from "@/lib/api-client";
+import { type MergedLike } from "@/types";
+import { useLikes } from "@/hooks/api";
 
 import {
     Empty,
-    EmptyContent,
-    EmptyDescription,
     EmptyHeader,
     EmptyMedia,
     EmptyTitle,
+    EmptyDescription,
 } from "@/components/ui/empty"
 import { Heart } from "lucide-react";
 
@@ -27,15 +24,7 @@ export function LikesList() {
     const [filterMode, setFilterMode] = useState("all");
     const { openMovie } = useMovieDetail();
 
-    const { data: likes, isLoading } = useQuery<MergedLike[]>({
-        queryKey: ["likes", sortBy, filterMode],
-        queryFn: async () => {
-            const res = await apiClient.get<MergedLike[]>("/api/user/likes", {
-                params: { sortBy, filter: filterMode }
-            });
-            return res.data;
-        }
-    });
+    const { data: likes, isLoading } = useLikes(sortBy, filterMode);
 
     return (
         <div className="relative w-full mx-auto h-[calc(100vh-115px)] flex flex-col">
@@ -84,7 +73,7 @@ export function LikesList() {
 
             <RandomMovieButton 
                 items={likes} 
-                className="absolute bottom-0 right-5 z-3" 
+                className="absolute bottom-5 right-5 z-3" 
             />
         </div>
     )

@@ -2,25 +2,28 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Info, Users, X } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import useSWR, { useSWRConfig } from "swr";
+import { Users } from "lucide-react";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
-import { JellyfinItem } from "@/types/swiparr";
 import { SessionHeader } from "./SessionHeader";
 import { SessionCodeSection } from "./SessionCodeSection";
 import { MatchesList } from "./MatchesList";
 import { SessionAlert } from "./SessionAlert";
-import { apiClient, fetcher } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";
 import { getRuntimeConfig } from "@/lib/runtime-config";
-
 import { useHotkeys } from "react-hotkeys-hook";
 import { useSettings } from "@/lib/settings";
+import { 
+  useSession, 
+  useMembers, 
+  useMatches, 
+  useCreateSession, 
+  useJoinSession, 
+  useLeaveSession 
+} from "@/hooks/api";
+import { apiClient } from "@/lib/api-client";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
@@ -29,83 +32,28 @@ export default function SessionContent() {
 
     useHotkeys("m, c", () => setIsOpen(prev => !prev), []);
     const { openMovie } = useMovieDetail();
-    const queryClient = useQueryClient();
-    const { mutate } = useSWRConfig();
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // -- 1. CHECK CURRENT STATUS --
-    const { data: sessionStatus, isLoading: isSessionLoading } = useSWR(
-        "/api/session",
-        fetcher
-    );
+    const { data: sessionStatus, isLoading: isSessionLoading } = useSession();
+    const activeCode = sessionStatus?.code || undefined;
     const isSuccess = !isSessionLoading && !!sessionStatus;
-    const activeCode = sessionStatus?.code;
 
-    // -- 1.5 FETCH MEMBERS (Using SWR) --
-    const { data: members } = useSWR<any[]>(
-        activeCode ? ["/api/session/members", activeCode] : null,
-        ([url]: [string]) => apiClient.get(url).then(res => res.data)
-    );
+    const { data: members } = useMembers();
+    const { data: matches } = useMatches();
 
-    // -- 2. HANDLE MATCHES (Using SWR) --
-    const { data: matches } = useSWR<JellyfinItem[]>(
-        activeCode ? ["/api/session/matches", activeCode] : null,
-        ([url]: [string]) => apiClient.get(url).then(res => res.data)
-    );
-
-    // -- 3. MUTATIONS --
-    const createSession = useMutation({
-        mutationFn: async () => apiClient.post("/api/session", {
-            action: "create",
-            allowGuestLending: settings.allowGuestLending
-        }),
-        onSuccess: () => {
-            mutate("/api/session");
-            queryClient.invalidateQueries({ queryKey: ["deck"] });
-        }
-    });
-
-    const joinSession = useMutation({
-        mutationFn: async (codeToJoin: string) => apiClient.post("/api/session", { action: "join", code: codeToJoin }),
-        onSuccess: () => {
-            const { basePath } = getRuntimeConfig();
-            mutate("/api/session");
-            queryClient.invalidateQueries({ queryKey: ["deck"] });
-            router.replace(`${basePath}/`);
-        },
-    });
-
-    const leaveSession = useMutation({
-        mutationFn: async () => apiClient.delete("/api/session"),
-        onSuccess: () => {
-            const { basePath } = getRuntimeConfig();
-            if (sessionStatus?.isGuest) {
-                // Guests are logged out when leaving
-                apiClient.post("/api/auth/logout").then(() => {
-                    window.location.href = `${basePath}/login`;
-                });
-                return;
-            }
-            mutate("/api/session");
-            if (activeCode) {
-                mutate(["/api/session/matches", activeCode], []);
-                mutate(["/api/session/members", activeCode], []);
-            }
-            queryClient.invalidateQueries({ queryKey: ["deck"] });
-        }
-    });
+    const createSession = useCreateSession();
+    const joinSession = useJoinSession();
+    const leaveSession = useLeaveSession();
 
     const handleCreateSession = () => {
-        toast.promise(createSession.mutateAsync(), {
+        toast.promise(createSession.mutateAsync({ allowGuestLending: settings.allowGuestLending }), {
             loading: "Creating session...",
             success: "Session created",
-            error: (err) => {
-                return {
-                    message: "Failed to create session",
-                    description: getErrorMessage(err)
-                }
-            },
+            error: (err) => ({
+                message: "Failed to create session",
+                description: getErrorMessage(err)
+            }),
         });
     };
 
@@ -113,30 +61,34 @@ export default function SessionContent() {
         toast.promise(joinSession.mutateAsync(code), {
             loading: "Joining session...",
             success: "Connected!",
-            error: (err) => {
-                return {
-                    message: "Invalid code",
-                    description: getErrorMessage(err)
-                }
-            },
+            error: (err) => ({
+                message: "Invalid code",
+                description: getErrorMessage(err)
+            }),
         });
     };
 
-    const handleLeaveSession = () => {
-        toast.promise(leaveSession.mutateAsync(), {
-            loading: "Leaving session...",
-            success: "Left session",
-            error: (err) => {
-                return {
+    const handleLeaveSession = async () => {
+        try {
+            await toast.promise(leaveSession.mutateAsync(), {
+                loading: "Leaving session...",
+                success: "Left session",
+                error: (err) => ({
                     message: "Failed to leave session",
                     description: getErrorMessage(err)
-                }
-            },
-        });
+                }),
+            });
+
+            if (sessionStatus?.isGuest) {
+                const { basePath } = getRuntimeConfig();
+                await apiClient.post("/api/auth/logout");
+                window.location.href = `${basePath}/login`;
+            }
+        } catch (err) {
+            // Error handled by toast.promise
+        }
     };
 
-
-    // -- 4. AUTO-JOIN LOGIC --
     useEffect(() => {
         const joinParam = searchParams.get("join");
         if (joinParam && isSuccess && !activeCode) {
@@ -145,7 +97,6 @@ export default function SessionContent() {
         }
     }, [searchParams, isSuccess, activeCode]);
 
-    // -- 5. SHARE LOGIC --
     const handleShare = async () => {
         if (!activeCode) return;
         const { basePath } = getRuntimeConfig();
@@ -178,7 +129,7 @@ export default function SessionContent() {
                 <SessionHeader
                     activeCode={activeCode}
                     members={members}
-                    currentSettings={sessionStatus?.settings}
+                    currentSettings={sessionStatus?.settings || undefined}
                 />
                 <div className="px-1">
                     <SessionAlert />
@@ -201,9 +152,6 @@ export default function SessionContent() {
                         matches={matches}
                         openMovie={openMovie}
                     />
-                    <div>
-
-                    </div>
                 </div>
                 <RandomMovieButton
                     items={matches}
@@ -213,4 +161,3 @@ export default function SessionContent() {
         </Sheet>
     );
 }
-

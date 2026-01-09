@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getCachedRatings } from "@/lib/jellyfin/cached-queries";
 

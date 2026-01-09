@@ -1,6 +1,6 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { JellyfinItem } from "@/types/swiparr";
+import { JellyfinItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
@@ -22,7 +22,7 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-background/95 backdrop-blur-md p-6 overflow-hidden"
+          className="fixed inset-0 z-5 flex flex-col items-center justify-center bg-background backdrop-blur-md overflow-visible"
         >
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}

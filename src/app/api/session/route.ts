@@ -4,13 +4,12 @@ import { sessionOptions } from "@/lib/session";
 import { db, sessions, sessionMembers, likes, hiddens } from "@/lib/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { isAdmin } from "@/lib/server/admin";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
-
-
+import { getEffectiveCredentials, GuestKickedError } from "@/lib/server/auth-resolver";
+import { sessionActionSchema, sessionSettingsSchema } from "@/lib/validations";
 
 function generateCode() {
     // Simple 4-letter code (e.g., AXYZ)
@@ -21,8 +20,6 @@ function generateCode() {
     }
     return result;
 }
-
-import { sessionActionSchema, sessionSettingsSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -113,7 +110,7 @@ export async function PATCH(request: NextRequest) {
     const validated = sessionSettingsSchema.safeParse(body);
     if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-    const { filters, settings } = validated.data;
+    const { filters, settings, allowGuestLending } = validated.data;
 
     if (session.sessionCode) {
         // Enforce that only the host can update session settings
@@ -121,7 +118,7 @@ export async function PATCH(request: NextRequest) {
             where: eq(sessions.code, session.sessionCode)
         });
 
-        if (!currentSession || (settings !== undefined && currentSession.hostUserId !== session.user.Id)) {
+        if (!currentSession || ((settings !== undefined || allowGuestLending !== undefined) && currentSession.hostUserId !== session.user.Id)) {
             return NextResponse.json({ error: "Only the host can modify session settings" }, { status: 403 });
         }
 
@@ -129,6 +126,11 @@ export async function PATCH(request: NextRequest) {
 
         if (filters !== undefined) updateData.filters = JSON.stringify(filters);
         if (settings !== undefined) updateData.settings = JSON.stringify(settings);
+        
+        if (allowGuestLending !== undefined) {
+            updateData.hostAccessToken = allowGuestLending ? session.user.AccessToken : null;
+            updateData.hostDeviceId = allowGuestLending ? session.user.DeviceId : null;
+        }
 
         await db.update(sessions)
             .set(updateData)
@@ -165,17 +167,31 @@ export async function GET() {
   
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
-  const { userId: effectiveUserId } = await getEffectiveCredentials(session);
-
+  let effectiveUserId = null;
+  try {
+    const creds = await getEffectiveCredentials(session);
+    effectiveUserId = creds.userId;
+  } catch (err) {
+    if (err instanceof GuestKickedError) {
+        // Automatically logout the guest if they were kicked
+        session.destroy();
+        return NextResponse.json({ error: "guest_kicked" }, { status: 403 });
+    }
+    // For other errors, we might still want to return basic info or a generic error
+    console.error("Failed to get effective credentials:", err);
+  }
 
   let filters = session.soloFilters || null;
   let settings = null;
+  let hostUserId = null;
+
   if (session.sessionCode) {
     const currentSession = await db.query.sessions.findFirst({
         where: eq(sessions.code, session.sessionCode)
     });
     filters = currentSession?.filters ? JSON.parse(currentSession.filters) : null;
     settings = currentSession?.settings ? JSON.parse(currentSession.settings) : null;
+    hostUserId = currentSession?.hostUserId || null;
   }
 
   const response = { 
@@ -185,6 +201,7 @@ export async function GET() {
     effectiveUserId,
     isGuest: !!session.user.isGuest,
     isAdmin: await isAdmin(session.user.Id, session.user.Name),
+    hostUserId,
     filters,
     settings
   };

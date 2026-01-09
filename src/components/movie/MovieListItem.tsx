@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
-import { MergedLike } from "@/types/swiparr";
+import { MergedLike } from "@/types";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 
 interface MovieListItemProps {

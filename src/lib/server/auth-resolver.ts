@@ -1,6 +1,13 @@
 import { db, sessions } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
+
+export class GuestKickedError extends Error {
+    constructor() {
+        super("Guest lending disabled");
+        this.name = "GuestKickedError";
+    }
+}
 
 export async function getEffectiveCredentials(session: SessionData) {
     if (!session.user?.isGuest) {
@@ -19,8 +26,12 @@ export async function getEffectiveCredentials(session: SessionData) {
         where: eq(sessions.code, session.sessionCode)
     });
 
-    if (!currentSession || !currentSession.hostAccessToken) {
-        throw new Error("Session or host credentials not found");
+    if (!currentSession) {
+        throw new Error("Session not found");
+    }
+
+    if (!currentSession.hostAccessToken) {
+        throw new GuestKickedError();
     }
 
     return {

@@ -19,5 +19,5 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// For SWR fetchers
-export const fetcher = (url: string) => apiClient.get(url).then((res) => res.data);
+// For TanStack Query, we use apiClient directly
+

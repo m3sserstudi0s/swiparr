@@ -5,7 +5,7 @@ import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
-import { SessionData, type JellyfinItem, type MergedLike } from "@/types/swiparr";
+import { SessionData, type JellyfinItem, type MergedLike } from "@/types";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 

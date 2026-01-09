@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"; // Added useEffect
 import Image, { ImageLoaderProps, ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
-import useSWR from "swr";
+import { useQuery } from "@tanstack/react-query";
+
 import { apiClient } from "@/lib/api-client";
 import { Skeleton } from "./skeleton";
 
@@ -50,13 +51,20 @@ export function OptimizedImage({
   const isFill = fill ?? (!width && !height);
   const isJellyfinImage = !!jellyfinItemId || (typeof src === "string" && (src.startsWith("/api/jellyfin/image") || src.startsWith(`${basePath}/api/jellyfin/image`)));
 
-  const { data: blurData } = useSWR(
-    isJellyfinImage && !initialBlurDataURL && jellyfinItemId
-      ? `/api/jellyfin/image/${jellyfinItemId}/blur${jellyfinImageType ? `?imageType=${jellyfinImageType}` : ""}`
-      : null,
-    (url: string) => apiClient.get(url).then(res => res.data.blurDataURL),
-    { revalidateOnFocus: false }
-  );
+  const blurUrl = isJellyfinImage && !initialBlurDataURL && jellyfinItemId
+    ? `/api/jellyfin/image/${jellyfinItemId}/blur${jellyfinImageType ? `?imageType=${jellyfinImageType}` : ""}`
+    : null;
+
+  const { data: blurData } = useQuery({
+    queryKey: ["blur", blurUrl],
+    queryFn: async () => {
+      const res = await apiClient.get(blurUrl!);
+      return res.data.blurDataURL;
+    },
+    enabled: !!blurUrl,
+    staleTime: Infinity,
+  });
+
 
   const blurDataURL = initialBlurDataURL || blurData;
 

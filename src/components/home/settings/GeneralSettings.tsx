@@ -7,15 +7,29 @@ import { useTheme } from "next-themes";
 import { useSettings } from "@/lib/settings";
 import { SettingsSection } from "./SettingsSection";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import useSWR from "swr";
-import { apiClient, fetcher } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSession, useUpdateSession } from "@/hooks/api";
+import { toast } from "sonner";
 
 export function GeneralSettings() {
     const { setTheme, resolvedTheme: theme } = useTheme();
     const { settings, updateSettings } = useSettings();
-    const { data: sessionStatus, isLoading } = useSWR("/api/session", fetcher);
+    const { data: sessionStatus, isLoading } = useSession();
+    const updateSession = useUpdateSession();
+
     const isGuest = sessionStatus?.isGuest || false;
+    const isHost = sessionStatus?.code && sessionStatus?.userId === sessionStatus?.hostUserId;
+
+    const handleToggleGuestLending = (pressed: boolean) => {
+        updateSettings({ allowGuestLending: pressed });
+        if (isHost) {
+            toast.promise(updateSession.mutateAsync({ allowGuestLending: pressed }), {
+                loading: "Updating session...",
+                success: "Guest lending updated for current session",
+                error: "Failed to update session"
+            });
+        }
+    };
 
     return (
         <SettingsSection title="General">
@@ -40,31 +54,18 @@ export function GeneralSettings() {
 
             {isLoading ? (
                 <>
-                    <div className="grid grid-flow-col items-center justify-between gap-2">
-                        <div className="space-y-0.5">
-                            <Skeleton className="h-4 w-28" />
-                            <Skeleton className="h-3 w-48" />
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="grid grid-flow-col items-center justify-between gap-2">
+                            <div className="space-y-0.5">
+                                <Skeleton className="h-4 w-28" />
+                                <Skeleton className="h-3 w-48" />
+                            </div>
+                            <Skeleton className="h-9 w-26 rounded-md" />
                         </div>
-                        <Skeleton className="h-9 w-26 rounded-md" />
-                    </div>
-                    <div className="grid grid-flow-col items-center justify-between gap-2">
-                        <div className="space-y-0.5">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-3 w-40" />
-                        </div>
-                        <Skeleton className="h-9 w-26 rounded-md" />
-                    </div>
-                    <div className="grid grid-flow-col items-center justify-between gap-2">
-                        <div className="space-y-0.5">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-3 w-40" />
-                        </div>
-                        <Skeleton className="h-9 w-26 rounded-md" />
-                    </div>
+                    ))}
                 </>
             ) : !isGuest && (
                 <>
-
                     <div className="grid grid-flow-col items-center justify-between gap-2">
                         <div className="space-y-0.5">
                             <div className="text-sm font-medium">Collection Type</div>
@@ -114,7 +115,7 @@ export function GeneralSettings() {
                         </div>
                         <Toggle
                             pressed={settings.allowGuestLending}
-                            onPressedChange={(pressed) => updateSettings({ allowGuestLending: pressed })}
+                            onPressedChange={handleToggleGuestLending}
                             variant="outline"
                             size="sm"
                             className="w-26"

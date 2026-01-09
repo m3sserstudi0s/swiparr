@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { sessionOptions } from "@/lib/session";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

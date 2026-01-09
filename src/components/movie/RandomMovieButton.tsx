@@ -4,7 +4,7 @@ import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMovieDetail } from "./MovieDetailProvider";
-import { JellyfinItem } from "@/types/swiparr";
+import { JellyfinItem } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface RandomMovieButtonProps {

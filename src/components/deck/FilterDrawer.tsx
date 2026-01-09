@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { useQuery } from "@tanstack/react-query";
-import { Filters } from "@/types/swiparr";
+import { Filters } from "@/types";
 import { RotateCcw, Star } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";

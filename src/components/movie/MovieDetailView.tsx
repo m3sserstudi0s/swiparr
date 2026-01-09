@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Clock, Star, Users, HeartOff, Plus, Minus, Info } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { JellyfinItem } from "@/types/swiparr";
+import { JellyfinItem } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform } from "framer-motion";

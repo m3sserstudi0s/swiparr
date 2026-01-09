@@ -11,15 +11,10 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw, Info } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";
-
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
-import { Skeleton } from "@/components/ui/skeleton";
 import {
     Dialog,
     DialogClose,
@@ -30,76 +25,30 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-
-interface JellyfinLibrary {
-
-    Name: string;
-    Id: string;
-    CollectionType?: string;
-}
+import { 
+  useAdminStatus, 
+  useAdminConfig, 
+  useJellyfinLibraries, 
+  useAdminLibraries, 
+  useUpdateAdminConfig, 
+  useUpdateAdminLibraries, 
+  useClaimAdmin,
+  JellyfinLibrary
+} from "@/hooks/api";
 
 export function AdminSettings() {
-    const [isClaiming, setIsClaiming] = useState(false);
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
-    const [isSavingLibs, setIsSavingLibs] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [needsRefresh, setNeedsRefresh] = useState(false);
-    const router = useRouter();
-    const queryClient = useQueryClient();
 
-    const { data: adminStatus, refetch: refetchAdminStatus } = useQuery({
-        queryKey: ["admin-status"],
-        queryFn: async () => {
-            const res = await apiClient.get<{ hasAdmin: boolean; isAdmin: boolean } | null>("/api/admin/status");
-            return res.data;
-        },
-    });
+    const { data: adminStatus } = useAdminStatus();
+    const { data: config, isLoading: isLoadingConfig } = useAdminConfig();
+    const { data: availableLibraries = [], isLoading: isLoadingLibs } = useJellyfinLibraries();
+    const { data: adminLibraries } = useAdminLibraries();
 
-    const { data: config, isLoading: isLoadingConfig } = useQuery({
-        queryKey: ["admin-config"],
-        queryFn: async () => {
-            const res = await apiClient.get("/api/admin/config");
-            return res.data;
-        },
-        enabled: !!adminStatus?.isAdmin,
-    });
-
-    const updateConfigMutation = useMutation({
-        mutationFn: async (updates: { useStaticFilterValues: boolean }) => {
-            await apiClient.patch("/api/admin/config", updates);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["admin-config"] });
-            toast.success("Settings updated successfully");
-            setNeedsRefresh(true);
-        },
-        onError: (err) => {
-            toast.error("Failed to update settings", {
-                description: getErrorMessage(err)
-            });
-        }
-    });
-
-    const { data: availableLibraries = [], isLoading: isLoadingLibs } = useQuery({
-        queryKey: ["jellyfin-libraries"],
-        queryFn: async () => {
-            const res = await apiClient.get("/api/jellyfin/libraries");
-            return res.data;
-        },
-        enabled: !!adminStatus?.isAdmin,
-        staleTime: 1000 * 60 * 60, // 1 hour
-    });
-
-    const { data: adminLibraries } = useQuery({
-        queryKey: ["admin-libraries"],
-        queryFn: async () => {
-            const res = await apiClient.get("/api/admin/libraries");
-            return res.data;
-        },
-        enabled: !!adminStatus?.isAdmin,
-    });
-
-
+    const updateConfigMutation = useUpdateAdminConfig();
+    const updateLibrariesMutation = useUpdateAdminLibraries();
+    const claimMutation = useClaimAdmin();
 
     useEffect(() => {
         if (adminLibraries) {
@@ -107,59 +56,44 @@ export function AdminSettings() {
         }
     }, [adminLibraries]);
 
-    const claimMulation = useMutation({
-        mutationFn: async () => {
-            setIsClaiming(true);
-            await apiClient.post("/api/admin/claim");
-        },
-        onSuccess: () => {
-            refetchAdminStatus()
-            queryClient.invalidateQueries({ queryKey: ["admin-status"] });
-            toast.success("You are now the admin");
-        },
-        onError: (err) => {
-            toast.error("Failed to claim admin role", {
+    const handleClaimAdmin = () => {
+        toast.promise(claimMutation.mutateAsync(), {
+            loading: "Claiming admin role...",
+            success: "You are now the admin",
+            error: (err) => ({
+                message: "Failed to claim admin role",
                 description: getErrorMessage(err)
-            });
-        },
-        onSettled: () => {
-            setIsClaiming(false);
-        }
-    });
-
+            })
+        });
+    };
 
     const toggleLibrary = (id: string) => {
         if (id === "all") {
             setIncludedLibraries([]);
             return;
         }
-
         setIncludedLibraries(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
     };
 
     const saveLibraries = async () => {
-        setIsSavingLibs(true);
-        try {
-            await apiClient.patch("/api/admin/libraries", includedLibraries);
-            toast.success("Libraries updated successfully");
-            setNeedsRefresh(true);
-        } catch (err) {
-            toast.error("Failed to update libraries", {
+        toast.promise(updateLibrariesMutation.mutateAsync(includedLibraries), {
+            loading: "Updating libraries...",
+            success: () => {
+                setNeedsRefresh(true);
+                return "Libraries updated successfully";
+            },
+            error: (err) => ({
+                message: "Failed to update libraries",
                 description: getErrorMessage(err)
-            });
-            console.error(err);
-        } finally {
-            setIsSavingLibs(false);
-        }
+            })
+        });
     };
 
     const handleRefresh = () => {
         window.location.reload();
     };
-
-    // Only show if no admin exists or if current user IS admin
 
     if (adminStatus?.hasAdmin && !adminStatus.isAdmin) {
         return null;
@@ -183,10 +117,10 @@ export function AdminSettings() {
                         variant="default"
                         size="sm"
                         className="w-full"
-                        onClick={() => claimMulation.mutate()}
-                        disabled={isClaiming}
+                        onClick={handleClaimAdmin}
+                        disabled={claimMutation.isPending}
                     >
-                        {isClaiming ? "Claiming..." : "Claim admin"}
+                        {claimMutation.isPending ? "Claiming..." : "Claim admin"}
                     </Button>
                 </div>
             ) : (
@@ -228,7 +162,11 @@ export function AdminSettings() {
                             </div>
                             <Switch
                                 checked={config?.useStaticFilterValues || false}
-                                onCheckedChange={(checked) => updateConfigMutation.mutate({ useStaticFilterValues: checked })}
+                                onCheckedChange={(checked) => {
+                                  updateConfigMutation.mutate({ useStaticFilterValues: checked }, {
+                                    onSuccess: () => setNeedsRefresh(true)
+                                  });
+                                }}
                                 disabled={isLoadingConfig || updateConfigMutation.isPending}
                             />
                         </div>
@@ -287,7 +225,6 @@ export function AdminSettings() {
                                             availableLibraries.map((lib: JellyfinLibrary) => {
                                                 const isIncluded = includedLibraries.includes(lib.Id);
                                                 return (
-
                                                     <button
                                                         key={lib.Id}
                                                         onClick={() => toggleLibrary(lib.Id)}
@@ -317,9 +254,9 @@ export function AdminSettings() {
                                     size="sm"
                                     className="w-full"
                                     onClick={saveLibraries}
-                                    disabled={isSavingLibs || isLoadingLibs}
+                                    disabled={updateLibrariesMutation.isPending || isLoadingLibs}
                                 >
-                                    {isSavingLibs && <Spinner />}
+                                    {updateLibrariesMutation.isPending && <Spinner />}
                                     Save
                                 </Button>
                             </CollapsibleContent>

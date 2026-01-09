@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function POST(request: NextRequest) {

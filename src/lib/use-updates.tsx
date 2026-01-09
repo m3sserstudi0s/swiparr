@@ -1,48 +1,58 @@
-import { useEffect, useRef } from 'react';
-import { useSWRConfig } from 'swr';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EVENT_TYPES } from './events';
 import { toast } from 'sonner';
-import useSWR from 'swr';
 import { useMovieDetail } from '@/components/movie/MovieDetailProvider';
 import React from 'react';
 import { useRuntimeConfig } from './runtime-config';
 import { apiClient } from './api-client';
+import { useSession, QUERY_KEYS, useLeaveSession } from '@/hooks/api';
+import { useRouter } from 'next/navigation';
 
 export function useUpdates() {
-    const { mutate } = useSWRConfig();
     const queryClient = useQueryClient();
     const { openMovie } = useMovieDetail();
     const { basePath } = useRuntimeConfig();
+    const { data: session, isError, error } = useSession();
+    const router = useRouter();
+    
+    useEffect(() => {
+        if (isError) {
+            const errData = (error as any)?.response?.data;
+            if (errData?.error === "guest_kicked") {
+                toast.error("Session ended", {
+                    description: "The host has disabled guest lending. You have been logged out.",
+                    duration: 5000,
+                });
+                queryClient.setQueryData(QUERY_KEYS.session, null);
+                router.push('/login');
+            }
+        }
+    }, [isError, error, router, queryClient]);
 
-    const { data: sessionData } = useSWR<{ code: string | null; userId: string }>('/api/session', (url: string) => apiClient.get(url).then(res => res.data));
-    const sessionCode = sessionData?.code;
+    const sessionCode = session?.code;
+    const userId = session?.userId;
 
     useEffect(() => {
         if (!sessionCode) return;
 
         const eventSource = new EventSource(`${basePath}/api/events`);
 
-        eventSource.addEventListener(EVENT_TYPES.SESSION_UPDATED, (event: any) => {
+        const handleSessionUpdated = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate session members
-                mutate(['/api/session/members', sessionCode]);
-                // Invalidate deck to get fresh cards for new member configuration
-                queryClient.invalidateQueries({ queryKey: ['deck'] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.MATCH_FOUND, (event: any) => {
+        const handleMatchFound = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate matches
-                mutate(['/api/session/matches', sessionCode]);
-                // Invalidate likes list
-                queryClient.invalidateQueries({ queryKey: ['likes'] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
 
-                // If it's not the current user who swiped, show a toast
-                if (sessionData && data.swiperId !== sessionData.userId) {
+                if (userId && data.swiperId !== userId) {
                     toast.success(<p>Match! <span className='font-semibold italic'>{data.itemName}</span></p>, {
                         description: "Check it out.",
                         action: {
@@ -53,130 +63,117 @@ export function useUpdates() {
                     });
                 }
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.MATCH_REMOVED, (event: any) => {
+        const handleMatchRemoved = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate matches
-                mutate(['/api/session/matches', sessionCode]);
-                // Invalidate likes list
-                queryClient.invalidateQueries({ queryKey: ['likes'] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.FILTERS_UPDATED, (event: any) => {
+        const handleFiltersUpdated = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate session to get new filters
-                mutate('/api/session');
-                // Invalidate deck to get fresh cards with new filters
-                queryClient.invalidateQueries({ queryKey: ['deck', sessionCode] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
                 
-                // Show toast if another member changed the filters
-                if (sessionData && data.userId !== sessionData.userId) {
+                if (userId && data.userId !== userId) {
                     toast.info(`${data.userName} changed the filters`, {
                         description: "The cards have been updated.",
                         position: 'top-right'
                     });
                 }
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.SETTINGS_UPDATED, (event: any) => {
+        const handleSettingsUpdated = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate session to get new settings
-                mutate('/api/session');
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
                 
-                // Show toast if another member changed the settings
-                if (sessionData && data.userId !== sessionData.userId) {
+                if (userId && data.userId !== userId) {
                     toast.info(`${data.userName} updated session settings`, {
                         description: "Rules and limits might have changed.",
                         position: 'top-right'
                     });
                 }
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.STATS_RESET, (event: any) => {
+        const handleStatsReset = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate stats
-                queryClient.invalidateQueries({ queryKey: ['session-stats'] });
-                // Invalidate SWR stats cache
-                mutate('/api/session/stats');
-                // Invalidate matches
-                mutate(['/api/session/matches', sessionCode]);
-                // Invalidate deck to refresh swipes
-                queryClient.invalidateQueries({ queryKey: ['deck', sessionCode] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.stats(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
                 
-                // Show toast
-                if (sessionData && data.userId !== sessionData.userId) {
+                if (userId && data.userId !== userId) {
                     toast.info(`${data.userName} reset session stats`, {
                         description: "All swipes and matches have been cleared.",
                         position: 'top-right'
                     });
                 }
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.USER_JOINED, (event: any) => {
+        const handleUserJoined = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate session members
-                mutate(['/api/session/members', sessionCode]);
-                // Invalidate deck to get fresh cards for new member configuration
-                queryClient.invalidateQueries({ queryKey: ['deck'] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
                 
-                // Show toast if another member joined
-                if (sessionData && data.userId !== sessionData.userId) {
+                if (userId && data.userId !== userId) {
                     toast.info(`${data.userName} joined the session`, {
                         position: 'top-right'
                     });
                 }
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.USER_LEFT, (event: any) => {
+        const handleUserLeft = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate session members
-                mutate(['/api/session/members', sessionCode]);
-                // Invalidate matches
-                mutate(['/api/session/matches', sessionCode]);
-                // Invalidate deck to refresh swipes
-                queryClient.invalidateQueries({ queryKey: ['deck'] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
                 
-                // Show toast
-                if (sessionData && data.userId !== sessionData.userId) {
+                if (userId && data.userId !== userId) {
                     toast.info(`${data.userName} left the session`, {
                         position: 'top-right'
                     });
                 }
             }
-        });
+        };
 
-        eventSource.addEventListener(EVENT_TYPES.LIKE_UPDATED, (event: any) => {
+        const handleLikeUpdated = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
-                // Invalidate likes list to update "liked by" avatars/counts
-                queryClient.invalidateQueries({ queryKey: ['likes'] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
             }
-        });
+        };
+
+        eventSource.addEventListener(EVENT_TYPES.SESSION_UPDATED, handleSessionUpdated as any);
+        eventSource.addEventListener(EVENT_TYPES.MATCH_FOUND, handleMatchFound as any);
+        eventSource.addEventListener(EVENT_TYPES.MATCH_REMOVED, handleMatchRemoved as any);
+        eventSource.addEventListener(EVENT_TYPES.FILTERS_UPDATED, handleFiltersUpdated as any);
+        eventSource.addEventListener(EVENT_TYPES.SETTINGS_UPDATED, handleSettingsUpdated as any);
+        eventSource.addEventListener(EVENT_TYPES.STATS_RESET, handleStatsReset as any);
+        eventSource.addEventListener(EVENT_TYPES.USER_JOINED, handleUserJoined as any);
+        eventSource.addEventListener(EVENT_TYPES.USER_LEFT, handleUserLeft as any);
+        eventSource.addEventListener(EVENT_TYPES.LIKE_UPDATED, handleLikeUpdated as any);
 
         return () => {
             eventSource.close();
         };
-    }, [sessionCode, mutate, sessionData, queryClient, openMovie]);
+    }, [sessionCode, userId, queryClient, openMovie, basePath]);
 }
 
 export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: (data: any) => void) {
     useEffect(() => {
         if (!qcSecret) return;
 
-        // Use polling instead of SSE for quick connect to avoid secret consumption issues
-        // and because it's more reliable across different environments.
         const poll = async () => {
             try {
                 const res = await apiClient.post("/api/auth/quick-connect", { secret: qcSecret });
@@ -198,7 +195,6 @@ export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: 
             }
         }, 5000);
 
-        // Initial poll
         poll();
 
         return () => {

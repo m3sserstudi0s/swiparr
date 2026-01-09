@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -36,14 +37,23 @@ export const ticksToTime = (ticks?: number) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-export function getErrorMessage(error: any, fallback: string = "An unexpected error occurred") {
+export function getErrorMessage(error: unknown, fallback: string = "An unexpected error occurred") {
+  // If it's an Axios error, look inside the response
+  if (isAxiosError(error)) {
+    const serverMessage = error.response?.data?.message || error?.response?.data?.error;
+    if (serverMessage) return serverMessage;
+    
+    // Fallback for network errors (no response)
+    if (error.code === 'ECONNABORTED') return "Request timed out";
+    if (!error.response) return "Cannot connect to server";
+  }
+
+  // If it's a standard Error object
+  if (error instanceof Error) return error.message;
+
   if (typeof error === "string") return error;
-  if (error?.response?.data?.error) {
-    return error.response.data.error;
-  }
-  if (error?.message) {
-    return error.message;
-  }
+
+  // Final fallback
   return fallback;
 }
 

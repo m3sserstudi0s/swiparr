@@ -2,7 +2,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Sparkles } from "lucide-react";
 import { MovieListItem } from "../movie/MovieListItem";
-import { JellyfinItem } from "@/types/swiparr";
+import { JellyfinItem } from "@/types";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 
 interface MatchesListProps {

@@ -31,6 +31,7 @@ export const sessionSettingsSchema = z.object({
     maxLeftSwipes: z.number().int().min(0).optional(),
     matchStrategy: z.enum(["atLeastTwo", "allMembers"]).optional(),
   }).optional(),
+  allowGuestLending: z.boolean().optional(),
 });
 
 export const libraryUpdateSchema = z.array(z.string());

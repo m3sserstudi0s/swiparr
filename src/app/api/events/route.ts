@@ -3,7 +3,7 @@ import { events, EVENT_TYPES } from "@/lib/events";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();

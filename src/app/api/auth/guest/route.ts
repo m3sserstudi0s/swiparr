@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { db, sessions, sessionMembers } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import { events, EVENT_TYPES } from "@/lib/events";
 

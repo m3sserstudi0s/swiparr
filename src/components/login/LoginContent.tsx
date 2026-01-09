@@ -15,6 +15,7 @@ import { Label } from "../ui/label";
 import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";
 import { getRuntimeConfig } from "@/lib/runtime-config";
+import { NextApiResponse } from "next";
 
 export default function LoginContent() {
   const [username, setUsername] = useState("");

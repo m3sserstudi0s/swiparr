@@ -1,7 +1,7 @@
 "use client";
 import React, { forwardRef, useRef, memo } from "react";
 
-import { JellyfinItem } from "@/types/swiparr";
+import { JellyfinItem } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Clock } from "lucide-react";

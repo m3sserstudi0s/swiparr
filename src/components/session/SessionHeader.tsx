@@ -4,11 +4,9 @@ import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
 import { useState } from "react";
 import { SessionSettingsSheet } from "./SessionSettingsSheet";
-import { useSWRConfig } from "swr";
 import { toast } from "sonner";
-import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";
-
+import { useUpdateSession } from "@/hooks/api";
 
 interface SessionHeaderProps {
   activeCode?: string;
@@ -18,7 +16,7 @@ interface SessionHeaderProps {
 
 export function SessionHeader({ activeCode, members, currentSettings }: SessionHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { mutate } = useSWRConfig();
+  const updateSession = useUpdateSession();
 
   const handleSaveSettings = async (settings: any) => {
     // Only save if it's different from current to avoid unnecessary patches
@@ -31,17 +29,15 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
 
     if (!hasChanged) return;
 
-    try {
-      await apiClient.patch("/api/session", { settings });
-      mutate("/api/session");
-      toast.success("Session settings updated");
-    } catch (err) {
-      toast.error("Failed to update settings", {
+    toast.promise(updateSession.mutateAsync({ settings }), {
+      loading: "Updating session settings...",
+      success: "Session settings updated",
+      error: (err) => ({
+        message: "Failed to update settings",
         description: getErrorMessage(err)
-      });
-    }
+      })
+    });
   };
-
 
   return (
     <>

@@ -13,7 +13,7 @@ import { RotateCcw, Users, Heart, X, Sparkles, TrendingUp, BarChart3, Infinity }
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
-import { SessionSettings, SessionStats } from "@/types/swiparr";
+import { SessionSettings, SessionStats } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";

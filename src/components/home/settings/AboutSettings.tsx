@@ -1,15 +1,13 @@
 "use client";
 
-import { BookOpenText, Code, Info, Loader2, AlertCircle, CircleCheck, Newspaper, ExternalLink, FileText, ArrowUp } from "lucide-react";
+import { BookOpenText, Code, Info, Loader2, AlertCircle, CircleCheck, ExternalLink, FileText, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import useSWR from "swr";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { GITHUB_URL } from "@/lib/constants";
 import { SettingsSection } from "./SettingsSection";
-import { apiClient, fetcher } from "@/lib/api-client";
-
 import { toast } from "sonner";
+import { useVersion } from "@/hooks/api";
 
 interface AboutSettingsProps {
     onShowUserGuide: () => void;
@@ -17,20 +15,16 @@ interface AboutSettingsProps {
 
 export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
     const { version: currentVersion } = useRuntimeConfig();
-    const { data: versionData, error: versionError, isLoading: isCheckingVersion, mutate } = useSWR(
-        "/api/version",
-        fetcher
-    );
+    const { data: versionData, error: versionError, isFetching: isCheckingVersion, refetch } = useVersion();
 
     const latestVersion = versionData?.version;
     const isLatest = latestVersion ? currentVersion >= latestVersion : true;
 
     const handleCheckUpdate = async () => {
-        const promise = mutate();
-        toast.promise(promise, {
+        toast.promise(refetch(), {
             loading: "Checking for updates...",
-            success: (data) => {
-                const latest = data?.version;
+            success: (res) => {
+                const latest = res.data?.version;
                 if (!latest) return "Could not check version";
                 return currentVersion >= latest 
                     ? "You are on the latest version" 

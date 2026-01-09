@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { db, sessions, sessionMembers, likes, hiddens } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { events, EVENT_TYPES } from "@/lib/events";
-import { SessionSettings } from "@/types/swiparr";
+import { SessionSettings } from "@/types";
 
 export async function POST() {
   const cookieStore = await cookies();

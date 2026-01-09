@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 
 import { sessionOptions } from "@/lib/session";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
-import { SessionData, JellyfinItem } from "@/types/swiparr";
+import { SessionData, JellyfinItem } from "@/types";
 import { shuffleWithSeed } from "@/lib/utils";
 import { getIncludedLibraries } from "@/lib/server/admin";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";

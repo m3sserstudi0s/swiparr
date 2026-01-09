@@ -1,17 +1,16 @@
 "use client";
 
-import { User, Shield, UserCircle, UserPlus } from "lucide-react";
+import { Shield, UserPlus } from "lucide-react";
 import { SettingsSection } from "./SettingsSection";
-import useSWR from "swr";
-import { fetcher } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession } from "@/hooks/api";
 
 export function AccountSettings() {
-    const { data: sessionStatus, isLoading } = useSWR("/api/session", fetcher);
+    const { data: sessionStatus, isLoading } = useSession();
 
-    if (isLoading) {
+    if (isLoading || !sessionStatus) {
         return (
             <SettingsSection title="Account">
                 <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
@@ -25,7 +24,7 @@ export function AccountSettings() {
         );
     }
 
-    const { userName, userId, isGuest, isAdmin } = sessionStatus || {};
+    const { userName, userId, isGuest, isAdmin } = sessionStatus;
 
     return (
         <SettingsSection title="Account">
@@ -40,7 +39,7 @@ export function AccountSettings() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                        <span className="text-base font-medium truncate">{userName || "Unknown User"}</span>
+                        <span className="text-base font-medium truncate">{userName}</span>
                         {isAdmin && (
                             <Badge variant="secondary" className="px-1 py-0 h-4 text-[10px] uppercase font-bold tracking-tighter">
                                 Admin

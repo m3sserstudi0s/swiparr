@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
 import { authenticateJellyfin } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { isAdmin, setAdminUserId } from "@/lib/server/admin";
 import { apiClient } from "@/lib/jellyfin/api";
 import axios from "axios";

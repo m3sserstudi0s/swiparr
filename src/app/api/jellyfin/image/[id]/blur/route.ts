@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import { getBlurDataURL } from "@/lib/server/image-blur";
 import { sessionOptions } from "@/lib/session";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

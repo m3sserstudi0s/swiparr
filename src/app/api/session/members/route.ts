@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { db, sessionMembers } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { SessionData } from "@/types/swiparr";
+import { SessionData } from "@/types";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();

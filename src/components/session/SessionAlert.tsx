@@ -5,13 +5,12 @@ import {
     AlertTitle,
 } from "@/components/ui/alert"
 import { useSettings } from "@/lib/settings"
-import useSWR from "swr"
-import { apiClient, fetcher } from "@/lib/api-client"
+import { useSession } from "@/hooks/api"
 import { Button } from "@/components/ui/button"
 
 export function SessionAlert() {
     const { settings, updateSettings } = useSettings();
-    const { data: sessionStatus } = useSWR("/api/session", fetcher);
+    const { data: sessionStatus } = useSession();
 
     const isGuest = sessionStatus?.isGuest || false;
 
