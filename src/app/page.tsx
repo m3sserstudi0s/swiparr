@@ -19,7 +19,7 @@ export default function Home() {
   useHotkeys("2", () => setTab("likes"), []);
 
   return (
-    <main className="overflow-hidden h-svh pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <main className="overflow-hidden h-svh">
       <DynamicBackground show={tab === "swipe"} />
       <div className="grid justify-center my-[3svh] relative">
 
@@ -52,7 +52,7 @@ export default function Home() {
               <CardDeck />
             </TabsContent>
             <TabsContent value="likes" className={cn("h-full px-6 outline-none mt-4 w-full sm:max-w-md min-w-0 transition-opacity duration ease-in-out opacity-100", tab != "likes" && "opacity-0")}>
-               <LikesList />
+              <LikesList />
             </TabsContent>
           </TabsContents>
         </Tabs>
