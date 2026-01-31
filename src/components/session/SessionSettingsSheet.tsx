@@ -131,7 +131,7 @@ export function SessionSettingsSheet({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="sm:max-w-md w-full flex flex-col p-0">
+      <SheetContent side="right" className="sm:max-w-md w-full flex flex-col">
         <SheetHeader className="border-b p-6 shrink-0">
           <SheetTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
