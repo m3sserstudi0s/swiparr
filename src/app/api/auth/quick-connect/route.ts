@@ -17,8 +17,8 @@ export async function GET() {
     await session.save();
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("[QuickConnect] Error:", error);
+  } catch (error: any) {
+    console.error("[QuickConnect] Error initiating:", error.message);
     return NextResponse.json({ message: "Quick connect not available" }, { status: 500 });
   }
 }

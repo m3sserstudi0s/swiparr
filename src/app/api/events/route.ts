@@ -147,6 +147,16 @@ export async function GET(request: NextRequest) {
             }, 30000);
 
             request.signal.addEventListener('abort', cleanup);
+            
+            // In some environments, the stream might be closed without abort signal
+            // This is a fallback to ensure we eventually clean up
+            const checkInterval = setInterval(() => {
+                if (request.signal.aborted) {
+                    cleanup();
+                    clearInterval(checkInterval);
+                }
+            }, 60000);
+
         },
         cancel() {
             // Handled via abort signal and internal state

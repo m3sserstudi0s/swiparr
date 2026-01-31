@@ -2,6 +2,10 @@ import sharp from "sharp";
 import { getCache, setCache } from "./cache";
 import { apiClient, getAuthenticatedHeaders, getJellyfinUrl } from "../jellyfin/api";
 
+// Limit sharp memory usage and cache
+sharp.cache({ items: 50, memory: 50 }); // 50MB max cache
+sharp.concurrency(2); // Limit CPU usage too
+
 const BLUR_CACHE_TTL = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 export async function getBlurDataURL(
@@ -31,8 +35,8 @@ export async function getBlurDataURL(
         
         setCache(cacheKey, blurDataURL, BLUR_CACHE_TTL);
         return blurDataURL;
-    } catch (error) {
-        console.error(`Failed to generate blurDataURL for ${itemId}:`, error);
+    } catch (error: any) {
+        console.error(`Failed to generate blurDataURL for ${itemId}:`, error.message);
         return undefined;
     }
 }
