@@ -140,7 +140,7 @@ export function SessionSettingsSheet({
           </SheetTitle>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-100px)]">
+        <ScrollArea className="h-[calc(100svh-100px)]">
           <div className="flex flex-col gap-8 pt-6 pb-12 px-6">
 
             {/* Statistics Section */}

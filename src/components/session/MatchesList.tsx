@@ -20,7 +20,7 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
           <Badge variant="secondary">{matches?.length}</Badge>
         )}
       </h3>
-      <ScrollArea className="h-[calc(100vh-350px)] pr-4 -mr-4 relative">
+      <ScrollArea className="h-[calc(100svh-350px)] pr-4 -mr-4 relative">
         {!activeCode ? (
           <div className="text-center text-muted-foreground text-sm py-8">
             <Empty>

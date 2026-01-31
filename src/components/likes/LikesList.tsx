@@ -27,7 +27,7 @@ export function LikesList() {
     const { data: likes, isLoading } = useLikes(sortBy, filterMode);
 
     return (
-        <div className="relative w-full mx-auto h-[calc(100vh-115px)] flex flex-col">
+        <div className="relative w-full mx-auto h-[calc(100svh-115px)] flex flex-col">
             {/* Header w/ Filter */}
             <div className="flex items-center justify-between">
                 <h2 className="text-sm text-muted-foreground font-medium">Showing {isLoading ? '?' : likes?.length || 0} {likes?.length == 1 ? 'like' : 'likes'}</h2>
@@ -40,7 +40,7 @@ export function LikesList() {
             </div>
 
             {/* List Content */}
-            <ScrollArea className="flex-1 h-[calc(100vh-135px)] -mr-5 pr-5">
+            <ScrollArea className="flex-1 h-[calc(100svh-135px)] -mr-5 pr-5">
                 {isLoading && <LikesSkeleton />}
 
                 {!isLoading && likes?.length === 0 && (

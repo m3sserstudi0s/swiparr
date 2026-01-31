@@ -178,7 +178,6 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
           onScroll={handleScroll} // Update motion value here
           className={cn(
             "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-3 no-scrollbar relative",
-            "pb-[env(safe-area-inset-bottom)]",
             "mask-[linear-gradient(to_bottom,transparent_0%,black_60px,black_calc(100%-80px),transparent_100%)]"
           )}>
 

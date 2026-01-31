@@ -89,7 +89,7 @@ export function SettingsSidebar() {
                         </div>
                     </SheetHeader>
 
-                    <ScrollArea className="flex-1 px-6 h-[calc(100vh-80px)]">
+                    <ScrollArea className="flex-1 px-6 h-[calc(100svh-80px)]">
                         <div className="space-y-8 py-8 pb-12">
                             <AccountSettings />
                             <GeneralSettings />
