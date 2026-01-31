@@ -41,7 +41,7 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
 
   return (
     <>
-      <SheetHeader className="px-0 pb-0 pt-3.5">
+      <SheetHeader className="px-0 pb-0 pt-2">
         <SheetTitle className="flex items-center mr-10 h-10">
           {activeCode ? <Button
             variant="outline"

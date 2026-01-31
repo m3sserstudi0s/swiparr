@@ -82,7 +82,7 @@ export function SettingsSidebar() {
                         <Menu className="size-5.5" />
                     </Button>
                 </SheetTrigger>
-                <SheetContent className="flex flex-col p-0 overflow-hidden">
+                <SheetContent className="flex flex-col overflow-hidden">
                     <SheetHeader className="p-6 pb-0">
                         <div className="flex items-center gap-2">
                             <SheetTitle>Settings</SheetTitle>
