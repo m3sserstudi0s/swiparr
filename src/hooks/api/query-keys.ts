@@ -10,6 +10,10 @@ export const QUERY_KEYS = {
     years: ["media", "years"] as const,
     ratings: ["media", "ratings"] as const,
     libraries: ["media", "libraries"] as const,
+    watchProviders: (region: string, sessionCode?: string | null) => ["media", "watchProviders", region, sessionCode] as const,
+  },
+  user: {
+    settings: ["user", "settings"] as const,
   },
   admin: {
     status: ["admin", "status"] as const,

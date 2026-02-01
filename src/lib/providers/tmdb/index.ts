@@ -11,7 +11,8 @@ import {
   MediaLibrary, 
   MediaGenre, 
   MediaYear, 
-  MediaRating 
+  MediaRating,
+  WatchProvider
 } from "@/types/media";
 
 export class TmdbProvider implements MediaProvider {
@@ -23,7 +24,7 @@ export class TmdbProvider implements MediaProvider {
     hasQuickConnect: false,
     hasWatchlist: false,
     hasLibraries: false,
-    hasSettings: false,
+    hasSettings: true,
     requiresServerUrl: false,
   };
 
@@ -50,6 +51,12 @@ export class TmdbProvider implements MediaProvider {
         page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1,
         with_genres: filters.genres?.map(name => genreIdMap.get(name)).filter(Boolean).join(','),
     };
+
+    if (filters.watchProviders && filters.watchProviders.length > 0) {
+        discoverOptions.with_watch_providers = filters.watchProviders.join('|');
+        discoverOptions.watch_region = filters.watchRegion || 'SE';
+        discoverOptions.with_watch_monetization_types = 'flatrate';
+    }
 
     if (filters.years && filters.years.length > 0) {
         const minYear = Math.min(...filters.years);
@@ -94,7 +101,7 @@ export class TmdbProvider implements MediaProvider {
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
-    const movie = await this.client.movies.details(parseInt(id), ['credits', 'images' as any]);
+    const movie = await this.client.movies.details(parseInt(id), ['credits', 'images' as any, 'watch/providers' as any]);
     return this.mapMovieDetailsToMediaItem(movie as any);
   }
 
@@ -118,6 +125,15 @@ export class TmdbProvider implements MediaProvider {
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
     return []; 
+  }
+
+  async getWatchProviders(region: string): Promise<WatchProvider[]> {
+    const res = await this.client.watchProviders.getMovieProviders({ watch_region: region as any });
+    return res.results.map(p => ({
+      Id: p.provider_id.toString(),
+      Name: p.provider_name,
+      LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`,
+    }));
   }
 
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string): string {
@@ -207,6 +223,31 @@ export class TmdbProvider implements MediaProvider {
       },
       BackdropImageTags: movie.backdrop_path ? [movie.backdrop_path] : [],
       People: people,
+      WatchProviders: this.mapWatchProviders(movie['watch/providers']?.results),
     };
+  }
+
+  private mapWatchProviders(results: any): WatchProvider[] {
+    if (!results) return [];
+    // We'll take providers from a few common regions if the specific one isn't found, 
+    // or just aggregate flatrate from all. But better to use the one from settings.
+    // Since we don't have settings here easily, we'll try to find a region that has 'flatrate'.
+    const regions = Object.keys(results);
+    const flatrateProviders = new Map<number, WatchProvider>();
+
+    for (const region of regions) {
+        const providers = results[region]?.flatrate || [];
+        for (const p of providers) {
+            if (!flatrateProviders.has(p.provider_id)) {
+                flatrateProviders.set(p.provider_id, {
+                    Id: p.provider_id.toString(),
+                    Name: p.provider_name,
+                    LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`
+                });
+            }
+        }
+    }
+
+    return Array.from(flatrateProviders.values());
   }
 }

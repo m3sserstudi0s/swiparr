@@ -3,7 +3,8 @@ import {
   MediaLibrary, 
   MediaGenre, 
   MediaYear, 
-  MediaRating 
+  MediaRating,
+  WatchProvider
 } from "@/types/media";
 
 export interface ProviderCapabilities {
@@ -20,6 +21,8 @@ export interface SearchFilters {
   years?: number[];
   ratings?: string[];
   libraries?: string[];
+  watchProviders?: string[];
+  watchRegion?: string;
   searchTerm?: string;
   sortBy?: string;
   unplayedOnly?: boolean;
@@ -40,6 +43,7 @@ export interface MediaProvider {
   getYears(auth?: AuthContext): Promise<MediaYear[]>;
   getRatings(auth?: AuthContext): Promise<MediaRating[]>;
   getLibraries(auth?: AuthContext): Promise<MediaLibrary[]>;
+  getWatchProviders?(region: string, auth?: AuthContext): Promise<WatchProvider[]>;
 
   // Images
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string): string;

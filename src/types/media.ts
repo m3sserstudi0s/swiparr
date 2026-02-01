@@ -38,6 +38,7 @@ export interface MediaItem {
     Likes?: boolean;
   };
   BlurDataURL?: string;
+  WatchProviders?: WatchProvider[];
   likedBy?: {
     userId: string;
     userName: string;
@@ -64,4 +65,10 @@ export interface MediaYear {
 export interface MediaRating {
   Name: string;
   Value: string;
+}
+
+export interface WatchProvider {
+  Id: string;
+  Name: string;
+  LogoPath: string;
 }

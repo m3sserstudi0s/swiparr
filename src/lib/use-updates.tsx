@@ -43,6 +43,7 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: ["media", "watchProviders"] });
             }
         };
 
@@ -123,6 +124,7 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: ["media", "watchProviders"] });
                 
                 if (userId && data.userId !== userId) {
                     toast.info(`${data.userName} joined the session`, {
@@ -138,6 +140,7 @@ export function useUpdates() {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: ["media", "watchProviders"] });
                 
                 if (userId && data.userId !== userId) {
                     toast.info(`${data.userName} left the session`, {

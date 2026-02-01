@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 
-import { db, likes, hiddens, sessions } from "@/lib/db";
+import { db, likes, hiddens, sessions, sessionMembers, config as configTable } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
 
 import { sessionOptions } from "@/lib/session";
@@ -12,6 +12,7 @@ import { shuffleWithSeed } from "@/lib/utils";
 import { getIncludedLibraries } from "@/lib/server/admin";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -26,21 +27,13 @@ export async function GET(request: NextRequest) {
     try {
         const auth = await getEffectiveCredentials(session);
         const provider = getMediaProvider();
+        const runtimeConfig = getRuntimeConfig();
 
         // 0. Get admin-defined libraries
         const includedLibraries = await getIncludedLibraries();
 
-        // If searchTerm is provided, we bypass normal deck logic and just search
-        if (searchTerm) {
-            const results = await provider.getItems({ 
-                searchTerm, 
-                libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
-                limit: 20 
-            }, auth);
-            return NextResponse.json({ items: results, hasMore: false });
-        }
-
         // 1. Get existing interactions from DB (Likes and Hiddens)
+
         const [liked, hidden] = await Promise.all([
             db.select({ externalId: likes.externalId })
               .from(likes)
@@ -73,6 +66,52 @@ export async function GET(request: NextRequest) {
               })()
             : session.soloFilters;
 
+        // Watch Providers Logic
+        let watchProviders = sessionFilters?.watchProviders;
+        let watchRegion = sessionFilters?.watchRegion || "SE";
+
+        if (!watchProviders && runtimeConfig.provider === "tmdb") {
+            const accumulated = new Set<string>();
+            if (session.sessionCode) {
+                const sessionMembersList = await db.query.sessionMembers.findMany({
+                    where: eq(sessionMembers.sessionCode, session.sessionCode)
+                });
+                sessionMembersList.forEach(m => {
+                    if (m.settings) {
+                        try {
+                            const s = JSON.parse(m.settings);
+                            if (s.watchProviders) s.watchProviders.forEach((p: string) => accumulated.add(p));
+                            if (s.watchRegion) watchRegion = s.watchRegion;
+                        } catch(e) {}
+                    }
+                });
+            } else {
+                const userSettingsEntry = await db.query.config.findFirst({
+                    where: eq(configTable.key, `user_settings:${session.user.Id}`),
+                });
+                if (userSettingsEntry) {
+                    try {
+                        const s = JSON.parse(userSettingsEntry.value);
+                        if (s.watchProviders) s.watchProviders.forEach((p: string) => accumulated.add(p));
+                        if (s.watchRegion) watchRegion = s.watchRegion;
+                    } catch(e) {}
+                }
+            }
+            watchProviders = accumulated.size > 0 ? Array.from(accumulated) : undefined;
+        }
+
+        // If searchTerm is provided, we bypass normal deck logic and just search
+        if (searchTerm) {
+            const results = await provider.getItems({ 
+                searchTerm, 
+                libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
+                watchProviders,
+                watchRegion,
+                limit: 20 
+            }, auth);
+            return NextResponse.json({ items: results, hasMore: false });
+        }
+
         if (session.sessionCode) {
             // SESSION MODE: Seeded random
             
@@ -83,6 +122,8 @@ export async function GET(request: NextRequest) {
                 genres: sessionFilters?.genres,
                 years: sessionFilters?.yearRange ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange[0] + i) : undefined,
                 ratings: sessionFilters?.officialRatings,
+                watchProviders,
+                watchRegion,
                 limit: 1000, // Fetch a large batch for shuffling
             }, auth);
 
@@ -130,6 +171,8 @@ export async function GET(request: NextRequest) {
                 genres: sessionFilters?.genres,
                 years: soloYears,
                 ratings: sessionFilters?.officialRatings,
+                watchProviders,
+                watchRegion,
                 sortBy: "Random",
                 unplayedOnly: true,
                 limit: limit,

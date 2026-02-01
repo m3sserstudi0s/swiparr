@@ -4,6 +4,8 @@ export interface Filters {
   minCommunityRating?: number;
   officialRatings?: string[];
   runtimeRange?: [number, number];
+  watchProviders?: string[];
+  watchRegion?: string;
 }
 
 export interface SessionSettings {

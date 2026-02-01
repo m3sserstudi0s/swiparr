@@ -54,6 +54,7 @@ export const sessionMembers = sqliteTable("SessionMember", {
   sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
   externalUserId: text("externalUserId").notNull(),
   externalUserName: text("externalUserName").notNull(),
+  settings: text("settings"),
   joinedAt: text("joinedAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [

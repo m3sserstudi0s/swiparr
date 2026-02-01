@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Clock, Star, Users, HeartOff, Plus, Minus, Info } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MediaItem, Filters } from "@/types";
+import { MediaItem, Filters, WatchProvider } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform } from "framer-motion";
@@ -286,42 +286,45 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   </div>
                 )}
 
-                <div className="flex gap-2 mb-8 flex-wrap">
-                  <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
-
-                    <Button className="w-32" size="lg">
-                      <Play className="w-4 h-4 mr-2 fill-current" /> Play
-                    </Button>
-                  </Link>
-                  {!isGuest && capabilities.hasWatchlist && (
-                    <Button
-                      className="w-32"
+                {(capabilities.requiresServerUrl || (!isGuest && capabilities.hasWatchlist) || (movie.likedBy?.some(l => l.userId === sessionData?.userId))) &&
+                  <div className="flex gap-2 mb-8 flex-wrap">
+                    {capabilities.requiresServerUrl &&
+                      <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
+                        <Button className="w-32" size="lg">
+                          <Play className="w-4 h-4 mr-2 fill-current" /> Play
+                        </Button>
+                      </Link>
+                    }
+                    {!isGuest && capabilities.hasWatchlist && (
+                      <Button
+                        className="w-32"
+                        size="lg"
+                        variant={isInList ? "outline" : "secondary"}
+                        onClick={() => handleToggleWatchlist()}
+                        disabled={isTogglingWatchlist}
+                      >
+                        {isInList ? (
+                          <Minus className="w-4 h-4 mr-2" />
+                        ) : (
+                          <Plus className="w-4 h-4 mr-2" />
+                        )}
+                        {useWatchlist ? "Watchlist" : "Favorite"}
+                      </Button>
+                    )}
+                    {movie.likedBy?.some(l => l.userId === sessionData?.userId) && <Button
+                      variant="outline"
                       size="lg"
-                      variant={isInList ? "outline" : "secondary"}
-                      onClick={() => handleToggleWatchlist()}
-                      disabled={isTogglingWatchlist}
+                      className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnlike();
+                      }}
+                      disabled={isUnliking}
                     >
-                      {isInList ? (
-                        <Minus className="w-4 h-4 mr-2" />
-                      ) : (
-                        <Plus className="w-4 h-4 mr-2" />
-                      )}
-                      {useWatchlist ? "Watchlist" : "Favorite"}
-                    </Button>
-                  )}
-                  {movie.likedBy?.some(l => l.userId === sessionData?.userId) && <Button
-                    variant="outline"
-                    size="lg"
-                    className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUnlike();
-                    }}
-                    disabled={isUnliking}
-                  >
-                    <HeartOff className="w-5 h-5" />
-                  </Button>}
-                </div>
+                      <HeartOff className="w-5 h-5" />
+                    </Button>}
+                  </div>
+                }
 
                 {/* LIKED BY */}
                 {showLikedBy && movie.likedBy && movie.likedBy.length > 0 && sessionData?.code && (
@@ -330,6 +333,33 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     <UserAvatarList users={movie.likedBy} size="lg" />
                   </div>
                 )}
+
+                {/* WATCH PROVIDERS */}
+                {movie.WatchProviders && movie.WatchProviders.length > 0 && (
+                  <div className="mb-8 bg-muted/20 p-4 rounded-xl border border-border/50">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                      Available On
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {movie.WatchProviders.map((provider: WatchProvider) => (
+                        <div key={provider.Id} className="flex items-center gap-2 bg-background/50 border rounded-lg px-2.5 py-1.5 shadow-sm">
+                          <div className="relative size-5 overflow-hidden rounded">
+                            <OptimizedImage
+                              src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
+                              alt={provider.Name}
+                              className="object-cover"
+                              unoptimized
+                              width={20}
+                              height={20}
+                            />
+                          </div>
+                          <span className="text-[11px] font-medium leading-none">{provider.Name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
 
                 {/* DETAILS ROW */}
                 <div className="grid grid-cols-2 gap-8 mb-8">

@@ -11,12 +11,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { RotateCcw, Star } from "lucide-react";
+import { RotateCcw, Star, Check } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
-import { useFilters } from "@/hooks/api";
-import { MediaGenre, MediaRating, MediaYear } from "@/types/media";
+import { useFilters, useSession, useWatchProviders, useUserSettings } from "@/hooks/api";
+import { MediaGenre, MediaRating, MediaYear, WatchProvider } from "@/types/media";
+import { OptimizedImage } from "../ui/optimized-image";
+import { UserAvatarList } from "../session/UserAvatarList";
+import { useRuntimeConfig } from "@/lib/runtime-config";
+import { cn } from "@/lib/utils";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -28,11 +32,23 @@ interface FilterDrawerProps {
 export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: FilterDrawerProps) {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
+  const [selectedWatchProviders, setSelectedWatchProviders] = useState<string[]>([]);
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
   
+  const { provider } = useRuntimeConfig();
+  const { data: session } = useSession();
+  const { data: userSettings, isLoading: isLoadingSettings } = useUserSettings();
   const { genres, years, ratings, isLoading } = useFilters(open);
+
+  const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(
+    userSettings?.watchRegion || "SE",
+    session?.code
+  );
+
+  const availableWatchProviders = watchProvidersData?.providers || [];
+  const members = watchProvidersData?.members || [];
 
   const formatRuntime = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -60,12 +76,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     if (open && !isLoading) {
       const genresList = currentFilters?.genres || [];
       const officialRatings = currentFilters?.officialRatings || [];
+      const watchProviders = currentFilters?.watchProviders || availableWatchProviders.map(p => p.Id);
       const yearRange = currentFilters?.yearRange || [minYearLimit, maxYearLimit];
       const runtimeRange = currentFilters?.runtimeRange || [0, 240];
       const minCommunityRating = currentFilters?.minCommunityRating || 0;
 
       setSelectedGenres(genresList);
       setSelectedRatings(officialRatings);
+      setSelectedWatchProviders(watchProviders);
       setYearRange(yearRange);
       setRuntimeRange(runtimeRange);
       setMinRating(minCommunityRating);
@@ -74,6 +92,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       const normalizedInitial = {
         genres: genresList,
         officialRatings,
+        watchProviders,
         yearRange: currentFilters?.yearRange,
         runtimeRange: currentFilters?.runtimeRange,
         minCommunityRating: minCommunityRating > 0 ? minCommunityRating : undefined
@@ -81,7 +100,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       initialFiltersRef.current = JSON.stringify(normalizedInitial);
       hasInitializedRef.current = true;
     }
-  }, [open, isLoading, minYearLimit, maxYearLimit, currentFilters]);
+  }, [open, isLoading, minYearLimit, maxYearLimit, currentFilters, availableWatchProviders]);
 
   useEffect(() => {
     if (!open && hasInitializedRef.current) {
@@ -91,6 +110,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       const newFilters: Filters = {
         genres: selectedGenres,
         officialRatings: selectedRatings,
+        watchProviders: selectedWatchProviders,
         yearRange: isYearDefault ? undefined : yearRange,
         runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
         minCommunityRating: minRating > 0 ? minRating : undefined
@@ -102,7 +122,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       hasInitializedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, minYearLimit, maxYearLimit, onSave, selectedGenres, selectedRatings, yearRange, runtimeRange, minRating]);
+  }, [open, minYearLimit, maxYearLimit, onSave, selectedGenres, selectedRatings, selectedWatchProviders, yearRange, runtimeRange, minRating]);
 
 
   const toggleGenre = (genreName: string) => {
@@ -121,9 +141,27 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     );
   };
 
+  const toggleWatchProvider = (id: string) => {
+    setSelectedWatchProviders((prev) =>
+      prev.includes(id)
+        ? prev.filter((p) => p !== id)
+        : [...prev, id]
+    );
+  };
+
+  const selectAllGenres = () => setSelectedGenres(genres.map(g => g.Name));
+  const deselectAllGenres = () => setSelectedGenres([]);
+  
+  const selectAllRatings = () => setSelectedRatings(ratings.map(r => r.Value));
+  const deselectAllRatings = () => setSelectedRatings([]);
+
+  const selectAllProviders = () => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
+  const deselectAllProviders = () => setSelectedWatchProviders([]);
+
   const resetAll = () => {
     setSelectedGenres([]);
     setSelectedRatings([]);
+    setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
     setYearRange([minYearLimit, maxYearLimit]);
     setRuntimeRange([0, 240]);
     setMinRating(0);
@@ -245,9 +283,15 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
             {/* Genres Section */}
             <div className="space-y-4">
-              <Label className="text-base font-semibold">
-                Genres
-              </Label>
+              <div className="flex justify-between items-center">
+                <Label className="text-base font-semibold">
+                  Genres
+                </Label>
+                <div className="flex gap-2">
+                    <button onClick={selectAllGenres} className="text-[10px] font-medium text-primary hover:underline">Select all</button>
+                    <button onClick={deselectAllGenres} className="text-[10px] font-medium text-muted-foreground hover:underline">Clear</button>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {genres?.map((genre: MediaGenre) => (
                   <Badge
@@ -262,12 +306,84 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               </div>
             </div>
 
+            {/* Watch Providers Section */}
+            {provider === "tmdb" && availableWatchProviders.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <Label className="text-base font-semibold">
+                    Streaming Services
+                    </Label>
+                    <div className="flex gap-2">
+                        <button onClick={selectAllProviders} className="text-[10px] font-medium text-primary hover:underline">Select all</button>
+                        <button onClick={deselectAllProviders} className="text-[10px] font-medium text-muted-foreground hover:underline">Clear</button>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {availableWatchProviders.map((p: WatchProvider & { MemberUserIds?: string[] }) => {
+                    const isSelected = selectedWatchProviders.includes(p.Id);
+                    const providerMembers = (p.MemberUserIds || [])
+                      .map(id => {
+                        const m = members.find(m => m.externalUserId === id);
+                        if (!m) return null;
+                        return { userId: m.externalUserId, userName: m.externalUserName };
+                      })
+                      .filter(Boolean) as { userId: string, userName: string }[];
+
+                    return (
+                      <button
+                        key={p.Id}
+                        onClick={() => toggleWatchProvider(p.Id)}
+                        className={cn(
+                          "relative flex items-center gap-2 p-3 rounded-xl border transition-all text-left group",
+                          isSelected
+                            ? "bg-primary/5 border-primary text-primary shadow-sm"
+                            : "bg-background hover:bg-muted/50 border-input text-muted-foreground"
+                        )}
+                      >
+                        <div className="relative size-8 shrink-0 rounded-lg overflow-hidden border group-hover:scale-105 transition-transform">
+                          <OptimizedImage
+                            src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
+                            alt={p.Name}
+                            className="object-cover"
+                            unoptimized
+                            width={32}
+                            height={32}
+                          />
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-xs font-medium truncate">{p.Name}</span>
+                          {providerMembers.length > 0 && (
+                            <UserAvatarList 
+                              users={providerMembers.map(m => ({ userId: m.userId, userName: m.userName }))} 
+                              size="sm" 
+                              className="mt-1"
+                            />
+                          )}
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground rounded-full p-0.5">
+                            <Check className="size-2.5" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Official Ratings Section */}
             {ratings && ratings.length > 0 && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">
-                  Maturity Ratings
-                </Label>
+                <div className="flex justify-between items-center">
+                    <Label className="text-base font-semibold">
+                    Maturity Ratings
+                    </Label>
+                    <div className="flex gap-2">
+                        <button onClick={selectAllRatings} className="text-[10px] font-medium text-primary hover:underline">Select all</button>
+                        <button onClick={deselectAllRatings} className="text-[10px] font-medium text-muted-foreground hover:underline">Clear</button>
+                    </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {ratings.map((rating: MediaRating) => (
                     <Badge
@@ -290,7 +406,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               onClick={resetAll}
             >
               <RotateCcw className="size-4" />
-              Reset
+              Reset all
             </Button>
           </div>
         </ScrollArea>

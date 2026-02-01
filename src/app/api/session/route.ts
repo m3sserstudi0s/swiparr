@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { db, sessions, sessionMembers, likes, hiddens } from "@/lib/db";
+import { db, sessions, sessionMembers, likes, hiddens, config as configTable } from "@/lib/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
@@ -48,13 +48,21 @@ export async function POST(request: NextRequest) {
 
         // Register member
         try {
+            const userSettingsEntry = await db.query.config.findFirst({
+                where: eq(configTable.key, `user_settings:${session.user.Id}`),
+            });
+
             await db.insert(sessionMembers).values({
                 sessionCode: code,
                 externalUserId: session.user.Id,
                 externalUserName: session.user.Name,
-            }).onConflictDoNothing();
+                settings: userSettingsEntry?.value || null,
+            }).onConflictDoUpdate({
+                target: [sessionMembers.sessionCode, sessionMembers.externalUserId],
+                set: { settings: userSettingsEntry?.value || null }
+            });
         } catch (e) {
-            // Ignore if already member
+            console.error("Failed to register member or settings", e);
         }
 
         session.sessionCode = code;
@@ -81,10 +89,15 @@ export async function POST(request: NextRequest) {
         });
 
         // Register host as member
+        const userSettingsEntry = await db.query.config.findFirst({
+            where: eq(configTable.key, `user_settings:${session.user.Id}`),
+        });
+
         await db.insert(sessionMembers).values({
             sessionCode: code,
             externalUserId: session.user.Id,
             externalUserName: session.user.Name,
+            settings: userSettingsEntry?.value || null,
         });
 
 

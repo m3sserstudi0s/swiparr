@@ -39,3 +39,8 @@ export const libraryUpdateSchema = z.array(z.string());
 export const quickConnectSchema = z.object({
   secret: z.string().min(1),
 });
+
+export const userSettingsSchema = z.object({
+  watchProviders: z.array(z.string()).min(1, "At least one streaming service must be selected"),
+  watchRegion: z.string().min(2).max(2),
+});

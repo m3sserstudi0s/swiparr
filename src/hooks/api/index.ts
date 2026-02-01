@@ -9,3 +9,4 @@ export * from "./use-likes";
 export * from "./use-version";
 export * from "./use-admin";
 export * from "./use-filters";
+export * from "./use-user-settings";

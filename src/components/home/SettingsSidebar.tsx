@@ -31,6 +31,7 @@ import { AboutSettings } from "./settings/AboutSettings";
 import { AccountSettings } from "./settings/AccountSettings";
 import { AdminSettings } from "./settings/AdminSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
+import { StreamingSettings } from "./settings/StreamingSettings";
 import { DangerZone } from "./settings/DangerZone";
 
 export function SettingsSidebar() {
@@ -42,7 +43,7 @@ export function SettingsSidebar() {
 
     useHotkeys("s, ,", () => setOpen(prev => !prev), []);
 
-    const { basePath } = useRuntimeConfig();
+    const { basePath, provider } = useRuntimeConfig();
     const handleLogout = async () => {
         try {
             await apiClient.post("/api/auth/logout");
@@ -93,6 +94,7 @@ export function SettingsSidebar() {
                         <div className="space-y-8 py-8 pb-12">
                             <AccountSettings />
                             <GeneralSettings />
+                            {provider === "tmdb" && <StreamingSettings />}
                             <AdminSettings />
                             <AboutSettings onShowUserGuide={() => {
                                 setShowUserGuide(true);

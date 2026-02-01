@@ -43,6 +43,13 @@
       "when": 1769952020234,
       "tag": "0005_typical_agent_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1769980375179,
+      "tag": "0006_wealthy_phalanx",
+      "breakpoints": true
     }
   ]
 }
