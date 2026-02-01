@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
 import { Copy, Check, ShieldCheck, ArrowRight } from "lucide-react";
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
 import { Label } from "../ui/label";
 import { apiClient } from "@/lib/api-client";
-import { getErrorMessage } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 
 export default function LoginContent() {
@@ -46,6 +46,7 @@ export default function LoginContent() {
   useEffect(() => {
     if (sessionCodeParam || !capabilities.hasAuth) {
       setActiveTab("join");
+      sessionCodeParam && setGuestSessionCode(sessionCodeParam)
     }
   }, [sessionCodeParam, capabilities.hasAuth]);
 
@@ -165,12 +166,12 @@ export default function LoginContent() {
 
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
-        <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager"/>
+        <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager" />
         <CardTitle className="text-center text-2xl font-bold text-primary">
           Swiparr
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-70">
+      <CardContent className={cn(capabilities.hasAuth ? "h-80" : "h-40")}>
         {wasMadeAdmin ? (
           <div className="flex flex-col space-y-4 h-full">
             <Alert className="bg-primary/10 border-primary/20">
@@ -217,7 +218,7 @@ export default function LoginContent() {
                         </div>
                       </div>
                       <p className="text-xs text-center text-muted-foreground">
-                        Go to <span className="text-foreground font-semibold">Settings &gt; Quick Connect</span> on your logged-in device to authorize.
+                        Go to <span className="text-foreground font-semibold">Settings → Quick Connect</span> on your logged-in device to authorize.
                       </p>
                       <Button
                         variant="ghost"
@@ -230,6 +231,7 @@ export default function LoginContent() {
                     </div>
                   ) : (
                     <form onSubmit={handleLogin} className="space-y-3">
+                      <CardDescription>Enter your Jellyfin credentials</CardDescription>
                       <Input
                         placeholder="Username"
                         value={username}
@@ -264,12 +266,11 @@ export default function LoginContent() {
                 </TabsContent>
               </>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="text-center">
-                  <CardTitle className="text-lg font-medium">Create Profile</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">Enter a name to start swiping</p>
+                  <CardDescription>Enter a name to start swiping</CardDescription>
                 </div>
-                <form onSubmit={handleLogin} className="space-y-3">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <Input
                     placeholder="Display name"
                     value={username}
@@ -287,6 +288,7 @@ export default function LoginContent() {
             {capabilities.hasAuth && (
               <TabsContent value="join" className="space-y-4">
                 <form onSubmit={handleGuestLogin} className="space-y-3">
+                  <CardDescription>Enter a display name to continue</CardDescription>
                   <Input
                     placeholder="Display name"
                     value={guestName}
@@ -294,23 +296,25 @@ export default function LoginContent() {
                     className="bg-muted border-input"
                     autoFocus
                   />
-                  <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
                   {!sessionCodeParam && (
-                    <Input
-                      id="session-code"
-                      value={guestSessionCode}
-                      onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
-                      className="bg-muted border-input font-mono tracking-widest uppercase"
-                      maxLength={4}
-                    />
+                    <>
+                      <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
+                      <Input
+                        id="session-code"
+                        value={guestSessionCode}
+                        onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
+                        className="bg-muted border-input font-mono tracking-widest uppercase"
+                        maxLength={4}
+                      />
+                    </>
                   )}
                   <div className="pt-2">
                     <Button type="submit" className="w-full" disabled={loading || !guestName || !guestSessionCode}>
-                      {loading ? "Joining..." : "Join as Guest"}
+                      {loading ? "Joining..." : "Join"}
                     </Button>
                   </div>
                   <p className="text-xs text-center text-muted-foreground pt-2">
-                    Joining as a guest lets you swipe in a session without a Jellyfin account.
+                    Joining as a guest lets you swipe in a session without an account.
                   </p>
                 </form>
               </TabsContent>

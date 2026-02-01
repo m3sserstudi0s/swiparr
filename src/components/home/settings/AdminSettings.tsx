@@ -127,7 +127,7 @@ export function AdminSettings() {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <div className="grid grid-flow-col items-center justify-between gap-2">
                             <div className="space-y-0.5">
                                 <div className="flex items-center gap-1.5">
@@ -172,8 +172,6 @@ export function AdminSettings() {
                                 disabled={isLoadingConfig || updateConfigMutation.isPending}
                             />
                         </div>
-
-                        <div className="h-px bg-border my-2" />
 
                         {capabilities.hasLibraries && (
                             <Collapsible

@@ -57,7 +57,7 @@ export function AccountSettings() {
                         ) : provider === "tmdb" ? (
                             <>
                                 <Globe className="size-3" />
-                                Global Profile
+                                Universal Profile
                             </>
                         ) : (
                             <>
