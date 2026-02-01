@@ -4,7 +4,6 @@ import { sessionOptions } from "@/lib/session";
 import { db, likes, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, desc } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getMediaProvider } from "@/lib/providers/factory";

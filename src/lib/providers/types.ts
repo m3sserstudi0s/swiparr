@@ -47,6 +47,14 @@ export interface MediaProvider {
 
   // Auth (optional, based on capabilities)
   authenticate?(username: string, password?: string, deviceId?: string): Promise<any>;
+
+  // User Actions (optional)
+  toggleWatchlist?(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void>;
+  toggleFavorite?(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void>;
+
+  // Quick Connect (optional)
+  initiateQuickConnect?(deviceId: string): Promise<any>;
+  checkQuickConnect?(secret: string, deviceId: string): Promise<any>;
 }
 
 export interface AuthContext {

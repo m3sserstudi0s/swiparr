@@ -1,6 +1,7 @@
 import { db, sessions } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { SessionData } from "@/types";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export class GuestKickedError extends Error {
     constructor() {
@@ -10,6 +11,8 @@ export class GuestKickedError extends Error {
 }
 
 export async function getEffectiveCredentials(session: SessionData) {
+    const { capabilities } = getRuntimeConfig();
+    
     if (!session.user?.isGuest) {
         return {
             accessToken: session.user?.AccessToken,
@@ -30,12 +33,12 @@ export async function getEffectiveCredentials(session: SessionData) {
         throw new Error("Session not found");
     }
 
-    if (!currentSession.hostAccessToken) {
+    if (capabilities.hasAuth && !currentSession.hostAccessToken) {
         throw new GuestKickedError();
     }
 
     return {
-        accessToken: currentSession.hostAccessToken,
+        accessToken: currentSession.hostAccessToken || "",
         deviceId: currentSession.hostDeviceId || "guest-device",
         userId: currentSession.hostUserId
     };

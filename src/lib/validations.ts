@@ -2,12 +2,12 @@ import { z } from "zod";
 
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().optional(),
 });
 
 export const guestLoginSchema = z.object({
   username: z.string().min(1, "Username is required").max(50),
-  sessionCode: z.string().length(4, "Session code must be 4 characters").optional().or(z.literal("")),
+  sessionCode: z.string().max(4).optional().or(z.literal("")),
 });
 
 export const swipeSchema = z.object({

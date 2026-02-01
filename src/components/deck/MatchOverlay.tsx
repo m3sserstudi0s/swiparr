@@ -52,21 +52,21 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               <UserAvatarList users={item.likedBy} size="lg" className="mb-8" />
             )}
 
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="relative w-64 h-96 mb-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-primary/20"
-              onClick={() => { openMovie(item.Id); onClose(); }}
-            >
-              <OptimizedImage
-                src={`/api/media/image/${item.Id}`}
-                alt={item.Name}
-                externalId={item.Id}
-                blurDataURL={item.BlurDataURL}
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="relative w-64 h-96 mb-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-primary/20"
+                onClick={() => { openMovie(item.Id); onClose(); }}
+              >
+                <OptimizedImage
+                  src={`/api/media/image/${item.Id}?tag=${item.ImageTags?.Primary}`}
+                  alt={item.Name}
+                  externalId={item.Id}
+                  blurDataURL={item.BlurDataURL}
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
 
             <motion.div
               initial={{ y: 20, opacity: 0 }}

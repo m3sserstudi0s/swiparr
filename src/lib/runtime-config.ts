@@ -44,6 +44,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     capabilities.hasQuickConnect = false;
     capabilities.hasWatchlist = false;
     capabilities.hasLibraries = false;
+    capabilities.hasSettings = false;
     capabilities.requiresServerUrl = false;
   }
   

@@ -14,11 +14,10 @@ import logo from "../../../public/icon0.svg"
 import { Label } from "../ui/label";
 import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";
-import { getRuntimeConfig } from "@/lib/runtime-config";
-import { NextApiResponse } from "next";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 
 export default function LoginContent() {
-  const { capabilities } = getRuntimeConfig();
+  const { capabilities, basePath } = useRuntimeConfig();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [guestName, setGuestName] = useState("");
@@ -64,7 +63,6 @@ export default function LoginContent() {
   };
 
   const onAuthorized = useCallback((data?: any) => {
-    const { basePath } = getRuntimeConfig();
     if (data?.wasMadeAdmin) {
       setWasMadeAdmin(true);
       setLoading(false);
@@ -72,7 +70,7 @@ export default function LoginContent() {
       const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
       window.location.href = callbackUrl;
     }
-  }, [searchParams]);
+  }, [searchParams, basePath]);
 
   useQuickConnectUpdates(qcSecret, onAuthorized);
 
@@ -80,7 +78,6 @@ export default function LoginContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { basePath } = getRuntimeConfig();
 
     const promise = async () => {
       const res = await apiClient.post("/api/auth/login", { username, password });
@@ -88,7 +85,7 @@ export default function LoginContent() {
     };
 
     toast.promise(promise(), {
-      loading: "Logging in...",
+      loading: capabilities.hasAuth ? "Logging in..." : "Initializing...",
       success: (data) => {
         if (data.wasMadeAdmin) {
           setWasMadeAdmin(true);
@@ -98,7 +95,7 @@ export default function LoginContent() {
         const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
         window.location.href = callbackUrl;
         setLoading(false);
-        return "Logged in successfully";
+        return capabilities.hasAuth ? "Logged in successfully" : "Profile created";
       },
       error: (err) => {
         setLoading(false);
@@ -110,7 +107,6 @@ export default function LoginContent() {
 
   const handleGuestLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { basePath } = getRuntimeConfig();
     const code = sessionCodeParam || guestSessionCode;
     if (!guestName || !code) return;
     setLoading(true);
@@ -135,7 +131,6 @@ export default function LoginContent() {
   };
 
   const continueToApp = () => {
-    const { basePath } = getRuntimeConfig();
     const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
     window.location.href = callbackUrl;
   };
@@ -269,50 +264,57 @@ export default function LoginContent() {
                 </TabsContent>
               </>
             ) : (
-              <div className="mb-4 text-center">
-                <CardTitle className="text-lg font-medium">Create Profile</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Enter a name to start swiping</p>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <CardTitle className="text-lg font-medium">Create Profile</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Enter a name to start swiping</p>
+                </div>
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <Input
+                    placeholder="Display name"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="bg-muted border-input"
+                    autoFocus
+                  />
+                  <Button type="submit" className="w-full" disabled={loading || !username}>
+                    {loading ? "Starting..." : "Start"}
+                  </Button>
+                </form>
               </div>
             )}
 
-            <TabsContent value="join" className="space-y-4">
-              <form onSubmit={handleGuestLogin} className="space-y-3">
-                <Input
-                  placeholder="Display name"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  className="bg-muted border-input"
-                  autoFocus
-                />
-                {capabilities.hasAuth && (
-                  <>
-                    <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
-                    {!sessionCodeParam && (
-                      <Input
-                        id="session-code"
-                        value={guestSessionCode}
-                        onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
-                        className="bg-muted border-input font-mono tracking-widest uppercase"
-                        maxLength={4}
-                      />
-                    )}
-                  </>
-                )}
-                {!capabilities.hasAuth && !sessionCodeParam && !guestSessionCode && (
-                   <p className="text-[10px] text-muted-foreground italic">A new session will be created automatically.</p>
-                )}
-                <div className="pt-2">
-                  <Button type="submit" className="w-full" disabled={loading || !guestName || (capabilities.hasAuth && !sessionCodeParam && !guestSessionCode)}>
-                    {loading ? "Joining..." : (capabilities.hasAuth ? "Join as Guest" : "Start Swiping")}
-                  </Button>
-                </div>
-                {capabilities.hasAuth && (
+            {capabilities.hasAuth && (
+              <TabsContent value="join" className="space-y-4">
+                <form onSubmit={handleGuestLogin} className="space-y-3">
+                  <Input
+                    placeholder="Display name"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="bg-muted border-input"
+                    autoFocus
+                  />
+                  <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
+                  {!sessionCodeParam && (
+                    <Input
+                      id="session-code"
+                      value={guestSessionCode}
+                      onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
+                      className="bg-muted border-input font-mono tracking-widest uppercase"
+                      maxLength={4}
+                    />
+                  )}
+                  <div className="pt-2">
+                    <Button type="submit" className="w-full" disabled={loading || !guestName || !guestSessionCode}>
+                      {loading ? "Joining..." : "Join as Guest"}
+                    </Button>
+                  </div>
                   <p className="text-xs text-center text-muted-foreground pt-2">
                     Joining as a guest lets you swipe in a session without a Jellyfin account.
                   </p>
-                )}
-              </form>
-            </TabsContent>
+                </form>
+              </TabsContent>
+            )}
           </Tabs>
         )}
       </CardContent>

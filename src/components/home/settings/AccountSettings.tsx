@@ -1,13 +1,15 @@
 "use client";
 
-import { Shield, UserPlus } from "lucide-react";
+import { Shield, UserPlus, Globe } from "lucide-react";
 import { SettingsSection } from "./SettingsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "@/hooks/api";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 
 export function AccountSettings() {
+    const { capabilities, provider } = useRuntimeConfig();
     const { data: sessionStatus, isLoading } = useSession();
 
     if (isLoading || !sessionStatus) {
@@ -52,10 +54,15 @@ export function AccountSettings() {
                                 <UserPlus className="size-3" />
                                 Guest Account
                             </>
+                        ) : provider === "tmdb" ? (
+                            <>
+                                <Globe className="size-3" />
+                                Global Profile
+                            </>
                         ) : (
                             <>
                                 <Shield className="size-3" />
-                                Jellyfin Account
+                                {provider.charAt(0).toUpperCase() + provider.slice(1)} Account
                             </>
                         )}
                     </div>

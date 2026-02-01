@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -20,29 +20,15 @@ export async function POST(request: NextRequest) {
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
 
   try {
-    const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+    const auth = await getEffectiveCredentials(session);
+    const provider = getMediaProvider();
 
-    if (useWatchlist) {
-      // Kefwin Tweaks / Jellyfin Enhanced Watchlist
-      // This uses the Likes property via the Item Rating endpoint
-      // POST /Users/{userId}/Items/{itemId}/Rating?Likes=true
-      const url = getJellyfinUrl(`/Users/${userId}/Items/${itemId}/Rating`);
-      await apiClient.post(
-        url,
-        null,
-        { 
-            params: { Likes: action === "add" },
-            headers: getAuthenticatedHeaders(accessToken!, deviceId!)
-        }
-      );
+    if (useWatchlist && provider.toggleWatchlist) {
+      await provider.toggleWatchlist(itemId, action, auth);
+    } else if (!useWatchlist && provider.toggleFavorite) {
+      await provider.toggleFavorite(itemId, action, auth);
     } else {
-      // Standard Favorites
-      const url = getJellyfinUrl(`/Users/${userId}/FavoriteItems/${itemId}`);
-      if (action === "add") {
-        await apiClient.post(url, null, { headers: getAuthenticatedHeaders(accessToken!, deviceId!) });
-      } else {
-        await apiClient.delete(url, { headers: getAuthenticatedHeaders(accessToken!, deviceId!) });
-      }
+      return NextResponse.json({ error: "Operation not supported by this provider" }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });

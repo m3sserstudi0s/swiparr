@@ -96,7 +96,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
         isCondensed ? "relative shrink-0 w-15 h-22" : "relative shrink-0 w-20 h-28",
       )}>
         <OptimizedImage
-          src={`/api/media/image/${movie.Id}`}
+          src={`/api/media/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
           alt={movie.Name}
           externalId={movie.Id}
           height={100}

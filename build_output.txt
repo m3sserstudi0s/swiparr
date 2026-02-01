@@ -1,0 +1,45 @@
+
+> swiparr@0.1.64 build
+> next build
+
+▲ Next.js 16.1.1 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./
+Failed to find font override values for font `Google Sans Flex`
+Skipping generating a fallback font.
+
+
+✓ Compiled successfully in 7.9s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+DB connecting to: /app/data/swiparr.db
+DB connecting to: /app/data/swiparr.db
+DB connecting to: /app/data/swiparr.db
+TypeError: Cannot open database because the directory does not exist
+    at module evaluation (.next/server/chunks/_2b287816._.js:14:30129)
+    at instantiateModule (.next/server/chunks/[turbopack]_runtime.js:740:9)
+    at getOrInstantiateModuleFromParent (.next/server/chunks/[turbopack]_runtime.js:763:12)
+    at Context.esmImport [as i] (.next/server/chunks/[turbopack]_runtime.js:228:20)
+    at instantiateModule (.next/server/chunks/[turbopack]_runtime.js:740:9)
+    at getOrInstantiateModuleFromParent (.next/server/chunks/[turbopack]_runtime.js:763:12)
+    at Context.esmImport [as i] (.next/server/chunks/[turbopack]_runtime.js:228:20)
+    at module evaluation (.next/server/chunks/[root-of-the-server]__3f71162d._.js:1:4421)
+DB connecting to: /app/data/swiparr.db
+TypeError: Cannot open database because the directory does not exist
+    at module evaluation (.next/server/chunks/_2b287816._.js:14:30129)
+    at instantiateModule (.next/server/chunks/[turbopack]_runtime.js:740:9)
+    at getOrInstantiateModuleFromParent (.next/server/chunks/[turbopack]_runtime.js:763:12)
+    at Context.esmImport [as i] (.next/server/chunks/[turbopack]_runtime.js:228:20)
+    at instantiateModule (.next/server/chunks/[turbopack]_runtime.js:740:9)
+    at getOrInstantiateModuleFromParent (.next/server/chunks/[turbopack]_runtime.js:763:12)
+    at Context.esmImport [as i] (.next/server/chunks/[turbopack]_runtime.js:228:20)
+    at module evaluation (.next/server/chunks/[root-of-the-server]__435c78a6._.js:1:3590)
+
+> Build error occurred
+Error: Failed to collect page data for /api/admin/status
+    at ignore-listed frames {
+  type: 'Error'
+}

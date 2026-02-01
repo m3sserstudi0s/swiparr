@@ -18,6 +18,11 @@ if (provider === 'jellyfin' && !process.env.JELLYFIN_URL) {
   process.exit(1);
 }
 
+if (provider === 'tmdb' && !process.env.TMDB_ACCESS_TOKEN) {
+  console.error('ERROR: TMDB_ACCESS_TOKEN is not set. Swiparr requires this to function with the tmdb provider.');
+  process.exit(1);
+}
+
 const getDefaultDbPath = () => {
   if (process.env.NODE_ENV === 'production') {
     return '/app/data/swiparr.db';

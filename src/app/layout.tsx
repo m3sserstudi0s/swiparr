@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Google_Sans_Flex, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { getRuntimeConfig } from '@/lib/runtime-config'
@@ -7,10 +7,9 @@ import { getUseStaticFilterValues } from '@/lib/server/admin'
 
 export const dynamic = 'force-dynamic';
 
-const sansFlex = Google_Sans_Flex({ 
+const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
-  adjustFontFallback: false,
   variable: '--font-sans',
 })
 
@@ -66,7 +65,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${sansFlex.variable} ${jetbrainsMono.variable}`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
 
         <Providers
           attribute="class"

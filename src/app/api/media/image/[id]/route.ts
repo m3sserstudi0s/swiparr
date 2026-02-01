@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import { apiClient } from "@/lib/jellyfin/api";
+import axios from "axios";
 import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
@@ -65,10 +66,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         Object.assign(headers, getAuthenticatedHeaders(accessToken, deviceId || "Swiparr"));
     }
 
-    const response = await apiClient.get(imageUrl, {
+    const response = await (provider.name === "tmdb" ? axios.get(imageUrl, { responseType: "arraybuffer" }) : apiClient.get(imageUrl, {
       responseType: "arraybuffer",
       headers,
-    });
+    }));
 
     const contentType = response.headers["content-type"] || "image/webp";
     

@@ -85,7 +85,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
             <Card className="relative h-full w-full overflow-hidden rounded-3xl border-border shadow-2xl select-none isolate transform-gpu">
               <div className="absolute inset-0 bg-muted pointer-events-none rounded-3xl">
                 <OptimizedImage
-                  src={`/api/media/image/${item.Id}`}
+                  src={`/api/media/image/${item.Id}?tag=${item.ImageTags?.Primary}`}
                   alt={item.Name}
                   externalId={item.Id}
                   blurDataURL={item.BlurDataURL}

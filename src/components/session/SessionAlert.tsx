@@ -6,9 +6,11 @@ import {
 } from "@/components/ui/alert"
 import { useSettings } from "@/lib/settings"
 import { useSession } from "@/hooks/api"
+import { useRuntimeConfig } from "@/lib/runtime-config"
 import { Button } from "@/components/ui/button"
 
 export function SessionAlert() {
+    const { capabilities } = useRuntimeConfig();
     const { settings, updateSettings } = useSettings();
     const { data: sessionStatus } = useSession();
 
@@ -26,7 +28,7 @@ export function SessionAlert() {
         )
     }
 
-    if (!settings.hasDismissedGuestLendingAlert && !settings.allowGuestLending && !isGuest) {
+    if (capabilities.hasAuth && !settings.hasDismissedGuestLendingAlert && !settings.allowGuestLending && !isGuest) {
         return (
             <Alert className="relative py-1.75 px-3 h-17 gap-y-1! gap-x-2!">
                 <Info className="size-4 text-primary" />

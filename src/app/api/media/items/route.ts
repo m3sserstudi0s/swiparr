@@ -20,9 +20,18 @@ export async function GET(request: NextRequest) {
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { searchParams } = new URL(request.url);
+    const searchTerm = searchParams.get("searchTerm") || undefined;
+
     try {
         const auth = await getEffectiveCredentials(session);
         const provider = getMediaProvider();
+
+        // If searchTerm is provided, we bypass normal deck logic and just search
+        if (searchTerm) {
+            const results = await provider.getItems({ searchTerm, limit: 20 }, auth);
+            return NextResponse.json(results.filter(item => !excludeIds.has(item.Id)));
+        }
 
         // 0. Get admin-defined libraries
         const includedLibraries = await getIncludedLibraries();

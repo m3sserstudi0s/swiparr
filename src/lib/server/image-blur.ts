@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { getCache, setCache } from "./cache";
-import { apiClient, getAuthenticatedHeaders, getJellyfinUrl } from "../jellyfin/api";
+import axios from "axios";
 
 // Limit sharp memory usage and cache
 sharp.cache({ items: 50, memory: 50 }); // 50MB max cache
@@ -10,20 +10,18 @@ const BLUR_CACHE_TTL = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 export async function getBlurDataURL(
     itemId: string,
-    accessToken: string,
-    deviceId: string,
-    imageType: string = "Primary"
+    imageUrl: string,
+    headers: any = {}
 ): Promise<string | undefined> {
-    const cacheKey = `blur_${itemId}_${imageType}`;
+    const cacheKey = `blur_${itemId}_${Buffer.from(imageUrl).toString('base64').substring(0, 32)}`;
     const cached = getCache<string>(cacheKey);
     if (cached) return cached;
 
     try {
-        const imageUrl = getJellyfinUrl(`/Items/${itemId}/Images/${imageType}?maxWidth=20&quality=50`);
-        
-        const response = await apiClient.get(imageUrl, {
+        const response = await axios.get(imageUrl, {
             responseType: "arraybuffer",
-            headers: getAuthenticatedHeaders(accessToken, deviceId),
+            headers,
+            timeout: 10000,
         });
 
         const buffer = Buffer.from(response.data);

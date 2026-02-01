@@ -168,7 +168,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   };
 
 
-  const { serverPublicUrl } = useRuntimeConfig();
+  const { serverPublicUrl, capabilities } = useRuntimeConfig();
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -293,7 +293,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       <Play className="w-4 h-4 mr-2 fill-current" /> Play
                     </Button>
                   </Link>
-                  {!isGuest && (
+                  {!isGuest && capabilities.hasWatchlist && (
                     <Button
                       className="w-32"
                       size="lg"
@@ -369,7 +369,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         <div key={person.Id} className="flex flex-col items-center gap-2 min-w-20 text-center">
                           <Avatar className="w-16 h-16 border border-border shadow-sm">
                             <AvatarImage
-                              src={`/api/media/image/${person.Id}?tag=${person.PrimaryImageTag}`}
+                              src={`/api/media/image/${person.Id}?tag=${person.PrimaryImageTag || person.Id}`}
                               className="object-cover"
                             />
                             <AvatarFallback className="bg-muted text-muted-foreground text-xs">
