@@ -62,17 +62,17 @@ export async function GET(request: NextRequest) {
         // 2. Query Media Provider
         let items: MediaItem[] = [];
 
+        const sessionFilters = session.sessionCode 
+            ? await (async () => {
+                const currentSession = await db.query.sessions.findFirst({
+                    where: eq(sessions.code, session.sessionCode!)
+                });
+                return currentSession?.filters ? JSON.parse(currentSession.filters) : null;
+              })()
+            : session.soloFilters;
+
         if (session.sessionCode) {
             // SESSION MODE: Seeded random
-            const currentSession = await db.query.sessions.findFirst({
-                where: eq(sessions.code, session.sessionCode)
-            });
-
-            const sessionFilters = currentSession?.filters ? JSON.parse(currentSession.filters) : null;
-            
-            // This part is still somewhat Jellyfin-specific in terms of how it fetches all items to shuffle.
-            // For TMDB, we might need a different strategy.
-            // For now, if it's Jellyfin, we can use the same logic but abstracted via provider.
             
             // Fetch items from provider with filters
             // To maintain seeded shuffle, we need ALL matching item IDs.
@@ -95,6 +95,11 @@ export async function GET(request: NextRequest) {
                     return true;
                 });
             }
+
+            // Client-side filtering for Community Rating (if not handled by provider)
+            if (sessionFilters?.minCommunityRating) {
+                filteredItems = filteredItems.filter(item => (item.CommunityRating || 0) >= sessionFilters.minCommunityRating);
+            }
             
             // Seeded shuffle
             const shuffledItems = shuffleWithSeed(filteredItems, session.sessionCode);
@@ -110,27 +115,32 @@ export async function GET(request: NextRequest) {
             }
         } else {
             // SOLO MODE: Normal random
-            const soloYears = session.soloFilters?.yearRange ? Array.from({ length: session.soloFilters.yearRange[1] - session.soloFilters.yearRange[0] + 1 }, (_, i) => session.soloFilters!.yearRange![0] + i) : undefined;
+            const soloYears = sessionFilters?.yearRange ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange[0] + i) : undefined;
             
             items = await provider.getItems({
                 libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
-                genres: session.soloFilters?.genres,
+                genres: sessionFilters?.genres,
                 years: soloYears,
-                ratings: session.soloFilters?.officialRatings,
+                ratings: sessionFilters?.officialRatings,
                 sortBy: "Random",
                 unplayedOnly: true,
                 limit: 100,
             }, auth);
             
             // Client-side filtering for Runtime in Solo mode
-            if (session.soloFilters?.runtimeRange) {
-                const [min, max] = session.soloFilters.runtimeRange;
+            if (sessionFilters?.runtimeRange) {
+                const [min, max] = sessionFilters.runtimeRange;
                 items = items.filter(item => {
                     const minutes = (item.RunTimeTicks || 0) / 600000000;
                     if (min && minutes < min) return false;
                     if (max && max < 240 && minutes > max) return false;
                     return true;
                 });
+            }
+
+            // Client-side filtering for Community Rating in Solo mode
+            if (sessionFilters?.minCommunityRating) {
+                items = items.filter(item => (item.CommunityRating || 0) >= sessionFilters.minCommunityRating);
             }
             
             items = items.filter(item => !excludeIds.has(item.Id)).slice(0, 50);

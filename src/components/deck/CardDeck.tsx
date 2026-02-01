@@ -202,7 +202,7 @@ export function CardDeck() {
   useHotkeys("right", () => handleSwipeAction("right"), { enabled: !isFilterOpen && activeDeck.length > 0 });
   useHotkeys("up", () => activeDeck[0] && openMovie(activeDeck[0].Id, {showLikedBy: false}), { enabled: !isFilterOpen && activeDeck.length > 0 });
 
-  if (isLoadingSession || (isLoading && displayDeck.length === 0)) {
+  if (isLoadingSession || (isLoading && displayDeck.length === 0) || (isFetching && activeDeck.length === 0)) {
     return <DeckLoading />;
   }
 

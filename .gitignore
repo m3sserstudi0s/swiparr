@@ -46,3 +46,4 @@ next-env.d.ts
 swiparr.db
 AGENTS.md
 .gemini/settings.json
+docs/*

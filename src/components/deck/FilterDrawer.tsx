@@ -10,15 +10,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { useQuery } from "@tanstack/react-query";
 import { Filters } from "@/types";
 import { RotateCcw, Star } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
-import { apiClient } from "@/lib/api-client";
 import { Skeleton } from "../ui/skeleton";
-import { useRuntimeConfig } from "@/lib/runtime-config";
-import { DEFAULT_GENRES, DEFAULT_RATINGS } from "@/lib/constants";
+import { useFilters } from "@/hooks/api";
+import { MediaGenre, MediaRating, MediaYear } from "@/types/media";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -33,7 +31,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
-  const { useStaticFilterValues } = useRuntimeConfig();
+  
+  const { genres, years, ratings, isLoading } = useFilters(open);
 
   const formatRuntime = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -45,70 +44,27 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const initialFiltersRef = useRef<string>("");
   const hasInitializedRef = useRef(false);
 
-  // Fetch available years to determine min/max
-  const { data: years, isLoading: isLoadingYears } = useQuery({
-    queryKey: ["years"],
-    queryFn: async () => {
-      if (useStaticFilterValues) {
-        return Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => ({ Name: (1900 + i).toString() }));
-      }
-      const res = await apiClient.get("/api/media/years");
-      return res.data;
-    },
-    enabled: open,
-    staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
-  });
-
   const minYearLimit = useMemo(() => {
-    if (useStaticFilterValues) return 1900;
     if (!years || years.length === 0) return 1900;
-    const yearNums = years.map((y: any) => parseInt(y.Name)).filter((n: any) => !isNaN(n));
+    const yearNums = years.map((y: MediaYear) => y.Value).filter((n) => !isNaN(n));
     return yearNums.length > 0 ? Math.min(...yearNums) : 1900;
-  }, [years, useStaticFilterValues]);
+  }, [years]);
 
   const maxYearLimit = useMemo(() => {
-    if (useStaticFilterValues) return new Date().getFullYear();
     if (!years || years.length === 0) return new Date().getFullYear();
-    const yearNums = years.map((y: any) => parseInt(y.Name)).filter((n: any) => !isNaN(n));
+    const yearNums = years.map((y: MediaYear) => y.Value).filter((n) => !isNaN(n));
     return yearNums.length > 0 ? Math.max(...yearNums) : new Date().getFullYear();
-  }, [years, useStaticFilterValues]);
-
-  // Fetch available genres
-  const { data: genres, isLoading: isLoadingGenres } = useQuery({
-    queryKey: ["genres"],
-    queryFn: async () => {
-      if (useStaticFilterValues) return DEFAULT_GENRES;
-      const res = await apiClient.get("/api/media/genres");
-      return res.data;
-    },
-    enabled: open,
-    staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
-  });
-
-  // Fetch available ratings
-  const { data: ratings, isLoading: isLoadingRatings } = useQuery({
-    queryKey: ["ratings"],
-    queryFn: async () => {
-      if (useStaticFilterValues) return DEFAULT_RATINGS;
-      const res = await apiClient.get("/api/media/ratings");
-      return res.data;
-    },
-    enabled: open,
-    staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
-  });
+  }, [years]);
 
   useEffect(() => {
-    if (open && !isLoadingYears) {
-      const genres = currentFilters?.genres || [];
+    if (open && !isLoading) {
+      const genresList = currentFilters?.genres || [];
       const officialRatings = currentFilters?.officialRatings || [];
       const yearRange = currentFilters?.yearRange || [minYearLimit, maxYearLimit];
       const runtimeRange = currentFilters?.runtimeRange || [0, 240];
       const minCommunityRating = currentFilters?.minCommunityRating || 0;
 
-      setSelectedGenres(genres);
+      setSelectedGenres(genresList);
       setSelectedRatings(officialRatings);
       setYearRange(yearRange);
       setRuntimeRange(runtimeRange);
@@ -116,7 +72,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
       // Store a normalized version of currentFilters for comparison
       const normalizedInitial = {
-        genres,
+        genres: genresList,
         officialRatings,
         yearRange: currentFilters?.yearRange,
         runtimeRange: currentFilters?.runtimeRange,
@@ -125,7 +81,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       initialFiltersRef.current = JSON.stringify(normalizedInitial);
       hasInitializedRef.current = true;
     }
-  }, [open, isLoadingYears, minYearLimit, maxYearLimit, currentFilters]);
+  }, [open, isLoading, minYearLimit, maxYearLimit, currentFilters]);
 
   useEffect(() => {
     if (!open && hasInitializedRef.current) {
@@ -173,7 +129,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setMinRating(0);
   };
 
-  if (isLoadingYears || isLoadingGenres || isLoadingRatings) {
+  if (isLoading) {
 
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -293,7 +249,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 Genres
               </Label>
               <div className="flex flex-wrap gap-2">
-                {genres?.map((genre: { Id: string; Name: string }) => (
+                {genres?.map((genre: MediaGenre) => (
                   <Badge
                     key={genre.Id}
                     variant={selectedGenres.includes(genre.Name) ? "default" : "outline"}
@@ -313,19 +269,20 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                   Maturity Ratings
                 </Label>
                 <div className="flex flex-wrap gap-2">
-                  {ratings.map((rating: string) => (
+                  {ratings.map((rating: MediaRating) => (
                     <Badge
-                      key={rating}
-                      variant={selectedRatings.includes(rating) ? "default" : "outline"}
+                      key={rating.Value}
+                      variant={selectedRatings.includes(rating.Value) ? "default" : "outline"}
                       className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
-                      onClick={() => toggleRating(rating)}
+                      onClick={() => toggleRating(rating.Value)}
                     >
-                      {rating}
+                      {rating.Name}
                     </Badge>
                   ))}
                 </div>
               </div>
             )}
+
 
             <Button
               variant="outline"

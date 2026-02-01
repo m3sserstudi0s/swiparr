@@ -84,11 +84,7 @@ export class TmdbProvider implements MediaProvider {
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    return [
-      { Name: "7+ Stars", Value: "7" },
-      { Name: "8+ Stars", Value: "8" },
-      { Name: "9+ Stars", Value: "9" },
-    ];
+    return []; // Return empty so hook uses fallback
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {

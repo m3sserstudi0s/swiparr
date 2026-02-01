@@ -35,6 +35,7 @@ export class JellyfinProvider implements MediaProvider {
         ParentId: filters.libraries?.join(",") || undefined,
         Genres: filters.genres?.join(",") || undefined,
         Years: filters.years?.join(",") || undefined,
+        OfficialRatings: filters.ratings?.join(",") || undefined,
         Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,
         MinCommunityRating: filters.ratings?.[0] || undefined, 
         Limit: filters.limit || 50,
@@ -68,12 +69,20 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    return [
-      { Name: "G", Value: "G" },
-      { Name: "PG", Value: "PG" },
-      { Name: "PG-13", Value: "PG-13" },
-      { Name: "R", Value: "R" },
-    ];
+    const res = await apiClient.get(getJellyfinUrl("/Items"), {
+      params: {
+        IncludeItemTypes: "Movie",
+        Recursive: true,
+        Fields: "OfficialRating",
+        EnableImages: false,
+      },
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+    });
+
+    const items = res.data.Items || [];
+    const ratings = Array.from(new Set(items.map((i: any) => i.OfficialRating).filter(Boolean))) as string[];
+    
+    return ratings.sort().map(r => ({ Name: r, Value: r }));
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
