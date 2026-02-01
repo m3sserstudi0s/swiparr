@@ -5,9 +5,10 @@ import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
-import { SessionData, type JellyfinItem, type MergedLike } from "@/types";
+import { SessionData, type MediaItem, type MergedLike } from "@/types";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -19,9 +20,10 @@ export async function GET(request: NextRequest) {
   const filter = searchParams.get("filter") || "all";
 
   try {
-    const { accessToken, deviceId } = await getEffectiveCredentials(session);
+    const auth = await getEffectiveCredentials(session);
+    const provider = getMediaProvider();
 
-    const conditions = [eq(likesTable.jellyfinUserId, session.user.Id)];
+    const conditions = [eq(likesTable.externalUserId, session.user.Id)];
 
     if (filter === "session") {
         conditions.push(isNotNull(likesTable.sessionCode));
@@ -35,16 +37,14 @@ export async function GET(request: NextRequest) {
 
     if (likesResult.length === 0) return NextResponse.json([]);
 
-    const ids = likesResult.map((l: Like) => l.jellyfinItemId).join(",");
-    const jellyfinRes = await apiClient.get(getJellyfinUrl(`/Items`), {
-        params: {
-            Ids: ids,
-            Fields: "ProductionYear,CommunityRating",
-        },
-        headers: getAuthenticatedHeaders(accessToken!, deviceId!),
-    });
-
-    const items: JellyfinItem[] = jellyfinRes.data.Items;
+    const ids = likesResult.map((l: Like) => l.externalId);
+    
+    // We should ideally use the provider here to get full details for multiple IDs
+    // For now, I'll assume we can loop or the provider has a getMultiple method.
+    // JellyfinProvider currently doesn't have getMultipleDetails, but we can call getItems with IDs if it supports it.
+    
+    // Let's add getItemsByIds to MediaProvider or just use getItemDetails in a loop (not ideal but safe for now)
+    const items = await Promise.all(ids.map(id => provider.getItemDetails(id, auth)));
 
     // Fetch all likes in this session for these items to identify contributors
     // Only if we have session items
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         allRelatedLikes = await db.query.likes.findMany({
             where: and(
                 inArray(likesTable.sessionCode, sessionCodes as string[]),
-                inArray(likesTable.jellyfinItemId, items.map(i => i.Id))
+                inArray(likesTable.externalId, items.map(i => i.Id))
             )
         });
         members = await db.query.sessionMembers.findMany({
@@ -64,9 +64,9 @@ export async function GET(request: NextRequest) {
         });
     }
 
-    let merged: MergedLike[] = items.map((item: JellyfinItem) => {
-        const likeData = likesResult.find((l: Like) => l.jellyfinItemId === item.Id);
-        const itemLikes = allRelatedLikes.filter(l => l.jellyfinItemId === item.Id && l.sessionCode === likeData?.sessionCode);
+    let merged: MergedLike[] = items.map((item: MediaItem) => {
+        const likeData = likesResult.find((l: Like) => l.externalId === item.Id);
+        const itemLikes = allRelatedLikes.filter(l => l.externalId === item.Id && l.sessionCode === likeData?.sessionCode);
         
         return {
             ...item,
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
             sessionCode: likeData?.sessionCode,
             isMatch: likeData?.isMatch ?? false,
             likedBy: itemLikes.map(l => ({
-                userId: l.jellyfinUserId,
-                userName: members.find(m => m.jellyfinUserId === l.jellyfinUserId && m.sessionCode === l.sessionCode)?.jellyfinUserName || "Unknown"
+                userId: l.externalUserId,
+                userName: members.find(m => m.externalUserId === l.externalUserId && m.sessionCode === l.sessionCode)?.externalUserName || "Unknown"
             }))
         };
     });
@@ -120,8 +120,8 @@ export async function DELETE(request: NextRequest) {
     // Delete the user's like for this item
     await db.delete(likesTable).where(
         and(
-            eq(likesTable.jellyfinUserId, session.user.Id),
-            eq(likesTable.jellyfinItemId, itemId),
+            eq(likesTable.externalUserId, session.user.Id),
+            eq(likesTable.externalId, itemId),
             targetSessionCode ? eq(likesTable.sessionCode, targetSessionCode) : isNull(likesTable.sessionCode)
         )
     );
@@ -131,7 +131,7 @@ export async function DELETE(request: NextRequest) {
         const remainingLikes = await db.query.likes.findMany({
             where: and(
                 eq(likesTable.sessionCode, targetSessionCode),
-                eq(likesTable.jellyfinItemId, itemId)
+                eq(likesTable.externalId, itemId)
             )
         });
 
@@ -142,7 +142,7 @@ export async function DELETE(request: NextRequest) {
                 .where(
                     and(
                         eq(likesTable.sessionCode, targetSessionCode),
-                        eq(likesTable.jellyfinItemId, itemId)
+                        eq(likesTable.externalId, itemId)
                     )
                 );
         }

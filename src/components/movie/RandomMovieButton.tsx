@@ -4,11 +4,11 @@ import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMovieDetail } from "./MovieDetailProvider";
-import { JellyfinItem } from "@/types";
+import { MediaItem } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface RandomMovieButtonProps {
-    items: JellyfinItem[] | undefined;
+    items: MediaItem[] | undefined;
     className?: string;
 }
 

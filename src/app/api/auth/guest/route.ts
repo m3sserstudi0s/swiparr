@@ -10,7 +10,19 @@ import { events, EVENT_TYPES } from "@/lib/events";
 
 import { guestLoginSchema } from "@/lib/validations";
 
+import { getRuntimeConfig } from "@/lib/runtime-config";
+
+function generateCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let result = "";
+    for (let i = 0; i < 4; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
 export async function POST(request: NextRequest) {
+    const { capabilities } = getRuntimeConfig();
     try {
         const body = await request.json();
         const validated = guestLoginSchema.safeParse(body);
@@ -21,8 +33,24 @@ export async function POST(request: NextRequest) {
 
         const { username, sessionCode } = validated.data;
 
+        let code = sessionCode?.toUpperCase();
+        
+        if (!code && !capabilities.hasAuth) {
+            // TMDB mode: Create a new session if no code provided
+            code = generateCode();
+            await db.insert(sessions).values({
+                id: uuidv4(),
+                code,
+                hostUserId: `guest-${uuidv4()}`, // Temporary ID, will be overwritten by guestId below
+                hostAccessToken: null,
+                hostDeviceId: "guest-device",
+            });
+        }
 
-        const code = sessionCode.toUpperCase();
+        if (!code) {
+            return NextResponse.json({ message: "Session code is required" }, { status: 400 });
+        }
+
         const existingSession = await db.query.sessions.findFirst({
             where: eq(sessions.code, code),
         });
@@ -31,7 +59,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "Session not found" }, { status: 404 });
         }
 
-        if (!existingSession.hostAccessToken) {
+        if (capabilities.hasAuth && !existingSession.hostAccessToken) {
             return NextResponse.json({ message: "This session does not allow guest lending" }, { status: 403 });
         }
 
@@ -52,12 +80,17 @@ export async function POST(request: NextRequest) {
     
         await session.save();
 
+        // If this was a newly created session in TMDB mode, update the hostUserId
+        if (!sessionCode && !capabilities.hasAuth) {
+            await db.update(sessions).set({ hostUserId: guestId }).where(eq(sessions.code, code));
+        }
+
         // Register guest as member
         try {
             await db.insert(sessionMembers).values({
                 sessionCode: code,
-                jellyfinUserId: guestId,
-                jellyfinUserName: username,
+                externalUserId: guestId,
+                externalUserName: username,
             }).onConflictDoNothing();
         } catch (e) {
             // Ignore if already member

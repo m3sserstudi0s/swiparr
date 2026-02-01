@@ -30,7 +30,7 @@ export function DeckControls({
       <Button
         size="icon"
         variant="secondary"
-        className="h-12 w-12 rounded-full bg-background border-2"
+        className="h-12 w-12 rounded-full bg-background/50 border-2"
         onClick={onRewind}
         disabled={!canRewind}
       >
@@ -64,7 +64,7 @@ export function DeckControls({
       <Button
         size="icon"
         variant="secondary"
-        className="h-12 w-12 rounded-full bg-background border-2 relative"
+        className="h-12 w-12 rounded-full bg-background/50 border-2 relative"
         onClick={onOpenFilter}
       >
         <SlidersHorizontal className="size-5.5" />

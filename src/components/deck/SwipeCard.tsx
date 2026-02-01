@@ -1,7 +1,7 @@
 "use client";
 import React, { forwardRef, useRef, memo } from "react";
 
-import { JellyfinItem } from "@/types";
+import { MediaItem } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Clock } from "lucide-react";
@@ -14,7 +14,7 @@ export type { TinderCardHandle };
 
 
 interface SwipeCardProps {
-  item: JellyfinItem;
+  item: MediaItem;
   index: number;
   onSwipe: (id: string, direction: "left" | "right") => void;
   onCardLeftScreen: (id: string, direction: "left" | "right") => void;
@@ -85,9 +85,9 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
             <Card className="relative h-full w-full overflow-hidden rounded-3xl border-border shadow-2xl select-none isolate transform-gpu">
               <div className="absolute inset-0 bg-muted pointer-events-none rounded-3xl">
                 <OptimizedImage
-                  src={`/api/jellyfin/image/${item.Id}`}
+                  src={`/api/media/image/${item.Id}`}
                   alt={item.Name}
-                  jellyfinItemId={item.Id}
+                  externalId={item.Id}
                   blurDataURL={item.BlurDataURL}
                   loading={index == 0 ? 'eager' : undefined}
                   className="h-full w-full object-cover rounded-3xl"

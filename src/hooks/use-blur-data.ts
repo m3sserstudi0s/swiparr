@@ -3,7 +3,7 @@ import { apiClient } from "@/lib/api-client";
 
 export function useBlurData(itemId?: string, initialBlurDataURL?: string, imageType: string = "Primary") {
   const blurUrl = itemId && !initialBlurDataURL
-    ? `/api/jellyfin/image/${itemId}/blur${imageType ? `?imageType=${imageType}` : ""}`
+    ? `/api/media/image/${itemId}/blur${imageType ? `?imageType=${imageType}` : ""}`
     : null;
 
   const { data: blurData } = useQuery({

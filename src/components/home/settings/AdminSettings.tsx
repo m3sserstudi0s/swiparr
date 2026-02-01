@@ -28,13 +28,13 @@ import {
 import { 
   useAdminStatus, 
   useAdminConfig, 
-  useJellyfinLibraries, 
+  useMediaLibraries, 
   useAdminLibraries, 
   useUpdateAdminConfig, 
   useUpdateAdminLibraries, 
   useClaimAdmin,
-  JellyfinLibrary
 } from "@/hooks/api";
+import { MediaLibrary } from "@/types/media";
 
 export function AdminSettings() {
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
@@ -43,7 +43,7 @@ export function AdminSettings() {
 
     const { data: adminStatus } = useAdminStatus();
     const { data: config, isLoading: isLoadingConfig } = useAdminConfig();
-    const { data: availableLibraries = [], isLoading: isLoadingLibs } = useJellyfinLibraries();
+    const { data: availableLibraries = [], isLoading: isLoadingLibs } = useMediaLibraries();
     const { data: adminLibraries } = useAdminLibraries();
 
     const updateConfigMutation = useUpdateAdminConfig();
@@ -222,7 +222,7 @@ export function AdminSettings() {
                                                 No movie libraries found
                                             </div>
                                         ) : (
-                                            availableLibraries.map((lib: JellyfinLibrary) => {
+                                            availableLibraries.map((lib: MediaLibrary) => {
                                                 const isIncluded = includedLibraries.includes(lib.Id);
                                                 return (
                                                     <button

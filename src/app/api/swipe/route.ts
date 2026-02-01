@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
     // Fetch session and other data in parallel
     const [sessionData, rightSwipeCount, totalMatchCount] = await Promise.all([
         sessionCode ? db.query.sessions.findFirst({ where: eq(sessions.code, sessionCode) }) : Promise.resolve(null),
-        (sessionCode && body.direction === "right") ? db.select({ value: count() }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.jellyfinUserId, session.user.Id))) : Promise.resolve(null),
-        (sessionCode && body.direction === "right") ? db.select({ value: sql<number>`count(distinct ${likes.jellyfinItemId})` }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.isMatch, true))) : Promise.resolve(null)
+        (sessionCode && body.direction === "right") ? db.select({ value: count() }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, session.user.Id))) : Promise.resolve(null),
+        (sessionCode && body.direction === "right") ? db.select({ value: sql<number>`count(distinct ${likes.externalId})` }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.isMatch, true))) : Promise.resolve(null)
     ]);
 
     if (sessionData?.settings) {
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
             db.query.likes.findMany({
                 where: and(
                     eq(likes.sessionCode, sessionCode),
-                    eq(likes.jellyfinItemId, body.itemId),
-                    ne(likes.jellyfinUserId, session.user.Id)
+                    eq(likes.externalId, body.itemId),
+                    ne(likes.externalUserId, session.user.Id)
                 )
             })
         ]);
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
                 .set({ isMatch: true })
                 .where(and(
                     eq(likes.sessionCode, sessionCode),
-                    eq(likes.jellyfinItemId, body.itemId)
+                    eq(likes.externalId, body.itemId)
                 ));
             
             // Notify other members of the match
@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
 
       // 3. Store OUR like
       await db.insert(likes).values({
-          jellyfinUserId: session.user.Id,
-          jellyfinItemId: body.itemId,
+          externalUserId: session.user.Id,
+          externalId: body.itemId,
           sessionCode: sessionCode,
           isMatch: isMatch,
       });
@@ -114,15 +114,15 @@ export async function POST(request: NextRequest) {
       
     } else {
       // Dislike logic (Hidden)
-      const leftSwipeCount = sessionCode ? await db.select({ value: count() }).from(hiddens).where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.jellyfinUserId, session.user.Id))) : null;
+      const leftSwipeCount = sessionCode ? await db.select({ value: count() }).from(hiddens).where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, session.user.Id))) : null;
 
       if (settings?.maxLeftSwipes && leftSwipeCount && leftSwipeCount[0].value >= settings.maxLeftSwipes) {
           return NextResponse.json({ error: "Left swipe limit reached" }, { status: 403 });
       }
 
       await db.insert(hiddens).values({
-          jellyfinUserId: session.user.Id,
-          jellyfinItemId: body.itemId,
+          externalUserId: session.user.Id,
+          externalId: body.itemId,
           sessionCode: sessionCode,
       });
     }
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
             db.query.likes.findMany({
                 where: and(
                     eq(likes.sessionCode, sessionCode),
-                    eq(likes.jellyfinItemId, body.itemId)
+                    eq(likes.externalId, body.itemId)
                 )
             }),
             db.query.sessionMembers.findMany({
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
         ]);
 
         likedBy = itemLikes.map(l => ({
-            userId: l.jellyfinUserId,
-            userName: members.find(m => m.jellyfinUserId === l.jellyfinUserId)?.jellyfinUserName || "Unknown"
+            userId: l.externalUserId,
+            userName: members.find(m => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown"
         }));
     }
 
@@ -170,8 +170,8 @@ export async function DELETE(request: NextRequest) {
 
     await db.delete(likes).where(
       and(
-        eq(likes.jellyfinUserId, session.user.Id),
-        eq(likes.jellyfinItemId, body.itemId)
+        eq(likes.externalUserId, session.user.Id),
+        eq(likes.externalId, body.itemId)
       )
     );
 
@@ -182,7 +182,7 @@ export async function DELETE(request: NextRequest) {
             db.query.likes.findMany({
                 where: and(
                     eq(likes.sessionCode, sessionCode),
-                    eq(likes.jellyfinItemId, body.itemId)
+                    eq(likes.externalId, body.itemId)
                 )
             }),
             db.query.sessionMembers.findMany({ where: eq(sessionMembers.sessionCode, sessionCode) })
@@ -206,7 +206,7 @@ export async function DELETE(request: NextRequest) {
                 .where(
                     and(
                         eq(likes.sessionCode, sessionCode),
-                        eq(likes.jellyfinItemId, body.itemId)
+                        eq(likes.externalId, body.itemId)
                     )
                 );
         }
@@ -222,8 +222,8 @@ export async function DELETE(request: NextRequest) {
 
     await db.delete(hiddens).where(
       and(
-        eq(hiddens.jellyfinUserId, session.user.Id),
-        eq(hiddens.jellyfinItemId, body.itemId)
+        eq(hiddens.externalUserId, session.user.Id),
+        eq(hiddens.externalId, body.itemId)
       )
     );
     return NextResponse.json({ success: true });

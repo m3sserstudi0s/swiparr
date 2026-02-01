@@ -21,14 +21,14 @@ export type NewSession = InferInsertModel<typeof sessions>;
 
 export const likes = sqliteTable("Like", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  jellyfinItemId: text("jellyfinItemId").notNull(),
-  jellyfinUserId: text("jellyfinUserId").notNull(),
+  externalId: text("externalId").notNull(),
+  externalUserId: text("externalUserId").notNull(),
   isMatch: integer("isMatch", { mode: "boolean" }).notNull().default(false),
   sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
-    uniqueIndex("Like_jellyfinItemId_jellyfinUserId_sessionCode_key").on(table.jellyfinItemId, table.jellyfinUserId, table.sessionCode),
+    uniqueIndex("Like_externalId_externalUserId_sessionCode_key").on(table.externalId, table.externalUserId, table.sessionCode),
   ];
 });
 
@@ -37,12 +37,12 @@ export type NewLike = InferInsertModel<typeof likes>;
 
 export const hiddens = sqliteTable("Hidden", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  jellyfinItemId: text("jellyfinItemId").notNull(),
-  jellyfinUserId: text("jellyfinUserId").notNull(),
+  externalId: text("externalId").notNull(),
+  externalUserId: text("externalUserId").notNull(),
   sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
 }, (table) => {
   return [
-    uniqueIndex("Hidden_jellyfinItemId_jellyfinUserId_sessionCode_key").on(table.jellyfinItemId, table.jellyfinUserId, table.sessionCode),
+    uniqueIndex("Hidden_externalId_externalUserId_sessionCode_key").on(table.externalId, table.externalUserId, table.sessionCode),
   ];
 });
 
@@ -52,12 +52,12 @@ export type NewHidden = InferInsertModel<typeof hiddens>;
 export const sessionMembers = sqliteTable("SessionMember", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
-  jellyfinUserId: text("jellyfinUserId").notNull(),
-  jellyfinUserName: text("jellyfinUserName").notNull(),
+  externalUserId: text("externalUserId").notNull(),
+  externalUserName: text("externalUserName").notNull(),
   joinedAt: text("joinedAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
-    uniqueIndex("SessionMember_sessionCode_jellyfinUserId_key").on(table.sessionCode, table.jellyfinUserId),
+    uniqueIndex("SessionMember_sessionCode_externalUserId_key").on(table.sessionCode, table.externalUserId),
   ];
 });
 

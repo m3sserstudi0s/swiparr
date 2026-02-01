@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import { JellyfinItem, SwipePayload, SwipeResponse, SessionStats } from "@/types";
+import { MediaItem, SwipePayload, SwipeResponse, SessionStats } from "@/types";
 import { QUERY_KEYS } from "./query-keys";
 import { useSession } from "./use-session";
 
@@ -20,12 +20,12 @@ export function useSwipe() {
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.stats(sessionCode!) });
 
       // Snapshot the previous value
-      const previousDeck = queryClient.getQueryData<JellyfinItem[]>(QUERY_KEYS.deck(sessionCode));
+      const previousDeck = queryClient.getQueryData<MediaItem[]>(QUERY_KEYS.deck(sessionCode));
       const previousStats = queryClient.getQueryData<SessionStats>(QUERY_KEYS.stats(sessionCode!));
 
       // Optimistically update to the new value
       if (previousDeck) {
-        queryClient.setQueryData(QUERY_KEYS.deck(sessionCode), (old: JellyfinItem[] | undefined) => 
+        queryClient.setQueryData(QUERY_KEYS.deck(sessionCode), (old: MediaItem[] | undefined) => 
           old?.filter(item => item.Id !== payload.itemId)
         );
       }

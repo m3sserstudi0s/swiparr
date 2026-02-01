@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
-import { MergedLike } from "@/types";
+import { MergedLike, MediaItem } from "@/types";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 
 interface MovieListItemProps {
@@ -80,7 +80,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
-  const { jellyfinPublicUrl } = useRuntimeConfig();
+  const { serverPublicUrl } = useRuntimeConfig();
 
   const isCondensed = variant === "condensed";
 
@@ -96,9 +96,9 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
         isCondensed ? "relative shrink-0 w-15 h-22" : "relative shrink-0 w-20 h-28",
       )}>
         <OptimizedImage
-          src={`/api/jellyfin/image/${movie.Id}`}
+          src={`/api/media/image/${movie.Id}`}
           alt={movie.Name}
-          jellyfinItemId={movie.Id}
+          externalId={movie.Id}
           height={100}
           width={50}
           blurDataURL={movie.BlurDataURL}
@@ -158,7 +158,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           )}
 
           <div className="flex gap-2">
-            <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
+            <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"

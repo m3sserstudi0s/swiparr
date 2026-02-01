@@ -1,0 +1,333 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "e64a4939-33a3-4347-b2e8-43cb32c012d1",
+  "prevId": "4cc78dfd-dbad-491b-96b2-9f2c9ff42d91",
+  "tables": {
+    "Config": {
+      "name": "Config",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Hidden": {
+      "name": "Hidden",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "externalId": {
+          "name": "externalId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "externalUserId": {
+          "name": "externalUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sessionCode": {
+          "name": "sessionCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "Hidden_externalId_externalUserId_sessionCode_key": {
+          "name": "Hidden_externalId_externalUserId_sessionCode_key",
+          "columns": [
+            "externalId",
+            "externalUserId",
+            "sessionCode"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "Hidden_sessionCode_Session_code_fk": {
+          "name": "Hidden_sessionCode_Session_code_fk",
+          "tableFrom": "Hidden",
+          "tableTo": "Session",
+          "columnsFrom": [
+            "sessionCode"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Like": {
+      "name": "Like",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "externalId": {
+          "name": "externalId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "externalUserId": {
+          "name": "externalUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "isMatch": {
+          "name": "isMatch",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "sessionCode": {
+          "name": "sessionCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "Like_externalId_externalUserId_sessionCode_key": {
+          "name": "Like_externalId_externalUserId_sessionCode_key",
+          "columns": [
+            "externalId",
+            "externalUserId",
+            "sessionCode"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "Like_sessionCode_Session_code_fk": {
+          "name": "Like_sessionCode_Session_code_fk",
+          "tableFrom": "Like",
+          "tableTo": "Session",
+          "columnsFrom": [
+            "sessionCode"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "SessionMember": {
+      "name": "SessionMember",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "sessionCode": {
+          "name": "sessionCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "externalUserId": {
+          "name": "externalUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "externalUserName": {
+          "name": "externalUserName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "joinedAt": {
+          "name": "joinedAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "SessionMember_sessionCode_externalUserId_key": {
+          "name": "SessionMember_sessionCode_externalUserId_key",
+          "columns": [
+            "sessionCode",
+            "externalUserId"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "SessionMember_sessionCode_Session_code_fk": {
+          "name": "SessionMember_sessionCode_Session_code_fk",
+          "tableFrom": "SessionMember",
+          "tableTo": "Session",
+          "columnsFrom": [
+            "sessionCode"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "Session": {
+      "name": "Session",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hostUserId": {
+          "name": "hostUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hostAccessToken": {
+          "name": "hostAccessToken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "hostDeviceId": {
+          "name": "hostDeviceId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "filters": {
+          "name": "filters",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "settings": {
+          "name": "settings",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "Session_code_key": {
+          "name": "Session_code_key",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {
+      "\"Hidden\".\"jellyfinItemId\"": "\"Hidden\".\"externalId\"",
+      "\"Hidden\".\"jellyfinUserId\"": "\"Hidden\".\"externalUserId\"",
+      "\"Like\".\"jellyfinItemId\"": "\"Like\".\"externalId\"",
+      "\"Like\".\"jellyfinUserId\"": "\"Like\".\"externalUserId\"",
+      "\"SessionMember\".\"jellyfinUserId\"": "\"SessionMember\".\"externalUserId\"",
+      "\"SessionMember\".\"jellyfinUserName\"": "\"SessionMember\".\"externalUserName\""
+    }
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

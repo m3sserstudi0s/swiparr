@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { db, likes, sessionMembers } from "@/lib/db";
-import { eq, and, isNull, or, sql } from "drizzle-orm";
+import { eq, and, isNull, or } from "drizzle-orm";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
-import { getBlurDataURL } from "@/lib/server/image-blur";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
@@ -18,19 +17,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
 
   try {
-    const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+    const auth = await getEffectiveCredentials(session);
+    const provider = getMediaProvider();
 
-    const jellyfinRes = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items/${id}`), {
-      headers: getAuthenticatedHeaders(accessToken!, deviceId!),
-    });
-
-    const item = jellyfinRes.data;
+    const item = await provider.getItemDetails(id, auth);
 
     // Add likes info
-    // Fetch likes from BOTH the current session and solo mode
     const itemLikes = await db.query.likes.findMany({
         where: and(
-            eq(likes.jellyfinItemId, id),
+            eq(likes.externalId, id),
             session.sessionCode 
                 ? or(eq(likes.sessionCode, session.sessionCode), isNull(likes.sessionCode))
                 : isNull(likes.sessionCode)
@@ -38,7 +33,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     if (itemLikes.length > 0) {
-        // If in session, we can get names from sessionMembers
         let members: any[] = [];
         if (session.sessionCode) {
             members = await db.query.sessionMembers.findMany({
@@ -47,15 +41,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
 
         item.likedBy = itemLikes.map(l => ({
-            userId: l.jellyfinUserId,
+            userId: l.externalUserId,
             userName: session.sessionCode 
-                ? (members.find(m => m.jellyfinUserId === l.jellyfinUserId)?.jellyfinUserName || "Unknown")
-                : (l.jellyfinUserId === session.user.Id ? session.user.Name : "Unknown"),
+                ? (members.find(m => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown")
+                : (l.externalUserId === session.user.Id ? session.user.Name : "Unknown"),
             sessionCode: l.sessionCode
         }));
     }
 
-    item.BlurDataURL = await getBlurDataURL(id, accessToken!, deviceId!);
+    item.BlurDataURL = await provider.getBlurDataUrl(id, "Primary", auth);
 
     return NextResponse.json(item);
   } catch (error) {

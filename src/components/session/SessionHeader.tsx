@@ -58,8 +58,8 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
               <UserAvatarList
                 size="md"
                 users={members.map((m: any) => ({
-                  userId: m.jellyfinUserId,
-                  userName: m.jellyfinUserName,
+                  userId: m.externalUserId,
+                  userName: m.externalUserName,
                 }))}
               />
             </div>

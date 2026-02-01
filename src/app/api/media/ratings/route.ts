@@ -4,7 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
-import { getCachedRatings } from "@/lib/jellyfin/cached-queries";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -12,13 +12,12 @@ export async function GET(request: NextRequest) {
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
-
-        const ratings = await getCachedRatings(accessToken!, deviceId!, userId!);
+        const auth = await getEffectiveCredentials(session);
+        const provider = getMediaProvider();
+        const ratings = await provider.getRatings(auth);
         return NextResponse.json(ratings);
     } catch (error) {
         console.error("Fetch Ratings Error", error);
         return NextResponse.json({ error: "Failed to fetch ratings" }, { status: 500 });
     }
 }
-

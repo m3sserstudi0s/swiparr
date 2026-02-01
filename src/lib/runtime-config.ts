@@ -6,8 +6,12 @@
 
 import packageJson from "../../package.json";
 
+import { ProviderCapabilities } from "./providers/types";
+
 export interface RuntimeConfig {
-  jellyfinPublicUrl: string;
+  provider: "jellyfin" | "tmdb" | "plex" | string;
+  capabilities: ProviderCapabilities;
+  serverPublicUrl: string;
   useWatchlist: boolean;
   useStaticFilterValues: boolean;
   version: string;
@@ -23,13 +27,35 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     return window.__SWIPARR_CONFIG__;
   }
   
-  const jellyfinPublicUrl = (process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || '').replace(/\/$/, '');
+  const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
+  
+  // Default capabilities (Jellyfin style)
+  const capabilities: ProviderCapabilities = {
+    hasAuth: true,
+    hasQuickConnect: true,
+    hasWatchlist: true,
+    hasLibraries: true,
+    hasSettings: true,
+    requiresServerUrl: true,
+  };
+
+  if (provider === 'tmdb') {
+    capabilities.hasAuth = false;
+    capabilities.hasQuickConnect = false;
+    capabilities.hasWatchlist = false;
+    capabilities.hasLibraries = false;
+    capabilities.requiresServerUrl = false;
+  }
+  
+  const serverPublicUrl = (process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || process.env.SERVER_PUBLIC_URL || '').replace(/\/$/, '');
   const rawBasePath = (process.env.URL_BASE_PATH || '').replace(/\/$/, '');
   const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
   
   return {
-    jellyfinPublicUrl,
-    useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
+    provider,
+    capabilities,
+    serverPublicUrl,
+    useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.USE_WATCHLIST || '').toLowerCase() === 'true',
     useStaticFilterValues: false,
     version: (process.env.APP_VERSION || packageJson.version).replace(/^v/i, ''),
     basePath,

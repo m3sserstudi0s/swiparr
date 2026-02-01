@@ -4,8 +4,7 @@ import { sessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
-import { getCachedLibraries } from "@/lib/jellyfin/cached-queries";
-
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -16,13 +15,12 @@ export async function GET() {
     }
 
     try {
-        const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
-
-        const libraries = await getCachedLibraries(accessToken!, deviceId!, userId!);
+        const auth = await getEffectiveCredentials(session);
+        const provider = getMediaProvider();
+        const libraries = await provider.getLibraries(auth);
         
         return NextResponse.json(libraries);
     } catch (error) {
-
         console.error("Fetch Libraries Error", error);
         return NextResponse.json({ error: "Failed to fetch libraries" }, { status: 500 });
     }

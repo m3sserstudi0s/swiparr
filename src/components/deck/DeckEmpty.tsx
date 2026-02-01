@@ -17,8 +17,8 @@ interface DeckEmptyProps {
 
 export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
   return (
-    <div className="flex flex-col items-center justify-top h-[83vh] text-center text-muted-foreground ">
-      <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
+    <div className="flex flex-col items-center justify-top text-center h-full text-muted-foreground ">
+      <Empty className="w-full h-full mt-10">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <GalleryHorizontalEnd />

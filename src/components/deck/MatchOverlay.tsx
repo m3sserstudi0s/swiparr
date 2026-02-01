@@ -1,6 +1,6 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { JellyfinItem } from "@/types";
+import { MediaItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
@@ -8,7 +8,7 @@ import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 
 interface MatchOverlayProps {
-  item: JellyfinItem | null;
+  item: MediaItem | null;
   onClose: () => void;
 }
 
@@ -60,9 +60,9 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               onClick={() => { openMovie(item.Id); onClose(); }}
             >
               <OptimizedImage
-                src={`/api/jellyfin/image/${item.Id}`}
+                src={`/api/media/image/${item.Id}`}
                 alt={item.Name}
-                jellyfinItemId={item.Id}
+                externalId={item.Id}
                 blurDataURL={item.BlurDataURL}
                 className="w-full h-full object-cover"
               />

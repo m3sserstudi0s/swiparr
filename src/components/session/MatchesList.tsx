@@ -2,12 +2,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Sparkles } from "lucide-react";
 import { MovieListItem } from "../movie/MovieListItem";
-import { JellyfinItem } from "@/types";
+import { MediaItem } from "@/types";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 
 interface MatchesListProps {
   activeCode?: string;
-  matches?: JellyfinItem[];
+  matches?: MediaItem[];
   openMovie: (id: string) => void;
 }
 
@@ -57,7 +57,7 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
               </div>
             )}
             <div className="pt-6 pb-22">
-              {matches?.map((movie: JellyfinItem) => (
+              {matches?.map((movie: MediaItem) => (
                 <MovieListItem
                   key={movie.Id}
                   movie={{ ...movie, isMatch: true } as any}

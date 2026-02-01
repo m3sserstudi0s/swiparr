@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Clock, Star, Users, HeartOff, Plus, Minus, Info } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { JellyfinItem } from "@/types";
+import { MediaItem, Filters } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform } from "framer-motion";
@@ -44,7 +44,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     queryKey: ["movie", movieId],
     queryFn: async () => {
       if (!movieId) return null;
-      const res = await apiClient.get<JellyfinItem>(`/api/jellyfin/item/${movieId}`);
+      const res = await apiClient.get<MediaItem>(`/api/media/item/${movieId}`);
       return res.data;
     },
     enabled: !!movieId,
@@ -168,7 +168,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   };
 
 
-  const { jellyfinPublicUrl } = useRuntimeConfig();
+  const { serverPublicUrl } = useRuntimeConfig();
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -210,11 +210,11 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
                   <OptimizedImage
                     src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0
-                      ? `/api/jellyfin/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
-                      : `/api/jellyfin/image/${movie.Id}`
+                      ? `/api/media/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
+                      : `/api/media/image/${movie.Id}`
                     }
-                    jellyfinItemId={movie.Id}
-                    jellyfinImageType="Backdrop"
+                    externalId={movie.Id}
+                    imageType="Backdrop"
                     width={400}
                     height={225}
                     className="w-full h-full object-cover"
@@ -225,9 +225,9 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 {/* Header Content */}
                 <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
                   <OptimizedImage
-                    src={`/api/jellyfin/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
-                    jellyfinItemId={movie.Id}
-                    jellyfinImageType="Primary"
+                    src={`/api/media/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
+                    externalId={movie.Id}
+                    imageType="Primary"
                     width={75}
                     height={125}
                     className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0"
@@ -287,7 +287,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 )}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
-                  <Link href={`${jellyfinPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
+                  <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
 
                     <Button className="w-32" size="lg">
                       <Play className="w-4 h-4 mr-2 fill-current" /> Play
@@ -369,7 +369,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         <div key={person.Id} className="flex flex-col items-center gap-2 min-w-20 text-center">
                           <Avatar className="w-16 h-16 border border-border shadow-sm">
                             <AvatarImage
-                              src={`/api/jellyfin/image/${person.Id}?tag=${person.PrimaryImageTag}`}
+                              src={`/api/media/image/${person.Id}?tag=${person.PrimaryImageTag}`}
                               className="object-cover"
                             />
                             <AvatarFallback className="bg-muted text-muted-foreground text-xs">

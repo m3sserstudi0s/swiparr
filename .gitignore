@@ -44,3 +44,5 @@ next-env.d.ts
 
 /generated/prisma
 swiparr.db
+AGENTS.md
+.gemini/settings.json

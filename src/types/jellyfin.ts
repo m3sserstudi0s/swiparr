@@ -1,15 +1,8 @@
-export interface JellyfinPerson {
-  Name: string;
-  Id: string;
-  Role: string;
-  Type?: string;
-  PrimaryImageTag?: string;
-}
+import { MediaItem, MediaPerson, MediaStudio } from "./media";
 
-export interface JellyfinStudio {
-  Name: string;
-  Id: string;
-}
+export type JellyfinItem = MediaItem;
+export type JellyfinPerson = MediaPerson;
+export type JellyfinStudio = MediaStudio;
 
 export interface ImageTags {
   Primary?: string;
@@ -18,31 +11,4 @@ export interface ImageTags {
   Backdrop?: string;
   Banner?: string;
   Art?: string;
-}
-
-export interface JellyfinItem {
-  Name: string;
-  OriginalTitle?: string;
-  Id: string;
-  RunTimeTicks?: number; // 1 tick = 100ns
-  ProductionYear?: number;
-  CommunityRating?: number;
-  Overview?: string;
-  Taglines?: string[];
-  OfficialRating?: string;
-  Genres?: string[];
-  People?: JellyfinPerson[];
-  Studios?: JellyfinStudio[];
-  ImageTags: ImageTags;
-  BackdropImageTags?: string[];
-  UserData?: {
-    IsFavorite: boolean;
-    Likes?: boolean;
-  };
-  BlurDataURL?: string;
-  likedBy?: {
-    userId: string;
-    userName: string;
-    sessionCode?: string | null;
-  }[];
 }

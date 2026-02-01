@@ -22,7 +22,7 @@ export interface SessionStats {
 }
 
 export interface SessionMember {
-  jellyfinUserId: string;
-  jellyfinUserName: string;
+  externalUserId: string;
+  externalUserName: string;
   isAdmin?: boolean;
 }

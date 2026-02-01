@@ -14,8 +14,8 @@ const loadedImageCache = new Set<string>();
 interface OptimizedImageProps extends Omit<ImageProps, "onLoad"> {
   containerClassName?: string;
   onLoad?: (e: any) => void;
-  jellyfinItemId?: string;
-  jellyfinImageType?: string;
+  externalId?: string;
+  imageType?: string;
 }
 
 export function OptimizedImage({
@@ -30,8 +30,8 @@ export function OptimizedImage({
   onLoad,
   placeholder,
   blurDataURL: initialBlurDataURL,
-  jellyfinItemId,
-  jellyfinImageType,
+  externalId,
+  imageType,
   ...props
 }: OptimizedImageProps) {
   const { basePath } = useRuntimeConfig();
@@ -48,9 +48,9 @@ export function OptimizedImage({
 
 
   const isFill = fill ?? (!width && !height);
-  const isJellyfinImage = !!jellyfinItemId || (typeof src === "string" && (src.startsWith("/api/jellyfin/image") || src.startsWith(`${basePath}/api/jellyfin/image`)));
+  const isMediaImage = !!externalId || (typeof src === "string" && (src.startsWith("/api/media/image") || src.startsWith(`${basePath}/api/media/image`)));
 
-  const blurDataURL = useBlurData(jellyfinItemId, initialBlurDataURL, jellyfinImageType);
+  const blurDataURL = useBlurData(externalId, initialBlurDataURL, imageType);
 
   const imageLoader = ({ src, width, quality }: ImageLoaderProps) => {
     return `${src}${src.includes("?") ? "&" : "?"}width=${width}&quality=${quality || 75}`;
@@ -84,7 +84,7 @@ export function OptimizedImage({
       </div>
       <Image
         {...props}
-        loader={isJellyfinImage ? imageLoader : undefined}
+        loader={isMediaImage ? imageLoader : undefined}
         src={resolvedSrc}
         alt={alt}
         width={isFill ? undefined : width}

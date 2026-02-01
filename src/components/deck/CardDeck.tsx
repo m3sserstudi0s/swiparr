@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useState, useMemo, useCallback, useEffect } from "react";
-import { JellyfinItem, Filters } from "@/types";
+import { MediaItem, Filters } from "@/types";
 import { SwipeCard, TinderCardHandle } from "./SwipeCard";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { UserAvatarList } from "../session/UserAvatarList";
@@ -46,8 +46,10 @@ export function CardDeck() {
   const swipedIdsRef = useRef<Set<string>>(new Set());
   const [lastSwipe, setLastSwipe] = useState<{ id: string; direction: "left" | "right" } | null>(null);
   const [rewindingId, setRewindingId] = useState<{ id: string; direction: "left" | "right" } | null>(null);
-  const [displayDeck, setDisplayDeck] = useState<JellyfinItem[]>([]);
-  const [matchedItem, setMatchedItem] = useState<JellyfinItem | null>(null);
+  const [displayDeck, setDisplayDeck] = useState<MediaItem[]>([]);
+  const [matchedItem, setMatchedItem] = useState<MediaItem | null>(null);
+
+  const { setBackgroundItem } = useBackgroundStore();
 
   // Clear local state when session or filters change to get a fresh start
   const filtersJson = JSON.stringify(sessionStatus?.filters);
@@ -139,154 +141,124 @@ export function CardDeck() {
     });
   }, [displayDeck, swipeMutation]);
 
-  const activeDeck = useMemo(() => {
-    return displayDeck.filter((item: JellyfinItem) => !removedIds.includes(item.Id));
+  const filteredDeck = useMemo(() => {
+    return displayDeck.filter((item: MediaItem) => !removedIds.includes(item.Id));
   }, [displayDeck, removedIds]);
 
-  const setBackgroundItem = useBackgroundStore((state) => state.setBackgroundItem);
+  const activeDeck = useMemo(() => {
+    return filteredDeck.filter((item: MediaItem) => !swipedIdsRef.current.has(item.Id));
+  }, [filteredDeck]);
+
   useEffect(() => {
-    if (activeDeck.length > 0) {
-      const topItem = activeDeck[0];
+    const topItem = activeDeck[0];
+    if (topItem) {
       setBackgroundItem({ id: topItem.Id, blurDataURL: topItem.BlurDataURL });
+    } else {
+      setBackgroundItem(null);
     }
   }, [activeDeck, setBackgroundItem]);
 
-  useEffect(() => {
-    if (!isFetching && activeDeck.length > 0 && activeDeck.length <= 15) {
-      refetch();
-    }
-  }, [activeDeck.length, isFetching, refetch]);
-
-  const swipeTop = useCallback(async (direction: "left" | "right") => {
-    if (activeDeck.length === 0) return;
+  const handleSwipeAction = (direction: "left" | "right") => {
     const topCard = activeDeck[0];
-    const ref = cardRefs.current[topCard.Id];
-    if (ref && ref.current) {
-      await ref.current.swipe(direction);
+    if (topCard) {
+      const ref = cardRefs.current[topCard.Id];
+      if (ref?.current) {
+        ref.current.swipe(direction);
+      }
     }
-  }, [activeDeck]);
+  };
 
-  const rewind = useCallback(async () => {
+  const rewind = async () => {
     if (!lastSwipe) return;
     const { id, direction } = lastSwipe;
-
-    setRewindingId({ id, direction });
-    setRemovedIds((prev) => prev.filter((rid) => rid !== id));
-    swipedIdsRef.current.delete(id);
-    setLastSwipe(null);
-
-    undoSwipeMutation.mutate(id, {
-      onError: (err) => {
-        toast.error("Failed to undo swipe", { description: getErrorMessage(err) });
-      }
-    });
-  }, [lastSwipe, undoSwipeMutation]);
+    
+    try {
+      await undoSwipeMutation.mutateAsync(id);
+      setRewindingId({ id, direction });
+      swipedIdsRef.current.delete(id);
+      setRemovedIds(prev => prev.filter(rid => rid !== id));
+      setLastSwipe(null);
+    } catch (err) {
+      toast.error("Undo failed");
+    }
+  };
 
   useEffect(() => {
     if (rewindingId) {
       const ref = cardRefs.current[rewindingId.id];
-      if (ref && ref.current) {
+      if (ref?.current) {
         ref.current.restore(rewindingId.direction);
         setRewindingId(null);
       }
     }
   }, [rewindingId, activeDeck]);
 
-  const updateFilters = async (newFilters: Filters) => {
-    toast.promise(updateSessionMutation.mutateAsync({ filters: newFilters }), {
-      loading: "Applying filters...",
-      success: "Filters updated",
-      error: (err) => ({
-        message: "Failed to update filters",
-        description: getErrorMessage(err)
-      })
-    });
+  const updateFilters = (newFilters: Filters) => {
+    updateSessionMutation.mutate({ filters: newFilters });
+    setIsFilterOpen(false);
   };
 
-  useHotkeys("left, a", () => swipeTop("left"), [swipeTop]);
-  useHotkeys("right, d", () => swipeTop("right"), [swipeTop]);
-  useHotkeys("enter, space", () => {
-    if (activeDeck.length > 0) {
-      openMovie(activeDeck[0].Id, {showLikedBy: false});
-    }
-  }, [activeDeck, openMovie]);
-  useHotkeys("r, backspace", () => rewind(), [rewind]);
-  useHotkeys("f", () => setIsFilterOpen(prev => !prev), []);
+  useHotkeys("left", () => handleSwipeAction("left"), { enabled: !isFilterOpen && activeDeck.length > 0 });
+  useHotkeys("right", () => handleSwipeAction("right"), { enabled: !isFilterOpen && activeDeck.length > 0 });
+  useHotkeys("up", () => activeDeck[0] && openMovie(activeDeck[0].Id, {showLikedBy: false}), { enabled: !isFilterOpen && activeDeck.length > 0 });
 
-  const leftSwipesRemaining = useMemo(() => {
-    if (!sessionSettings?.maxLeftSwipes) return undefined;
-    return Math.max(0, sessionSettings.maxLeftSwipes - (stats?.mySwipes.left || 0));
-  }, [sessionSettings?.maxLeftSwipes, stats?.mySwipes.left]);
-
-  const rightSwipesRemaining = useMemo(() => {
-    if (!sessionSettings?.maxRightSwipes) return undefined;
-    return Math.max(0, sessionSettings.maxRightSwipes - (stats?.mySwipes.right || 0));
-  }, [sessionSettings?.maxRightSwipes, stats?.mySwipes.right]);
-
-  const showLoader = isLoadingSession || (isFetching && activeDeck.length === 0) || updateSessionMutation.isPending;
-
-  if (showLoader) return <DeckLoading />;
-  if ((isError || isErrorSession) && activeDeck.length === 0) return <DeckError />;
-  
-  if (activeDeck.length === 0) {
-    return (
-      <div className="w-full">
-        <DeckEmpty
-          onRefresh={() => {
-            setRemovedIds([]);
-            swipedIdsRef.current.clear();
-            setLastSwipe(null);
-            setDisplayDeck([]);
-            refetch();
-          }}
-          onOpenFilter={() => setIsFilterOpen(true)}
-        />
-        <FilterDrawer
-          open={isFilterOpen}
-          onOpenChange={setIsFilterOpen}
-          currentFilters={sessionFilters}
-          onSave={updateFilters}
-        />
-      </div>
-    );
+  if (isLoadingSession || (isLoading && displayDeck.length === 0)) {
+    return <DeckLoading />;
   }
+
+  if (isErrorSession || isError) {
+    return <DeckError />;
+  }
+
+  const leftSwipesRemaining = sessionSettings?.maxLeftSwipes ? Math.max(0, sessionSettings.maxLeftSwipes - (stats?.mySwipes.left || 0)) : undefined;
+  const rightSwipesRemaining = sessionSettings?.maxRightSwipes ? Math.max(0, sessionSettings.maxRightSwipes - (stats?.mySwipes.right || 0)) : undefined;
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full">
       {sessionStatus?.code && members && members.length > 0 ? (
         <div className="h-8.75">
           <UserAvatarList
-            users={members.map((m) => ({ userId: m.jellyfinUserId, userName: m.jellyfinUserName }))}
+            users={members.map((m) => ({ userId: m.externalUserId, userName: m.externalUserName }))}
             size="md"
           />
         </div>
       ) : <div className="h-8.75" />}
       <div className="relative w-full h-[68svh] flex justify-center items-center select-none">
-        {activeDeck.slice(0, 4).reverse().map((item: JellyfinItem, i, arr) => {
-          const zIndex = arr.length - 1 - i;
-          const prevent: ("left" | "right")[] = [];
-          if (sessionSettings?.maxLeftSwipes && (stats?.mySwipes.left || 0) >= sessionSettings.maxLeftSwipes) prevent.push("left");
-          if (sessionSettings?.maxRightSwipes && (stats?.mySwipes.right || 0) >= sessionSettings.maxRightSwipes) prevent.push("right");
+        {activeDeck.length === 0 ? (
+          <DeckEmpty onRefresh={() => {
+            setRemovedIds([]);
+            swipedIdsRef.current.clear();
+            refetch();
+          }} onOpenFilter={() => setIsFilterOpen(true)} />
+        ) : (
+          <>
+            {activeDeck.slice(0, 4).reverse().map((item: MediaItem, i, arr) => {
+              const zIndex = arr.length - 1 - i;
+              const prevent: ("left" | "right")[] = [];
+              if (sessionSettings?.maxLeftSwipes && (stats?.mySwipes.left || 0) >= sessionSettings.maxLeftSwipes) prevent.push("left");
+              if (sessionSettings?.maxRightSwipes && (stats?.mySwipes.right || 0) >= sessionSettings.maxRightSwipes) prevent.push("right");
 
-          return (
-            <SwipeCard
-              key={item.Id}
-              ref={getCardRef(item.Id)}
-              item={item}
-              index={zIndex}
-              onSwipe={onSwipe}
-              onCardLeftScreen={onCardLeftScreen}
-              onClick={() => openMovie(item.Id, {showLikedBy: false} )}
-              preventSwipe={prevent}
-            />
-          );
-        })}
+              return (
+                <SwipeCard
+                  key={item.Id}
+                  ref={getCardRef(item.Id)}
+                  item={item}
+                  index={zIndex}
+                  onSwipe={onSwipe}
+                  onCardLeftScreen={onCardLeftScreen}
+                  onClick={() => openMovie(item.Id, {showLikedBy: false} )}
+                  preventSwipe={prevent}
+                />
+              );
+            })}
+          </>
+        )}
       </div>
 
       <DeckControls
         onRewind={rewind}
-        onSwipeLeft={() => swipeTop("left")}
-        onSwipeRight={() => swipeTop("right")}
+        onSwipeLeft={() => handleSwipeAction("left")}
+        onSwipeRight={() => handleSwipeAction("right")}
         onOpenFilter={() => setIsFilterOpen(true)}
         canRewind={!!lastSwipe}
         hasAppliedFilters={hasAppliedFilters}

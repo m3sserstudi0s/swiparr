@@ -11,8 +11,10 @@ if (!process.env.AUTH_SECRET && !process.env.AUTHORS_SECRET) {
   console.log('INFO: AUTH_SECRET is not set. A persistent secret will be generated in the database.');
 }
 
-if (!process.env.JELLYFIN_URL) {
-  console.error('ERROR: JELLYFIN_URL is not set. Swiparr requires this to function.');
+const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
+
+if (provider === 'jellyfin' && !process.env.JELLYFIN_URL) {
+  console.error('ERROR: JELLYFIN_URL is not set. Swiparr requires this to function with the jellyfin provider.');
   process.exit(1);
 }
 

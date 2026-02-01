@@ -1,12 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { QUERY_KEYS } from "./query-keys";
-
-export interface JellyfinLibrary {
-  Name: string;
-  Id: string;
-  CollectionType?: string;
-}
+import { MediaLibrary } from "@/types/media";
 
 export function useAdminStatus() {
   return useQuery({
@@ -42,12 +37,12 @@ export function useUpdateAdminConfig() {
   });
 }
 
-export function useJellyfinLibraries() {
+export function useMediaLibraries() {
   const { data: adminStatus } = useAdminStatus();
-  return useQuery<JellyfinLibrary[]>({
-    queryKey: QUERY_KEYS.jellyfin.libraries,
+  return useQuery<MediaLibrary[]>({
+    queryKey: QUERY_KEYS.media.libraries,
     queryFn: async () => {
-      const res = await apiClient.get<JellyfinLibrary[]>("/api/jellyfin/libraries");
+      const res = await apiClient.get<MediaLibrary[]>("/api/media/libraries");
       return res.data;
     },
     enabled: !!adminStatus?.isAdmin,

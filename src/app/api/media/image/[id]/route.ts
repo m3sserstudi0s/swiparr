@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
-import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
+import { apiClient } from "@/lib/jellyfin/api";
 import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!id || id === "undefined") {
+    return new NextResponse("Invalid ID", { status: 400 });
+  }
   const searchParams = request.nextUrl.searchParams;
   const token = searchParams.get("token");
   
@@ -19,53 +23,55 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   if (!accessToken) {
     if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
-    const creds = await getEffectiveCredentials(session);
-    accessToken = creds.accessToken || "";
-    deviceId = creds.deviceId;
+    try {
+        const creds = await getEffectiveCredentials(session);
+        accessToken = creds.accessToken || "";
+        deviceId = creds.deviceId;
+    } catch (e) {
+        // May fail if TMDB/no-auth, that's okay for public images
+    }
   } else if (session.isLoggedIn && session.user.AccessToken === accessToken) {
     deviceId = session.user.DeviceId;
   }
 
   const isUser = searchParams.get("type") === "user";
   const imageType = searchParams.get("imageType") || "Primary";
-  
-  // Get parameters from query string
-  const width = searchParams.get("width") || searchParams.get("maxWidth");
-  const height = searchParams.get("height") || searchParams.get("maxHeight");
-  const quality = searchParams.get("quality") || "80";
-  const format = searchParams.get("format") || "webp"; // Lowercase is safer
   const tag = searchParams.get("tag");
   
-  let imageUrl = isUser 
-    ? getJellyfinUrl(`/Users/${id}/Images/${imageType}`)
-    : getJellyfinUrl(`/Items/${id}/Images/${imageType}`);
+  const provider = getMediaProvider();
+  
+  // Jellyfin-specific user image handling
+  let imageUrl = (isUser && provider.name === "jellyfin")
+    ? (provider as any).getImageUrl(id, "user") // Need to handle user images in provider
+    : provider.getImageUrl(id, imageType as any, tag || undefined);
 
-  const urlObj = new URL(imageUrl);
+  const urlObj = new URL(imageUrl, "http://n"); // dummy base for relative URLs if any
   
-  // Apply resizing at the source (Jellyfin) to reduce bandwidth between Jellyfin and our server
-  if (width) urlObj.searchParams.set("maxWidth", width);
-  if (height) urlObj.searchParams.set("maxHeight", height);
+  // Forward parameters
+  searchParams.forEach((value, key) => {
+    if (key !== "token" && key !== "imageType" && key !== "tag") {
+        urlObj.searchParams.set(key, value);
+    }
+  });
   
-  urlObj.searchParams.set("quality", quality);
-  urlObj.searchParams.set("format", format);
-  if (tag) urlObj.searchParams.set("tag", tag);
-  
-  imageUrl = urlObj.toString();
+  // If the provider returned a full URL, use it. If it was relative to jellyfin, getJellyfinUrl would have been used.
+  // Our JellyfinProvider currently returns full URLs.
+  imageUrl = urlObj.toString().replace("http://n/", "/");
 
   try {
-    const headers = (accessToken && deviceId) 
-      ? getAuthenticatedHeaders(accessToken, deviceId)
-      : (accessToken ? { "X-Emby-Token": accessToken } : {});
+    const headers: any = {};
+    if (provider.name === "jellyfin" && accessToken) {
+        const { getAuthenticatedHeaders } = await import("@/lib/jellyfin/api");
+        Object.assign(headers, getAuthenticatedHeaders(accessToken, deviceId || "Swiparr"));
+    }
 
-    // Use apiClient (axios) as we know it works in this environment's network config
     const response = await apiClient.get(imageUrl, {
       responseType: "arraybuffer",
-      headers: headers as any,
+      headers,
     });
 
     const contentType = response.headers["content-type"] || "image/webp";
     
-    // Return the buffer directly. Next.js Image optimizer will consume this.
     return new NextResponse(response.data, {
       status: 200,
       headers: {
@@ -74,11 +80,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
   } catch (error: any) {
-    // If it's a 404 from Jellyfin, we return 404
     if (error.response?.status === 404) {
       return new NextResponse("Image not found", { status: 404 });
     }
-    console.error("Error proxying image from Jellyfin:", error.message);
+    console.error("Error proxying image:", error.message);
     return new NextResponse("Error fetching image", { status: 500 });
   }
 }

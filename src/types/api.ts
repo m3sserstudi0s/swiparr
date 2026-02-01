@@ -1,10 +1,10 @@
-import { JellyfinItem } from "./jellyfin";
+import { MediaItem } from "./media";
 import { Filters, SessionSettings } from "./session";
 
 export interface SwipePayload {
   itemId: string;
   direction: "left" | "right";
-  item?: JellyfinItem;
+  item?: MediaItem;
   sessionCode?: string | null;
 }
 
@@ -26,15 +26,10 @@ export interface SessionStatus {
   settings: SessionSettings | null;
 }
 
-export interface MergedLike extends JellyfinItem {
+export interface MergedLike extends MediaItem {
   swipedAt?: string;
   sessionCode?: string | null;
   isMatch?: boolean;
-  likedBy?: {
-    userId: string;
-    userName: string;
-    sessionCode?: string | null;
-  }[];
 }
 
 export interface AuthResponse {

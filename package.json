@@ -56,6 +56,7 @@
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
+    "tmdb-ts": "^2.2.0",
     "tw-shimmer": "^0.4.2",
     "uuid": "^13.0.0",
     "vaul": "^1.1.2",

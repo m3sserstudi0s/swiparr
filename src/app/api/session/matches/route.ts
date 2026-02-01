@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "@/lib/jellyfin/api";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -16,29 +17,22 @@ export async function GET(request: NextRequest) {
   if (!session.sessionCode) return NextResponse.json([]);
 
   try {
-    const { accessToken, deviceId, userId } = await getEffectiveCredentials(session);
+    const auth = await getEffectiveCredentials(session);
+    const provider = getMediaProvider();
 
     const matches = await db.select().from(likes)
       .where(and(
         eq(likes.sessionCode, session.sessionCode as string),
         eq(likes.isMatch, true),
       ))
-      .groupBy(likes.jellyfinItemId)
+      .groupBy(likes.externalId)
       .orderBy(desc(likes.createdAt));
 
     if (matches.length === 0) return NextResponse.json([]);
 
-    const ids = matches.map((m: Like) => m.jellyfinItemId).join(",");
+    const ids = matches.map((m: Like) => m.externalId);
     
-    const jellyfinRes = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Items`), {
-      params: {
-        Ids: ids,
-        Fields: "ProductionYear,CommunityRating,Overview",
-      },
-      headers: getAuthenticatedHeaders(accessToken!, deviceId!),
-    });
-
-    const items = jellyfinRes.data.Items;
+    const items = await Promise.all(ids.map(id => provider.getItemDetails(id, auth)));
 
     // Fetch all likes for these items in this session to know who liked what
     const allLikesInSession = await db.query.likes.findMany({
@@ -49,11 +43,11 @@ export async function GET(request: NextRequest) {
 
     // Map likes to items
     const itemsWithLikes = items.map((item: any) => {
-        const itemLikes = allLikesInSession.filter(l => l.jellyfinItemId === item.Id);
+        const itemLikes = allLikesInSession.filter(l => l.externalId === item.Id);
         return {
             ...item,
             likedBy: itemLikes.map(l => ({
-                userId: l.jellyfinUserId,
+                userId: l.externalUserId,
             }))
         };
     });
@@ -67,7 +61,7 @@ export async function GET(request: NextRequest) {
         ...item,
         likedBy: item.likedBy.map((lb: any) => ({
             ...lb,
-            userName: members.find(m => m.jellyfinUserId === lb.userId)?.jellyfinUserName || "Unknown"
+            userName: members.find(m => m.externalUserId === lb.userId)?.externalUserName || "Unknown"
         }))
     }));
 

@@ -30,7 +30,7 @@ export function AccountSettings() {
         <SettingsSection title="Account">
             <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
                 <Avatar className="inline-block">
-                    <AvatarImage src={`/api/jellyfin/image/${userId}?type=user`} />
+                    <AvatarImage src={`/api/media/image/${userId}?type=user`} />
                     <AvatarFallback
                         className="font-semibold"
                     >

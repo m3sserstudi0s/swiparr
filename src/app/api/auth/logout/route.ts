@@ -21,16 +21,16 @@ export async function POST() {
     const userLikes = await db.query.likes.findMany({
         where: and(
             eq(likes.sessionCode, code),
-            eq(likes.jellyfinUserId, userId)
+            eq(likes.externalUserId, userId)
         )
     });
-    const likedItemIds = userLikes.map(l => l.jellyfinItemId);
+    const likedItemIds = userLikes.map(l => l.externalId);
 
     // 1. Remove member from session
     await db.delete(sessionMembers).where(
         and(
             eq(sessionMembers.sessionCode, code),
-            eq(sessionMembers.jellyfinUserId, userId)
+            eq(sessionMembers.externalUserId, userId)
         )
     );
 
@@ -38,13 +38,13 @@ export async function POST() {
     await db.delete(likes).where(
         and(
             eq(likes.sessionCode, code),
-            eq(likes.jellyfinUserId, userId)
+            eq(likes.externalUserId, userId)
         )
     );
     await db.delete(hiddens).where(
         and(
             eq(hiddens.sessionCode, code),
-            eq(hiddens.jellyfinUserId, userId)
+            eq(hiddens.externalUserId, userId)
         )
     );
 
@@ -70,7 +70,7 @@ export async function POST() {
                 const remainingItemLikes = await db.query.likes.findMany({
                     where: and(
                         eq(likes.sessionCode, code),
-                        eq(likes.jellyfinItemId, itemId)
+                        eq(likes.externalId, itemId)
                     )
                 });
 
@@ -86,7 +86,7 @@ export async function POST() {
                         .set({ isMatch: false })
                         .where(and(
                             eq(likes.sessionCode, code),
-                            eq(likes.jellyfinItemId, itemId)
+                            eq(likes.externalId, itemId)
                         ));
                 }
             }

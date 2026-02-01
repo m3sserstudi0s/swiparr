@@ -7,7 +7,7 @@ export const loginSchema = z.object({
 
 export const guestLoginSchema = z.object({
   username: z.string().min(1, "Username is required").max(50),
-  sessionCode: z.string().length(4, "Session code must be 4 characters"),
+  sessionCode: z.string().length(4, "Session code must be 4 characters").optional().or(z.literal("")),
 });
 
 export const swipeSchema = z.object({

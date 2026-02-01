@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
         try {
             await db.insert(sessionMembers).values({
                 sessionCode: code,
-                jellyfinUserId: session.user.Id,
-                jellyfinUserName: session.user.Name,
+                externalUserId: session.user.Id,
+                externalUserName: session.user.Name,
             }).onConflictDoNothing();
         } catch (e) {
             // Ignore if already member
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
         // Register host as member
         await db.insert(sessionMembers).values({
             sessionCode: code,
-            jellyfinUserId: session.user.Id,
-            jellyfinUserName: session.user.Name,
+            externalUserId: session.user.Id,
+            externalUserName: session.user.Name,
         });
 
 
@@ -223,16 +223,16 @@ export async function DELETE() {
         const userLikes = await db.query.likes.findMany({
             where: and(
                 eq(likes.sessionCode, code),
-                eq(likes.jellyfinUserId, userId)
+                eq(likes.externalUserId, userId)
             )
         });
-        const likedItemIds = userLikes.map(l => l.jellyfinItemId);
+        const likedItemIds = userLikes.map(l => l.externalId);
 
         // 1. Remove member from session
         await db.delete(sessionMembers).where(
             and(
                 eq(sessionMembers.sessionCode, code),
-                eq(sessionMembers.jellyfinUserId, userId)
+                eq(sessionMembers.externalUserId, userId)
             )
         );
 
@@ -240,13 +240,13 @@ export async function DELETE() {
         await db.delete(likes).where(
             and(
                 eq(likes.sessionCode, code),
-                eq(likes.jellyfinUserId, userId)
+                eq(likes.externalUserId, userId)
             )
         );
         await db.delete(hiddens).where(
             and(
                 eq(hiddens.sessionCode, code),
-                eq(hiddens.jellyfinUserId, userId)
+                eq(hiddens.externalUserId, userId)
             )
         );
 
@@ -272,7 +272,7 @@ export async function DELETE() {
                     const remainingItemLikes = await db.query.likes.findMany({
                         where: and(
                             eq(likes.sessionCode, code),
-                            eq(likes.jellyfinItemId, itemId)
+                            eq(likes.externalId, itemId)
                         )
                     });
 
@@ -288,7 +288,7 @@ export async function DELETE() {
                             .set({ isMatch: false })
                             .where(and(
                                 eq(likes.sessionCode, code),
-                                eq(likes.jellyfinItemId, itemId)
+                                eq(likes.externalId, itemId)
                             ));
                     }
                 }

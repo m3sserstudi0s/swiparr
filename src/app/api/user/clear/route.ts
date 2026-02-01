@@ -31,8 +31,8 @@ export async function POST() {
     }
 
     // 3. Clear user's own likes/hiddens (including those not in sessions)
-    await db.delete(likesTable).where(eq(likesTable.jellyfinUserId, userId));
-    await db.delete(hiddensTable).where(eq(hiddensTable.jellyfinUserId, userId));
+    await db.delete(likesTable).where(eq(likesTable.externalUserId, userId));
+    await db.delete(hiddensTable).where(eq(hiddensTable.externalUserId, userId));
 
     // 4. Finally delete the sessions hosted by the user
     await db.delete(sessionsTable).where(eq(sessionsTable.hostUserId, userId));

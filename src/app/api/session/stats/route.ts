@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
     // 1. My Swipes
     const myLikesCount = await db.select({ count: sql<number>`count(*)` })
         .from(likes)
-        .where(and(eq(likes.sessionCode, sessionCode), eq(likes.jellyfinUserId, userId)));
+        .where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, userId)));
     
     const myHiddensCount = await db.select({ count: sql<number>`count(*)` })
         .from(hiddens)
-        .where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.jellyfinUserId, userId)));
+        .where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, userId)));
 
     const myRight = myLikesCount[0].count;
     const myLeft = myHiddensCount[0].count;

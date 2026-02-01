@@ -52,7 +52,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       if (useStaticFilterValues) {
         return Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => ({ Name: (1900 + i).toString() }));
       }
-      const res = await apiClient.get("/api/jellyfin/years");
+      const res = await apiClient.get("/api/media/years");
       return res.data;
     },
     enabled: open,
@@ -79,7 +79,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     queryKey: ["genres"],
     queryFn: async () => {
       if (useStaticFilterValues) return DEFAULT_GENRES;
-      const res = await apiClient.get("/api/jellyfin/genres");
+      const res = await apiClient.get("/api/media/genres");
       return res.data;
     },
     enabled: open,
@@ -92,7 +92,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     queryKey: ["ratings"],
     queryFn: async () => {
       if (useStaticFilterValues) return DEFAULT_RATINGS;
-      const res = await apiClient.get("/api/jellyfin/ratings");
+      const res = await apiClient.get("/api/media/ratings");
       return res.data;
     },
     enabled: open,

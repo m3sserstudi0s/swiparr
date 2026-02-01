@@ -36,6 +36,13 @@
       "when": 1767542143026,
       "tag": "0004_classy_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1769952020234,
+      "tag": "0005_typical_agent_zero",
+      "breakpoints": true
     }
   ]
 }

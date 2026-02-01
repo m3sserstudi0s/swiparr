@@ -46,7 +46,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                 <Tooltip key={user.userId}>
                     <TooltipTrigger asChild>
                         <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
-                            <AvatarImage src={`/api/jellyfin/image/${user.userId}?type=user`} />
+                            <AvatarImage src={`/api/media/image/${user.userId}?type=user`} />
                             <AvatarFallback
                                 className={cn(
                                     "font-semibold",

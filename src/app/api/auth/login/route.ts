@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/session";
-import { authenticateJellyfin } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { isAdmin, setAdminUserId } from "@/lib/server/admin";
-import { apiClient } from "@/lib/jellyfin/api";
 import axios from "axios";
-
 import { loginSchema } from "@/lib/validations";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function POST(request: NextRequest) {
     let usernameForLog = "unknown";
@@ -23,32 +21,43 @@ export async function POST(request: NextRequest) {
         const { username, password } = validated.data;
         usernameForLog = username;
 
-        // Create a unique deviceId for this user-device combination
-        // Using a hash or simply appending username to a base device ID
         const baseDeviceId = crypto.randomUUID();
         const deviceId = `${baseDeviceId}-${username}`;
 
-        // Log the attempt (Don't log the password!)
         console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
 
-        const jellyfinUser = await authenticateJellyfin(username, password, deviceId);
-        console.log("[Auth] Jellyfin API accepted credentials. User ID:", jellyfinUser.User.Id);
+        const provider = getMediaProvider();
+        if (!provider.authenticate) {
+            return NextResponse.json({ message: "Authentication not supported by this provider" }, { status: 400 });
+        }
+
+        const authResult = await provider.authenticate(username, password, deviceId);
+        
+        // Jellyfin provider returns { User: { Id, Name }, AccessToken, ... }
+        // We might need to normalize this in the provider or handle it here
+        // For now, I'll assume the provider returns a standard object or I'll adapt it in JellyfinProvider
+        
+        const userId = authResult.User?.Id || authResult.id;
+        const userName = authResult.User?.Name || authResult.name;
+        const accessToken = authResult.AccessToken || authResult.accessToken;
+
+        console.log("[Auth] Provider accepted credentials. User ID:", userId);
 
         // Set as admin if no admin exists
-        const wasMadeAdmin = await setAdminUserId(jellyfinUser.User.Id);
+        const wasMadeAdmin = await setAdminUserId(userId);
         if (wasMadeAdmin) {
-            console.log(`[Auth] User ${jellyfinUser.User.Name} (${jellyfinUser.User.Id}) set as initial admin.`);
+            console.log(`[Auth] User ${userName} (${userId}) set as initial admin.`);
         }
 
         const cookieStore = await cookies();
         const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
 
         session.user = {
-            Id: jellyfinUser.User.Id,
-            Name: jellyfinUser.User.Name,
-            AccessToken: jellyfinUser.AccessToken,
+            Id: userId,
+            Name: userName,
+            AccessToken: accessToken,
             DeviceId: deviceId,
-            isAdmin: await isAdmin(jellyfinUser.User.Id, jellyfinUser.User.Name),
+            isAdmin: await isAdmin(userId, userName),
             wasMadeAdmin: wasMadeAdmin,
         };
         session.isLoggedIn = true;
