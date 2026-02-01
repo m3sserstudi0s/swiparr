@@ -2,6 +2,7 @@ import { getRuntimeConfig } from "@/lib/runtime-config";
 import { MediaProvider } from "./types";
 import { JellyfinProvider } from "./jellyfin/index";
 import { TmdbProvider } from "./tmdb/index";
+import { PlexProvider } from "./plex/index";
 
 class ProviderFactory {
   private static instance: MediaProvider;
@@ -25,6 +26,9 @@ class ProviderFactory {
         break;
       case "tmdb":
         this.instance = new TmdbProvider();
+        break;
+      case "plex":
+        this.instance = new PlexProvider();
         break;
       default:
         console.warn(`Unknown provider: ${providerType}, defaulting to Jellyfin`);

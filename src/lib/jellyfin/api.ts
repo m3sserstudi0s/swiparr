@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getRuntimeConfig } from '../runtime-config';
 
-const JELLYFIN_URL = process.env.JELLYFIN_URL || 'http://localhost:8096';
+const JELLYFIN_URL = process.env.JELLYFIN_URL || process.env.SERVER_URL || 'http://localhost:8096';
 
 // Create an axios instance with a timeout to prevent hanging requests
 export const apiClient = axios.create({

@@ -17,7 +17,7 @@ import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 
 export default function LoginContent() {
-  const { capabilities, basePath } = useRuntimeConfig();
+  const { capabilities, basePath, provider } = useRuntimeConfig();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [guestName, setGuestName] = useState("");
@@ -231,7 +231,7 @@ export default function LoginContent() {
                     </div>
                   ) : (
                     <form onSubmit={handleLogin} className="space-y-3">
-                      <CardDescription>Enter your Jellyfin credentials</CardDescription>
+                      <CardDescription>Enter your {provider === 'jellyfin' ? 'Jellyfin' : provider === 'plex' ? 'Plex' : 'provider'} credentials</CardDescription>
                       <Input
                         placeholder="Username"
                         value={username}
@@ -240,7 +240,7 @@ export default function LoginContent() {
                       />
                       <Input
                         type="password"
-                        placeholder="Password"
+                        placeholder={provider === 'plex' ? 'Token' : 'Password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="bg-muted border-input"
@@ -248,19 +248,23 @@ export default function LoginContent() {
                       <Button type="submit" className="w-full mt-2" disabled={loading}>
                         {loading ? "Connecting..." : "Log in"}
                       </Button>
-                      <div className="relative py-1">
-                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-                        <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full hover:bg-accent h-9"
-                        onClick={startQuickConnect}
-                        disabled={loading}
-                      >
-                        Quick Connect
-                      </Button>
+                      {capabilities.hasQuickConnect && (
+                        <>
+                          <div className="relative py-1">
+                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+                            <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full hover:bg-accent h-9"
+                            onClick={startQuickConnect}
+                            disabled={loading}
+                          >
+                            Quick Connect
+                          </Button>
+                        </>
+                      )}
                     </form>
                   )}
                 </TabsContent>

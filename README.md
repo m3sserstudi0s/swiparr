@@ -96,8 +96,12 @@ docker run -d \
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `JELLYFIN_URL` | **Required:** Internal URL to your Jellyfin server. | - |
-| `JELLYFIN_PUBLIC_URL` | _Optional:_  Public URL to your Jellyfin server. Defaults to `JELLYFIN_URL`. | - |
+| `PROVIDER` | The media provider to use (`jellyfin`, `plex`, or `tmdb`). | `jellyfin` |
+| `JELLYFIN_URL` | Internal URL to your Jellyfin server. | - |
+| `JELLYFIN_PUBLIC_URL` | _Optional:_ Public URL to your Jellyfin server. Defaults to `JELLYFIN_URL`. | - |
+| `PLEX_URL` | Internal URL to your Plex server (e.g., `http://192.168.1.10:32400`). | - |
+| `PLEX_TOKEN` | _Optional:_ A global Plex token to use for admin tasks and public access. | - |
+| `TMDB_ACCESS_TOKEN` | Your TMDB API Read-Only Access Token (required if using `tmdb` provider). | - |
 | `AUTH_SECRET` | _Optional:_  Random string (min 32 chars). Generated automatically if not set. | - |
 | `JELLYFIN_USE_WATCHLIST` | _Optional:_ Set to `true` to use "Watchlist" instead of "Favorites". | `false` |
 | `USE_SECURE_COOKIES` | _Optional:_ Security: Set to `true` if you are accessing Swiparr over HTTPS. | `false` |

@@ -87,13 +87,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (provider.name === "jellyfin" && accessToken && !isTmdbImageUrl) {
         const { getAuthenticatedHeaders } = await import("@/lib/jellyfin/api");
         Object.assign(headers, getAuthenticatedHeaders(accessToken, deviceId || "Swiparr"));
+    } else if (provider.name === "plex" && !isTmdbImageUrl) {
+        const { getPlexHeaders } = await import("@/lib/plex/api");
+        const token = accessToken || process.env.PLEX_TOKEN;
+        Object.assign(headers, getPlexHeaders(token || undefined));
     }
 
-    // Use axios directly for external TMDB images, use apiClient for Jellyfin (which handles base URL)
-    const response = await (isTmdbImageUrl ? axios.get(imageUrl, { responseType: "arraybuffer" }) : apiClient.get(imageUrl, {
-      responseType: "arraybuffer",
-      headers,
-    }));
+    // Use axios directly for external TMDB images, use apiClient for Jellyfin/Plex
+    let response;
+    if (isTmdbImageUrl) {
+        response = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    } else {
+        const { apiClient } = await import("@/lib/jellyfin/api");
+        const { plexClient } = await import("@/lib/plex/api");
+        const client = provider.name === "plex" ? plexClient : apiClient;
+        response = await client.get(imageUrl, {
+          responseType: "arraybuffer",
+          headers,
+        });
+    }
 
     const contentType = response.headers["content-type"] || "image/webp";
     

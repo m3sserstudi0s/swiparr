@@ -13,13 +13,18 @@ if (!process.env.AUTH_SECRET && !process.env.AUTHORS_SECRET) {
 
 const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
 
-if (provider === 'jellyfin' && !process.env.JELLYFIN_URL) {
+if (provider === 'jellyfin' && (!process.env.JELLYFIN_URL && !process.env.SERVER_URL)) {
   console.error('ERROR: JELLYFIN_URL is not set. Swiparr requires this to function with the jellyfin provider.');
   process.exit(1);
 }
 
 if (provider === 'tmdb' && !process.env.TMDB_ACCESS_TOKEN) {
   console.error('ERROR: TMDB_ACCESS_TOKEN is not set. Swiparr requires this to function with the tmdb provider.');
+  process.exit(1);
+}
+
+if (provider === 'plex' && (!process.env.PLEX_URL && !process.env.SERVER_URL)) {
+  console.error('ERROR: PLEX_URL is not set. Swiparr requires this to function with the plex provider.');
   process.exit(1);
 }
 
