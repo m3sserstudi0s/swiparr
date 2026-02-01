@@ -34,7 +34,21 @@ export function CardDeck() {
   const sessionSettings = sessionStatus?.settings;
 
   const { data: stats } = useStats();
-  const { data: deck, isLoading, isError, refetch, isFetching } = useDeck();
+  const { 
+    data: deckData, 
+    isLoading, 
+    isError, 
+    refetch, 
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useDeck();
+
+  // Flatten the pages from useInfiniteQuery
+  const deck = useMemo(() => {
+    return deckData?.pages.flatMap(page => page.items) || [];
+  }, [deckData]);
   const { data: members } = useMembers();
   
   const swipeMutation = useSwipe();
@@ -149,6 +163,13 @@ export function CardDeck() {
     return filteredDeck.filter((item: MediaItem) => !swipedIdsRef.current.has(item.Id));
   }, [filteredDeck]);
 
+  // Fetch next page when deck is running low
+  useEffect(() => {
+    if (activeDeck.length < 10 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [activeDeck.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   useEffect(() => {
     const topItem = activeDeck[0];
     if (topItem) {
@@ -228,6 +249,7 @@ export function CardDeck() {
           <DeckEmpty onRefresh={() => {
             setRemovedIds([]);
             swipedIdsRef.current.clear();
+            setDisplayDeck([]);
             refetch();
           }} onOpenFilter={() => setIsFilterOpen(true)} />
         ) : (

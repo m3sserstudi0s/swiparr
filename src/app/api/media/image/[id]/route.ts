@@ -39,14 +39,35 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const imageType = searchParams.get("imageType") || "Primary";
   const tag = searchParams.get("tag");
   
-  const provider = getMediaProvider();
+  let provider = getMediaProvider();
   
+  // Heuristic to detect if ID is likely TMDB (numeric or path-like) 
+  // vs Jellyfin (usually UUID-like)
+  const isNumeric = /^\d+$/.test(id);
+  const isPath = id.startsWith('/');
+  
+  if ((isNumeric || isPath) && provider.name !== "tmdb") {
+      // If we have a numeric ID but current provider is jellyfin, 
+      // it might be a TMDB ID leaking through or vice versa.
+      // For now, let's trust the configured provider unless it fails, 
+      // but if provider is TMDB, we definitely use it.
+  }
+
   // Jellyfin-specific user image handling
   let imageUrl = (isUser && provider.name === "jellyfin")
-    ? (provider as any).getImageUrl(id, "user") // Need to handle user images in provider
+    ? (provider as any).getImageUrl(id, "user") 
     : provider.getImageUrl(id, imageType as any, tag || undefined);
 
-  const urlObj = new URL(imageUrl, "http://n"); // dummy base for relative URLs if any
+  if (!imageUrl && provider.name === "tmdb" && tag) {
+      // Retry with tag if provider returned empty
+      imageUrl = provider.getImageUrl(id, imageType as any, tag);
+  }
+
+  if (!imageUrl) {
+      return new NextResponse("Image not found", { status: 404 });
+  }
+
+  const urlObj = new URL(imageUrl, "http://n");
   
   // Forward parameters
   searchParams.forEach((value, key) => {
@@ -55,18 +76,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
   });
   
-  // If the provider returned a full URL, use it. If it was relative to jellyfin, getJellyfinUrl would have been used.
+    // If the provider returned a full URL, use it. If it was relative to jellyfin, getJellyfinUrl would have been used.
   // Our JellyfinProvider currently returns full URLs.
   imageUrl = urlObj.toString().replace("http://n/", "/");
 
   try {
     const headers: any = {};
-    if (provider.name === "jellyfin" && accessToken) {
+    const isTmdbImageUrl = imageUrl.includes("tmdb.org");
+
+    if (provider.name === "jellyfin" && accessToken && !isTmdbImageUrl) {
         const { getAuthenticatedHeaders } = await import("@/lib/jellyfin/api");
         Object.assign(headers, getAuthenticatedHeaders(accessToken, deviceId || "Swiparr"));
     }
 
-    const response = await (provider.name === "tmdb" ? axios.get(imageUrl, { responseType: "arraybuffer" }) : apiClient.get(imageUrl, {
+    // Use axios directly for external TMDB images, use apiClient for Jellyfin (which handles base URL)
+    const response = await (isTmdbImageUrl ? axios.get(imageUrl, { responseType: "arraybuffer" }) : apiClient.get(imageUrl, {
       responseType: "arraybuffer",
       headers,
     }));

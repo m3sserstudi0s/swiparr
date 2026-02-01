@@ -1,4 +1,5 @@
-import { TMDB } from 'tmdb-ts';
+import { MovieQueryOptions, TMDB } from 'tmdb-ts';
+import { v4 as uuidv4 } from "uuid";
 import { 
   MediaProvider, 
   ProviderCapabilities, 
@@ -32,36 +33,64 @@ export class TmdbProvider implements MediaProvider {
   }
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
+    const genres = await this.getGenres(auth);
+    const genreIdMap = new Map(genres.map(g => [g.Name, g.Id]));
+    const genreNameMap = new Map(genres.map(g => [g.Id, g.Name]));
+
     if (filters.searchTerm) {
         const searchRes = await this.client.search.movies({ 
             query: filters.searchTerm,
             page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1
         });
-        return searchRes.results.map((m: any) => this.mapMovieToMediaItem(m));
+        return searchRes.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));
+    }
+
+    // Default to discover
+    const discoverOptions: MovieQueryOptions = {
+        page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1,
+        with_genres: filters.genres?.map(name => genreIdMap.get(name)).filter(Boolean).join(','),
+    };
+
+    if (filters.years && filters.years.length > 0) {
+        const minYear = Math.min(...filters.years);
+        const maxYear = Math.max(...filters.years);
+        if (minYear === maxYear) {
+            discoverOptions.primary_release_year = minYear;
+        } else {
+            discoverOptions['primary_release_date.gte'] = `${minYear}-01-01`;
+            discoverOptions['primary_release_date.lte'] = `${maxYear}-12-31`;
+        }
+    }
+
+    if (filters.ratings && filters.ratings.length > 0) {
+        // officialRatings from Jellyfin don't map directly to TMDB easily without a map
+        // but we can try to use vote_average if a numeric-like rating is passed
+        const numericRatings = filters.ratings.map(r => parseFloat(r)).filter(n => !isNaN(n));
+        if (numericRatings.length > 0) {
+            discoverOptions['vote_average.gte'] = Math.min(...numericRatings);
+        }
     }
 
     // If no specific filters and sortBy is Random, we can use trending or discover with a random page
     if (!filters.genres?.length && !filters.years?.length && !filters.ratings?.length && filters.sortBy === "Random") {
-        const page = Math.floor(Math.random() * 10) + 1; // Randomize within first 10 pages
-        // Using any cast since I'm unsure of exact method name for trending movies in this lib
-        const trending = await this.client.trending.trending("movie", "week")
-        return trending.results.map((m: any) => this.mapMovieToMediaItem(m));
+        const page = Math.floor(Math.random() * 10) + 1;
+        const trending = await this.client.trending.trending("movie", "week", { page });
+        return trending.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));
     }
 
-    // Default to discover
-    const discoverOptions: any = {
-        page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1,
-        with_genres: filters.genres?.join(','),
-        primary_release_year: filters.years?.[0], 
-        'vote_average.gte': filters.ratings?.[0] ? parseFloat(filters.ratings[0]) : undefined,
-    };
-
     if (filters.sortBy === "Random") {
-        discoverOptions.page = Math.floor(Math.random() * 20) + 1;
+        // To get better randomness with discover, we first get total pages
+        try {
+            const initialRes = await this.client.discover.movie({ ...discoverOptions, page: 1 });
+            const totalPages = Math.min(initialRes.total_pages, 500); // TMDB limits to 500 pages for discover
+            discoverOptions.page = Math.floor(Math.random() * totalPages) + 1;
+        } catch (e) {
+            discoverOptions.page = Math.floor(Math.random() * 20) + 1;
+        }
     }
 
     const discoverRes = await this.client.discover.movie(discoverOptions);
-    return discoverRes.results.map((m: any) => this.mapMovieToMediaItem(m));
+    return discoverRes.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
@@ -92,11 +121,19 @@ export class TmdbProvider implements MediaProvider {
   }
 
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string): string {
-    if (!tag) return "";
-    // TMDB tags ARE the paths
-    const cleanTag = tag.startsWith('/') ? tag : `/${tag}`;
     const size = type === "Primary" ? "w500" : "original";
-    return `https://image.tmdb.org/t/p/${size}${cleanTag}`;
+    if (tag) {
+        const cleanTag = tag.startsWith('/') ? tag : `/${tag}`;
+        return `https://image.tmdb.org/t/p/${size}${cleanTag}`;
+    }
+    
+    // Fallback if no tag provided but we have an itemId that might be the path
+    if (itemId && (itemId.startsWith('/') || itemId.length > 20)) {
+        const cleanTag = itemId.startsWith('/') ? itemId : `/${itemId}`;
+        return `https://image.tmdb.org/t/p/${size}${cleanTag}`;
+    }
+
+    return "";
   }
 
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
@@ -106,7 +143,7 @@ export class TmdbProvider implements MediaProvider {
         const details = await this.getItemDetails(itemId);
         const tag = type === "Backdrop" ? details.ImageTags?.Backdrop : details.ImageTags?.Primary;
         if (!tag) return "";
-        const imageUrl = `https://image.tmdb.org/t/p/w200${tag}`; // Small size for blur
+        const imageUrl = `https://image.tmdb.org/t/p/w200${tag.startsWith('/') ? tag : `/${tag}`}`; 
         return await getBlurDataURL(itemId, imageUrl) || "";
     } catch (e) {
         return "";
@@ -114,7 +151,6 @@ export class TmdbProvider implements MediaProvider {
   }
 
   async authenticate(username: string, password?: string, deviceId?: string): Promise<any> {
-    const { v4: uuidv4 } = await import("uuid");
     return {
         id: `tmdb-${uuidv4()}`,
         name: username,
@@ -122,7 +158,7 @@ export class TmdbProvider implements MediaProvider {
     };
   }
 
-  private mapMovieToMediaItem(movie: any): MediaItem {
+  private mapMovieToMediaItem(movie: any, genreMap?: Map<string, string>): MediaItem {
     return {
       Id: movie.id.toString(),
       Name: movie.title,
@@ -133,11 +169,28 @@ export class TmdbProvider implements MediaProvider {
         Primary: movie.poster_path,
         Backdrop: movie.backdrop_path,
       },
-      Genres: [], 
+      Genres: movie.genre_ids?.map((id: number) => genreMap?.get(id.toString())).filter(Boolean) || [], 
     };
   }
 
   private mapMovieDetailsToMediaItem(movie: any): MediaItem {
+    const people = [
+        ...(movie.credits?.cast?.slice(0, 10).map((p: any) => ({
+            Id: p.id.toString(),
+            Name: p.name,
+            Role: p.character,
+            Type: "Actor",
+            PrimaryImageTag: p.profile_path,
+        })) || []),
+        ...(movie.credits?.crew?.filter((p: any) => p.job === "Director").map((p: any) => ({
+            Id: p.id.toString(),
+            Name: p.name,
+            Role: "Director",
+            Type: "Director",
+            PrimaryImageTag: p.profile_path,
+        })) || [])
+    ];
+
     return {
       Id: movie.id.toString(),
       Name: movie.title,
@@ -153,13 +206,7 @@ export class TmdbProvider implements MediaProvider {
         Backdrop: movie.backdrop_path,
       },
       BackdropImageTags: movie.backdrop_path ? [movie.backdrop_path] : [],
-      People: movie.credits?.cast?.slice(0, 10).map((p: any) => ({
-        Id: p.id.toString(),
-        Name: p.name,
-        Role: p.character,
-        Type: "Actor",
-        PrimaryImageTag: p.profile_path,
-      })),
+      People: people,
     };
   }
 }

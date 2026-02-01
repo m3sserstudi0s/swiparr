@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Clock } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { ticksToTime } from "@/lib/utils";
+import { cn, ticksToTime } from "@/lib/utils";
 
 
 export type { TinderCardHandle };
@@ -82,7 +82,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
             onPointerDown={isFront ? handlePointerDown : undefined}
             onPointerUp={isFront ? handlePointerUp : undefined}
           >
-            <Card className="relative h-full w-full overflow-hidden rounded-3xl border-border shadow-2xl select-none isolate transform-gpu">
+            <Card className={cn("relative h-full w-full overflow-hidden rounded-3xl border-border select-none isolate transform-gpu", isFront && "shadow-xl")}>
               <div className="absolute inset-0 bg-muted pointer-events-none rounded-3xl">
                 <OptimizedImage
                   src={`/api/media/image/${item.Id}?tag=${item.ImageTags?.Primary}`}

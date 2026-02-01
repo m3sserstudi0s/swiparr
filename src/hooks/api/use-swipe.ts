@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, InfiniteData } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { MediaItem, SwipePayload, SwipeResponse, SessionStats } from "@/types";
 import { QUERY_KEYS } from "./query-keys";
@@ -20,14 +20,21 @@ export function useSwipe() {
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.stats(sessionCode!) });
 
       // Snapshot the previous value
-      const previousDeck = queryClient.getQueryData<MediaItem[]>(QUERY_KEYS.deck(sessionCode));
+      const previousDeck = queryClient.getQueryData<InfiniteData<{ items: MediaItem[]; hasMore: boolean }>>(QUERY_KEYS.deck(sessionCode));
       const previousStats = queryClient.getQueryData<SessionStats>(QUERY_KEYS.stats(sessionCode!));
 
       // Optimistically update to the new value
       if (previousDeck) {
-        queryClient.setQueryData(QUERY_KEYS.deck(sessionCode), (old: MediaItem[] | undefined) => 
-          old?.filter(item => item.Id !== payload.itemId)
-        );
+        queryClient.setQueryData<InfiniteData<{ items: MediaItem[]; hasMore: boolean }>>(QUERY_KEYS.deck(sessionCode), (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map(page => ({
+              ...page,
+              items: page.items.filter(item => item.Id !== payload.itemId)
+            }))
+          };
+        });
       }
 
       if (previousStats) {

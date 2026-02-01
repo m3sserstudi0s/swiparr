@@ -47,3 +47,4 @@ swiparr.db
 AGENTS.md
 .gemini/settings.json
 docs/*
+build_output.txt
