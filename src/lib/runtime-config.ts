@@ -10,6 +10,7 @@ import { ProviderCapabilities } from "./providers/types";
 
 export interface RuntimeConfig {
   provider: "jellyfin" | "tmdb" | "plex" | string;
+  providerLock: boolean;
   capabilities: ProviderCapabilities;
   serverPublicUrl: string;
   useWatchlist: boolean;
@@ -28,6 +29,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
   }
   
   const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
+  const providerLock = (process.env.PROVIDER_LOCK || 'true').toLowerCase() === 'true';
   
   // Default capabilities (Jellyfin style)
   const capabilities: ProviderCapabilities = {
@@ -56,6 +58,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
   
   return {
     provider,
+    providerLock,
     capabilities,
     serverPublicUrl,
     useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.USE_WATCHLIST || '').toLowerCase() === 'true',

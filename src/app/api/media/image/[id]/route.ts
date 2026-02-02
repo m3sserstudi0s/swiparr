@@ -18,6 +18,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   
   let accessToken = token;
   let deviceId: string | undefined;
+  let serverUrl: string | undefined;
+  let providerType: string | undefined;
   
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
@@ -28,18 +30,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const creds = await getEffectiveCredentials(session);
         accessToken = creds.accessToken || "";
         deviceId = creds.deviceId;
+        serverUrl = creds.serverUrl;
+        providerType = creds.provider;
     } catch (e) {
         // May fail if TMDB/no-auth, that's okay for public images
     }
   } else if (session.isLoggedIn && session.user.AccessToken === accessToken) {
     deviceId = session.user.DeviceId;
+    serverUrl = session.user.providerConfig?.serverUrl;
+    providerType = session.user.provider;
   }
 
   const isUser = searchParams.get("type") === "user";
   const imageType = searchParams.get("imageType") || "Primary";
   const tag = searchParams.get("tag");
   
-  let provider = getMediaProvider();
+  let provider = getMediaProvider(providerType);
   
   // Heuristic to detect if ID is likely TMDB (numeric or path-like) 
   // vs Jellyfin (usually UUID-like)
@@ -55,12 +61,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   // Jellyfin-specific user image handling
   let imageUrl = (isUser && provider.name === "jellyfin")
-    ? (provider as any).getImageUrl(id, "user") 
-    : provider.getImageUrl(id, imageType as any, tag || undefined);
+    ? (provider as any).getImageUrl(id, "user", undefined, { serverUrl }) 
+    : provider.getImageUrl(id, imageType as any, tag || undefined, { serverUrl });
 
   if (!imageUrl && provider.name === "tmdb" && tag) {
       // Retry with tag if provider returned empty
-      imageUrl = provider.getImageUrl(id, imageType as any, tag);
+      imageUrl = provider.getImageUrl(id, imageType as any, tag, { serverUrl });
   }
 
   if (!imageUrl) {

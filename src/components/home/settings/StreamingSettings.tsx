@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SettingsSection } from "./SettingsSection";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
     Collapsible,
     CollapsibleContent,
@@ -16,54 +15,55 @@ import { Spinner } from "@/components/ui/spinner"
 import {
     useUserSettings,
     useUpdateUserSettings,
-    useWatchProviders
+    useWatchProviders,
+    useRegions
 } from "@/hooks/api";
-import { WatchProvider } from "@/types/media";
+import { WatchProvider, MediaRegion } from "@/types/media";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+    Combobox,
+    ComboboxInput,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxList,
+    ComboboxItem,
+    ComboboxTrigger,
+} from "@/components/ui/combobox"
 import { OptimizedImage } from "@/components/ui/optimized-image";
-
-const REGIONS = [
-    { code: "SE", name: "Sweden" },
-    { code: "US", name: "United States" },
-    { code: "GB", name: "United Kingdom" },
-    { code: "DE", name: "Germany" },
-    { code: "FR", name: "France" },
-    { code: "IT", name: "Italy" },
-    { code: "ES", name: "Spain" },
-    { code: "CA", name: "Canada" },
-    { code: "AU", name: "Australia" },
-    { code: "CH", name: "Switzerland" },
-];
 
 export function StreamingSettings() {
     const { data: settings, isLoading: isLoadingSettings } = useUserSettings();
+    const { data: regions = [] } = useRegions();
     const updateSettingsMutation = useUpdateUserSettings();
 
-    const [region, setRegion] = useState("SE");
+    const [selectedRegion, setSelectedRegion] = useState<MediaRegion | null>(null);
     const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
-
-    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(region, null, true);
-    const availableProviders = watchProvidersData?.providers || [];
+    const [container, setContainer] = useState<HTMLElement | null>(null);
 
     useEffect(() => {
-        if (settings && availableProviders.length > 0 && !hasInitialized) {
-            setRegion(settings.watchRegion || "SE");
-            if ((settings as any).isNew) {
-                setSelectedProviders(availableProviders.map(p => p.Id));
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setContainer(document.querySelector('[data-slot="sheet-content"]') as HTMLElement);
+    }, []);
+
+    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || "SE", null, true);
+    const availableProviders = useMemo(() => watchProvidersData?.providers || [], [watchProvidersData]);
+
+    useEffect(() => {
+        if (settings && regions.length > 0 && !hasInitialized) {
+            const regionCode = settings.watchRegion || "SE";
+            const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === "SE") || regions[0];
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setSelectedRegion(region);
+            
+            if (settings.isNew) {
+                setSelectedProviders(availableProviders.map((p: WatchProvider) => p.Id));
             } else {
                 setSelectedProviders(settings.watchProviders || []);
             }
             setHasInitialized(true);
         }
-    }, [settings, availableProviders, hasInitialized]);
+    }, [settings, regions, availableProviders, hasInitialized]);
 
     const toggleProvider = (id: string) => {
         setSelectedProviders(prev =>
@@ -72,7 +72,7 @@ export function StreamingSettings() {
     };
 
     const selectAll = () => {
-        setSelectedProviders(availableProviders.map(p => p.Id));
+        setSelectedProviders(availableProviders.map((p: WatchProvider) => p.Id));
     };
 
     const deselectAll = () => {
@@ -86,7 +86,7 @@ export function StreamingSettings() {
         }
 
         toast.promise(updateSettingsMutation.mutateAsync({
-            watchRegion: region,
+            watchRegion: selectedRegion?.Id || "SE",
             watchProviders: selectedProviders,
         }), {
             loading: "Updating streaming settings...",
@@ -122,18 +122,30 @@ export function StreamingSettings() {
                         </div>
                     </div>
 
-                    <Select value={region} onValueChange={setRegion}>
-                        <SelectTrigger className="w-40 h-9">
-                            <SelectValue placeholder="Select region" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {REGIONS.map((r) => (
-                                <SelectItem key={r.code} value={r.code}>
-                                    {r.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Combobox
+                        value={selectedRegion}
+                        onValueChange={setSelectedRegion}
+                        items={regions}
+                        itemToStringValue={(r: MediaRegion) => r?.Name || ""}
+                    >
+                        <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-40 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
+                            <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
+                        </ComboboxTrigger>
+                        <ComboboxContent container={container} className="min-w-40 z-[1000]">
+                            <div className="p-1">
+                                <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
+                            </div>
+                            <ComboboxEmpty>No region found</ComboboxEmpty>
+                            <ComboboxList>
+                                {(r: MediaRegion) => (
+                                    <ComboboxItem key={r.Id} value={r}>
+                                        {r.Name}
+                                    </ComboboxItem>
+                                )}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
+
                 </div>
 
                 <Collapsible

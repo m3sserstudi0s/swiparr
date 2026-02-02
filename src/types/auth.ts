@@ -8,6 +8,11 @@ export interface UserSession {
   isAdmin?: boolean;
   wasMadeAdmin?: boolean;
   isGuest?: boolean;
+  provider?: string;
+  providerConfig?: {
+    serverUrl?: string;
+    tmdbToken?: string;
+  };
 }
 
 export interface SessionData {
@@ -16,4 +21,8 @@ export interface SessionData {
   isLoggedIn: boolean;
   soloFilters?: Filters;
   tempDeviceId?: string;
+  providerConfig?: {
+    serverUrl?: string;
+    tmdbToken?: string;
+  };
 }

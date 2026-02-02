@@ -6,14 +6,19 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { isAdmin, setAdminUserId } from "@/lib/server/admin";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const serverUrl = searchParams.get("serverUrl") || undefined;
     const deviceId = crypto.randomUUID();
-    const data = await initiateQuickConnect(deviceId);
+    const data = await initiateQuickConnect(deviceId, serverUrl);
     
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
     session.tempDeviceId = deviceId;
+    if (serverUrl) {
+        session.providerConfig = { serverUrl };
+    }
     await session.save();
 
     return NextResponse.json(data);
@@ -41,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "No session found" }, { status: 400 });
     }
 
-    const authData = await checkQuickConnect(secret, session.tempDeviceId);
+    const authData = await checkQuickConnect(secret, session.tempDeviceId, session.providerConfig?.serverUrl);
 
     // If not yet authorized, authData will not contain AccessToken
     if (!authData.AccessToken || !authData.User?.Id) {
@@ -61,9 +66,12 @@ export async function POST(request: NextRequest) {
       DeviceId: session.tempDeviceId,
       isAdmin: await isAdmin(authData.User.Id, authData.User.Name),
       wasMadeAdmin: wasMadeAdmin,
+      provider: "jellyfin",
+      providerConfig: session.providerConfig,
     };
     session.isLoggedIn = true;
     delete session.tempDeviceId;
+    delete session.providerConfig;
     await session.save();
 
     return NextResponse.json({ success: true, wasMadeAdmin });

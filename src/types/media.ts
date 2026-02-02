@@ -72,3 +72,8 @@ export interface WatchProvider {
   Name: string;
   LogoPath: string;
 }
+
+export interface MediaRegion {
+  Id: string;
+  Name: string;
+}

@@ -12,7 +12,8 @@ import {
   MediaGenre, 
   MediaYear, 
   MediaRating,
-  WatchProvider
+  WatchProvider,
+  MediaRegion
 } from "@/types/media";
 
 export class TmdbProvider implements MediaProvider {
@@ -28,12 +29,15 @@ export class TmdbProvider implements MediaProvider {
     requiresServerUrl: false,
   };
 
-  constructor() {
-    const token = process.env.TMDB_ACCESS_TOKEN || '';
-    this.client = new TMDB(token);
+  constructor(token?: string) {
+    const finalToken = token || process.env.TMDB_ACCESS_TOKEN || '';
+    this.client = new TMDB(finalToken);
   }
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
+    if (auth?.tmdbToken) {
+        this.client = new TMDB(auth.tmdbToken);
+    }
     const genres = await this.getGenres(auth);
     const genreIdMap = new Map(genres.map(g => [g.Name, g.Id]));
     const genreNameMap = new Map(genres.map(g => [g.Id, g.Name]));
@@ -101,11 +105,17 @@ export class TmdbProvider implements MediaProvider {
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
+    if (auth?.tmdbToken) {
+        this.client = new TMDB(auth.tmdbToken);
+    }
     const movie = await this.client.movies.details(parseInt(id), ['credits', 'images' as any, 'watch/providers' as any]);
     return this.mapMovieDetailsToMediaItem(movie as any);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
+    if (auth?.tmdbToken) {
+        this.client = new TMDB(auth.tmdbToken);
+    }
     const res = await this.client.genres.movies();
     return res.genres.map(g => ({ Id: g.id.toString(), Name: g.name }));
   }
@@ -127,13 +137,27 @@ export class TmdbProvider implements MediaProvider {
     return []; 
   }
 
-  async getWatchProviders(region: string): Promise<WatchProvider[]> {
+  async getWatchProviders(region: string, auth?: AuthContext): Promise<WatchProvider[]> {
+    if (auth?.tmdbToken) {
+        this.client = new TMDB(auth.tmdbToken);
+    }
     const res = await this.client.watchProviders.getMovieProviders({ watch_region: region as any });
     return res.results.map(p => ({
       Id: p.provider_id.toString(),
       Name: p.provider_name,
       LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`,
     }));
+  }
+
+  async getRegions(auth?: AuthContext): Promise<MediaRegion[]> {
+    if (auth?.tmdbToken) {
+        this.client = new TMDB(auth.tmdbToken);
+    }
+    const res = await this.client.configuration.getCountries();
+    return res.map(c => ({
+      Id: c.iso_3166_1,
+      Name: c.english_name,
+    })).sort((a, b) => a.Name.localeCompare(b.Name));
   }
 
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string): string {
@@ -166,11 +190,12 @@ export class TmdbProvider implements MediaProvider {
     }
   }
 
-  async authenticate(username: string, password?: string, deviceId?: string): Promise<any> {
+  async authenticate(username: string, password?: string, deviceId?: string, tmdbToken?: string): Promise<any> {
     return {
         id: `tmdb-${uuidv4()}`,
         name: username,
         accessToken: null,
+        tmdbToken: tmdbToken,
     };
   }
 

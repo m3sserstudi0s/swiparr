@@ -39,7 +39,7 @@ export class PlexProvider implements MediaProvider {
       : sections.filter(s => s.CollectionType === "movies");
 
     for (const section of targetSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/all`);
+        const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
         const params: any = {
             type: 1, // Movies
             'X-Plex-Container-Start': filters.offset || 0,
@@ -71,7 +71,7 @@ export class PlexProvider implements MediaProvider {
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
     const token = auth?.accessToken || process.env.PLEX_TOKEN;
-    const url = getPlexUrl(`/library/metadata/${id}`);
+    const url = getPlexUrl(`/library/metadata/${id}`, auth?.serverUrl);
     const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
     const item = res.data.MediaContainer?.Metadata?.[0];
     if (!item) throw new Error("Item not found");
@@ -86,7 +86,7 @@ export class PlexProvider implements MediaProvider {
     let allGenres = new Map<string, MediaGenre>();
     
     for (const section of movieSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/genre`);
+        const url = getPlexUrl(`/library/sections/${section.Id}/genre`, auth?.serverUrl);
         const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
         const genres = res.data.MediaContainer?.Directory || [];
         genres.forEach((g: any) => {
@@ -105,7 +105,7 @@ export class PlexProvider implements MediaProvider {
     let allYears = new Map<number, MediaYear>();
     
     for (const section of movieSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/year`);
+        const url = getPlexUrl(`/library/sections/${section.Id}/year`, auth?.serverUrl);
         const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
         const years = res.data.MediaContainer?.Directory || [];
         years.forEach((y: any) => {
@@ -127,7 +127,7 @@ export class PlexProvider implements MediaProvider {
     let allRatings = new Set<string>();
     
     for (const section of movieSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/contentRating`);
+        const url = getPlexUrl(`/library/sections/${section.Id}/contentRating`, auth?.serverUrl);
         const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
         const ratings = res.data.MediaContainer?.Directory || [];
         ratings.forEach((r: any) => {
@@ -140,7 +140,7 @@ export class PlexProvider implements MediaProvider {
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
     const token = auth?.accessToken || process.env.PLEX_TOKEN;
-    const url = getPlexUrl("/library/sections");
+    const url = getPlexUrl("/library/sections", auth?.serverUrl);
     const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
     
     return (res.data.MediaContainer?.Directory || [])
@@ -152,15 +152,15 @@ export class PlexProvider implements MediaProvider {
       }));
   }
 
-  getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string): string {
+  getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string {
     // If tag is provided, it's usually the Plex path (e.g. /library/metadata/123/thumb/123456789)
     if (tag) {
-        return getPlexUrl(tag);
+        return getPlexUrl(tag, auth?.serverUrl);
     }
     
     // Fallback: If itemId is a path, use it
     if (itemId.startsWith('/')) {
-        return getPlexUrl(itemId);
+        return getPlexUrl(itemId, auth?.serverUrl);
     }
 
     // Otherwise, we might need to fetch details to get the image path, 
@@ -188,12 +188,12 @@ export class PlexProvider implements MediaProvider {
     }
   }
 
-  async authenticate(username: string, password?: string, deviceId?: string): Promise<any> {
+  async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const token = password || process.env.PLEX_TOKEN;
     if (!token) throw new Error("Plex Token is required");
     
     const headers = getPlexHeaders(token);
-    const url = getPlexUrl("/myplex/account");
+    const url = getPlexUrl("/myplex/account", serverUrl);
     const res = await plexClient.get(url, { headers });
     
     // Normalize to what Swiparr expects: { User: { Id, Name }, AccessToken }

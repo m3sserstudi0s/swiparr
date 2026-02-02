@@ -26,7 +26,7 @@ export class JellyfinProvider implements MediaProvider {
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`), {
+    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
       params: {
         IncludeItemTypes: "Movie",
         Recursive: true,
@@ -48,28 +48,28 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`), {
+    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return this.mapToMediaItem(res.data);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Genres"), {
+    const res = await apiClient.get(getJellyfinUrl("/Genres", auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return (res.data.Items || []).map((g: any) => ({ Id: g.Name, Name: g.Name }));
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Years"), {
+    const res = await apiClient.get(getJellyfinUrl("/Years", auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return (res.data.Items || []).map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Items"), {
+    const res = await apiClient.get(getJellyfinUrl("/Items", auth?.serverUrl), {
       params: {
         IncludeItemTypes: "Movie",
         Recursive: true,
@@ -86,7 +86,7 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Views`), {
+    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Views`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     
@@ -99,9 +99,9 @@ export class JellyfinProvider implements MediaProvider {
       }));
   }
 
-  getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string): string {
+  getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string {
     const path = type === "user" ? `/Users/${itemId}/Images/Primary` : `/Items/${itemId}/Images/${type}`;
-    const baseUrl = getJellyfinUrl(path);
+    const baseUrl = getJellyfinUrl(path, auth?.serverUrl);
     return tag ? `${baseUrl}?tag=${tag}` : baseUrl;
   }
 
@@ -113,13 +113,13 @@ export class JellyfinProvider implements MediaProvider {
     return await getBlurDataURL(itemId, imageUrl, headers) || "";
   }
 
-  async authenticate(username: string, password?: string, deviceId?: string): Promise<any> {
+  async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const { authenticateJellyfin } = await import("@/lib/jellyfin/api");
-    return authenticateJellyfin(username, password || "", deviceId || "Swiparr");
+    return authenticateJellyfin(username, password || "", deviceId || "Swiparr", serverUrl);
   }
 
   async toggleWatchlist(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
-    const url = getJellyfinUrl(`/Users/${auth?.userId}/Items/${itemId}/Rating`);
+    const url = getJellyfinUrl(`/Users/${auth?.userId}/Items/${itemId}/Rating`, auth?.serverUrl);
     await apiClient.post(
       url,
       null,
@@ -131,7 +131,7 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async toggleFavorite(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
-    const url = getJellyfinUrl(`/Users/${auth?.userId}/FavoriteItems/${itemId}`);
+    const url = getJellyfinUrl(`/Users/${auth?.userId}/FavoriteItems/${itemId}`, auth?.serverUrl);
     const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
     if (action === "add") {
       await apiClient.post(url, null, { headers });
@@ -140,14 +140,14 @@ export class JellyfinProvider implements MediaProvider {
     }
   }
 
-  async initiateQuickConnect(deviceId: string): Promise<any> {
+  async initiateQuickConnect(deviceId: string, serverUrl?: string): Promise<any> {
     const { initiateQuickConnect } = await import("@/lib/jellyfin/api");
-    return initiateQuickConnect(deviceId);
+    return initiateQuickConnect(deviceId, serverUrl);
   }
 
-  async checkQuickConnect(secret: string, deviceId: string): Promise<any> {
+  async checkQuickConnect(secret: string, deviceId: string, serverUrl?: string): Promise<any> {
     const { checkQuickConnect } = await import("@/lib/jellyfin/api");
-    return checkQuickConnect(secret, deviceId);
+    return checkQuickConnect(secret, deviceId, serverUrl);
   }
 
   private mapToMediaItem(item: any): MediaItem {

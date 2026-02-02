@@ -10,8 +10,8 @@ export const plexClient = axios.create({
   }
 });
 
-export const getPlexUrl = (path: string) => {
-  let base = PLEX_URL.replace(/\/$/, '');
+export const getPlexUrl = (path: string, customBaseUrl?: string) => {
+  let base = (customBaseUrl || PLEX_URL).replace(/\/$/, '');
   if (!base.startsWith('http')) {
     base = `http://${base}`;
   }
@@ -34,9 +34,9 @@ export const getPlexHeaders = (token?: string) => {
   return headers;
 };
 
-export const authenticatePlex = async (token: string) => {
+export const authenticatePlex = async (token: string, customBaseUrl?: string) => {
   // Plex "authentication" with a token is just verifying the token works
-  const url = getPlexUrl('myplex/account');
+  const url = getPlexUrl('myplex/account', customBaseUrl);
   const response = await plexClient.get(url, {
     headers: getPlexHeaders(token),
   });

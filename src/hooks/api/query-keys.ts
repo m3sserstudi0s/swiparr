@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
     ratings: ["media", "ratings"] as const,
     libraries: ["media", "libraries"] as const,
     watchProviders: (region: string, sessionCode?: string | null) => ["media", "watchProviders", region, sessionCode] as const,
+    regions: ["media", "regions"] as const,
   },
   user: {
     settings: ["user", "settings"] as const,

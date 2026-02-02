@@ -4,7 +4,8 @@ import {
   MediaGenre, 
   MediaYear, 
   MediaRating,
-  WatchProvider
+  WatchProvider,
+  MediaRegion
 } from "@/types/media";
 
 export interface ProviderCapabilities {
@@ -44,13 +45,14 @@ export interface MediaProvider {
   getRatings(auth?: AuthContext): Promise<MediaRating[]>;
   getLibraries(auth?: AuthContext): Promise<MediaLibrary[]>;
   getWatchProviders?(region: string, auth?: AuthContext): Promise<WatchProvider[]>;
+  getRegions?(auth?: AuthContext): Promise<MediaRegion[]>;
 
   // Images
-  getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string): string;
+  getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string;
   getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string>;
 
   // Auth (optional, based on capabilities)
-  authenticate?(username: string, password?: string, deviceId?: string): Promise<any>;
+  authenticate?(username: string, password?: string, deviceId?: string, config?: string): Promise<any>;
 
   // User Actions (optional)
   toggleWatchlist?(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void>;
@@ -65,4 +67,6 @@ export interface AuthContext {
   accessToken?: string;
   deviceId?: string;
   userId?: string;
+  serverUrl?: string;
+  tmdbToken?: string;
 }

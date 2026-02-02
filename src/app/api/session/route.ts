@@ -86,6 +86,8 @@ export async function POST(request: NextRequest) {
             hostUserId: session.user.Id,
             hostAccessToken: allowLending ? session.user.AccessToken : null,
             hostDeviceId: allowLending ? session.user.DeviceId : null,
+            provider: session.user.provider,
+            providerConfig: session.user.providerConfig ? JSON.stringify(session.user.providerConfig) : null,
         });
 
         // Register host as member

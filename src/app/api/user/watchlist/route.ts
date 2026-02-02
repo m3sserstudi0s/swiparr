@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const auth = await getEffectiveCredentials(session);
-    const provider = getMediaProvider();
+    const provider = getMediaProvider(auth.provider);
 
     if (useWatchlist && provider.toggleWatchlist) {
       await provider.toggleWatchlist(itemId, action, auth);

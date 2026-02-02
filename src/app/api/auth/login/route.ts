@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "Invalid input" }, { status: 400 });
         }
 
-        const { username, password } = validated.data;
+        const { username, password, provider: bodyProvider, config: providerConfig } = validated.data;
         usernameForLog = username;
 
         const baseDeviceId = crypto.randomUUID();
@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
 
-        const provider = getMediaProvider();
+        const provider = getMediaProvider(bodyProvider);
         if (!provider.authenticate) {
             return NextResponse.json({ message: "Authentication not supported by this provider" }, { status: 400 });
         }
 
-        const authResult = await provider.authenticate(username, password, deviceId);
+        const authResult = await provider.authenticate(username, password, deviceId, providerConfig?.serverUrl || providerConfig?.tmdbToken);
         
         // Jellyfin provider returns { User: { Id, Name }, AccessToken, ... }
         // We might need to normalize this in the provider or handle it here
@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
             DeviceId: deviceId,
             isAdmin: await isAdmin(userId, userName),
             wasMadeAdmin: wasMadeAdmin,
+            provider: bodyProvider || provider.name,
+            providerConfig: providerConfig,
         };
         session.isLoggedIn = true;
     

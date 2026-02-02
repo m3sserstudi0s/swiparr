@@ -8,8 +8,8 @@ export const apiClient = axios.create({
   timeout: 60000, // 60 seconds
 });
 
-export const getJellyfinUrl = (path: string) => {
-  let base = JELLYFIN_URL.replace(/\/$/, '');
+export const getJellyfinUrl = (path: string, customBaseUrl?: string) => {
+  let base = (customBaseUrl || JELLYFIN_URL).replace(/\/$/, '');
   if (!base.startsWith('http')) {
     base = `http://${base}`;
   }
@@ -31,8 +31,8 @@ export const getAuthenticatedHeaders = (accessToken: string, deviceId: string) =
   };
 };
 
-export const authenticateJellyfin = async (username: string, pw: string, deviceId: string) => {
-  const url = getJellyfinUrl('Users/AuthenticateByName');
+export const authenticateJellyfin = async (username: string, pw: string, deviceId: string, customBaseUrl?: string) => {
+  const url = getJellyfinUrl('Users/AuthenticateByName', customBaseUrl);
   const config = getRuntimeConfig()
   const response = await apiClient.post(
     url,
@@ -50,20 +50,20 @@ export const authenticateJellyfin = async (username: string, pw: string, deviceI
   return response.data;
 };
 
-export const getQuickConnectEnabled = async () => {
-  const url = getJellyfinUrl('QuickConnect/Enabled');
+export const getQuickConnectEnabled = async (customBaseUrl?: string) => {
+  const url = getJellyfinUrl('QuickConnect/Enabled', customBaseUrl);
   const res = await apiClient.get(url);
   return res.data;
 };
 
-export const initiateQuickConnect = async (deviceId: string) => {
-  const url = getJellyfinUrl('QuickConnect/Initiate');
+export const initiateQuickConnect = async (deviceId: string, customBaseUrl?: string) => {
+  const url = getJellyfinUrl('QuickConnect/Initiate', customBaseUrl);
   const res = await apiClient.post(url, null, { headers: getAuthHeaders(deviceId) });
   return res.data; // { Code, Secret, ... }
 };
 
-export const checkQuickConnect = async (secret: string, deviceId: string) => {
-  const url = getJellyfinUrl('Users/AuthenticateWithQuickConnect');
+export const checkQuickConnect = async (secret: string, deviceId: string, customBaseUrl?: string) => {
+  const url = getJellyfinUrl('Users/AuthenticateWithQuickConnect', customBaseUrl);
   try {
     const res = await apiClient.post(
       url,

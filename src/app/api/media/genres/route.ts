@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const auth = await getEffectiveCredentials(session);
-        const provider = getMediaProvider();
+        const provider = getMediaProvider(auth.provider);
         const genres = await provider.getGenres(auth);
         return NextResponse.json(genres);
     } catch (error) {

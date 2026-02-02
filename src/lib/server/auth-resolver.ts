@@ -40,6 +40,9 @@ export async function getEffectiveCredentials(session: SessionData) {
     return {
         accessToken: currentSession.hostAccessToken || "",
         deviceId: currentSession.hostDeviceId || "guest-device",
-        userId: currentSession.hostUserId
+        userId: currentSession.hostUserId,
+        serverUrl: currentSession.providerConfig ? JSON.parse(currentSession.providerConfig).serverUrl : undefined,
+        tmdbToken: currentSession.providerConfig ? JSON.parse(currentSession.providerConfig).tmdbToken : undefined,
+        provider: currentSession.provider || undefined
     };
 }

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const auth = await getEffectiveCredentials(session);
-    const provider = getMediaProvider();
+    const provider = getMediaProvider(auth.provider);
 
     const item = await provider.getItemDetails(id, auth);
 

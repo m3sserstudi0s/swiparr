@@ -1,34 +1,42 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
-import { Copy, Check, ShieldCheck, ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
-import { Label } from "../ui/label";
 import { apiClient } from "@/lib/api-client";
 import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 
+import { AdminInitializedView } from "./AdminInitializedView";
+import { JellyfinPlexView } from "./JellyfinPlexView";
+import { TmdbView } from "./TmdbView";
+import { SiPlex, SiJellyfin, SiThemoviedatabase } from "react-icons/si";
+
 export default function LoginContent() {
-  const { capabilities, basePath, provider } = useRuntimeConfig();
+  const { capabilities, basePath, provider, providerLock } = useRuntimeConfig();
+
+  const [selectedProvider, setSelectedProvider] = useState<string>(provider);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [serverUrl, setServerUrl] = useState("");
+  const [tmdbToken, setTmdbToken] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestSessionCode, setGuestSessionCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [wasMadeAdmin, setWasMadeAdmin] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [qcCode, setQcCode] = useState<string | null>(null);
+  const [qcSecret, setQcSecret] = useState<string | null>(null);
+
   const searchParams = useSearchParams();
+
   const sessionCodeParam = useMemo(() => {
     const directJoin = searchParams.get("join");
     if (directJoin) return directJoin;
-
     const callbackUrl = searchParams.get("callbackUrl");
     if (callbackUrl) {
       try {
@@ -41,18 +49,11 @@ export default function LoginContent() {
     return null;
   }, [searchParams]);
 
-  const [activeTab, setActiveTab] = useState<string>(capabilities.hasAuth ? "login" : "join");
-
   useEffect(() => {
-    if (sessionCodeParam || !capabilities.hasAuth) {
-      setActiveTab("join");
-      sessionCodeParam && setGuestSessionCode(sessionCodeParam)
+    if (sessionCodeParam) {
+      setGuestSessionCode(sessionCodeParam);
     }
-  }, [sessionCodeParam, capabilities.hasAuth]);
-
-  const [qcCode, setQcCode] = useState<string | null>(null);
-  const [qcSecret, setQcSecret] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  }, [sessionCodeParam]);
 
   const copyToClipboard = async () => {
     if (qcCode) {
@@ -75,18 +76,29 @@ export default function LoginContent() {
 
   useQuickConnectUpdates(qcSecret, onAuthorized);
 
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     const promise = async () => {
-      const res = await apiClient.post("/api/auth/login", { username, password });
+      const config: any = {};
+      if (selectedProvider === "jellyfin" || selectedProvider === "plex") {
+        if (serverUrl) config.serverUrl = serverUrl;
+      } else if (selectedProvider === "tmdb") {
+        if (tmdbToken) config.tmdbToken = tmdbToken;
+      }
+
+      const res = await apiClient.post("/api/auth/login", {
+        username,
+        password,
+        provider: providerLock ? undefined : selectedProvider,
+        config: providerLock ? undefined : config
+      });
       return res.data;
     };
 
     toast.promise(promise(), {
-      loading: capabilities.hasAuth ? "Logging in..." : "Initializing...",
+      loading: selectedProvider !== "tmdb" ? "Logging in..." : "Initializing...",
       success: (data) => {
         if (data.wasMadeAdmin) {
           setWasMadeAdmin(true);
@@ -96,7 +108,7 @@ export default function LoginContent() {
         const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
         window.location.href = callbackUrl;
         setLoading(false);
-        return capabilities.hasAuth ? "Logged in successfully" : "Profile created";
+        return selectedProvider !== "tmdb" ? "Logged in successfully" : "Profile created";
       },
       error: (err) => {
         setLoading(false);
@@ -131,16 +143,13 @@ export default function LoginContent() {
     });
   };
 
-  const continueToApp = () => {
-    const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
-    window.location.href = callbackUrl;
-  };
-
   const startQuickConnect = async () => {
     setLoading(true);
 
     const promise = async () => {
-      const res = await apiClient.get("/api/auth/quick-connect");
+      const res = await apiClient.get("/api/auth/quick-connect", {
+        params: { serverUrl: providerLock ? undefined : serverUrl }
+      });
       const data = res.data;
       if (!data.Code) throw new Error("Quick connect failed");
       return data;
@@ -162,8 +171,13 @@ export default function LoginContent() {
     });
   };
 
-  return (
+  const contentHeight = useMemo(() => {
+    if (wasMadeAdmin) return "h-auto";
+    if (selectedProvider === "tmdb") return !providerLock ? "h-[320px]" : "h-40";
+    return !providerLock ? "h-[420px]" : "h-80";
+  }, [wasMadeAdmin, selectedProvider, providerLock]);
 
+  return (
     <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
       <CardHeader>
         <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager" />
@@ -171,159 +185,70 @@ export default function LoginContent() {
           Swiparr
         </CardTitle>
       </CardHeader>
-      <CardContent className={cn(capabilities.hasAuth ? "h-80" : "h-40")}>
+      <CardContent className={cn("transition-all duration-300", contentHeight)}>
         {wasMadeAdmin ? (
-          <div className="flex flex-col space-y-4 h-full">
-            <Alert className="bg-primary/10 border-primary/20">
-              <ShieldCheck className="size-4 text-primary" />
-              <AlertTitle className="text-primary font-bold">Admin Privileges</AlertTitle>
-              <AlertDescription className="text-xs text-primary/80">
-                You are the first user and have been set as the administrator.
-              </AlertDescription>
-            </Alert>
-            <div className="flex-1 flex items-end pb-4">
-              <Button onClick={continueToApp} className="w-full group">
-                Continue
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </div>
-          </div>
+          <AdminInitializedView onContinue={() => {
+            const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
+            window.location.href = callbackUrl;
+          }} />
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {capabilities.hasAuth ? (
-              <>
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="login">Log in</TabsTrigger>
-                  <TabsTrigger value="join">Guest</TabsTrigger>
+          <div className="space-y-4">
+            {!providerLock && (
+              <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 h-9">
+                  <TabsTrigger value="jellyfin" className="text-xs">
+                    <SiJellyfin color="#00A4DC"/>
+                    Jellyfin
+                  </TabsTrigger>
+                  <TabsTrigger value="plex" className="text-xs">
+                    <SiPlex color="#e5a00d"/>
+                    Plex
+                  </TabsTrigger>
+                  <TabsTrigger value="tmdb" className="text-xs">
+                    <SiThemoviedatabase color="#01b4e4"/>
+                    TMDB
+                  </TabsTrigger>
                 </TabsList>
-                <TabsContent value="login" className="space-y-4">
-                  {qcCode ? (
-                    <div className="flex flex-col items-center space-y-6 py-4">
-                      <div className="relative group">
-                        <div className="flex flex-row text-3xl font-black tracking-[0.5em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
-                          {qcCode}
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="ml-2"
-                            onClick={copyToClipboard}
-                            title="Copy to clipboard"
-                          >
-                            {copied ? (
-                              <Check className="h-4 w-4 " />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-center text-muted-foreground">
-                        Go to <span className="text-foreground font-semibold">Settings → Quick Connect</span> on your logged-in device to authorize.
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setQcCode(null)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleLogin} className="space-y-3">
-                      <CardDescription>Enter your {provider === 'jellyfin' ? 'Jellyfin' : provider === 'plex' ? 'Plex' : 'provider'} credentials</CardDescription>
-                      <Input
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="bg-muted border-input"
-                      />
-                      <Input
-                        type="password"
-                        placeholder={provider === 'plex' ? 'Token' : 'Password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="bg-muted border-input"
-                      />
-                      <Button type="submit" className="w-full mt-2" disabled={loading}>
-                        {loading ? "Connecting..." : "Log in"}
-                      </Button>
-                      {capabilities.hasQuickConnect && (
-                        <>
-                          <div className="relative py-1">
-                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-                            <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full hover:bg-accent h-9"
-                            onClick={startQuickConnect}
-                            disabled={loading}
-                          >
-                            Quick Connect
-                          </Button>
-                        </>
-                      )}
-                    </form>
-                  )}
-                </TabsContent>
-              </>
-            ) : (
-              <div className="space-y-5">
-                <div className="text-center">
-                  <CardDescription>Enter a name to start swiping</CardDescription>
-                </div>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <Input
-                    placeholder="Display name"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="bg-muted border-input"
-                    autoFocus
-                  />
-                  <Button type="submit" className="w-full" disabled={loading || !username}>
-                    {loading ? "Starting..." : "Start"}
-                  </Button>
-                </form>
-              </div>
+              </Tabs>
             )}
 
-            {capabilities.hasAuth && (
-              <TabsContent value="join" className="space-y-4">
-                <form onSubmit={handleGuestLogin} className="space-y-3">
-                  <CardDescription>Enter a display name to continue</CardDescription>
-                  <Input
-                    placeholder="Display name"
-                    value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
-                    className="bg-muted border-input"
-                    autoFocus
-                  />
-                  {!sessionCodeParam && (
-                    <>
-                      <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground"> Session code</Label>
-                      <Input
-                        id="session-code"
-                        value={guestSessionCode}
-                        onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
-                        className="bg-muted border-input font-mono tracking-widest uppercase"
-                        maxLength={4}
-                      />
-                    </>
-                  )}
-                  <div className="pt-2">
-                    <Button type="submit" className="w-full" disabled={loading || !guestName || !guestSessionCode}>
-                      {loading ? "Joining..." : "Join"}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-center text-muted-foreground pt-2">
-                    Joining as a guest lets you swipe in a session without an account.
-                  </p>
-                </form>
-              </TabsContent>
+            {selectedProvider === "tmdb" ? (
+              <TmdbView
+                providerLock={providerLock}
+                tmdbToken={tmdbToken}
+                setTmdbToken={setTmdbToken}
+                username={username}
+                setUsername={setUsername}
+                loading={loading}
+                handleLogin={handleLogin}
+              />
+            ) : (
+              <JellyfinPlexView
+                provider={selectedProvider}
+                providerLock={providerLock}
+                serverUrl={serverUrl}
+                setServerUrl={setServerUrl}
+                username={username}
+                setUsername={setUsername}
+                password={password}
+                setPassword={setPassword}
+                guestName={guestName}
+                setGuestName={setGuestName}
+                guestSessionCode={guestSessionCode}
+                setGuestSessionCode={setGuestSessionCode}
+                loading={loading}
+                handleLogin={handleLogin}
+                handleGuestLogin={handleGuestLogin}
+                startQuickConnect={startQuickConnect}
+                qcCode={qcCode}
+                copied={copied}
+                copyToClipboard={copyToClipboard}
+                setQcCode={setQcCode}
+                sessionCodeParam={sessionCodeParam}
+                hasQuickConnect={providerLock ? capabilities.hasQuickConnect : selectedProvider === "jellyfin"}
+              />
             )}
-          </Tabs>
+          </div>
         )}
       </CardContent>
     </Card>

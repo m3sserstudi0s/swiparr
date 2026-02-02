@@ -7,37 +7,40 @@ import { PlexProvider } from "./plex/index";
 class ProviderFactory {
   private static instance: MediaProvider;
 
-  static getProvider(): MediaProvider {
-    if (this.instance) return this.instance;
+  static getProvider(providerTypeOverride?: string): MediaProvider {
+    if (this.instance && !providerTypeOverride) return this.instance;
 
-    // Use a try-catch because getRuntimeConfig might fail if called in a weird context
-    // or just use a default if it's undefined
-    let providerType = "jellyfin";
-    try {
-        const config = getRuntimeConfig();
-        providerType = config.provider;
-    } catch (e) {
-        // Fallback for build time etc
+    let providerType = providerTypeOverride || "jellyfin";
+    if (!providerTypeOverride) {
+        try {
+            const config = getRuntimeConfig();
+            providerType = config.provider;
+        } catch (e) {
+            // Fallback for build time etc
+        }
     }
 
-    switch (providerType) {
+    const provider = this.createProvider(providerType);
+    if (!providerTypeOverride) {
+        this.instance = provider;
+    }
+    return provider;
+  }
+
+  private static createProvider(type: string): MediaProvider {
+    switch (type) {
       case "jellyfin":
-        this.instance = new JellyfinProvider();
-        break;
+        return new JellyfinProvider();
       case "tmdb":
-        this.instance = new TmdbProvider();
-        break;
+        return new TmdbProvider();
       case "plex":
-        this.instance = new PlexProvider();
-        break;
+        return new PlexProvider();
       default:
-        console.warn(`Unknown provider: ${providerType}, defaulting to Jellyfin`);
-        this.instance = new JellyfinProvider();
+        console.warn(`Unknown provider: ${type}, defaulting to Jellyfin`);
+        return new JellyfinProvider();
     }
-
-    return this.instance;
   }
 }
 
 // Export a function instead of a constant to avoid issues with getRuntimeConfig being called too early
-export const getMediaProvider = () => ProviderFactory.getProvider();
+export const getMediaProvider = (type?: string) => ProviderFactory.getProvider(type);

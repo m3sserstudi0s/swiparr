@@ -3,6 +3,11 @@ import { z } from "zod";
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().optional(),
+  provider: z.string().optional(),
+  config: z.object({
+    serverUrl: z.string().optional(),
+    tmdbToken: z.string().optional(),
+  }).optional(),
 });
 
 export const guestLoginSchema = z.object({

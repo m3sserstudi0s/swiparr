@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { QUERY_KEYS } from "./query-keys";
-import { WatchProvider } from "@/types/media";
+import { WatchProvider, MediaRegion } from "@/types/media";
 
 export interface UserSettings {
   watchProviders: string[];
   watchRegion: string;
+  isNew?: boolean;
 }
 
 export function useUserSettings() {
@@ -42,5 +43,15 @@ export function useWatchProviders(region: string, sessionCode?: string | null, a
       return res.data;
     },
     enabled: !!region,
+  });
+}
+
+export function useRegions() {
+  return useQuery({
+    queryKey: QUERY_KEYS.media.regions,
+    queryFn: async () => {
+      const res = await apiClient.get<MediaRegion[]>("/api/media/regions");
+      return res.data;
+    },
   });
 }

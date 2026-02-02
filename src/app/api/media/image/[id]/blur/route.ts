@@ -19,10 +19,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const searchParams = request.nextUrl.searchParams;
     const imageType = searchParams.get("imageType") || "Primary";
-    const provider = getMediaProvider();
-    const auth = await getEffectiveCredentials(session);
+    const creds = await getEffectiveCredentials(session);
+    const provider = getMediaProvider(creds.provider);
     
-    const blurDataURL = await provider.getBlurDataUrl(id, imageType, auth);
+    const blurDataURL = await provider.getBlurDataUrl(id, imageType, creds);
     
     if (!blurDataURL) return new NextResponse("Not found", { status: 404 });
 
