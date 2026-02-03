@@ -3,11 +3,14 @@ import { apiClient } from "@/lib/api-client";
 import { MediaGenre, MediaRating, MediaYear } from "@/types/media";
 import { QUERY_KEYS } from "./query-keys";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { useSession } from "./use-session";
 import { DEFAULT_GENRES, DEFAULT_RATINGS } from "@/lib/constants";
 
 export function useFilters(open: boolean) {
-  const { useStaticFilterValues, provider } = useRuntimeConfig();
-  const isTmdb = provider === "tmdb";
+  const { useStaticFilterValues, provider: runtimeProvider } = useRuntimeConfig();
+  const { data: session } = useSession();
+  const activeProvider = session?.provider || runtimeProvider;
+  const isTmdb = activeProvider === "tmdb";
 
   const genresQuery = useQuery({
     queryKey: QUERY_KEYS.media.genres,

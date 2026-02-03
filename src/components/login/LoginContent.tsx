@@ -14,7 +14,7 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 import { AdminInitializedView } from "./AdminInitializedView";
 import { JellyfinPlexView } from "./JellyfinPlexView";
 import { TmdbView } from "./TmdbView";
-import { SiPlex, SiJellyfin, SiThemoviedatabase } from "react-icons/si";
+import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
 
 export default function LoginContent() {
   const { capabilities, basePath, provider, providerLock } = useRuntimeConfig();
@@ -82,7 +82,7 @@ export default function LoginContent() {
 
     const promise = async () => {
       const config: any = {};
-      if (selectedProvider === "jellyfin" || selectedProvider === "plex") {
+      if (selectedProvider === "jellyfin" || selectedProvider === "plex" || selectedProvider === "emby") {
         if (serverUrl) config.serverUrl = serverUrl;
       } else if (selectedProvider === "tmdb") {
         if (tmdbToken) config.tmdbToken = tmdbToken;
@@ -173,12 +173,12 @@ export default function LoginContent() {
 
   const contentHeight = useMemo(() => {
     if (wasMadeAdmin) return "h-auto";
-    if (selectedProvider === "tmdb") return !providerLock ? "h-[320px]" : "h-40";
+    if (selectedProvider === "tmdb") return !providerLock ? "h-60" : "h-40";
     return !providerLock ? "h-[420px]" : "h-80";
   }, [wasMadeAdmin, selectedProvider, providerLock]);
 
   return (
-    <Card className="w-full max-w-xs border-border bg-card text-card-foreground">
+    <Card className={cn("w-full border-border bg-card text-card-foreground", !providerLock ? "max-w-sm" : "max-w-xs")}>
       <CardHeader>
         <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager" />
         <CardTitle className="text-center text-2xl font-bold text-primary">
@@ -195,10 +195,14 @@ export default function LoginContent() {
           <div className="space-y-4">
             {!providerLock && (
               <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-9">
+                <TabsList className="grid w-full grid-cols-4 h-9">
                   <TabsTrigger value="jellyfin" className="text-xs">
                     <SiJellyfin color="#00A4DC"/>
                     Jellyfin
+                  </TabsTrigger>
+                  <TabsTrigger value="emby" className="text-xs">
+                    <SiEmby color="#52b54b"/>
+                    Emby
                   </TabsTrigger>
                   <TabsTrigger value="plex" className="text-xs">
                     <SiPlex color="#e5a00d"/>
@@ -245,7 +249,8 @@ export default function LoginContent() {
                 copyToClipboard={copyToClipboard}
                 setQcCode={setQcCode}
                 sessionCodeParam={sessionCodeParam}
-                hasQuickConnect={providerLock ? capabilities.hasQuickConnect : selectedProvider === "jellyfin"}
+                hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === "jellyfin")}
+                isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === "plex" || selectedProvider === "emby")}
               />
             )}
           </div>

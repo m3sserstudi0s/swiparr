@@ -9,7 +9,7 @@ import packageJson from "../../package.json";
 import { ProviderCapabilities } from "./providers/types";
 
 export interface RuntimeConfig {
-  provider: "jellyfin" | "tmdb" | "plex" | string;
+  provider: "jellyfin" | "tmdb" | "plex" | "emby" | string;
   providerLock: boolean;
   capabilities: ProviderCapabilities;
   serverPublicUrl: string;
@@ -29,7 +29,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
   }
   
   const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
-  const providerLock = (process.env.PROVIDER_LOCK || 'true').toLowerCase() === 'true';
+  const providerLock = (process.env.PROVIDER_LOCK || process.env.SERVER_LOCK || 'true').toLowerCase() === 'true';
   
   // Default capabilities (Jellyfin style)
   const capabilities: ProviderCapabilities = {
@@ -39,6 +39,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     hasLibraries: true,
     hasSettings: true,
     requiresServerUrl: true,
+    isExperimental: false,
   };
 
   if (provider === 'tmdb') {
@@ -48,11 +49,12 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     capabilities.hasLibraries = false;
     capabilities.hasSettings = false;
     capabilities.requiresServerUrl = false;
-  } else if (provider === 'plex') {
+  } else if (provider === 'plex' || provider === 'emby') {
     capabilities.hasQuickConnect = false;
+    capabilities.isExperimental = true;
   }
   
-  const serverPublicUrl = (process.env.SERVER_PUBLIC_URL || process.env.PLEX_URL || process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || '').replace(/\/$/, ''); // Keep JELLYFIN_PUBLIC_URL for backwards compatability
+  const serverPublicUrl = (process.env.SERVER_PUBLIC_URL || process.env.PLEX_URL || process.env.EMBY_URL || process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || '').replace(/\/$/, ''); // Keep JELLYFIN_PUBLIC_URL for backwards compatability
   const rawBasePath = (process.env.URL_BASE_PATH || '').replace(/\/$/, '');
   const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
   

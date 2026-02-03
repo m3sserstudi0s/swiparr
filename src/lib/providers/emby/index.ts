@@ -11,23 +11,23 @@ import {
   MediaYear, 
   MediaRating 
 } from "@/types/media";
-import { apiClient, getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { apiClient, getEmbyUrl, getAuthenticatedHeaders } from "@/lib/emby/api";
 
-export class JellyfinProvider implements MediaProvider {
-  readonly name = "jellyfin";
+export class EmbyProvider implements MediaProvider {
+  readonly name = "emby";
   
   readonly capabilities: ProviderCapabilities = {
     hasAuth: true,
-    hasQuickConnect: true,
+    hasQuickConnect: false,
     hasWatchlist: true,
     hasLibraries: true,
     hasSettings: true,
     requiresServerUrl: true,
-    isExperimental: false,
+    isExperimental: true,
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
+    const res = await apiClient.get(getEmbyUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
       params: {
         IncludeItemTypes: "Movie",
         Recursive: true,
@@ -49,28 +49,28 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
+    const res = await apiClient.get(getEmbyUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return this.mapToMediaItem(res.data);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Genres", auth?.serverUrl), {
+    const res = await apiClient.get(getEmbyUrl("/Genres", auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return (res.data.Items || []).map((g: any) => ({ Id: g.Name, Name: g.Name }));
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Years", auth?.serverUrl), {
+    const res = await apiClient.get(getEmbyUrl("/Years", auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return (res.data.Items || []).map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Items", auth?.serverUrl), {
+    const res = await apiClient.get(getEmbyUrl("/Items", auth?.serverUrl), {
       params: {
         IncludeItemTypes: "Movie",
         Recursive: true,
@@ -87,7 +87,7 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Views`, auth?.serverUrl), {
+    const res = await apiClient.get(getEmbyUrl(`/Users/${auth?.userId}/Views`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     
@@ -102,25 +102,26 @@ export class JellyfinProvider implements MediaProvider {
 
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string {
     const path = type === "user" ? `/Users/${itemId}/Images/Primary` : `/Items/${itemId}/Images/${type}`;
-    const baseUrl = getJellyfinUrl(path, auth?.serverUrl);
+    const baseUrl = getEmbyUrl(path, auth?.serverUrl);
     return tag ? `${baseUrl}?tag=${tag}` : baseUrl;
   }
 
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
-    const { getAuthenticatedHeaders } = await import("@/lib/jellyfin/api");
+    const { getAuthenticatedHeaders } = await import("@/lib/emby/api");
     const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any) + "?maxWidth=20&quality=50";
     const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
     return await getBlurDataURL(itemId, imageUrl, headers) || "";
   }
 
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
-    const { authenticateJellyfin } = await import("@/lib/jellyfin/api");
-    return authenticateJellyfin(username, password || "", deviceId || "Swiparr", serverUrl);
+    const { authenticateEmby } = await import("@/lib/emby/api");
+    return authenticateEmby(username, password || "", deviceId || "Swiparr", serverUrl);
   }
 
   async toggleWatchlist(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
-    const url = getJellyfinUrl(`/Users/${auth?.userId}/Items/${itemId}/Rating`, auth?.serverUrl);
+    // Emby uses the same Rating endpoint for likes
+    const url = getEmbyUrl(`/Users/${auth?.userId}/Items/${itemId}/Rating`, auth?.serverUrl);
     await apiClient.post(
       url,
       null,
@@ -132,23 +133,13 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async toggleFavorite(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
-    const url = getJellyfinUrl(`/Users/${auth?.userId}/FavoriteItems/${itemId}`, auth?.serverUrl);
+    const url = getEmbyUrl(`/Users/${auth?.userId}/FavoriteItems/${itemId}`, auth?.serverUrl);
     const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
     if (action === "add") {
       await apiClient.post(url, null, { headers });
     } else {
       await apiClient.delete(url, { headers });
     }
-  }
-
-  async initiateQuickConnect(deviceId: string, serverUrl?: string): Promise<any> {
-    const { initiateQuickConnect } = await import("@/lib/jellyfin/api");
-    return initiateQuickConnect(deviceId, serverUrl);
-  }
-
-  async checkQuickConnect(secret: string, deviceId: string, serverUrl?: string): Promise<any> {
-    const { checkQuickConnect } = await import("@/lib/jellyfin/api");
-    return checkQuickConnect(secret, deviceId, serverUrl);
   }
 
   private mapToMediaItem(item: any): MediaItem {

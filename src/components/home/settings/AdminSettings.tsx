@@ -16,6 +16,8 @@ import { getErrorMessage } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { useSession, useAdminStatus, useAdminConfig, useMediaLibraries, useAdminLibraries, useUpdateAdminConfig, useUpdateAdminLibraries, useClaimAdmin } from "@/hooks/api";
+import { MediaLibrary } from "@/types/media";
 import {
     Dialog,
     DialogClose,
@@ -26,19 +28,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
-  useAdminStatus, 
-  useAdminConfig, 
-  useMediaLibraries, 
-  useAdminLibraries, 
-  useUpdateAdminConfig, 
-  useUpdateAdminLibraries, 
-  useClaimAdmin,
-} from "@/hooks/api";
-import { MediaLibrary } from "@/types/media";
 
 export function AdminSettings() {
-    const { capabilities } = useRuntimeConfig();
+    const { data: sessionStatus } = useSession();
+    const runtimeConfig = useRuntimeConfig();
+    const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
+
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
     const [needsRefresh, setNeedsRefresh] = useState(false);
@@ -142,7 +137,7 @@ export function AdminSettings() {
                                             <DialogHeader>
                                                 <DialogTitle>Static Filter Values</DialogTitle>
                                                 <DialogDescription className="pt-2">
-                                                    Instead of fetching years, genres, and ratings from your Jellyfin server,
+                                                    Instead of fetching years, genres, and ratings from your server,
                                                     Swiparr will use a predefined list of values.
                                                     <br /><br />
                                                     This is <strong>only</strong>, and highly recommended for large libraries (3000+ items)

@@ -31,8 +31,9 @@ export function TmdbView({
       <form onSubmit={handleLogin} className="space-y-4">
         {!providerLock && (
           <Input
-            placeholder="TMDB Read-Only Access Token"
+            placeholder="TMDB API Read Access Token"
             value={tmdbToken}
+            type="password"
             onChange={(e) => setTmdbToken(e.target.value)}
             className="bg-muted border-input text-xs h-8"
           />

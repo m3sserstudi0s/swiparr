@@ -1,4 +1,4 @@
-import { db, sessions } from "@/lib/db";
+import { db, sessions, config as configTable } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { SessionData } from "@/types";
 import { getRuntimeConfig } from "@/lib/runtime-config";
@@ -13,11 +13,27 @@ export class GuestKickedError extends Error {
 export async function getEffectiveCredentials(session: SessionData) {
     const { capabilities } = getRuntimeConfig();
     
+    // Get user's watch region from settings
+    const userSettingsEntry = await db.query.config.findFirst({
+        where: eq(configTable.key, `user_settings:${session.user?.Id}`),
+    });
+    let watchRegion = "SE";
+    if (userSettingsEntry) {
+        try {
+            const s = JSON.parse(userSettingsEntry.value);
+            if (s.watchRegion) watchRegion = s.watchRegion;
+        } catch(e) {}
+    }
+
     if (!session.user?.isGuest) {
         return {
             accessToken: session.user?.AccessToken,
             deviceId: session.user?.DeviceId,
-            userId: session.user?.Id
+            userId: session.user?.Id,
+            serverUrl: session.user?.providerConfig?.serverUrl,
+            tmdbToken: session.user?.providerConfig?.tmdbToken,
+            provider: session.user?.provider,
+            watchRegion
         };
     }
 
@@ -43,6 +59,7 @@ export async function getEffectiveCredentials(session: SessionData) {
         userId: currentSession.hostUserId,
         serverUrl: currentSession.providerConfig ? JSON.parse(currentSession.providerConfig).serverUrl : undefined,
         tmdbToken: currentSession.providerConfig ? JSON.parse(currentSession.providerConfig).tmdbToken : undefined,
-        provider: currentSession.provider || undefined
+        provider: currentSession.provider || undefined,
+        watchRegion
     };
 }

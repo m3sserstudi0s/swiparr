@@ -15,10 +15,11 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 export function GeneralSettings() {
     const { setTheme, resolvedTheme: theme } = useTheme();
     const { settings, updateSettings } = useSettings();
-    const { capabilities } = useRuntimeConfig();
     const { data: sessionStatus, isLoading } = useSession();
+    const runtimeConfig = useRuntimeConfig();
     const updateSession = useUpdateSession();
 
+    const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
     const isGuest = sessionStatus?.isGuest || false;
     const isHost = sessionStatus?.code && sessionStatus?.userId === sessionStatus?.hostUserId;
 
@@ -102,7 +103,7 @@ export function GeneralSettings() {
                                             <DialogHeader>
                                                 <DialogTitle>Guest Lending</DialogTitle>
                                                 <DialogDescription className="pt-2">
-                                                    Allows people to join your session as guests without needing their own Jellyfin account.
+                                                    Allows people to join your session as guests without needing their own account.
                                                     They will use your connection to fetch movies and images for the duration of the session.
                                                 </DialogDescription>
                                             </DialogHeader>

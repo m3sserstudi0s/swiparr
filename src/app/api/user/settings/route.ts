@@ -79,6 +79,12 @@ export async function PATCH(request: NextRequest) {
             
             // Notify session that a user's settings (and thus accumulated providers) changed
             events.emit(EVENT_TYPES.SESSION_UPDATED, session.sessionCode);
+            events.emit(EVENT_TYPES.FILTERS_UPDATED, {
+                sessionCode: session.sessionCode,
+                userId: session.user.Id,
+                userName: session.user.Name,
+                isSettingsUpdate: true
+            });
         }
 
         return NextResponse.json({ success: true });

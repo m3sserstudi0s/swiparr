@@ -10,9 +10,10 @@ import { useRuntimeConfig } from "@/lib/runtime-config"
 import { Button } from "@/components/ui/button"
 
 export function SessionAlert() {
-    const { capabilities } = useRuntimeConfig();
+    const runtimeConfig = useRuntimeConfig();
     const { settings, updateSettings } = useSettings();
     const { data: sessionStatus } = useSession();
+    const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
 
     const isGuest = sessionStatus?.isGuest || false;
 
@@ -34,7 +35,7 @@ export function SessionAlert() {
                 <Info className="size-4 text-primary" />
                 <AlertTitle>Guest Lending</AlertTitle>
                 <AlertDescription className="text-xs">
-                    Allow others to join your session without a Jellyfin account by enabling Guest Lending in Settings.
+                    Allow others to join your session without an account by enabling Guest Lending in Settings.
                 </AlertDescription>
                 <Button
                     variant="ghost"

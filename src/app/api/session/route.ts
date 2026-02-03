@@ -10,6 +10,7 @@ import { events, EVENT_TYPES } from "@/lib/events";
 import { isAdmin } from "@/lib/server/admin";
 import { getEffectiveCredentials, GuestKickedError } from "@/lib/server/auth-resolver";
 import { sessionActionSchema, sessionSettingsSchema } from "@/lib/validations";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 function generateCode() {
     // Simple 4-letter code (e.g., AXYZ)
@@ -183,9 +184,14 @@ export async function GET() {
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
   let effectiveUserId = null;
+  let activeProvider = session.user.provider || "jellyfin";
+  let activeServerUrl = session.user.providerConfig?.serverUrl;
+
   try {
     const creds = await getEffectiveCredentials(session);
     effectiveUserId = creds.userId;
+    if (creds.provider) activeProvider = creds.provider;
+    if (creds.serverUrl) activeServerUrl = creds.serverUrl;
   } catch (err) {
     if (err instanceof GuestKickedError) {
         // Automatically logout the guest if they were kicked
@@ -209,6 +215,11 @@ export async function GET() {
     hostUserId = currentSession?.hostUserId || null;
   }
 
+  const userSettingsEntry = await db.query.config.findFirst({
+    where: eq(configTable.key, `user_settings:${session.user.Id}`),
+  });
+  const settingsHash = userSettingsEntry?.value ? userSettingsEntry.value.length.toString(16) + userSettingsEntry.value.slice(-8) : 'default';
+
   const response = { 
     code: session.sessionCode || null,
     userId: session.user.Id,
@@ -218,7 +229,11 @@ export async function GET() {
     isAdmin: await isAdmin(session.user.Id, session.user.Name),
     hostUserId,
     filters,
-    settings
+    settings,
+    provider: activeProvider,
+    capabilities: getMediaProvider(activeProvider).capabilities,
+    serverUrl: activeServerUrl,
+    settingsHash
   };
 
 

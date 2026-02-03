@@ -9,8 +9,8 @@ import { useSession } from "@/hooks/api";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 
 export function AccountSettings() {
-    const { capabilities, provider } = useRuntimeConfig();
     const { data: sessionStatus, isLoading } = useSession();
+    const runtimeConfig = useRuntimeConfig();
 
     if (isLoading || !sessionStatus) {
         return (
@@ -26,7 +26,8 @@ export function AccountSettings() {
         );
     }
 
-    const { userName, userId, isGuest, isAdmin } = sessionStatus;
+    const { userName, userId, isGuest, isAdmin, provider } = sessionStatus;
+    const activeProvider = provider || runtimeConfig.provider;
 
     return (
         <SettingsSection title="Account">
@@ -54,7 +55,7 @@ export function AccountSettings() {
                                 <UserPlus className="size-3" />
                                 Guest Account
                             </>
-                        ) : provider === "tmdb" ? (
+                        ) : activeProvider === "tmdb" ? (
                             <>
                                 <Globe className="size-3" />
                                 Universal Profile
@@ -62,7 +63,7 @@ export function AccountSettings() {
                         ) : (
                             <>
                                 <Shield className="size-3" />
-                                {provider.charAt(0).toUpperCase() + provider.slice(1)} Account
+                                {activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1)} Account
                             </>
                         )}
                     </div>

@@ -27,8 +27,10 @@ export function useUpdateUserSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user.settings });
-      // Also invalidate deck as settings changed
-      queryClient.invalidateQueries({ queryKey: ["deck"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
+      // Force a complete refresh of the deck
+      queryClient.removeQueries({ queryKey: ["deck"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.watchProviders("", null) });
     },
   });
 }

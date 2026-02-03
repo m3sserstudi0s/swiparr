@@ -27,6 +27,7 @@ export class TmdbProvider implements MediaProvider {
     hasLibraries: false,
     hasSettings: true,
     requiresServerUrl: false,
+    isExperimental: false,
   };
 
   constructor(token?: string) {
@@ -58,8 +59,8 @@ export class TmdbProvider implements MediaProvider {
 
     if (filters.watchProviders && filters.watchProviders.length > 0) {
         discoverOptions.with_watch_providers = filters.watchProviders.join('|');
-        discoverOptions.watch_region = filters.watchRegion || 'SE';
-        discoverOptions.with_watch_monetization_types = 'flatrate';
+        discoverOptions.watch_region = filters.watchRegion || auth?.watchRegion || 'SE';
+        (discoverOptions as any).with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
     }
 
     if (filters.years && filters.years.length > 0) {
@@ -83,7 +84,7 @@ export class TmdbProvider implements MediaProvider {
     }
 
     // If no specific filters and sortBy is Random, we can use trending or discover with a random page
-    if (!filters.genres?.length && !filters.years?.length && !filters.ratings?.length && filters.sortBy === "Random") {
+    if (!filters.genres?.length && !filters.years?.length && !filters.ratings?.length && !filters.watchProviders?.length && filters.sortBy === "Random") {
         const page = Math.floor(Math.random() * 10) + 1;
         const trending = await this.client.trending.trending("movie", "week", { page });
         return trending.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));
@@ -109,7 +110,7 @@ export class TmdbProvider implements MediaProvider {
         this.client = new TMDB(auth.tmdbToken);
     }
     const movie = await this.client.movies.details(parseInt(id), ['credits', 'images' as any, 'watch/providers' as any]);
-    return this.mapMovieDetailsToMediaItem(movie as any);
+    return this.mapMovieDetailsToMediaItem(movie as any, auth?.watchRegion);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
@@ -180,7 +181,7 @@ export class TmdbProvider implements MediaProvider {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
 
     try {
-        const details = await this.getItemDetails(itemId);
+        const details = await this.getItemDetails(itemId, auth);
         const tag = type === "Backdrop" ? details.ImageTags?.Backdrop : details.ImageTags?.Primary;
         if (!tag) return "";
         const imageUrl = `https://image.tmdb.org/t/p/w200${tag.startsWith('/') ? tag : `/${tag}`}`; 
@@ -214,7 +215,7 @@ export class TmdbProvider implements MediaProvider {
     };
   }
 
-  private mapMovieDetailsToMediaItem(movie: any): MediaItem {
+  private mapMovieDetailsToMediaItem(movie: any, region?: string): MediaItem {
     const people = [
         ...(movie.credits?.cast?.slice(0, 10).map((p: any) => ({
             Id: p.id.toString(),
@@ -248,31 +249,38 @@ export class TmdbProvider implements MediaProvider {
       },
       BackdropImageTags: movie.backdrop_path ? [movie.backdrop_path] : [],
       People: people,
-      WatchProviders: this.mapWatchProviders(movie['watch/providers']?.results),
+      WatchProviders: this.mapWatchProviders(movie['watch/providers']?.results, region),
     };
   }
 
-  private mapWatchProviders(results: any): WatchProvider[] {
+  private mapWatchProviders(results: any, preferredRegion?: string): WatchProvider[] {
     if (!results) return [];
-    // We'll take providers from a few common regions if the specific one isn't found, 
-    // or just aggregate flatrate from all. But better to use the one from settings.
-    // Since we don't have settings here easily, we'll try to find a region that has 'flatrate'.
-    const regions = Object.keys(results);
-    const flatrateProviders = new Map<number, WatchProvider>();
-
-    for (const region of regions) {
-        const providers = results[region]?.flatrate || [];
-        for (const p of providers) {
-            if (!flatrateProviders.has(p.provider_id)) {
-                flatrateProviders.set(p.provider_id, {
+    
+    const providers = new Map<number, WatchProvider>();
+    const processRegion = (regionCode: string) => {
+        const data = results[regionCode];
+        if (!data) return;
+        const allTypes = [...(data.flatrate || []), ...(data.rent || []), ...(data.buy || []), ...(data.ads || []), ...(data.free || [])];
+        for (const p of allTypes) {
+            if (!providers.has(p.provider_id)) {
+                providers.set(p.provider_id, {
                     Id: p.provider_id.toString(),
                     Name: p.provider_name,
                     LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`
                 });
             }
         }
+    };
+
+    if (preferredRegion && results[preferredRegion]) {
+        processRegion(preferredRegion);
+    } else {
+        // Fallback: process all regions but prioritize some common ones if we want to be generous
+        // For now, if no region, we still aggregate all as before to not break things
+        const regions = Object.keys(results);
+        for (const r of regions) processRegion(r);
     }
 
-    return Array.from(flatrateProviders.values());
+    return Array.from(providers.values());
   }
 }

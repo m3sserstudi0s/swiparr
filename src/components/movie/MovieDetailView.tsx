@@ -16,6 +16,7 @@ import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSettings } from "@/lib/settings";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { useSession } from "@/hooks/api";
 import { ticksToTime, getErrorMessage, cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 
@@ -168,7 +169,10 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   };
 
 
-  const { serverPublicUrl, capabilities } = useRuntimeConfig();
+  const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities } = useRuntimeConfig();
+  const { data: sessionStatus } = useSession();
+  const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
+  const serverPublicUrl = sessionStatus?.serverUrl || runtimeServerUrl;
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>

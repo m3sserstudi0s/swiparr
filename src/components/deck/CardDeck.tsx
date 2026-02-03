@@ -65,14 +65,15 @@ export function CardDeck() {
 
   const { setBackgroundItem } = useBackgroundStore();
 
-  // Clear local state when session or filters change to get a fresh start
+  // Clear local state when session, filters, or global settings change to get a fresh start
   const filtersJson = JSON.stringify(sessionStatus?.filters);
+  const settingsHash = sessionStatus?.settingsHash;
   useEffect(() => {
     setRemovedIds([]);
     swipedIdsRef.current.clear();
     setLastSwipe(null);
     setDisplayDeck([]);
-  }, [sessionCode, filtersJson]);
+  }, [sessionCode, filtersJson, settingsHash]);
 
   // Update displayDeck when new items are fetched
   useEffect(() => {

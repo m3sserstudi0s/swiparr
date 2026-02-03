@@ -65,6 +65,12 @@ export function StreamingSettings() {
         }
     }, [settings, regions, availableProviders, hasInitialized]);
 
+    useEffect(() => {
+        if (selectedRegion && availableProviders.length > 0 && hasInitialized) {
+            setSelectedProviders(prev => prev.filter(pId => availableProviders.some(p => p.Id === pId)));
+        }
+    }, [selectedRegion, availableProviders, hasInitialized]);
+
     const toggleProvider = (id: string) => {
         setSelectedProviders(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]

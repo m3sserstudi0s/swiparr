@@ -15,6 +15,7 @@ export interface ProviderCapabilities {
   hasLibraries: boolean;
   hasSettings: boolean;
   requiresServerUrl: boolean;
+  isExperimental: boolean;
 }
 
 export interface SearchFilters {
@@ -69,4 +70,5 @@ export interface AuthContext {
   userId?: string;
   serverUrl?: string;
   tmdbToken?: string;
+  watchRegion?: string;
 }

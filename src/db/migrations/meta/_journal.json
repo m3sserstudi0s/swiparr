@@ -50,6 +50,13 @@
       "when": 1769980375179,
       "tag": "0006_wealthy_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1770154050300,
+      "tag": "0007_mixed_jack_power",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,8 @@
 import { MediaItem } from "./media";
 import { Filters, SessionSettings } from "./session";
 
+import { ProviderCapabilities } from "@/lib/providers/types";
+
 export interface SwipePayload {
   itemId: string;
   direction: "left" | "right";
@@ -24,6 +26,10 @@ export interface SessionStatus {
   hostUserId: string | null;
   filters: Filters | null;
   settings: SessionSettings | null;
+  provider: string;
+  capabilities: ProviderCapabilities;
+  serverUrl?: string;
+  settingsHash?: string;
 }
 
 export interface MergedLike extends MediaItem {

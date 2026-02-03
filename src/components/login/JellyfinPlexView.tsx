@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CardDescription } from "@/components/ui/card";
 import { QuickConnectView } from "./QuickConnectView";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangleIcon } from "lucide-react"
 
 interface JellyfinPlexViewProps {
   provider: string;
@@ -29,6 +31,7 @@ interface JellyfinPlexViewProps {
   setQcCode: (val: string | null) => void;
   sessionCodeParam: string | null;
   hasQuickConnect: boolean;
+  isExperimental: boolean;
 }
 
 export function JellyfinPlexView({
@@ -53,7 +56,8 @@ export function JellyfinPlexView({
   copyToClipboard,
   setQcCode,
   sessionCodeParam,
-  hasQuickConnect
+  hasQuickConnect,
+  isExperimental
 }: JellyfinPlexViewProps) {
   const [activeTab, setActiveTab] = useState<string>("login");
 
@@ -80,15 +84,17 @@ export function JellyfinPlexView({
         ) : (
           <form onSubmit={handleLogin} className="space-y-3">
             <CardDescription>
-              Enter your {provider === "jellyfin" ? "Jellyfin" : "Plex"} credentials
+              Enter your {provider === "jellyfin" ? "Jellyfin" : provider === "emby" ? "Emby" : "Plex"} credentials
             </CardDescription>
 
             {!providerLock && (
               <Input
                 placeholder={
                   provider === "jellyfin"
-                    ? "Jellyfin Server URL (optional)"
-                    : "Plex Server URL (optional)"
+                    ? "Jellyfin Server URL"
+                    : provider === "emby"
+                    ? "Emby Server URL"
+                    : "Plex Server URL"
                 }
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
@@ -133,6 +139,15 @@ export function JellyfinPlexView({
                   Quick Connect
                 </Button>
               </>
+            )}
+            {isExperimental && (
+              <Alert className="max-w-full mt-2 ">
+                <AlertTriangleIcon className="text-amber-600!"/>
+                <AlertTitle>Experimental provider integration</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Certain features may not work as expected.
+                </AlertDescription>
+              </Alert>
             )}
           </form>
         )}

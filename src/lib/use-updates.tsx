@@ -81,7 +81,7 @@ export function useUpdates() {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
                 
                 if (userId && data.userId !== userId) {
-                    toast.info(`${data.userName} changed the filters`, {
+                    toast.info(`${data.userName} ${data.isSettingsUpdate ? 'updated their streaming services' : 'changed the filters'}`, {
                         description: "The cards have been updated.",
                         position: 'top-right'
                     });

@@ -84,7 +84,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                     <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex gap-4">
                                         <Filter className="size-4 text-primary mt-1 shrink-0" />
                                         <p className="text-sm text-muted-foreground">
-                                            Filter by Genre, Year, or Rating. Toggle Jellyfin Watchlist/Favorites sync in settings.
+                                            Filter by Genre, Year, or Rating. Toggle Watchlist/Favorites sync in settings.
                                         </p>
                                     </div>
                                 </TabsContent>
@@ -137,7 +137,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                             <h3 className="text-lg font-semibold">Guest access</h3>
                                         </div>
                                         <div className="p-4 rounded-xl border bg-muted/30 text-sm space-y-3">
-                                            <p className="font-medium">Enable this to allow users without Jellyfin accounts to join your session.</p>
+                                            <p className="font-medium">Enable this to allow users without accounts to join your session.</p>
                                             <ul className="space-y-2 list-disc pl-4 text-muted-foreground">
                                                 <li>Guests connect via proxy (no direct account access).</li>
                                                 <li>Likes are isolated to the specific session.</li>

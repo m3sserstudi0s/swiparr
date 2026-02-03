@@ -3,6 +3,7 @@ import { MediaProvider } from "./types";
 import { JellyfinProvider } from "./jellyfin/index";
 import { TmdbProvider } from "./tmdb/index";
 import { PlexProvider } from "./plex/index";
+import { EmbyProvider } from "./emby/index";
 
 class ProviderFactory {
   private static instance: MediaProvider;
@@ -35,6 +36,8 @@ class ProviderFactory {
         return new TmdbProvider();
       case "plex":
         return new PlexProvider();
+      case "emby":
+        return new EmbyProvider();
       default:
         console.warn(`Unknown provider: ${type}, defaulting to Jellyfin`);
         return new JellyfinProvider();

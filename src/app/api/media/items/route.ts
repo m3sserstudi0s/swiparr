@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     try {
         const auth = await getEffectiveCredentials(session);
         const provider = getMediaProvider(auth.provider);
+        const activeProviderName = auth.provider || session.user.provider || "jellyfin";
         const runtimeConfig = getRuntimeConfig();
 
         // 0. Get admin-defined libraries
@@ -68,9 +69,9 @@ export async function GET(request: NextRequest) {
 
         // Watch Providers Logic
         let watchProviders = sessionFilters?.watchProviders;
-        let watchRegion = sessionFilters?.watchRegion || "SE";
+        let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || "SE";
 
-        if (!watchProviders && runtimeConfig.provider === "tmdb") {
+        if (!watchProviders && activeProviderName === "tmdb") {
             const accumulated = new Set<string>();
             if (session.sessionCode) {
                 const sessionMembersList = await db.query.sessionMembers.findMany({

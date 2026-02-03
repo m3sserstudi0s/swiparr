@@ -8,6 +8,8 @@ import { TmdbProvider } from "@/lib/providers/tmdb";
 import { db, sessionMembers, config as configTable } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
+import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
@@ -20,13 +22,15 @@ export async function GET(request: NextRequest) {
     const region = searchParams.get("region") || "SE";
     const sessionCode = searchParams.get("sessionCode");
 
-    const runtimeConfig = getRuntimeConfig();
-    if (runtimeConfig.provider !== "tmdb") {
+    const auth = await getEffectiveCredentials(session);
+    const activeProvider = auth.provider || session.user.provider || "jellyfin";
+
+    if (activeProvider !== "tmdb") {
         return NextResponse.json({ providers: [] });
     }
 
     const provider = new TmdbProvider();
-    const allProviders = await provider.getWatchProviders(region);
+    const allProviders = await provider.getWatchProviders(region, auth);
 
     let memberSelections: Record<string, string[]> = {};
     let members: { externalUserId: string, externalUserName: string }[] = [];

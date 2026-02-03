@@ -33,6 +33,7 @@ import { AdminSettings } from "./settings/AdminSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
 import { StreamingSettings } from "./settings/StreamingSettings";
 import { DangerZone } from "./settings/DangerZone";
+import { useSession } from "@/hooks/api";
 
 export function SettingsSidebar() {
     const router = useRouter();
@@ -43,7 +44,10 @@ export function SettingsSidebar() {
 
     useHotkeys("s, ,", () => setOpen(prev => !prev), []);
 
-    const { basePath, provider } = useRuntimeConfig();
+    const { basePath, provider: runtimeProvider } = useRuntimeConfig();
+    const { data: sessionStatus } = useSession();
+    const activeProvider = sessionStatus?.provider || runtimeProvider;
+
     const handleLogout = async () => {
         try {
             await apiClient.post("/api/auth/logout");
@@ -66,6 +70,7 @@ export function SettingsSidebar() {
                 setShowClearDialog(false);
                 router.refresh();
                 setIsClearing(false);
+                window.location.reload();
                 return "All data cleared successfully";
             },
             error: (err) => {
@@ -94,7 +99,7 @@ export function SettingsSidebar() {
                         <div className="space-y-8 py-8 pb-12">
                             <AccountSettings />
                             <GeneralSettings />
-                            {provider === "tmdb" && <StreamingSettings />}
+                            {activeProvider === "tmdb" && <StreamingSettings />}
                             <AdminSettings />
                             <AboutSettings onShowUserGuide={() => {
                                 setShowUserGuide(true);

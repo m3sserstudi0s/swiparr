@@ -23,6 +23,7 @@ export class PlexProvider implements MediaProvider {
     hasLibraries: true,
     hasSettings: true,
     requiresServerUrl: true,
+    isExperimental: false,
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
