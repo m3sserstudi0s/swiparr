@@ -174,20 +174,20 @@ export function StreamingSettings() {
                     </CollapsibleTrigger>
 
                     <CollapsibleContent className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                             <p className="text-xs text-muted-foreground">
                                 Select which services you have access to
                             </p>
                             <div className="flex gap-2">
                                 <button
                                     onClick={selectAll}
-                                    className="text-[10px] font-medium text-primary hover:underline whitespace-nowrap"
+                                    className="text-xs font-medium text-primary hover:underline whitespace-nowrap cursor-pointer"
                                 >
                                     Select all
                                 </button>
                                 <button
                                     onClick={deselectAll}
-                                    className="text-[10px] font-medium text-muted-foreground hover:underline"
+                                    className="text-xs font-medium text-muted-foreground hover:underline cursor-pointer"
                                 >
                                     Clear
                                 </button>
@@ -199,7 +199,7 @@ export function StreamingSettings() {
                                 <Loader2 className="size-6 animate-spin text-muted-foreground" />
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 gap-2 max-h-75 overflow-y-auto pr-1">
+                            <div className="grid grid-cols-2 gap-2 max-h-75 overflow-y-auto pr-2">
                                 {availableProviders.length === 0 ? (
                                     <div className="col-span-2 text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
                                         No providers found for this region
