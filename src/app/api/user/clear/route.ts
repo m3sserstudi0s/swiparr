@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { db, likes as likesTable, hiddens as hiddensTable, sessions as sessionsTable } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -8,7 +8,7 @@ import { SessionData } from "@/types";
 
 export async function POST() {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
   if (!session.isLoggedIn) {
     return new NextResponse("Unauthorized", { status: 401 });

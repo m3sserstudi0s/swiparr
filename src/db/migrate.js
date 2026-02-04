@@ -1,49 +1,39 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/libsql';
+import { migrate } from 'drizzle-orm/libsql/migrator';
+import { createClient } from '@libsql/client';
 import path from 'path';
-import fs from 'fs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-if (!process.env.AUTH_SECRET && !process.env.AUTHORS_SECRET) {
-  console.log('INFO: AUTH_SECRET is not set. A persistent secret will be generated in the database.');
-}
-
-const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
-
-if (provider === 'jellyfin' && (!process.env.JELLYFIN_URL && !process.env.SERVER_URL)) {
-  console.error('ERROR: JELLYFIN_URL is not set. Swiparr requires this to function with the jellyfin provider.');
-  process.exit(1);
-}
-
-if (provider === 'tmdb' && !process.env.TMDB_ACCESS_TOKEN) {
-  console.error('ERROR: TMDB_ACCESS_TOKEN is not set. Swiparr requires this to function with the tmdb provider.');
-  process.exit(1);
-}
-
-if (provider === 'plex' && (!process.env.PLEX_URL && !process.env.SERVER_URL)) {
-  console.error('ERROR: PLEX_URL is not set. Swiparr requires this to function with the plex provider.');
-  process.exit(1);
-}
-
 const getDefaultDbPath = () => {
   if (process.env.NODE_ENV === 'production') {
-    return '/app/data/swiparr.db';
+    return 'file:/app/data/swiparr.db';
   }
-  return 'swiparr.db';
+  return 'file:swiparr.db';
 };
 
-const connectionString = process.env.DATABASE_URL?.replace("file:", "") || getDefaultDbPath();
-const sqlite = new Database(connectionString);
-const db = drizzle(sqlite);
+const url = process.env.DATABASE_URL || getDefaultDbPath();
+const authToken = process.env.DATABASE_AUTH_TOKEN;
 
-console.log('Running migrations...');
+const client = createClient({
+  url,
+  authToken,
+});
 
-// migrationsFolder should point to the drizzle directory
-// In production, we'll copy it to the root or a known location
-migrate(db, { migrationsFolder: path.join(process.cwd(), 'src', 'db', 'migrations') });
+const db = drizzle(client);
 
-console.log('Migrations complete!');
-sqlite.close();
+async function main() {
+  console.log('Running migrations...');
+  try {
+    await migrate(db, { migrationsFolder: path.join(process.cwd(), 'src', 'db', 'migrations') });
+    console.log('Migrations complete!');
+  } catch (error) {
+    console.error('Migration failed:', error);
+    process.exit(1);
+  } finally {
+    client.close();
+  }
+}
+
+main();

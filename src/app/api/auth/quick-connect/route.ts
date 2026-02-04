@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { initiateQuickConnect, checkQuickConnect } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const data = await initiateQuickConnect(deviceId, serverUrl);
     
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     session.tempDeviceId = deviceId;
     if (serverUrl) {
         session.providerConfig = { serverUrl };
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     
     if (!session.tempDeviceId) {
       return NextResponse.json({ success: false, message: "No session found" }, { status: 400 });

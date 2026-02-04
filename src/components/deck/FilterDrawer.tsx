@@ -137,9 +137,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
   const toggleRating = (rating: string) => {
     setSelectedRatings((prev) =>
-      prev.includes(rating)
-        ? prev.filter((r) => r !== rating)
-        : [...prev, rating]
+      prev.includes(rating) ? [] : [rating]
     );
   };
 
@@ -154,9 +152,6 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const selectAllGenres = () => setSelectedGenres(genres.map(g => g.Name));
   const deselectAllGenres = () => setSelectedGenres([]);
   
-  const selectAllRatings = () => setSelectedRatings(ratings.map(r => r.Value));
-  const deselectAllRatings = () => setSelectedRatings([]);
-
   const selectAllProviders = () => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
   const deselectAllProviders = () => setSelectedWatchProviders([]);
 
@@ -290,8 +285,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                   Genres
                 </Label>
                 <div className="flex gap-2">
-                    <button onClick={selectAllGenres} className="text-[10px] font-medium text-primary hover:underline">Select all</button>
-                    <button onClick={deselectAllGenres} className="text-[10px] font-medium text-muted-foreground hover:underline">Clear</button>
+                    <button onClick={selectAllGenres} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
+                    <button onClick={deselectAllGenres} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -316,8 +311,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                     Streaming Services
                     </Label>
                     <div className="flex gap-2">
-                        <button onClick={selectAllProviders} className="text-[10px] font-medium text-primary hover:underline">Select all</button>
-                        <button onClick={deselectAllProviders} className="text-[10px] font-medium text-muted-foreground hover:underline">Clear</button>
+                        <button onClick={selectAllProviders} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
+                        <button onClick={deselectAllProviders} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -379,12 +374,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                     <Label className="text-base font-semibold">
-                    Maturity Ratings
+                    Maturity Rating
                     </Label>
-                    <div className="flex gap-2">
-                        <button onClick={selectAllRatings} className="text-[10px] font-medium text-primary hover:underline">Select all</button>
-                        <button onClick={deselectAllRatings} className="text-[10px] font-medium text-muted-foreground hover:underline">Clear</button>
-                    </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {ratings.map((rating: MediaRating) => (

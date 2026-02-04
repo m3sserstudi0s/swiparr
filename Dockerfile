@@ -46,11 +46,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrations ./src/db/migrations
 COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrate.js ./src/db/migrate.js
 
-# Note: drizzle-orm and better-sqlite3 are needed by migrate.js. 
+# Note: drizzle-orm and @libsql/client are needed by migrate.js. 
 # Next.js standalone usually bundles deps, but migrate.js is run outside that bundle.
 # We copy them from the builder to ensure they are available for the migration script.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@libsql ./node_modules/@libsql
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/dotenv ./node_modules/dotenv
 
 COPY docker-entrypoint.sh /usr/local/bin/

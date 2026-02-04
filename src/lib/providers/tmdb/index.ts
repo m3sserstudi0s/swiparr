@@ -74,17 +74,12 @@ export class TmdbProvider implements MediaProvider {
         }
     }
 
-    if (filters.ratings && filters.ratings.length > 0) {
-        // officialRatings from Jellyfin don't map directly to TMDB easily without a map
-        // but we can try to use vote_average if a numeric-like rating is passed
-        const numericRatings = filters.ratings.map(r => parseFloat(r)).filter(n => !isNaN(n));
-        if (numericRatings.length > 0) {
-            discoverOptions['vote_average.gte'] = Math.min(...numericRatings);
-        }
+    if (filters.minCommunityRating && filters.minCommunityRating > 0) {
+        discoverOptions['vote_average.gte'] = filters.minCommunityRating;
     }
 
     // If no specific filters and sortBy is Random, we can use trending or discover with a random page
-    if (!filters.genres?.length && !filters.years?.length && !filters.ratings?.length && !filters.watchProviders?.length && filters.sortBy === "Random") {
+    if (!filters.genres?.length && !filters.years?.length && !filters.ratings?.length && !filters.watchProviders?.length && !filters.minCommunityRating && filters.sortBy === "Random") {
         const page = Math.floor(Math.random() * 10) + 1;
         const trending = await this.client.trending.trending("movie", "week", { page });
         return trending.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));

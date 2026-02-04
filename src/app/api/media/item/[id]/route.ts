@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { db, likes, sessionMembers } from "@/lib/db";
@@ -11,7 +11,7 @@ import { getMediaProvider } from "@/lib/providers/factory";
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
   const { id } = await params;

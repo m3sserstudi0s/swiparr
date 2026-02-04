@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { db, sessions, sessionMembers, likes, hiddens, config as configTable } from "@/lib/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -24,7 +24,7 @@ function generateCode() {
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
     const body = await request.json();
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     if (!session.isLoggedIn) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -179,7 +179,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function GET() {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
@@ -242,7 +242,7 @@ export async function GET() {
 
 export async function DELETE() {
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     
     if (session.isLoggedIn && session.user && session.sessionCode) {
         const code = session.sessionCode;

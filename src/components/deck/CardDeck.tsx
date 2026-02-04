@@ -65,10 +65,13 @@ export function CardDeck() {
 
   const { setBackgroundItem } = useBackgroundStore();
 
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
   // Clear local state when session, filters, or global settings change to get a fresh start
   const filtersJson = JSON.stringify(sessionStatus?.filters);
   const settingsHash = sessionStatus?.settingsHash;
   useEffect(() => {
+    setIsTransitioning(true);
     setRemovedIds([]);
     swipedIdsRef.current.clear();
     setLastSwipe(null);
@@ -78,6 +81,9 @@ export function CardDeck() {
   // Update displayDeck when new items are fetched
   useEffect(() => {
     if (deck && Array.isArray(deck)) {
+      if (deck.length > 0) {
+        setIsTransitioning(false);
+      }
       setDisplayDeck((prev) => {
         const existingIds = new Set(prev.map((i) => i.Id));
         const newItems = deck.filter((item) => !existingIds.has(item.Id));
@@ -224,7 +230,7 @@ export function CardDeck() {
   useHotkeys("right", () => handleSwipeAction("right"), { enabled: !isFilterOpen && activeDeck.length > 0 });
   useHotkeys("up", () => activeDeck[0] && openMovie(activeDeck[0].Id, {showLikedBy: false}), { enabled: !isFilterOpen && activeDeck.length > 0 });
 
-  if (isLoadingSession || (isLoading && displayDeck.length === 0) || (isFetching && activeDeck.length === 0)) {
+  if (isLoadingSession || isTransitioning || (activeDeck.length === 0 && (isLoading || isFetching || isFetchingNextPage))) {
     return <DeckLoading />;
   }
 

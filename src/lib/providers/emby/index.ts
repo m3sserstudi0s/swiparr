@@ -38,7 +38,7 @@ export class EmbyProvider implements MediaProvider {
         Years: filters.years?.join(",") || undefined,
         OfficialRatings: filters.ratings?.join(",") || undefined,
         Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,
-        MinCommunityRating: filters.ratings?.[0] || undefined, 
+        MinCommunityRating: filters.minCommunityRating || undefined, 
         Limit: filters.limit || 50,
         StartIndex: filters.offset || 0,
       },

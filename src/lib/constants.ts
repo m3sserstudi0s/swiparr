@@ -1,6 +1,9 @@
 export const GITHUB_REPO = "m3sserstudi0s/swiparr";
 export const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}`;
 export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
+export const SUPPORT_URL = "https://https://buymeacoffee.com/jakobbjelver";
+export const MESSER_STUDIOS_URL = "https://messerstudios.dev";
+
 
 export const DEFAULT_GENRES = [
     { Id: "1", Name: "Action" },

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { db, likes, hiddens, sessions, sessionMembers, config as configTable } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
 
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { MediaItem } from "@/types/media";
 import { shuffleWithSeed } from "@/lib/utils";
@@ -16,7 +16,7 @@ import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
@@ -123,6 +123,7 @@ export async function GET(request: NextRequest) {
                 genres: sessionFilters?.genres,
                 years: sessionFilters?.yearRange ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange[0] + i) : undefined,
                 ratings: sessionFilters?.officialRatings,
+                minCommunityRating: sessionFilters?.minCommunityRating,
                 watchProviders,
                 watchRegion,
                 limit: 1000, // Fetch a large batch for shuffling
@@ -172,6 +173,7 @@ export async function GET(request: NextRequest) {
                 genres: sessionFilters?.genres,
                 years: soloYears,
                 ratings: sessionFilters?.officialRatings,
+                minCommunityRating: sessionFilters?.minCommunityRating,
                 watchProviders,
                 watchRegion,
                 sortBy: "Random",

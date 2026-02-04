@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
 import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -11,7 +11,7 @@ import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
   const { searchParams } = new URL(request.url);
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
   const { searchParams } = new URL(request.url);

@@ -15,6 +15,8 @@ import { AdminInitializedView } from "./AdminInitializedView";
 import { JellyfinPlexView } from "./JellyfinPlexView";
 import { TmdbView } from "./TmdbView";
 import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
+import { Footer } from "../Footer";
+
 
 export default function LoginContent() {
   const { capabilities, basePath, provider, providerLock } = useRuntimeConfig();
@@ -256,6 +258,8 @@ export default function LoginContent() {
           </div>
         )}
       </CardContent>
+      <Footer className="pb-6" />
     </Card>
+
   );
 }

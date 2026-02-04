@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { isAdmin, getIncludedLibraries, setIncludedLibraries } from "@/lib/server/admin";
 
 export async function GET() {
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
     if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id))) {
         return new NextResponse("Unauthorized", { status: 401 });
@@ -22,7 +22,7 @@ import { libraryUpdateSchema } from "@/lib/validations";
 
 export async function PATCH(request: NextRequest) {
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
     if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id))) {
         return new NextResponse("Unauthorized", { status: 401 });

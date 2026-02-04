@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { db, likes, hiddens, sessionMembers, sessions } from "@/lib/db";
 import { eq, and, ne, count, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -13,7 +13,7 @@ import { swipeSchema } from "@/lib/validations";
 export async function POST(request: NextRequest) {
 
     const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const bodyRaw = await request.json();
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body: { itemId: string } = await request.json();

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 
 export async function proxy(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function proxy(request: NextRequest) {
     ? NextResponse.rewrite(new URL(pathname + search, request.url))
     : NextResponse.next();
 
-  const session = await getIronSession<SessionData>(request, response, sessionOptions);
+  const session = await getIronSession<SessionData>(request, response, await getSessionOptions());
 
   // 1. Define public paths. 
   const isPublicPath =

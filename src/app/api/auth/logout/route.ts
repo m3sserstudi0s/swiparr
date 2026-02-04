@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { db, sessions, sessionMembers, likes, hiddens } from "@/lib/db";
@@ -10,7 +10,7 @@ import { SessionSettings } from "@/types";
 
 export async function POST() {
   const cookieStore = await cookies();
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
   if (session.sessionCode && session.user?.Id) {
     const code = session.sessionCode;

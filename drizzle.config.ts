@@ -1,19 +1,19 @@
 import { defineConfig } from 'drizzle-kit';
 import 'dotenv/config';
-import fs from 'fs';
 
 const getDefaultDbPath = () => {
   if (process.env.NODE_ENV === 'production') {
-    return '/app/data/swiparr.db';
+    return 'file:/app/data/swiparr.db';
   }
-  return 'swiparr.db';
+  return 'file:swiparr.db';
 };
 
 export default defineConfig({
   schema: './src/db/schema.ts',
   out: './src/db/migrations',
-  dialect: 'sqlite',
+  dialect: 'turso',
   dbCredentials: {
-    url: process.env.DATABASE_URL?.replace("file:", "") || getDefaultDbPath(),
+    url: process.env.DATABASE_URL || getDefaultDbPath(),
+    authToken: process.env.DATABASE_AUTH_TOKEN,
   },
 });

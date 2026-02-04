@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { isAdmin, setAdminUserId } from "@/lib/server/admin";
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         }
 
         const cookieStore = await cookies();
-        const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+        const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
         session.user = {
             Id: userId,

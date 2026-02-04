@@ -22,6 +22,7 @@ export interface SearchFilters {
   genres?: string[];
   years?: number[];
   ratings?: string[];
+  minCommunityRating?: number;
   libraries?: string[];
   watchProviders?: string[];
   watchRegion?: string;

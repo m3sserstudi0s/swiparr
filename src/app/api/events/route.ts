@@ -1,13 +1,13 @@
 import { NextRequest } from "next/server";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
-    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
     const encoder = new TextEncoder();
 

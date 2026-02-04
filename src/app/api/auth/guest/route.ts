@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
+import { getSessionOptions } from "@/lib/session";
 import { db, sessions, sessionMembers } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         const guestId = `guest-${uuidv4()}`;
         
         const cookieStore = await cookies();
-        const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+        const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
         session.user = {
             Id: guestId,

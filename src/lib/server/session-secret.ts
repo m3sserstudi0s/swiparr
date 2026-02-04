@@ -3,7 +3,7 @@ import { config } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
-export function getAuthSecret(): string {
+export async function getAuthSecret(): Promise<string> {
   // 1. Environment variable (highest priority)
   if (process.env.AUTH_SECRET && process.env.AUTH_SECRET.length >= 32) {
     return process.env.AUTH_SECRET;
@@ -14,14 +14,14 @@ export function getAuthSecret(): string {
 
   try {
     // 2. Database (persistent fallback)
-    const result = db.select().from(config).where(eq(config.key, "auth_secret")).get();
-    if (result) {
-      return result.value;
+    const result = await db.select().from(config).where(eq(config.key, "auth_secret")).limit(1);
+    if (result && result.length > 0) {
+      return result[0].value;
     }
 
     // 3. Generate new and store in DB
     const newSecret = crypto.randomBytes(32).toString("hex");
-    db.insert(config).values({ key: "auth_secret", value: newSecret }).run();
+    await db.insert(config).values({ key: "auth_secret", value: newSecret });
     console.log("[Auth] Generated new persistent AUTH_SECRET and stored in database.");
     return newSecret;
   } catch (e) {
@@ -30,4 +30,3 @@ export function getAuthSecret(): string {
     return crypto.randomBytes(32).toString("hex");
   }
 }
-

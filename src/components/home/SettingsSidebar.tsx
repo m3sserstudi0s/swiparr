@@ -34,6 +34,8 @@ import { GeneralSettings } from "./settings/GeneralSettings";
 import { StreamingSettings } from "./settings/StreamingSettings";
 import { DangerZone } from "./settings/DangerZone";
 import { useSession } from "@/hooks/api";
+import { Footer } from "../Footer";
+
 
 export function SettingsSidebar() {
     const router = useRouter();
@@ -112,8 +114,9 @@ export function SettingsSidebar() {
 
                         </div>
                     </ScrollArea>
-
+                    <Footer className="py-6" />
                 </SheetContent>
+
             </Sheet>
 
             <UserGuide open={showUserGuide} onOpenChange={setShowUserGuide} />
