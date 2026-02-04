@@ -303,6 +303,29 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               </div>
             </div>
 
+            {/* Official Ratings Section */}
+            {ratings && ratings.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <Label className="text-base font-semibold">
+                    Maturity Rating
+                    </Label>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {ratings.map((rating: MediaRating) => (
+                    <Badge
+                      key={rating.Value}
+                      variant={selectedRatings.includes(rating.Value) ? "default" : "outline"}
+                      className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
+                      onClick={() => toggleRating(rating.Value)}
+                    >
+                      {rating.Name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Watch Providers Section */}
             {activeProvider === "tmdb" && availableWatchProviders.length > 0 && (
               <div className="space-y-4">
@@ -368,30 +391,6 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 </div>
               </div>
             )}
-
-            {/* Official Ratings Section */}
-            {ratings && ratings.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <Label className="text-base font-semibold">
-                    Maturity Rating
-                    </Label>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {ratings.map((rating: MediaRating) => (
-                    <Badge
-                      key={rating.Value}
-                      variant={selectedRatings.includes(rating.Value) ? "default" : "outline"}
-                      className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
-                      onClick={() => toggleRating(rating.Value)}
-                    >
-                      {rating.Name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
 
             <Button
               variant="outline"
