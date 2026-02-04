@@ -28,7 +28,7 @@ function ComboboxTrigger({
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
       className={cn(
-        "flex items-center justify-between gap-2 [&_svg:not([class*='size-'])]:size-4",
+        "flex items-center justify-between gap-2 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
         className
       )}
       {...props}

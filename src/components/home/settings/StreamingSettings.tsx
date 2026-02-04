@@ -137,14 +137,14 @@ export function StreamingSettings() {
                         <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-40 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
                             <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
                         </ComboboxTrigger>
-                        <ComboboxContent container={container} className="min-w-40 z-[1000]">
-                            <div className="p-1">
+                        <ComboboxContent container={container} className="min-w-40 z-1000">
+                            <div className="p-2 mt-2">
                                 <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
                             </div>
                             <ComboboxEmpty>No region found</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
-                                    <ComboboxItem key={r.Id} value={r}>
+                                    <ComboboxItem key={r.Id} value={r} className="cursor-pointer">
                                         {r.Name}
                                     </ComboboxItem>
                                 )}
@@ -160,7 +160,7 @@ export function StreamingSettings() {
                     className="space-y-3"
                 >
                     <CollapsibleTrigger asChild>
-                        <button className="flex items-center justify-between w-full group">
+                        <button className="flex items-center justify-between w-full group cursor-pointer">
                             <div className="flex items-center gap-2 text-sm font-medium">
                                 <Tv className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                 Streaming Services

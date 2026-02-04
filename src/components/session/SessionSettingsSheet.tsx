@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { SessionSettings, SessionStats } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import { getErrorMessage } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { toast } from "sonner";
@@ -205,12 +205,11 @@ export function SessionSettingsSheet({
               <div className="flex justify-end w-full ">
                 <Button
                   variant="outline"
-                  size="sm"
-                  className={`w-40 gap-2 transition-all ${confirmResetStats ? "text-destructive border-destructive bg-destructive/5" : "text-muted-foreground"}`}
+                  className={cn("gap-2 transition-all text-muted-foreground hover:text-foreground", confirmResetStats && "text-destructive hover:text-destructive border-destructive bg-destructive/5")}
                   onClick={handleResetStats}
                   disabled={isResettingStats}
                 >
-                  <RotateCcw className={`size-3 ${isResettingStats ? "animate-spin" : ""}`} />
+                  <RotateCcw className={cn('size-3 mt-px', isResettingStats && "animate-spin")} />
                   {isResettingStats ? "Resetting..." : confirmResetStats ? "Confirm reset" : "Reset stats"}
                 </Button>
               </div>
@@ -317,14 +316,14 @@ export function SessionSettingsSheet({
 
             <hr className="border-muted" />
             <div className="flex justify-end w-full ">
-              <Button
-                variant="outline"
-                className="w-40 gap-2 text-muted-foreground hover:text-foreground"
-                onClick={resetAll}
-              >
-                <RotateCcw className="size-4" />
-                Reset settings
-              </Button>
+            <Button
+              variant="outline"
+              className="gap-2 text-muted-foreground hover:text-foreground"
+              onClick={resetAll}
+            >
+              <RotateCcw className="size-3 mt-px" />
+              Reset settings
+            </Button>
             </div>
 
           </div>

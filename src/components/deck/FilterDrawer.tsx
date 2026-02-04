@@ -36,7 +36,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
-  
+
   const { data: session } = useSession();
   const { provider: runtimeProvider } = useRuntimeConfig();
   const activeProvider = session?.provider || runtimeProvider;
@@ -151,7 +151,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
   const selectAllGenres = () => setSelectedGenres(genres.map(g => g.Name));
   const deselectAllGenres = () => setSelectedGenres([]);
-  
+
   const selectAllProviders = () => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
   const deselectAllProviders = () => setSelectedWatchProviders([]);
 
@@ -191,6 +191,15 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         <DrawerHeader className="border-b pb-4 shrink-0">
           <DrawerTitle>
             Filters
+            <Button
+              variant="outline"
+              size={'sm'}
+              className="absolute right-5 w-22 h-7 gap-2 text-muted-foreground hover:text-foreground text-xs"
+              onClick={resetAll}
+            >
+              <RotateCcw className="size-3 mt-px" />
+              Reset all
+            </Button>
           </DrawerTitle>
         </DrawerHeader>
 
@@ -285,8 +294,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                   Genres
                 </Label>
                 <div className="flex gap-2">
-                    <button onClick={selectAllGenres} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
-                    <button onClick={deselectAllGenres} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
+                  <button onClick={selectAllGenres} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
+                  <button onClick={deselectAllGenres} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -307,9 +316,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             {ratings && ratings.length > 0 && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <Label className="text-base font-semibold">
+                  <Label className="text-base font-semibold">
                     Maturity Rating
-                    </Label>
+                  </Label>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {ratings.map((rating: MediaRating) => (
@@ -330,13 +339,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             {activeProvider === "tmdb" && availableWatchProviders.length > 0 && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <Label className="text-base font-semibold">
+                  <Label className="text-base font-semibold">
                     Streaming Services
-                    </Label>
-                    <div className="flex gap-2">
-                        <button onClick={selectAllProviders} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
-                        <button onClick={deselectAllProviders} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
-                    </div>
+                  </Label>
+                  <div className="flex gap-2">
+                    <button onClick={selectAllProviders} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
+                    <button onClick={deselectAllProviders} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {availableWatchProviders.map((p: WatchProvider & { MemberUserIds?: string[] }) => {
@@ -373,9 +382,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         <div className="flex flex-col min-w-0 flex-1">
                           <span className="text-xs font-medium truncate">{p.Name}</span>
                           {providerMembers.length > 0 && (
-                            <UserAvatarList 
-                              users={providerMembers.map(m => ({ userId: m.userId, userName: m.userName }))} 
-                              size="sm" 
+                            <UserAvatarList
+                              users={providerMembers.map(m => ({ userId: m.userId, userName: m.userName }))}
+                              size="sm"
                               className="mt-1"
                             />
                           )}
@@ -391,15 +400,6 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 </div>
               </div>
             )}
-
-            <Button
-              variant="outline"
-              className="w-full gap-2 text-muted-foreground hover:text-foreground"
-              onClick={resetAll}
-            >
-              <RotateCcw className="size-4" />
-              Reset all
-            </Button>
           </div>
         </ScrollArea>
       </DrawerContent>
