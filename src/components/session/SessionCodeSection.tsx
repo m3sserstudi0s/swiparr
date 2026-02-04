@@ -46,7 +46,7 @@ export function SessionCodeSection({
       <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col justify-between h-44">
         <div className="h-6 flex items-center justify-center mb-2">
           {!activeCode ? (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold">
               Enter code or create session
             </span>
           ) : (

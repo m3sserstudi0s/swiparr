@@ -7,13 +7,13 @@ interface FooterProps {
 
 export function Footer({ className }: FooterProps) {
     return (
-        <div className={cn("text-center text-[10px] text-muted-foreground/50 uppercase tracking-widest", className)}>
+        <div className={cn("text-center text-[10px] text-muted-foreground uppercase tracking-widest", className)}>
             <a href={SUPPORT_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
                 Support
             </a>
             <span className="mx-2">•</span>
             <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-                Source Code
+                Open Source
             </a>
             <span className="mx-2">•</span>
             <a href={MESSER_STUDIOS_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">

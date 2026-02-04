@@ -111,10 +111,9 @@ export function SettingsSidebar() {
                                 onClearData={() => setShowClearDialog(true)}
                                 onLogout={handleLogout}
                             />
-
+                            <Footer/>
                         </div>
                     </ScrollArea>
-                    <Footer className="py-6" />
                 </SheetContent>
 
             </Sheet>
