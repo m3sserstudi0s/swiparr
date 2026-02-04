@@ -54,7 +54,8 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     capabilities.isExperimental = true;
   }
   
-  const serverPublicUrl = (process.env.SERVER_PUBLIC_URL || process.env.PLEX_URL || process.env.EMBY_URL || process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || '').replace(/\/$/, ''); // Keep JELLYFIN_PUBLIC_URL for backwards compatability
+  // Jellyfin-specific URLs kept for backwards compatibility
+  const serverPublicUrl = (process.env.SERVER_PUBLIC_URL || process.env.SERVER_URL || process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || '').replace(/\/$/, ''); 
   const rawBasePath = (process.env.URL_BASE_PATH || '').replace(/\/$/, '');
   const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
   
