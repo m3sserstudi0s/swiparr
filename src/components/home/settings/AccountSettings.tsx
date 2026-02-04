@@ -30,7 +30,7 @@ export function AccountSettings() {
     const activeProvider = provider || runtimeConfig.provider;
 
     return (
-        <SettingsSection title="Account">
+        <SettingsSection title="Profile">
             <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
                 <Avatar className="inline-block">
                     <AvatarImage src={`/api/media/image/${userId}?type=user`} />
