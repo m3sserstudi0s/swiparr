@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Moon, Bookmark, Star, Users, Info, UserX } from "lucide-react";
+import { Sun, Moon, Bookmark, Star, Users, Info, UserX, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { useTheme } from "next-themes";
@@ -38,7 +38,10 @@ export function GeneralSettings() {
         <SettingsSection title="General">
             <div className="grid grid-flow-col items-center justify-between gap-2">
                 <div className="space-y-0.5">
-                    <div className="text-sm font-medium">Theme</div>
+                    <div className="flex items-center gap-1.5">
+                        <Palette className="size-4 text-muted-foreground" />
+                        <div className="text-sm font-medium">Theme</div>
+                    </div>
                     <div className="text-xs text-muted-foreground text-pretty">Switch between light and dark mode</div>
                 </div>
                 <Button
