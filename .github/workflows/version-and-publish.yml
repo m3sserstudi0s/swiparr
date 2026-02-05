@@ -20,7 +20,7 @@ env:
 jobs:
   version-and-build:
     # Prevents running this on my own fork
-    if: github.repository == 'jakobbjelver/swiparr'
+    if: github.repository != 'jakobbjelver/swiparr'
     runs-on: ubuntu-latest
     permissions:
       contents: write
