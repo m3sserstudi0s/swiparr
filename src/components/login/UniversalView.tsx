@@ -1,5 +1,7 @@
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
+
 import { CardDescription } from "@/components/ui/card";
 
 interface UniversalViewProps {
@@ -30,14 +32,15 @@ export function UniversalView({
       </CardDescription>
       <form onSubmit={handleLogin} className="space-y-4">
         {!providerLock && (
-          <Input
+          <PasswordInput
             placeholder="TMDB API Read Access Token"
             value={tmdbToken}
-            type="password"
             onChange={(e) => setTmdbToken(e.target.value)}
-            className="bg-muted border-input text-xs h-8"
+            className="h-8"
+            inputClassName="text-xs"
           />
         )}
+
         <Input
           placeholder="Display name"
           value={username}

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
+
 import { Label } from "@/components/ui/label";
 import { CardDescription } from "@/components/ui/card";
 import { QuickConnectView } from "./QuickConnectView";
@@ -108,13 +110,12 @@ export function AuthView({
               onChange={(e) => setUsername(e.target.value)}
               className="bg-muted border-input"
             />
-            <Input
-              type="password"
+            <PasswordInput
               placeholder={provider === "plex" ? "Token" : "Password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-muted border-input"
             />
+
             <Button type="submit" className="w-full mt-2 font-semibold" disabled={loading}>
               {loading ? "Connecting..." : "Log in"}
             </Button>
