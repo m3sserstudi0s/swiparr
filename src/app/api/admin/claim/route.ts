@@ -13,12 +13,12 @@ export async function POST() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const currentAdmin = await getAdminUserId();
+    const currentAdmin = await getAdminUserId(session.user.provider);
     if (currentAdmin) {
         return NextResponse.json({ error: "Admin already exists" }, { status: 400 });
     }
 
-    const success = await setAdminUserId(session.user.Id);
+    const success = await setAdminUserId(session.user.Id, session.user.provider);
     if (success) {
         // Update session
         session.user.isAdmin = true;

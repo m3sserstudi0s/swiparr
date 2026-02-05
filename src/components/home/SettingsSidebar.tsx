@@ -46,7 +46,7 @@ export function SettingsSidebar() {
 
     useHotkeys("s, ,", () => setOpen(prev => !prev), []);
 
-    const { basePath, provider: runtimeProvider } = useRuntimeConfig();
+    const { basePath, provider: runtimeProvider, capabilities } = useRuntimeConfig();
     const { data: sessionStatus } = useSession();
     const activeProvider = sessionStatus?.provider || runtimeProvider;
 
@@ -102,7 +102,7 @@ export function SettingsSidebar() {
                             <AccountSettings />
                             <GeneralSettings />
                             {activeProvider === "tmdb" && <StreamingSettings />}
-                            <AdminSettings />
+                            {activeProvider !== "tmdb" && <AdminSettings />}
                             <AboutSettings onShowUserGuide={() => {
                                 setShowUserGuide(true);
                                 setOpen(false);

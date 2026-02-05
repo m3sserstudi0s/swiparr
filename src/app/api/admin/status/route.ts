@@ -13,7 +13,7 @@ export async function GET() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const adminUserId = await getAdminUserId();
+    const adminUserId = await getAdminUserId(session.user.provider);
 
     return NextResponse.json({
         hasAdmin: !!adminUserId,

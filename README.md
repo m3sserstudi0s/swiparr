@@ -177,7 +177,10 @@ HOSTNAME=0.0.0.0                          # Bind address
 DATABASE_URL=file:/app/data/swiparr.db    # SQLite path
 
 # Admin
-ADMIN_USERNAME=your-jellyfin/plex/emby-username      # Auto-grant admin privileges
+ADMIN_USERNAME=your-username                      # Global auto-grant admin privileges
+JELLYFIN_ADMIN_USERNAME=jelly-admin               # Provider-specific admin (overrides global)
+PLEX_ADMIN_USERNAME=plex-admin                   # Provider-specific admin (overrides global)
+EMBY_ADMIN_USERNAME=emby-admin                   # Provider-specific admin (overrides global)
 
 # Security Headers
 X_FRAME_OPTIONS=DENY                       # Frame control
@@ -202,10 +205,14 @@ PROVIDER_LOCK=false                          # Let users choose and configure th
 | `DATABASE_URL` | ❌ | Optional[^1] | `file:/app/data/swiparr.db` |
 | `URL_BASE_PATH` | ❌ | Optional | - |
 | `ADMIN_USERNAME` | ❌ | Optional[^2] | - |
+| `JELLYFIN_ADMIN_USERNAME` | ❌ | Optional[^2] | - |
+| `PLEX_ADMIN_USERNAME` | ❌ | Optional[^2] | - |
+| `EMBY_ADMIN_USERNAME` | ❌ | Optional[^2] | - |
 
 [^1]: Can be set to a local file (internal to container) OR external URL. Mostly relevant for Vercel deployments, which uses the Turso integration in the set-up workflow by default where these values are auto-generated and -injected. Can of course be swapped out with a database service provider of choice.
 
-[^2]: Only applicable for when provider is Jellyfin, Plex or Emby (auth supported). Admin role ownership defaults to the first user that logs in on the instance.
+[^2]: Only applicable for providers with authentication (Jellyfin, Plex, Emby). Admin role ownership is tracked per-provider. Defaults to the first user of that provider that logs in, or matching env vars.
+
 
 ✳️ = Required conditionally
 
@@ -258,15 +265,16 @@ When you create a session, customize it for your group:
 
 ### Admin Privileges
 
-**Automatically Assigned:** First user to log in becomes admin
+**Automatically Assigned:** First user to log in for each provider becomes that provider's admin.
 
-**Manual Assignment:** Set `ADMIN_USERNAME` environment variable
+**Manual Assignment:** Set `ADMIN_USERNAME` (global) or `[PROVIDER]_ADMIN_USERNAME` (e.g., `JELLYFIN_ADMIN_USERNAME`) environment variables.
 
 **Admin Powers:**
-- Configure included media libraries
+- Configure included media libraries for the provider
 - Manage global provider settings
 - Override session restrictions
-- Access admin dashboard
+- Access admin dashboard (disabled for TMDB)
+
 
 ---
 

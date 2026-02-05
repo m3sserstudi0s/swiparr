@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Set as admin if no admin exists
-    const wasMadeAdmin = await setAdminUserId(authData.User.Id);
+    const wasMadeAdmin = await setAdminUserId(authData.User.Id, "jellyfin");
     if (wasMadeAdmin) {
         console.log(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
     }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       Name: authData.User.Name,
       AccessToken: authData.AccessToken,
       DeviceId: session.tempDeviceId,
-      isAdmin: await isAdmin(authData.User.Id, authData.User.Name),
+      isAdmin: await isAdmin(authData.User.Id, authData.User.Name, "jellyfin"),
       wasMadeAdmin: wasMadeAdmin,
       provider: "jellyfin",
       providerConfig: session.providerConfig,

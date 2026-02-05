@@ -33,10 +33,6 @@ export async function POST(request: NextRequest) {
 
         const authResult = await provider.authenticate(username, password, deviceId, providerConfig?.serverUrl || providerConfig?.tmdbToken);
         
-        // Jellyfin provider returns { User: { Id, Name }, AccessToken, ... }
-        // We might need to normalize this in the provider or handle it here
-        // For now, I'll assume the provider returns a standard object or I'll adapt it in JellyfinProvider
-        
         const userId = authResult.User?.Id || authResult.id;
         const userName = authResult.User?.Name || authResult.name;
         const accessToken = authResult.AccessToken || authResult.accessToken;
@@ -44,7 +40,7 @@ export async function POST(request: NextRequest) {
         console.log("[Auth] Provider accepted credentials. User ID:", userId);
 
         // Set as admin if no admin exists
-        const wasMadeAdmin = await setAdminUserId(userId);
+        const wasMadeAdmin = await setAdminUserId(userId, bodyProvider);
         if (wasMadeAdmin) {
             console.log(`[Auth] User ${userName} (${userId}) set as initial admin.`);
         }
@@ -57,7 +53,7 @@ export async function POST(request: NextRequest) {
             Name: userName,
             AccessToken: accessToken,
             DeviceId: deviceId,
-            isAdmin: await isAdmin(userId, userName),
+            isAdmin: await isAdmin(userId, userName, bodyProvider),
             wasMadeAdmin: wasMadeAdmin,
             provider: bodyProvider || provider.name,
             providerConfig: providerConfig,
