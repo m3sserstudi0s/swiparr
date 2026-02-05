@@ -31,6 +31,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false # Not save its own token to be able to sync down stream
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -76,11 +77,19 @@ jobs:
 
       - name: Sync fork
         if: github.ref == 'refs/heads/master'
+        env:
+          SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
         run: |
-          # Use the token as the username directly
-          git remote add fork https://${{ secrets.FORK_SYNC_TOKEN }}@github.com/jakobbjelver/swiparr.git
-          git push fork master --force
-          git push fork --tags --force
+          # 1. Clear any existing extra headers to avoid conflicts
+          git config --local --unset http.https://github.com/.extraheader || true
+          
+          # 2. Add the fork remote using the standard URL
+          git remote add fork https://github.com/jakobbjelver/swiparr.git
+          
+          # 3. Use the token to push via an authorization header
+          # This is the same way GitHub Actions themselves authenticate
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(echo -n "x-access-token:$SYNC_TOKEN" | base64)" push fork master --force
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(echo -n "x-access-token:$SYNC_TOKEN" | base64)" push fork --tags --force
 
       # ---- Docker Build & Publish ----
 
