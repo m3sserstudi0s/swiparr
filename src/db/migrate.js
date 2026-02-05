@@ -16,6 +16,8 @@ const getDefaultDbPath = () => {
 const url = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || getDefaultDbPath();
 const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
+console.log('Connecting to database at:', url.split('@').pop()); // Hide token if present
+
 const client = createClient({
   url,
   authToken,
@@ -26,7 +28,9 @@ const db = drizzle(client);
 async function main() {
   console.log('Running migrations...');
   try {
-    await migrate(db, { migrationsFolder: path.join(process.cwd(), 'src', 'db', 'migrations') });
+    const migrationsFolder = path.join(process.cwd(), 'src', 'db', 'migrations');
+    console.log('Migrations folder:', migrationsFolder);
+    await migrate(db, { migrationsFolder });
     console.log('Migrations complete!');
   } catch (error) {
     console.error('Migration failed:', error);
