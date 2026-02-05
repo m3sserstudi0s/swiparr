@@ -27,6 +27,15 @@ jobs:
       packages: write
 
     steps:
+      - name: Debug Secret
+        run: |
+          if [ -z "${{ secrets.FORK_SYNC_TOKEN }}" ]; then
+            echo "SECRET IS EMPTY"
+            exit 1
+          else
+            echo "SECRET IS SET"
+          fi
+          
       - name: Checkout code
         uses: actions/checkout@v4
         with:
