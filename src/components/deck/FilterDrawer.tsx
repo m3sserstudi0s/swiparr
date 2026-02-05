@@ -38,8 +38,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [minRating, setMinRating] = useState<number>(0);
 
   const { data: session } = useSession();
-  const { provider: runtimeProvider } = useRuntimeConfig();
-  const activeProvider = session?.provider || runtimeProvider;
+  const { capabilities } = useRuntimeConfig();
 
   const { data: userSettings, isLoading: isLoadingSettings } = useUserSettings();
   const { genres, years, ratings, isLoading } = useFilters(open);
@@ -336,7 +335,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             )}
 
             {/* Watch Providers Section */}
-            {activeProvider === "tmdb" && availableWatchProviders.length > 0 && (
+            {capabilities.hasStreamingSettings && availableWatchProviders.length > 0 && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <Label className="text-base font-semibold">

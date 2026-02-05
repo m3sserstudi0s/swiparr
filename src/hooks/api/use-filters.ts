@@ -7,15 +7,13 @@ import { useSession } from "./use-session";
 import { DEFAULT_GENRES, DEFAULT_RATINGS } from "@/lib/constants";
 
 export function useFilters(open: boolean) {
-  const { useStaticFilterValues, provider: runtimeProvider } = useRuntimeConfig();
-  const { data: session } = useSession();
-  const activeProvider = session?.provider || runtimeProvider;
-  const isTmdb = activeProvider === "tmdb";
+  const { useStaticFilterValues, capabilities } = useRuntimeConfig();
+  const isExternal = !capabilities.hasAuth;
 
   const genresQuery = useQuery({
     queryKey: QUERY_KEYS.media.genres,
     queryFn: async () => {
-      if (useStaticFilterValues && !isTmdb) return DEFAULT_GENRES;
+      if (useStaticFilterValues && !isExternal) return DEFAULT_GENRES;
       const res = await apiClient.get<MediaGenre[]>("/api/media/genres");
       if (!res.data || res.data.length === 0) return DEFAULT_GENRES;
       return res.data;
@@ -33,7 +31,7 @@ export function useFilters(open: boolean) {
         Value: 1900 + i 
       }));
 
-      if (useStaticFilterValues && !isTmdb) {
+      if (useStaticFilterValues && !isExternal) {
         return staticYears;
       }
       const res = await apiClient.get<MediaYear[]>("/api/media/years");
@@ -47,7 +45,7 @@ export function useFilters(open: boolean) {
   const ratingsQuery = useQuery({
     queryKey: QUERY_KEYS.media.ratings,
     queryFn: async () => {
-      if (useStaticFilterValues && !isTmdb) {
+      if (useStaticFilterValues && !isExternal) {
          return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
       }
       const res = await apiClient.get<MediaRating[]>("/api/media/ratings");

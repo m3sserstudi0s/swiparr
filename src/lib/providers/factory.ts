@@ -1,5 +1,5 @@
 import { getRuntimeConfig } from "@/lib/runtime-config";
-import { MediaProvider } from "./types";
+import { MediaProvider, ProviderType } from "./types";
 import { JellyfinProvider } from "./jellyfin/index";
 import { TmdbProvider } from "./tmdb/index";
 import { PlexProvider } from "./plex/index";
@@ -11,7 +11,7 @@ class ProviderFactory {
   static getProvider(providerTypeOverride?: string): MediaProvider {
     if (this.instance && !providerTypeOverride) return this.instance;
 
-    let providerType = providerTypeOverride || "jellyfin";
+    let providerType = (providerTypeOverride || ProviderType.JELLYFIN) as ProviderType;
     if (!providerTypeOverride) {
         try {
             const config = getRuntimeConfig();
@@ -28,15 +28,15 @@ class ProviderFactory {
     return provider;
   }
 
-  private static createProvider(type: string): MediaProvider {
+  private static createProvider(type: ProviderType): MediaProvider {
     switch (type) {
-      case "jellyfin":
+      case ProviderType.JELLYFIN:
         return new JellyfinProvider();
-      case "tmdb":
+      case ProviderType.TMDB:
         return new TmdbProvider();
-      case "plex":
+      case ProviderType.PLEX:
         return new PlexProvider();
-      case "emby":
+      case ProviderType.EMBY:
         return new EmbyProvider();
       default:
         console.warn(`Unknown provider: ${type}, defaulting to Jellyfin`);

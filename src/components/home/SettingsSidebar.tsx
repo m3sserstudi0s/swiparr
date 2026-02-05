@@ -101,8 +101,8 @@ export function SettingsSidebar() {
                         <div className="space-y-8 py-8 pb-12">
                             <AccountSettings />
                             <GeneralSettings />
-                            {activeProvider === "tmdb" && <StreamingSettings />}
-                            {activeProvider !== "tmdb" && <AdminSettings />}
+                            {capabilities.hasStreamingSettings && <StreamingSettings />}
+                            {capabilities.isAdminPanel && <AdminSettings />}
                             <AboutSettings onShowUserGuide={() => {
                                 setShowUserGuide(true);
                                 setOpen(false);

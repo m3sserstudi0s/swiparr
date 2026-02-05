@@ -5,13 +5,12 @@
  */
 
 import packageJson from "../../package.json";
-
-import { ProviderCapabilities } from "./providers/types";
-
+import { ProviderCapabilities, ProviderType, PROVIDER_CAPABILITIES } from "./providers/types";
 import { config } from "./config";
+import { getActiveProvider, getUseStaticFilterValues } from "./server/admin";
 
 export interface RuntimeConfig {
-  provider: "jellyfin" | "tmdb" | "plex" | "emby" | string;
+  provider: ProviderType;
   providerLock: boolean;
   capabilities: ProviderCapabilities;
   serverPublicUrl: string;
@@ -30,31 +29,11 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     return window.__SWIPARR_CONFIG__;
   }
 
-  // Default capabilities (Jellyfin style)
-  const capabilities: ProviderCapabilities = {
-    hasAuth: true,
-    hasQuickConnect: true,
-    hasWatchlist: true,
-    hasLibraries: true,
-    hasSettings: true,
-    requiresServerUrl: true,
-    isExperimental: false,
-  };
-
-  if (config.app.provider === 'tmdb') {
-    capabilities.hasAuth = false;
-    capabilities.hasQuickConnect = false;
-    capabilities.hasWatchlist = false;
-    capabilities.hasLibraries = false;
-    capabilities.hasSettings = false;
-    capabilities.requiresServerUrl = false;
-  } else if (config.app.provider === 'plex' || config.app.provider === 'emby') {
-    capabilities.hasQuickConnect = false;
-    capabilities.isExperimental = true;
-  }
+  const provider = (overrides?.provider || config.app.provider) as ProviderType;
+  const capabilities = PROVIDER_CAPABILITIES[provider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
 
   return {
-    provider: config.app.provider,
+    provider,
     providerLock: config.app.providerLock,
     capabilities,
     serverPublicUrl: config.server.publicUrl,
@@ -65,6 +44,23 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     ...overrides
   };
 }
+
+/**
+ * Async version of getRuntimeConfig that fetches from DB if not locked.
+ * Only usable in Server Components or API routes.
+ */
+export async function getAsyncRuntimeConfig(): Promise<RuntimeConfig> {
+    const [provider, useStaticFilterValues] = await Promise.all([
+        getActiveProvider(),
+        getUseStaticFilterValues()
+    ]);
+
+    return getRuntimeConfig({ 
+        provider: provider as ProviderType,
+        useStaticFilterValues 
+    });
+}
+
 
 
 /**

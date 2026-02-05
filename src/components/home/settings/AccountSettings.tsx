@@ -27,7 +27,8 @@ export function AccountSettings() {
     }
 
     const { userName, userId, isGuest, isAdmin, provider } = sessionStatus;
-    const activeProvider = provider || runtimeConfig.provider;
+    const { capabilities, provider: runtimeProvider } = runtimeConfig;
+    const activeProvider = provider || runtimeProvider;
 
     return (
         <SettingsSection title="Profile">
@@ -55,7 +56,7 @@ export function AccountSettings() {
                                 <UserPlus className="size-3" />
                                 Guest Account
                             </>
-                        ) : activeProvider === "tmdb" ? (
+                        ) : !capabilities.hasAuth ? (
                             <>
                                 <Globe className="size-3" />
                                 Universal Profile

@@ -8,6 +8,13 @@ import {
   MediaRegion
 } from "@/types/media";
 
+export enum ProviderType {
+  JELLYFIN = 'jellyfin',
+  TMDB = 'tmdb',
+  PLEX = 'plex',
+  EMBY = 'emby'
+}
+
 export interface ProviderCapabilities {
   hasAuth: boolean;
   hasQuickConnect: boolean;
@@ -16,7 +23,57 @@ export interface ProviderCapabilities {
   hasSettings: boolean;
   requiresServerUrl: boolean;
   isExperimental: boolean;
+  hasStreamingSettings: boolean; // TMDB specific streaming/region filters
+  isAdminPanel: boolean; // Jellyfin/Emby/Plex server management
 }
+
+export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> = {
+  [ProviderType.JELLYFIN]: {
+    hasAuth: true,
+    hasQuickConnect: true,
+    hasWatchlist: true,
+    hasLibraries: true,
+    hasSettings: true,
+    requiresServerUrl: true,
+    isExperimental: false,
+    hasStreamingSettings: false,
+    isAdminPanel: true,
+  },
+  [ProviderType.EMBY]: {
+    hasAuth: true,
+    hasQuickConnect: false,
+    hasWatchlist: true,
+    hasLibraries: true,
+    hasSettings: true,
+    requiresServerUrl: true,
+    isExperimental: true,
+    hasStreamingSettings: false,
+    isAdminPanel: true,
+  },
+  [ProviderType.PLEX]: {
+    hasAuth: true,
+    hasQuickConnect: false,
+    hasWatchlist: true,
+    hasLibraries: true,
+    hasSettings: true,
+    requiresServerUrl: true,
+    isExperimental: true,
+    hasStreamingSettings: false,
+    isAdminPanel: true,
+  },
+  [ProviderType.TMDB]: {
+    hasAuth: false,
+    hasQuickConnect: false,
+    hasWatchlist: false,
+    hasLibraries: false,
+    hasSettings: false,
+    requiresServerUrl: false,
+    isExperimental: false,
+    hasStreamingSettings: true,
+    isAdminPanel: false,
+  },
+};
+
 
 export interface SearchFilters {
   genres?: string[];

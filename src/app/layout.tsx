@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
-import { getRuntimeConfig } from '@/lib/runtime-config'
-import { getUseStaticFilterValues } from '@/lib/server/admin'
+import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +31,7 @@ export const viewport: Viewport = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { basePath } = getRuntimeConfig();
+  const { basePath } = await getAsyncRuntimeConfig();
   return {
     title: "Swiparr",
     description: "Swipe on your Jellyfin media",
@@ -50,9 +49,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const useStaticFilterValues = await getUseStaticFilterValues();
-  const config = getRuntimeConfig({ useStaticFilterValues });
-  const basePath = config.basePath || "";
+  const config = await getAsyncRuntimeConfig();
 
   return (
     <html lang="en" suppressHydrationWarning>
