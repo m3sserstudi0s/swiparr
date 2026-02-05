@@ -72,6 +72,15 @@ jobs:
           git tag $VERSION ${{ steps.auto-commit.outputs.commit_hash }}
           git push origin $VERSION
 
+      # ---- Fork Sync ----
+
+      - name: Sync fork
+        if: github.ref == 'refs/heads/master'
+        run: |
+          git remote add fork https://x-access-token:${{ secrets.FORK_SYNC_TOKEN }}@github.com/jakobbjelver/swiparr.git
+          git push fork master --force
+          git push fork --tags --force
+
       # ---- Docker Build & Publish ----
 
       - name: Set up QEMU
@@ -106,12 +115,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             APP_VERSION=${{ steps.npm-version.outputs.new_version }}
-
-      # ---- Fork Sync (FINAL STEP) ----
-
-      - name: Sync fork
-        if: github.ref == 'refs/heads/master'
-        run: |
-          git remote add fork https://x-access-token:${{ secrets.FORK_SYNC_TOKEN }}@github.com/jakobbjelver/swiparr.git
-          git push fork master --force
-          git push fork --tags --force
