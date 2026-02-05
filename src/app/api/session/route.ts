@@ -47,6 +47,30 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
+        // Validate provider compatibility (only for non-guests)
+        if (!session.user.isGuest) {
+            const sessionProvider = existingSession.provider;
+            const userProvider = session.user.provider;
+
+            if (sessionProvider !== userProvider) {
+                return NextResponse.json({ 
+                    error: `Provider mismatch: This session is for ${sessionProvider}, but you are logged in with ${userProvider || 'no provider'}.` 
+                }, { status: 400 });
+            }
+
+            // For server-based providers, validate server URL
+            if (["jellyfin", "emby", "plex"].includes(sessionProvider || "")) {
+                const sessionConfig = existingSession.providerConfig ? JSON.parse(existingSession.providerConfig) : {};
+                const userConfig = session.user.providerConfig || {};
+                
+                if (sessionConfig.serverUrl !== userConfig.serverUrl) {
+                    return NextResponse.json({ 
+                        error: `Server mismatch: This session is hosted on ${sessionConfig.serverUrl}, but you are connected to ${userConfig.serverUrl || 'a different server'}.` 
+                    }, { status: 400 });
+                }
+            }
+        }
+
         // Register member
         try {
             const userSettingsEntry = await db.query.config.findFirst({
