@@ -1,5 +1,6 @@
 import { db, config as configTable } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { useRuntimeConfig } from "../runtime-config";
 
 const ADMIN_USER_ID_KEY = "admin_user_id";
 const INCLUDED_LIBRARIES_KEY = "included_libraries";
@@ -13,6 +14,11 @@ export async function getAdminUserId(): Promise<string | null> {
 }
 
 export async function isAdmin(userId: string, username?: string): Promise<boolean> {
+
+    // 0. Check if provider has auth
+    const isApplicable = useRuntimeConfig().capabilities.hasAuth
+    if(!isApplicable) return false
+
     // 1. Check if username matches ADMIN_USERNAME env var
     const adminUsername = process.env.ADMIN_USERNAME;
     if (adminUsername && username && username.toLowerCase() === adminUsername.toLowerCase()) {

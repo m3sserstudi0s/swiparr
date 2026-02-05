@@ -8,9 +8,6 @@ export async function getAuthSecret(): Promise<string> {
   if (process.env.AUTH_SECRET && process.env.AUTH_SECRET.length >= 32) {
     return process.env.AUTH_SECRET;
   }
-  if (process.env.AUTHORS_SECRET && process.env.AUTHORS_SECRET.length >= 32) {
-    return process.env.AUTHORS_SECRET;
-  }
 
   try {
     // 2. Database (persistent fallback)

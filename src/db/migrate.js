@@ -13,8 +13,8 @@ const getDefaultDbPath = () => {
   return 'file:swiparr.db';
 };
 
-const url = process.env.DATABASE_URL || getDefaultDbPath();
-const authToken = process.env.DATABASE_AUTH_TOKEN;
+const url = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || getDefaultDbPath();
+const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
 const client = createClient({
   url,

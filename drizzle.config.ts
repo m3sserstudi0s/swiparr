@@ -13,7 +13,7 @@ export default defineConfig({
   out: './src/db/migrations',
   dialect: 'turso',
   dbCredentials: {
-    url: process.env.DATABASE_URL || getDefaultDbPath(),
-    authToken: process.env.DATABASE_AUTH_TOKEN,
+    url:  process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || getDefaultDbPath(),
+    authToken: process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN,
   },
 });
