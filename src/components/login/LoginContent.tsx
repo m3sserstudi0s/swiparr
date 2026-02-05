@@ -10,6 +10,7 @@ import logo from "../../../public/icon0.svg"
 import { apiClient } from "@/lib/api-client";
 import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { PROVIDER_CAPABILITIES, ProviderType } from "@/lib/providers/types";
 
 import { AdminInitializedView } from "./AdminInitializedView";
 import { AuthView } from "./AuthView";
@@ -18,9 +19,14 @@ import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
 
 
 export default function LoginContent() {
-  const { capabilities, basePath, provider, providerLock } = useRuntimeConfig();
+  const { capabilities: initialCapabilities, basePath, provider, providerLock } = useRuntimeConfig();
 
   const [selectedProvider, setSelectedProvider] = useState<string>(provider);
+
+  const capabilities = useMemo(() => {
+    if (providerLock) return initialCapabilities;
+    return PROVIDER_CAPABILITIES[selectedProvider as ProviderType] || initialCapabilities;
+  }, [selectedProvider, providerLock, initialCapabilities]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [serverUrl, setServerUrl] = useState("");

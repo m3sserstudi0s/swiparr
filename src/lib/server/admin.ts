@@ -13,6 +13,10 @@ export async function getActiveProvider(): Promise<ProviderType> {
         return appConfig.app.provider as ProviderType;
     }
 
+    if (typeof window !== 'undefined') {
+        return appConfig.app.provider as ProviderType;
+    }
+
     const config = await db.query.config.findFirst({
         where: eq(configTable.key, ACTIVE_PROVIDER_KEY),
     });
@@ -22,6 +26,7 @@ export async function getActiveProvider(): Promise<ProviderType> {
 
 export async function setActiveProvider(provider: ProviderType): Promise<void> {
     if (appConfig.app.providerLock) return;
+    if (typeof window !== 'undefined') return;
 
     await db.insert(configTable).values({
         key: ACTIVE_PROVIDER_KEY,
@@ -33,6 +38,7 @@ export async function setActiveProvider(provider: ProviderType): Promise<void> {
 }
 
 export async function getAdminUserId(provider?: string): Promise<string | null> {
+    if (typeof window !== 'undefined') return null;
     const key = provider ? `${ADMIN_USER_ID_KEY}:${provider.toLowerCase()}` : ADMIN_USER_ID_KEY;
     const adminConfig = await db.query.config.findFirst({
         where: eq(configTable.key, key),
@@ -82,6 +88,7 @@ export async function isAdmin(userId: string, username?: string, provider?: stri
 }
 
 export async function setAdminUserId(userId: string, provider?: string): Promise<boolean> {
+    if (typeof window !== 'undefined') return false;
     const activeProvider = (provider || await getActiveProvider()) as ProviderType;
     const capabilities = PROVIDER_CAPABILITIES[activeProvider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
     
@@ -106,6 +113,7 @@ export async function setAdminUserId(userId: string, provider?: string): Promise
 }
 
 export async function getIncludedLibraries(): Promise<string[]> {
+    if (typeof window !== 'undefined') return [];
     const config = await db.query.config.findFirst({
         where: eq(configTable.key, INCLUDED_LIBRARIES_KEY),
     });
@@ -118,6 +126,7 @@ export async function getIncludedLibraries(): Promise<string[]> {
 }
 
 export async function setIncludedLibraries(libraries: string[]): Promise<void> {
+    if (typeof window !== 'undefined') return;
     await db.insert(configTable).values({
         key: INCLUDED_LIBRARIES_KEY,
         value: JSON.stringify(libraries),
@@ -128,6 +137,7 @@ export async function setIncludedLibraries(libraries: string[]): Promise<void> {
 }
 
 export async function getUseStaticFilterValues(): Promise<boolean> {
+    if (typeof window !== 'undefined') return false;
     const config = await db.query.config.findFirst({
         where: eq(configTable.key, USE_STATIC_FILTER_VALUES_KEY),
     });
@@ -135,6 +145,7 @@ export async function getUseStaticFilterValues(): Promise<boolean> {
 }
 
 export async function setUseStaticFilterValues(useStatic: boolean): Promise<void> {
+    if (typeof window !== 'undefined') return;
     await db.insert(configTable).values({
         key: USE_STATIC_FILTER_VALUES_KEY,
         value: useStatic ? "true" : "false",

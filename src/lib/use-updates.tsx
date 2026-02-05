@@ -157,6 +157,29 @@ export function useUpdates() {
             }
         };
 
+        const handleAdminConfigUpdated = (event: MessageEvent) => {
+            const data = JSON.parse(event.data);
+            
+            // Invalidate everything that could be affected by admin settings
+            if (data.type === 'libraries') {
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.libraries });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.libraries });
+                queryClient.invalidateQueries({ queryKey: ["deck"] });
+            } else if (data.type === 'filters') {
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.genres });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.years });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.ratings });
+                queryClient.invalidateQueries({ queryKey: ["deck"] });
+            }
+
+            if (userId && data.userId !== userId) {
+                toast.info(`Admin updated ${data.type === 'libraries' ? 'libraries' : 'global settings'}`, {
+                    description: "The application has been updated.",
+                    position: 'top-right'
+                });
+            }
+        };
+
         eventSource.addEventListener(EVENT_TYPES.SESSION_UPDATED, handleSessionUpdated as any);
         eventSource.addEventListener(EVENT_TYPES.MATCH_FOUND, handleMatchFound as any);
         eventSource.addEventListener(EVENT_TYPES.MATCH_REMOVED, handleMatchRemoved as any);
@@ -166,6 +189,7 @@ export function useUpdates() {
         eventSource.addEventListener(EVENT_TYPES.USER_JOINED, handleUserJoined as any);
         eventSource.addEventListener(EVENT_TYPES.USER_LEFT, handleUserLeft as any);
         eventSource.addEventListener(EVENT_TYPES.LIKE_UPDATED, handleLikeUpdated as any);
+        eventSource.addEventListener(EVENT_TYPES.ADMIN_CONFIG_UPDATED, handleAdminConfigUpdated as any);
 
         return () => {
             eventSource.close();

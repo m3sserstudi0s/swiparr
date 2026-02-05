@@ -10,7 +10,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight, RefreshCw, Info } from "lucide-react";
+import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight, Info } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,6 @@ export function AdminSettings() {
 
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [needsRefresh, setNeedsRefresh] = useState(false);
 
     const { data: adminStatus } = useAdminStatus();
     const { data: config, isLoading: isLoadingConfig } = useAdminConfig();
@@ -78,7 +77,6 @@ export function AdminSettings() {
         toast.promise(updateLibrariesMutation.mutateAsync(includedLibraries), {
             loading: "Updating libraries...",
             success: () => {
-                setNeedsRefresh(true);
                 return "Libraries updated successfully";
             },
             error: (err) => ({
@@ -86,10 +84,6 @@ export function AdminSettings() {
                 description: getErrorMessage(err)
             })
         });
-    };
-
-    const handleRefresh = () => {
-        window.location.reload();
     };
 
     if (adminStatus?.hasAdmin && !adminStatus.isAdmin) {
@@ -160,9 +154,7 @@ export function AdminSettings() {
                             <Switch
                                 checked={config?.useStaticFilterValues || false}
                                 onCheckedChange={(checked) => {
-                                  updateConfigMutation.mutate({ useStaticFilterValues: checked }, {
-                                    onSuccess: () => setNeedsRefresh(true)
-                                  });
+                                  updateConfigMutation.mutate({ useStaticFilterValues: checked });
                                 }}
                                 disabled={isLoadingConfig || updateConfigMutation.isPending}
                             />
@@ -175,7 +167,7 @@ export function AdminSettings() {
                                 className="space-y-3"
                             >
                                 <CollapsibleTrigger asChild>
-                                    <button className="flex items-center justify-between w-full group">
+                                    <button className="flex items-center justify-between w-full group cursor-pointer">
                                         <div className="flex items-center gap-2 text-sm font-medium">
                                             <Library className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                             Libraries
@@ -257,20 +249,6 @@ export function AdminSettings() {
                                     </Button>
                                 </CollapsibleContent>
                             </Collapsible>
-                        )}
-
-                        {needsRefresh && (
-                            <div className="animate-in zoom-in-95 duration-300">
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={handleRefresh}
-                                >
-                                    <RefreshCw className="size-4" />
-                                    Reload to apply
-                                </Button>
-                            </div>
                         )}
                     </div>
                 </div>

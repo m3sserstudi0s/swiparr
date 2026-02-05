@@ -33,6 +33,8 @@ export function useUpdateAdminConfig() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.config });
+      // Force a complete refresh of the filters
+      queryClient.removeQueries({ queryKey: ["media"] });
     },
   });
 }
@@ -70,6 +72,8 @@ export function useUpdateAdminLibraries() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.libraries });
+      // Force a complete refresh of the deck
+      queryClient.removeQueries({ queryKey: ["deck"] });
     },
   });
 }

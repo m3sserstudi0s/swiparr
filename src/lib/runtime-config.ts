@@ -7,7 +7,6 @@
 import packageJson from "../../package.json";
 import { ProviderCapabilities, ProviderType, PROVIDER_CAPABILITIES } from "./providers/types";
 import { config } from "./config";
-import { getActiveProvider, getUseStaticFilterValues } from "./server/admin";
 
 export interface RuntimeConfig {
   provider: ProviderType;
@@ -21,8 +20,9 @@ export interface RuntimeConfig {
 }
 
 /**
- * Server-only function to collect environment variables.
- * This should only be called in Server Components or API routes.
+ * Shared logic to get the config.
+ * In the browser, it retrieves from window.__SWIPARR_CONFIG__.
+ * On the server, it uses env vars.
  */
 export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeConfig {
   if (typeof window !== 'undefined' && window.__SWIPARR_CONFIG__) {
@@ -32,13 +32,15 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
   const provider = (overrides?.provider || config.app.provider) as ProviderType;
   const capabilities = PROVIDER_CAPABILITIES[provider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
 
+  const providerLock = config.app.providerLock;
+  
   return {
     provider,
-    providerLock: config.app.providerLock,
+    providerLock,
     capabilities,
     serverPublicUrl: config.server.publicUrl,
     useWatchlist: config.app.useWatchlist,
-    useStaticFilterValues: false,
+    useStaticFilterValues: !!overrides?.useStaticFilterValues,
     version: config.app.version,
     basePath: config.app.basePath,
     ...overrides
@@ -47,21 +49,44 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
 
 /**
  * Async version of getRuntimeConfig that fetches from DB if not locked.
- * Only usable in Server Components or API routes.
+ * This function uses dynamic imports to ensure database code is never 
+ * executed on the client.
  */
 export async function getAsyncRuntimeConfig(): Promise<RuntimeConfig> {
-    const [provider, useStaticFilterValues] = await Promise.all([
-        getActiveProvider(),
-        getUseStaticFilterValues()
-    ]);
+    // Only fetch from DB if we are on the server
+    if (typeof window === 'undefined') {
+        // We use a dynamic import to avoid static analysis pulling the server code into client bundles
+        const [admin, sessionLib, { cookies }, { getIronSession }, { getSessionOptions }] = await Promise.all([
+            import("./server/admin"),
+            import("./server/auth-resolver"),
+            import("next/headers"),
+            import("iron-session"),
+            import("./session")
+        ]);
 
-    return getRuntimeConfig({ 
-        provider: provider as ProviderType,
-        useStaticFilterValues 
-    });
+        const cookieStore = await cookies();
+        const session = await getIronSession<any>(cookieStore, await getSessionOptions());
+
+        let provider: string | undefined;
+
+        if (session?.user?.provider) {
+            provider = session.user.provider;
+        } else if (!config.app.providerLock) {
+            provider = await admin.getActiveProvider();
+        } else {
+            provider = config.app.provider;
+        }
+
+        const useStaticFilterValues = await admin.getUseStaticFilterValues();
+
+        return getRuntimeConfig({ 
+            provider: provider as ProviderType,
+            useStaticFilterValues 
+        });
+    }
+
+    return getRuntimeConfig();
 }
-
-
 
 /**
  * Client-side global variable to store the config once injected.

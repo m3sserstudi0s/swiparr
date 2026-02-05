@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { isAdmin, getUseStaticFilterValues, setUseStaticFilterValues } from "@/lib/server/admin";
 import { z } from "zod";
+import { events, EVENT_TYPES } from "@/lib/events";
+import { revalidateTag } from "next/cache";
 
 const configSchema = z.object({
     useStaticFilterValues: z.boolean(),
@@ -41,6 +43,18 @@ export async function PATCH(request: NextRequest) {
         const { useStaticFilterValues } = validated.data;
 
         await setUseStaticFilterValues(useStaticFilterValues);
+
+        // Purge Next.js cache
+        revalidateTag("jellyfin-years");
+        revalidateTag("jellyfin-genres");
+        revalidateTag("jellyfin-ratings");
+
+        // Notify all clients
+        events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
+            type: 'filters',
+            userId: session.user.Id
+        });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: "Failed to update config" }, { status: 500 });

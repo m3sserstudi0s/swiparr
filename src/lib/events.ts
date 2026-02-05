@@ -33,4 +33,5 @@ export const EVENT_TYPES = {
     USER_JOINED: 'user_joined',
     USER_LEFT: 'user_left',
     LIKE_UPDATED: 'like_updated',
+    ADMIN_CONFIG_UPDATED: 'admin_config_updated',
 };

@@ -106,6 +106,16 @@ export async function GET(request: NextRequest) {
                 }
             };
 
+            const onAdminConfigUpdate = (payload: any) => {
+                if (!closed) {
+                    try {
+                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.ADMIN_CONFIG_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
+                    } catch (e) {
+                        cleanup();
+                    }
+                }
+            };
+
             const cleanup = () => {
                 if (closed) return;
                 closed = true;
@@ -118,6 +128,7 @@ export async function GET(request: NextRequest) {
                 events.off(EVENT_TYPES.USER_JOINED, onUserJoined);
                 events.off(EVENT_TYPES.USER_LEFT, onUserLeft);
                 events.off(EVENT_TYPES.LIKE_UPDATED, onLike);
+                events.off(EVENT_TYPES.ADMIN_CONFIG_UPDATED, onAdminConfigUpdate);
                 if (keepAlive) clearInterval(keepAlive);
                 try {
                     controller.close();
@@ -135,6 +146,7 @@ export async function GET(request: NextRequest) {
             events.on(EVENT_TYPES.USER_JOINED, onUserJoined);
             events.on(EVENT_TYPES.USER_LEFT, onUserLeft);
             events.on(EVENT_TYPES.LIKE_UPDATED, onLike);
+            events.on(EVENT_TYPES.ADMIN_CONFIG_UPDATED, onAdminConfigUpdate);
 
             keepAlive = setInterval(() => {
                 if (!closed) {

@@ -4,6 +4,8 @@ import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { isAdmin, getIncludedLibraries, setIncludedLibraries } from "@/lib/server/admin";
+import { events, EVENT_TYPES } from "@/lib/events";
+import { revalidateTag } from "next/cache";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -40,6 +42,16 @@ export async function PATCH(request: NextRequest) {
 
 
         await setIncludedLibraries(libraries);
+        
+        // Purge Next.js cache
+        revalidateTag("jellyfin-libraries");
+
+        // Notify all clients
+        events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
+            type: 'libraries',
+            userId: session.user.Id
+        });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: "Failed to update libraries" }, { status: 500 });

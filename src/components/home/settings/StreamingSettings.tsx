@@ -8,7 +8,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Globe, Tv, Check, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Tv, Check, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage, cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
@@ -120,7 +120,6 @@ export function StreamingSettings() {
                 <div className="flex flex-col items-end gap-4">
                     <div className="w-full space-y-0.5">
                         <div className="flex items-center gap-1.5">
-                            <Globe className="size-4 text-muted-foreground" />
                             <div className="text-sm font-medium">Region</div>
                         </div>
                         <div className="text-xs text-muted-foreground">
