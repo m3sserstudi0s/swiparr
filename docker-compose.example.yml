@@ -19,7 +19,7 @@ services:
       # Generated automatically and stored in the database if not provided.
       # - AUTH_SECRET=your_random_secret_here
       
-      # OPTIONAL: Database location (internal to container)
+      # OPTIONAL: Database location (internal to container, OR an external database URL + DATABASE_AUTH_TOKEN)
       # Default: file:/app/data/swiparr.db
       - DATABASE_URL=file:/app/data/swiparr.db
       

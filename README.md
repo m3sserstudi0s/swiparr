@@ -1,60 +1,84 @@
-# Swiparr 🍿
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/86617fda-1ed5-4637-bb13-1c00cc5a443c" alt="Swiparr" width="200" />
+</p>
 
-Swiparr is a fun way to discover and decide what to watch next from your Jellyfin media library. Think "Tinder for Movies" – swipe through your library, match with friends in a session, and find something everyone wants to watch.
+<h1 align="center">Swiparr 🍿</h1>
 
-It's a web app built with Next.js, connects to your Jellyfin server, and is available to host as a docker container. 
-Open source and free forever.
+<p align="center">
+  <strong>Discover what to watch next, by yourself or together.</strong>
+</p>
 
-![License](https://img.shields.io/github/license/m3sserstudi0s/swiparr)
-![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)
+<p align="center">
+  Swiparr turns the dreaded "what should we watch?" question into a fun, collaborative experience. 
+  <br>
+  Like Tinder for movies & shows, but smarter and works for groups.
+</p>
 
-![swiparr_6](https://github.com/user-attachments/assets/86617fda-1ed5-4637-bb13-1c00cc5a443c)
+<p align="center">
+  <img src="https://img.shields.io/github/license/m3sserstudi0s/swiparr" alt="License" />
+  <img src="https://img.shields.io/badge/docker-ghcr.io-blue" alt="Docker" />
+  <a href="https://www.buymeacoffee.com/jakobbjelver" target="_blank">
+    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee" />
+  </a>
+</p>
 
-## Features
+---
 
-- **Swipe discovery:** Quickly browse your Jellyfin library with a card-based interface.
-- **Sessions:** Create or join a session with friends to find common likes (matches). Sessions are fundamentally temporary "in-the-moment" experiences; when you leave a session, your swipes and matches for that session are cleared.
-- **Native Jellyfin integration:** Pulls directly from your Jellyfin server.
-- **Guest Mode:** Let friends join your session without needing their own Jellyfin account by "lending" your connection temporarily.
-- **Mobile friendly:** Optimized for use on your phone.
+## 🎯 The Problem We're Solving
 
-**Highly recommended**: Download as a web app on mobile, and use the keyboard shortcuts on desktop.
+We all know the struggle: 30 minutes of "what should we watch?" that ends with watching the same show again. Swiparr fixes this by:
 
-To make your final choice, use the **Random button** to pick a movie from your matches.
+✨ Turning discovery into a fun, game-like experience  
+🤝 Finding content everyone actually wants to watch  
+⚡ Making group decisions in minutes, not hours  
+🌍 Working with your existing media libraries OR standalone  
 
-## Guest access (Account lending)
+---
 
-Swiparr includes a **Guest mode** designed for situations where some participants don't have a Jellyfin account. 
+## ✨ Features at a Glance
 
-### How it works:
-1. **Enable lending**: A host (with a Jellyfin account) enables "Guest lending" in their Swiparr settings.
-2. **Proxy connection**: When guests join that host's session, Swiparr uses the host's credentials to fetch movie data and images from Jellyfin.
-3. **Identity**: Guests choose a display name and get a unique ID. Their likes and matches are tracked separately from the host.
-4. **Security**: Guests can only swipe within the session. They cannot modify the host's Jellyfin account, favorites, or settings.
+### 🎬 Content Discovery
+- **Intuitive Swipe Interface** - Browse movies & shows with a familiar card-based design
+- **Multi-Provider Support** - Works with Jellyfin, Emby, Plex, or TMDB directly
+- **Smart Matching** - Automatically finds content everyone in your group will enjoy
+- **Mobile-First** - Optimized for phones, with desktop keyboard shortcuts
+- **PWA Ready** - Install as a web app for the best experience
 
-This makes it easy to host sessions with guests who aren't part of your home lab ecosystem.
+### 👥 Built for Groups
+- **Instant Sessions** - Create or join in seconds, no complex setup
+- **Flexible Match Rules** - Choose "any two people" or "everyone must agree"
+- **Session Controls** - Limit likes, dislikes, or total matches
+- **Watchlist Sync** - Seamlessly save favorites back to your media server
 
-## Session Settings
+### 🔧 Universal Compatibility
+- **Jellyfin** - Full native integration
+- **Emby** - Experimental support (improving)  
+- **Plex** - Experimental support (improving)
+- **TMDB** - No media server required, works standalone
 
-When you create a session, you can customize how it behaves to fit your group's preferences:
+---
 
-### Match Strategies
-- **Two or more**: A match is created as soon as any two members in the session like the same movie. Great for larger groups.
-- **Unanimous**: Every single member in the session must like the movie for it to appear in the matches list.
+## 🚀 Quick Start
 
-### Restrictions
-- **Max likes**: Limit how many right swipes each person gets. This forces everyone to be more selective.
-- **Max nopes**: Limit how many left swipes each person gets. Useful if you want to prevent members from just saying no to everything.
-- **Max matches**: Stop registering matches once a the set max number of matches have been found.
+### Fastest: Swiparr Global
 
-## Quick start
+**No setup, no server, no problem.**
 
+🌐 **[swiparr.app](https://swiparr.app)** - Free to use, community-supported
 
-The easiest way to run Swiparr is with Docker Compose.
+### Easiest: Deploy to Vercel
 
-### Docker Compose (Recommended)
+One-click deployment, perfect for personal or small group use:
 
-1. Create a or add to an existing `docker-compose.yml` file (or copy `docker-compose.example.yml`):
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fm3sserstudi0s%2Fswiparr&env=PROVIDER,TMDB_ACCESS_TOKEN,USE_SECURE_COOKIES,PROVIDER_LOCK&envDefaults=%7B%22PROVIDER%22%3A%22tmdb%22%2C%22USE_SECURE_COOKIES%22%3A%22true%22%2C%22PROVIDER_LOCK%22%3A%22true%22%7D&envDescription=Get%20a%20TMDB%20Access%20Token%20to%20continue%20with%20TMDB%20(no%20media%20server%20needed)%2C%20or%20set%20another%20PROVIDER%20(jellyfin%2C%20plex%2C%20emby)%2C%20or%20set%20PROVIDER_LOCK%20to%20%22false%22%20to%20configure%20the%20provider%20(any)%20at%20run-time.&envLink=https%3A%2F%2Fgithub.com%2Fm3sserstudi0s%2Fswiparr%3Ftab%3Dreadme-ov-file%23environment-variable-matrix&project-name=swiparr&repository-name=swiparr&demo-title=Swiparr&demo-description=Discover%20what%20to%20watch%20next%2C%20by%20yourself%20or%20together.&demo-url=https%3A%2F%2Fswiparr.com&demo-image=https%3A%2F%2Fswiparr.com%2Ficon1.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22tursocloud%22%2C%22productSlug%22%3A%22database%22%2C%22protocol%22%3A%22storage%22%2C%22group%22%3A%22%22%7D%5D)
+
+Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out[^1].
+
+### Full Control: Self-Host with Docker
+
+**Using Docker Compose (Recommended):**
+
+1. Create `docker-compose.yml`:
 
 ```yaml
 services:
@@ -63,22 +87,20 @@ services:
     container_name: swiparr
     restart: unless-stopped
     environment:
-      - JELLYFIN_URL=http://your-jellyfin-internal-ip:8096
-      # - JELLYFIN_PUBLIC_URL=https://jellyfin.yourdomain.com
+      - PROVIDER=jellyfin  # or plex, emby, tmdb (or set PROVIDER_LOCK to "false")
+      - JELLYFIN_URL=http://your-jellyfin:8096 # adjust to provider, none without server lock
     volumes:
       - ./swiparr-data:/app/data
     ports:
       - 4321:4321
 ```
 
-2. Run the container:
+2. Run it:
 ```bash
 docker compose up -d
 ```
 
-### Docker CLI
-
-Alternatively, you can run the container directly with the Docker CLI:
+**Using Docker CLI:**
 
 ```bash
 docker run -d \
@@ -86,72 +108,318 @@ docker run -d \
   --restart unless-stopped \
   -p 4321:4321 \
   -v $(pwd)/swiparr-data:/app/data \
-  -e JELLYFIN_URL=http://your-jellyfin-internal-ip:8096 \
+  -e PROVIDER=jellyfin \
+  -e JELLYFIN_URL=http://your-jellyfin:8096 \
   ghcr.io/m3sserstudi0s/swiparr:latest
 ```
 
-3. Access Swiparr at `http://your-server-ip:4321`.
+3. Open [http://localhost:4321](http://localhost:4321)
 
-## Configuration
+---
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PROVIDER` | The media provider to use (`jellyfin`, `plex`, or `tmdb`). | `jellyfin` |
-| `JELLYFIN_URL` | Internal URL to your Jellyfin server. | - |
-| `JELLYFIN_PUBLIC_URL` | _Optional:_ Public URL to your Jellyfin server. Defaults to `JELLYFIN_URL`. | - |
-| `PLEX_URL` | Internal URL to your Plex server (e.g., `http://192.168.1.10:32400`). | - |
-| `PLEX_TOKEN` | _Optional:_ A global Plex token to use for admin tasks and public access. | - |
-| `TMDB_ACCESS_TOKEN` | Your TMDB API Read-Only Access Token (required if using `tmdb` provider). | - |
-| `AUTH_SECRET` | _Optional:_  Random string (min 32 chars). Generated automatically if not set. | - |
-| `JELLYFIN_USE_WATCHLIST` | _Optional:_ Set to `true` to use "Watchlist" instead of "Favorites". | `false` |
-| `USE_SECURE_COOKIES` | _Optional:_ Security: Set to `true` if you are accessing Swiparr over HTTPS. | `false` |
-| `DATABASE_URL` | _Optional:_ Path to the SQLite database file. | `file:/app/data/swiparr.db` |
-| `PORT` | _Optional:_ The port the container listens on. | `4321` |
-| `HOSTNAME` | _Optional:_ The hostname the server binds to. | `0.0.0.0` |
-| `ADMIN_USERNAME` | _Optional:_ A Jellyfin username that will always have admin privileges. | - |
-| `X_FRAME_OPTIONS` | _Optional:_ Security: `X-Frame-Options` header. Set to `DISABLED` to remove. | `DENY` |
-| `CSP_FRAME_ANCESTORS` | _Optional:_ Security: `Content-Security-Policy: frame-ancestors` directive. | `none` |
-| `PUID` | _Optional:_ User ID to run the application as. | `1001` |
-| `PGID` | _Optional:_ Group ID to run the application as. | `1001` |
+## ⚙️ Configuration Reference
 
+### Provider-Specific Settings
 
-> **Note:** Watchlist is not a feature in vanilla Jellyfin, but available either through the Jellyfin Enhanced plugin or Kefwin Tweaks script.
+Choose **one** provider setup based on your needs:
 
-## Admin Privileges
+<details>
+<summary><strong>Jellyfin Setup</strong></summary>
 
-The first user to log in to Swiparr is automatically appointed as the system administrator. Admins can:
-- Configure which Jellyfin libraries are included in discovery.
-- Access future admin-only features and management tools.
+```env
+PROVIDER=jellyfin
+JELLYFIN_URL=http://your-jellyfin:8096              # Internal URL (required)
+JELLYFIN_PUBLIC_URL=https://jellyfin.example.com    # Public URL (optional)
+JELLYFIN_USE_WATCHLIST=true                         # Use Watchlist vs Favorites (optional)
+```
+</details>
 
-Alternatively, you can manually assign an admin by setting the `ADMIN_USERNAME` environment variable to a specific Jellyfin username.
+<details>
+<summary><strong>Emby Setup (Experimental)</strong></summary>
 
-## Self-hosting tips
+```env
+PROVIDER=emby
+EMBY_URL=http://your-emby:8096        # Internal URL (required)
+EMBY_PUBLIC_URL=https://emby.example.com  # Public URL (optional)
+```
+</details>
 
-### Reverse proxy
-If you are running Swiparr behind a reverse proxy (Nginx, Traefik, Caddy, Nginx Proxy Manager), ensure you:
-1. Set `USE_SECURE_COOKIES=true` in your environment variables if using HTTPS.
-2. Ensure your proxy passes the `Host` header to Swiparr. In Nginx, this is `proxy_set_header Host $host;`. Without this, authentication will fail due to Next.js 15 security checks.
-3. Forward other standard headers: `X-Forwarded-For`, `X-Forwarded-Proto`.
-4. Swiparr runs on port `4321` by default.
+<details>
+<summary><strong>Plex Setup (Experimental)</strong></summary>
 
-### Internal vs public Jellyfin URL
-- **`JELLYFIN_URL`**: Internal URL used by the Swiparr backend to communicate with Jellyfin. 
-  - If Jellyfin is in the same Docker network, use the container name: `http://jellyfin:8096`.
-  - Otherwise, use the internal IP: `http://192.168.1.10:8096`.
-  - **Note:** This URL should be accessible from *within* the Swiparr container.
-- **`JELLYFIN_PUBLIC_URL`**: The public-facing URL your browser uses to access Jellyfin (e.g., `https://jellyfin.yourdomain.com`). This is used for links and redirects. Defaults to `JELLYFIN_URL` if not provided.
+```env
+PROVIDER=plex
+PLEX_URL=http://your-plex:32400       # Internal URL (required)
+PLEX_TOKEN=your-admin-token          # Admin token (optional)
+```
+</details>
 
-## Community and support
+<details>
+<summary><strong>TMDB Setup (No Server Required)</strong></summary>
 
-I use **GitHub discussions** for everything related to Swiparr
+```env
+PROVIDER=tmdb
+TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
+TMDB_REGION=SE                        # Content region (optional, default: SE)
+```
+</details>
 
-- 💬 [Ask a question](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=q-a)
-- 💡 [Propose a feature](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=ideas)
-- 🐛 [Report a bug](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=bugs)
-- 🙌 [General discussion](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=general)
+### Security & Advanced Options
 
-**Please note:** I am currently not accepting pull requests.
+```env
+# Authentication
+AUTH_SECRET=random-string-32-chars-min     # Auto-generated if empty
+USE_SECURE_COOKIES=true                    # Required for HTTPS
 
-## License
+# Application
+PORT=4321                                  # Default port
+HOSTNAME=0.0.0.0                          # Bind address
+DATABASE_URL=file:/app/data/swiparr.db    # SQLite path
 
-Swiparr is released under the [MIT License](LICENSE).
+# Admin
+ADMIN_USERNAME=your-jellyfin/plex/emby-username      # Auto-grant admin privileges
+
+# Security Headers
+X_FRAME_OPTIONS=DENY                       # Frame control
+CSP_FRAME_ANCESTORS=none                   # Embedding policy
+
+# BYOP Mode - Bring Your Own Provider
+PROVIDER_LOCK=false                          # Let users choose and configure their own provider
+```
+
+### Environment Variable Matrix
+
+| Variable | Required? | When? | Default |
+|----------|-----------|-------|---------|
+| `PROVIDER` | ✳️ | If PROVIDER_LOCK=false | `jellyfin` |
+| `JELLYFIN_URL` | ✳️ | If PROVIDER=jellyfin | - |
+| `EMBY_URL` | ✳️ | If PROVIDER=emby | - |
+| `PLEX_URL` | ✳️ | If PROVIDER=plex | - |
+| `TMDB_ACCESS_TOKEN` | ✳️ | If PROVIDER=tmdb | - |
+| `PROVIDER_LOCK` | ❌ | Optional | `true` |
+| `USE_SECURE_COOKIES` | ❌ | HTTPS deployments | `false` |
+| `AUTH_SECRET` | ❌ | Optional | Auto-generated |
+| `DATABASE_URL` | ❌ | Optional[^1] | `file:/app/data/swiparr.db` |
+| `URL_BASE_PATH` | ❌ | Optional | - |
+| `ADMIN_USERNAME` | ❌ | Optional[^2] | - |
+
+[^1]: Can be set to a local file (internal to container) OR external URL. Mostly relevant for Vercel deployments, which uses the Turso integration in the set-up workflow by default where these values are auto-generated and -injected. Can of course be swapped out with a database service provider of choice.
+
+[^2]: Only applicable for when provider is Jellyfin, Plex or Emby (auth supported). Admin role ownership defaults to the first user that logs in on the instance.
+
+✳️ = Required conditionally
+
+---
+
+## 🎮 Deep Dive: Features
+
+### Session Settings
+
+When you create a session, customize it for your group:
+
+<details>
+<summary><strong>Match Strategies</strong></summary>
+
+- **Two or More**: Any two people liking the same content creates a match
+  - Best for: Larger groups where majority rules
+  - Finding: Quick results, more options
+
+- **Unanimous**: Everyone must like it for a match
+  - Best for: Smaller groups wanting guaranteed crowd-pleasers
+  - Finding: Fewer but higher-quality matches
+</details>
+
+<details>
+<summary><strong>Session Restrictions</strong></summary>
+
+- **Max Likes**: Limit right swipes per person
+  - Forces thoughtful, selective choices
+  - Prevents mindless approval
+
+- **Max Nopes**: Limit left swipes per person
+  - Stops serial negativity
+  - Encourages open-mindedness
+
+- **Max Matches**: Auto-stop when you have enough options
+  - Perfect for when you just need 3-4 solid picks
+</details>
+
+### Guest Lending (Account Sharing)
+
+**How it works:**
+
+1. Host enables "Guest Lending" in settings
+2. Guest joins session with just a name - no account needed
+3. Swiparr uses the host's credentials to fetch content
+4. Guest gets a unique ID, their swipes are tracked separately
+5. Guests cannot access host account or modify settings
+
+**Perfect for:** Movie nights with friends who don't have media servers
+
+### Admin Privileges
+
+**Automatically Assigned:** First user to log in becomes admin
+
+**Manual Assignment:** Set `ADMIN_USERNAME` environment variable
+
+**Admin Powers:**
+- Configure included media libraries
+- Manage global provider settings
+- Override session restrictions
+- Access admin dashboard
+
+---
+
+## 🔄 Provider Flexibility: Two Modes
+
+### Server Lock Mode (PROVIDER_LOCK=true)
+
+**One provider, admin-controlled**
+
+- Admin configures ONE provider in environment variables
+- All users automatically use this provider
+- Best for: Families, roommates, shared media servers
+- **Use case:** Everyone in the house uses the same Jellyfin server
+
+### BYOP Mode (PROVIDER_LOCK=false)
+
+**Bring Your Own Provider**
+
+- Each user connects their own provider during onboarding
+- Users can switch providers anytime
+- Best for: Friends with different media servers
+- **Use case:** Alice uses her Jellyfin, Bob uses Plex, Charlie uses TMDB - all in the same session
+
+---
+
+## 🔒 Security & Privacy
+
+- **Encrypted Sessions**: iron-session with secure, encrypted cookies
+- **Scoped Access**: Guests can only swipe, no account access
+- **Data Ownership**: Self-hosted = your data stays on your server
+- **Provider Isolation**: No credential sharing in BYOP mode
+- **CORS Protection**: Configured for safe media server integration
+- **Security Headers**: X-Content-Type-Options, X-XSS-Protection, CSP, Referrer-Policy
+
+---
+
+## 🤝 Contributing
+
+**Swiparr is now open for contributions!** 🎉
+
+### How to Contribute
+
+1. **Start with Discussion** - Propose changes before coding
+   - [💡 Ideas & Feature Proposals](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=ideas)
+   - [🐛 Bug Reports](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=bugs)
+2. **Fork & Develop** - After discussion approval
+3. **Pull Request** - With clear description and tests
+
+### Development Setup
+
+```bash
+git clone https://github.com/m3sserstudi0s/swiparr.git
+cd swiparr
+npm install
+npm run dev          # Start dev server
+npm run lint         # Check code style
+```
+
+### Contribution Areas
+
+- **Provider Integrations**: Improve Emby/Plex support
+- **UI/UX**: Mobile responsiveness, accessibility
+- **Performance**: Optimize queries, bundle size
+- **Documentation**: Examples, guides, tutorials
+- **Testing**: Add test coverage (currently minimal)
+
+**First-time contributors welcome!** Start with "good first issue" discussions.
+
+---
+
+## 💚 Support the Project
+
+Swiparr is free, open source, and community-supported. Your contributions help:
+
+- ☕ [**Buy Me a Coffee**](https://www.buymeacoffee.com/jakobbjelver) - Quick one-time support
+- 🌟 **Star on GitHub** - Show your support (it's free!)
+- 📢 **Share Swiparr** - Tell friends, post on social media
+- 🏢 **Use swiparr.app** - The hosted version includes infrastructure funding
+
+**All support directly funds development and infrastructure costs.**
+
+---
+
+## 📞 Community & Support
+
+All support, questions, and discussions happen in GitHub Discussions:
+
+| Topic | Link |
+|-------|------|
+| ❓ Questions & Help | [Ask a Question](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=q-a) |
+| 💡 Feature Ideas | [Propose a Feature](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=ideas) |
+| 🐛 Bug Reports | [Report a Bug](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=bugs) |
+| 🙌 General Chat | [Start a Discussion](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=general) |
+
+---
+
+## 🐳 Docker Advanced Topics
+
+### Reverse Proxy Configuration
+
+**Nginx Example:**
+
+```nginx
+location / {
+    proxy_pass http://swiparr:4321;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+**Required Headers:**
+- `Host` - Required for Next.js 15+ authentication
+- `X-Forwarded-For` - Client IP for logging
+- `X-Forwarded-Proto` - Protocol detection
+
+### Volume Management
+
+```yaml
+volumes:
+  - ./data:/app/data          # Database & cache
+  - ./logs:/app/logs          # Optional: Persist logs
+```
+
+### Environment File
+
+Use `--env-file .env` with Docker for cleaner configuration management.
+
+---
+
+## 📚 Additional Resources
+
+- **AGENTS.md** - Developer guide and code standards (for contributors)
+- **GitHub Releases** - Detailed changelog for each version
+
+---
+
+## 📄 License
+
+**MIT License** - See [LICENSE](LICENSE) file for details
+
+You're free to use, modify, and distribute Swiparr. Commercial use is permitted.
+
+---
+
+<div align="center">
+
+**Made with ❤️ and late nights**
+
+<p>
+  <a href="https://swiparr.app">🌐 Swiparr Global</a> • 
+  <a href="https://github.com/m3sserstudi0s/swiparr">⭐ GitHub Repo</a> • 
+  <a href="https://github.com/m3sserstudi0s/swiparr/discussions">💬 Community</a>
+</p>
+
+</div>

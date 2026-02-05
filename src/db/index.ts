@@ -10,8 +10,12 @@ const getDefaultDbPath = () => {
   return 'file:swiparr.db';
 };
 
-const url = process.env.DATABASE_URL || getDefaultDbPath();
-const authToken = process.env.DATABASE_AUTH_TOKEN;
+const url = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || getDefaultDbPath();
+const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
+
+if (process.env.NODE_ENV === 'production') {
+  console.log('[DB] Connecting to:', url.startsWith('libsql') ? 'Turso/LibSQL' : 'Local SQLite');
+}
 
 const client = createClient({
   url,

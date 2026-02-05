@@ -27,10 +27,10 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
   if (typeof window !== 'undefined' && window.__SWIPARR_CONFIG__) {
     return window.__SWIPARR_CONFIG__;
   }
-  
+
   const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
-  const providerLock = (process.env.PROVIDER_LOCK || process.env.SERVER_LOCK || 'true').toLowerCase() === 'true';
-  
+  const providerLock = (process.env.PROVIDER_LOCK || 'true').toLowerCase() === 'true';
+
   // Default capabilities (Jellyfin style)
   const capabilities: ProviderCapabilities = {
     hasAuth: true,
@@ -53,18 +53,21 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     capabilities.hasQuickConnect = false;
     capabilities.isExperimental = true;
   }
-  
-  // Jellyfin-specific URLs kept for backwards compatibility
-  const serverPublicUrl = (process.env.SERVER_PUBLIC_URL || process.env.SERVER_URL || process.env.JELLYFIN_PUBLIC_URL || process.env.JELLYFIN_URL || '').replace(/\/$/, ''); 
+
+  const SERVER_PUBLIC_URL = process.env.JELLYFIN_PUBLIC_URL || process.env.EMBY_PUBLIC_URL || process.env.PLEX_PUBLIC_URL
+  const SERVER_URL = process.env.JELLYFIN_URL || process.env.EMBY_URL || process.env.PLEX_URL
+
+
+  const serverPublicUrl = (SERVER_PUBLIC_URL || SERVER_URL || '').replace(/\/$/, '');
   const rawBasePath = (process.env.URL_BASE_PATH || '').replace(/\/$/, '');
   const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
-  
+
   return {
     provider,
     providerLock,
     capabilities,
     serverPublicUrl,
-    useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || process.env.USE_WATCHLIST || '').toLowerCase() === 'true',
+    useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
     useStaticFilterValues: false,
     version: (process.env.APP_VERSION || packageJson.version).replace(/^v/i, ''),
     basePath,
