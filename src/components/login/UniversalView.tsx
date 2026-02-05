@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CardDescription } from "@/components/ui/card";
 
-interface TmdbViewProps {
+interface UniversalViewProps {
   providerLock: boolean;
   tmdbToken: string;
   setTmdbToken: (val: string) => void;
@@ -12,7 +12,7 @@ interface TmdbViewProps {
   handleLogin: (e: React.FormEvent) => void;
 }
 
-export function TmdbView({
+export function UniversalView({
   providerLock,
   tmdbToken,
   setTmdbToken,
@@ -20,7 +20,7 @@ export function TmdbView({
   setUsername,
   loading,
   handleLogin,
-}: TmdbViewProps) {
+}: UniversalViewProps) {
   return (
     <div className="space-y-4">
       <CardDescription>
@@ -45,7 +45,7 @@ export function TmdbView({
           className="bg-muted border-input"
           autoFocus
         />
-        <Button type="submit" className="w-full" disabled={loading || !username}>
+        <Button type="submit" className="w-full font-semibold" disabled={loading || !username}>
           {loading ? "Starting..." : "Start"}
         </Button>
       </form>

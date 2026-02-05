@@ -8,7 +8,7 @@ import { QuickConnectView } from "./QuickConnectView";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangleIcon } from "lucide-react"
 
-interface JellyfinPlexViewProps {
+interface AuthViewProps {
   provider: string;
   providerLock: boolean;
   serverUrl: string;
@@ -34,7 +34,7 @@ interface JellyfinPlexViewProps {
   isExperimental: boolean;
 }
 
-export function JellyfinPlexView({
+export function AuthView({
   provider,
   providerLock,
   serverUrl,
@@ -58,7 +58,7 @@ export function JellyfinPlexView({
   sessionCodeParam,
   hasQuickConnect,
   isExperimental
-}: JellyfinPlexViewProps) {
+}: AuthViewProps) {
   const [activeTab, setActiveTab] = useState<string>("login");
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export function JellyfinPlexView({
               onChange={(e) => setPassword(e.target.value)}
               className="bg-muted border-input"
             />
-            <Button type="submit" className="w-full mt-2" disabled={loading}>
+            <Button type="submit" className="w-full mt-2 font-semibold" disabled={loading}>
               {loading ? "Connecting..." : "Log in"}
             </Button>
 
@@ -132,7 +132,7 @@ export function JellyfinPlexView({
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full hover:bg-accent h-9"
+                  className="w-full hover:bg-accent h-9 font-semibold"
                   onClick={startQuickConnect}
                   disabled={loading}
                 >
@@ -180,7 +180,7 @@ export function JellyfinPlexView({
           <div className="pt-2">
             <Button
               type="submit"
-              className="w-full"
+              className="w-full font-semibold"
               disabled={loading || !guestName || !guestSessionCode}
             >
               {loading ? "Joining..." : "Join"}

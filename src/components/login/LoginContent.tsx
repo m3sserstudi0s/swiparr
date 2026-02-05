@@ -12,8 +12,8 @@ import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 
 import { AdminInitializedView } from "./AdminInitializedView";
-import { JellyfinPlexView } from "./JellyfinPlexView";
-import { TmdbView } from "./TmdbView";
+import { AuthView } from "./AuthView";
+import { UniversalView } from "./UniversalView";
 import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
 
 
@@ -186,7 +186,7 @@ export default function LoginContent() {
           Swiparr
         </CardTitle>
       </CardHeader>
-      <CardContent className={cn("transition-all duration-300", contentHeight)}>
+      <CardContent className={cn("transition-all duration-300", contentHeight, !providerLock && "px-5")}>
         {wasMadeAdmin ? (
           <AdminInitializedView onContinue={() => {
             const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
@@ -197,20 +197,20 @@ export default function LoginContent() {
             {!providerLock && (
               <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
                 <TabsList className="grid w-full grid-cols-4 h-9">
-                  <TabsTrigger value="jellyfin" className="text-xs">
-                    <SiJellyfin color="#00A4DC"/>
+                  <TabsTrigger value="jellyfin" className="text-xs font-semibold">
+                    <SiJellyfin/>
                     Jellyfin
                   </TabsTrigger>
-                  <TabsTrigger value="emby" className="text-xs">
-                    <SiEmby color="#52b54b"/>
+                  <TabsTrigger value="emby" className="text-xs font-semibold">
+                    <SiEmby/>
                     Emby
                   </TabsTrigger>
-                  <TabsTrigger value="plex" className="text-xs">
-                    <SiPlex color="#e5a00d"/>
+                  <TabsTrigger value="plex" className="text-xs font-semibold">
+                    <SiPlex/>
                     Plex
                   </TabsTrigger>
-                  <TabsTrigger value="tmdb" className="text-xs">
-                    <SiThemoviedatabase color="#01b4e4"/>
+                  <TabsTrigger value="tmdb" className="text-xs font-semibold">
+                    <SiThemoviedatabase/>
                     TMDB
                   </TabsTrigger>
                 </TabsList>
@@ -218,7 +218,7 @@ export default function LoginContent() {
             )}
 
             {selectedProvider === "tmdb" ? (
-              <TmdbView
+              <UniversalView
                 providerLock={providerLock}
                 tmdbToken={tmdbToken}
                 setTmdbToken={setTmdbToken}
@@ -228,7 +228,7 @@ export default function LoginContent() {
                 handleLogin={handleLogin}
               />
             ) : (
-              <JellyfinPlexView
+              <AuthView
                 provider={selectedProvider}
                 providerLock={providerLock}
                 serverUrl={serverUrl}
