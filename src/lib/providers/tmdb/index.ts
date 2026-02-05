@@ -1,11 +1,13 @@
 import { MovieQueryOptions, TMDB } from 'tmdb-ts';
 import { v4 as uuidv4 } from "uuid";
+import { config as appConfig } from "@/lib/config";
 import { 
   MediaProvider, 
   ProviderCapabilities, 
   SearchFilters, 
   AuthContext 
 } from "../types";
+
 import { 
   MediaItem, 
   MediaLibrary, 
@@ -31,9 +33,10 @@ export class TmdbProvider implements MediaProvider {
   };
 
   constructor(token?: string) {
-    const finalToken = token || process.env.TMDB_ACCESS_TOKEN || '';
+    const finalToken = token || appConfig.TMDB_ACCESS_TOKEN || '';
     this.client = new TMDB(finalToken);
   }
+
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     if (auth?.tmdbToken) {

@@ -3,13 +3,14 @@ import type { NextRequest } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
+import { config as appConfig } from "@/lib/config";
 
 export async function proxy(request: NextRequest) {
   const { search } = request.nextUrl;
   let pathname = request.nextUrl.pathname;
-  const rawBasePath = (process.env.URL_BASE_PATH || "").replace(/\/$/, "");
-  const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
+  const basePath = appConfig.app.basePath;
   let isRewritten = false;
+
 
   // Handle base path stripping for routing
   if (basePath && (pathname === basePath || pathname.startsWith(basePath + "/"))) {
@@ -59,13 +60,14 @@ export async function proxy(request: NextRequest) {
   }
 
   // Configurable Iframe Headers
-  const xFrameOptions = process.env.X_FRAME_OPTIONS || 'DENY';
+  const xFrameOptions = appConfig.proxy.xFrameOptions;
   if (xFrameOptions.toUpperCase() !== 'DISABLED') {
     response.headers.set('X-Frame-Options', xFrameOptions);
   }
 
-  const cspFrameAncestors = process.env.CSP_FRAME_ANCESTORS || 'none';
+  const cspFrameAncestors = appConfig.proxy.cspFrameAncestors;
   response.headers.set('Content-Security-Policy', `frame-ancestors ${cspFrameAncestors}`);
+
 
   return response;
 }

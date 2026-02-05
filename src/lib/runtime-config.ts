@@ -8,6 +8,8 @@ import packageJson from "../../package.json";
 
 import { ProviderCapabilities } from "./providers/types";
 
+import { config } from "./config";
+
 export interface RuntimeConfig {
   provider: "jellyfin" | "tmdb" | "plex" | "emby" | string;
   providerLock: boolean;
@@ -28,9 +30,6 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     return window.__SWIPARR_CONFIG__;
   }
 
-  const provider = (process.env.PROVIDER || 'jellyfin').toLowerCase();
-  const providerLock = (process.env.PROVIDER_LOCK || 'true').toLowerCase() === 'true';
-
   // Default capabilities (Jellyfin style)
   const capabilities: ProviderCapabilities = {
     hasAuth: true,
@@ -42,38 +41,31 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     isExperimental: false,
   };
 
-  if (provider === 'tmdb') {
+  if (config.app.provider === 'tmdb') {
     capabilities.hasAuth = false;
     capabilities.hasQuickConnect = false;
     capabilities.hasWatchlist = false;
     capabilities.hasLibraries = false;
     capabilities.hasSettings = false;
     capabilities.requiresServerUrl = false;
-  } else if (provider === 'plex' || provider === 'emby') {
+  } else if (config.app.provider === 'plex' || config.app.provider === 'emby') {
     capabilities.hasQuickConnect = false;
     capabilities.isExperimental = true;
   }
 
-  const SERVER_PUBLIC_URL = process.env.JELLYFIN_PUBLIC_URL || process.env.EMBY_PUBLIC_URL || process.env.PLEX_PUBLIC_URL
-  const SERVER_URL = process.env.JELLYFIN_URL || process.env.EMBY_URL || process.env.PLEX_URL
-
-
-  const serverPublicUrl = (SERVER_PUBLIC_URL || SERVER_URL || '').replace(/\/$/, '');
-  const rawBasePath = (process.env.URL_BASE_PATH || '').replace(/\/$/, '');
-  const basePath = rawBasePath && !rawBasePath.startsWith('/') ? `/${rawBasePath}` : rawBasePath;
-
   return {
-    provider,
-    providerLock,
+    provider: config.app.provider,
+    providerLock: config.app.providerLock,
     capabilities,
-    serverPublicUrl,
-    useWatchlist: (process.env.JELLYFIN_USE_WATCHLIST || '').toLowerCase() === 'true',
+    serverPublicUrl: config.server.publicUrl,
+    useWatchlist: config.app.useWatchlist,
     useStaticFilterValues: false,
-    version: (process.env.APP_VERSION || packageJson.version).replace(/^v/i, ''),
-    basePath,
+    version: config.app.version,
+    basePath: config.app.basePath,
     ...overrides
   };
 }
+
 
 /**
  * Client-side global variable to store the config once injected.

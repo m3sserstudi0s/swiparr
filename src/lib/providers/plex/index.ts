@@ -1,9 +1,11 @@
+import { config as appConfig } from "@/lib/config";
 import { 
   MediaProvider, 
   ProviderCapabilities, 
   SearchFilters, 
   AuthContext 
 } from "../types";
+
 import { 
   MediaItem, 
   MediaLibrary, 
@@ -27,7 +29,7 @@ export class PlexProvider implements MediaProvider {
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
-    const token = auth?.accessToken || process.env.PLEX_TOKEN;
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const headers = getPlexHeaders(token);
     
     // If we have libraries filtered, we fetch from those sections
@@ -71,7 +73,7 @@ export class PlexProvider implements MediaProvider {
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
-    const token = auth?.accessToken || process.env.PLEX_TOKEN;
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const url = getPlexUrl(`/library/metadata/${id}`, auth?.serverUrl);
     const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
     const item = res.data.MediaContainer?.Metadata?.[0];
@@ -80,7 +82,7 @@ export class PlexProvider implements MediaProvider {
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
-    const token = auth?.accessToken || process.env.PLEX_TOKEN;
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const sections = await this.getLibraries(auth);
     const movieSections = sections.filter(s => s.CollectionType === "movies");
     
@@ -99,7 +101,7 @@ export class PlexProvider implements MediaProvider {
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
-    const token = auth?.accessToken || process.env.PLEX_TOKEN;
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const sections = await this.getLibraries(auth);
     const movieSections = sections.filter(s => s.CollectionType === "movies");
     
@@ -121,7 +123,7 @@ export class PlexProvider implements MediaProvider {
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    const token = auth?.accessToken || process.env.PLEX_TOKEN;
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const sections = await this.getLibraries(auth);
     const movieSections = sections.filter(s => s.CollectionType === "movies");
     
@@ -140,7 +142,7 @@ export class PlexProvider implements MediaProvider {
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
-    const token = auth?.accessToken || process.env.PLEX_TOKEN;
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const url = getPlexUrl("/library/sections", auth?.serverUrl);
     const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
     
@@ -172,7 +174,7 @@ export class PlexProvider implements MediaProvider {
 
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
-    const token = auth?.accessToken || process.env.PLEX_TOKEN;
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     
     try {
         const details = await this.getItemDetails(itemId, auth);
@@ -190,7 +192,7 @@ export class PlexProvider implements MediaProvider {
   }
 
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
-    const token = password || process.env.PLEX_TOKEN;
+    const token = password || appConfig.PLEX_TOKEN;
     if (!token) throw new Error("Plex Token is required");
     
     const headers = getPlexHeaders(token);

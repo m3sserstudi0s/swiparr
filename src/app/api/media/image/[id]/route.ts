@@ -7,6 +7,8 @@ import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { config as appConfig } from "@/lib/config";
+
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -95,9 +97,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         Object.assign(headers, getAuthenticatedHeaders(accessToken, deviceId || "Swiparr"));
     } else if (provider.name === "plex" && !isTmdbImageUrl) {
         const { getPlexHeaders } = await import("@/lib/plex/api");
-        const token = accessToken || process.env.PLEX_TOKEN;
+        const token = accessToken || appConfig.PLEX_TOKEN;
         Object.assign(headers, getPlexHeaders(token || undefined));
     }
+
 
     // Use axios directly for external TMDB images, use apiClient for Jellyfin/Plex
     let response;

@@ -1,5 +1,6 @@
 import { SessionOptions } from "iron-session";
 import { getAuthSecret } from "./server/session-secret";
+import { config } from "./config";
 
 export async function getSessionOptions(): Promise<SessionOptions> {
   return {
@@ -8,12 +9,11 @@ export async function getSessionOptions(): Promise<SessionOptions> {
     cookieOptions: {
       // Only use secure cookies if explicitly set, otherwise defaults to false
       // This ensures it works on local HTTP access (standard for home labs)
-      secure: process.env.USE_SECURE_COOKIES?.toLowerCase() === "true",
+      secure: config.auth.secureCookies,
       httpOnly: true,
       sameSite: "lax",
-      path: (process.env.URL_BASE_PATH || "").startsWith("/") 
-        ? (process.env.URL_BASE_PATH || "").replace(/\/$/, "") || "/"
-        : "/" + (process.env.URL_BASE_PATH || "").replace(/\/$/, ""),
+      path: config.app.basePath || "/",
     },
   };
 }
+

@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { getRuntimeConfig } from '../runtime-config';
+import { config as appConfig } from '../config';
 
-const EMBY_URL = process.env.EMBY_URL || 'http://localhost:8096';
+const EMBY_URL = appConfig.EMBY_URL || 'http://localhost:8096';
+
 
 // Create an axios instance with a timeout to prevent hanging requests
 export const apiClient = axios.create({

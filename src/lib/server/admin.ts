@@ -1,6 +1,7 @@
 import { db, config as configTable } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { useRuntimeConfig } from "../runtime-config";
+import { config as appConfig } from "@/lib/config";
 
 const ADMIN_USER_ID_KEY = "admin_user_id";
 const INCLUDED_LIBRARIES_KEY = "included_libraries";
@@ -28,20 +29,29 @@ export async function getAdminUserId(provider?: string): Promise<string | null> 
 export async function isAdmin(userId: string, username?: string, provider?: string): Promise<boolean> {
 
     // 0. Check if provider has auth
-    const config = useRuntimeConfig();
-    const activeProvider = provider || config.provider;
+    const runtimeConfig = useRuntimeConfig();
+    const activeProvider = provider || runtimeConfig.provider;
     
     // For other providers, check capabilities if possible, otherwise default to true for Jellyfin/Plex/Emby
-    if (activeProvider === config.provider) {
-        if (!config.capabilities.hasAuth) return false;
+    if (activeProvider === runtimeConfig.provider) {
+        if (!runtimeConfig.capabilities.hasAuth) return false;
     }
 
     // 1. Check if username matches provider-specific or global ADMIN_USERNAME env var
     if (username) {
-        const providerAdminEnv = activeProvider ? process.env[`${activeProvider.toUpperCase()}_ADMIN_USERNAME`] : null;
-        const globalAdminEnv = process.env.ADMIN_USERNAME;
+        let targetAdmin = appConfig.auth.adminUsername;
+
+        // If a specific provider was requested that isn't the active one, 
+        // we'd need to look up its specific env var. 
+        // But usually activeProvider is the current one.
+        if (provider && provider !== appConfig.app.provider) {
+            const p = provider.toLowerCase();
+            if (p === 'jellyfin') targetAdmin = appConfig.JELLYFIN_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
+            else if (p === 'emby') targetAdmin = appConfig.EMBY_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
+            else if (p === 'plex') targetAdmin = appConfig.PLEX_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
+            else if (p === 'tmdb') targetAdmin = appConfig.TMDB_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
+        }
         
-        const targetAdmin = providerAdminEnv || globalAdminEnv;
         if (targetAdmin && username.toLowerCase() === targetAdmin.toLowerCase()) {
             return true;
         }

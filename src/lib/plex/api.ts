@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { getRuntimeConfig } from '../runtime-config';
+import { config as appConfig } from '../config';
 
-const PLEX_URL = process.env.PLEX_URL || 'http://localhost:32400';
+const PLEX_URL = appConfig.PLEX_URL || 'http://localhost:32400';
+
 
 export const plexClient = axios.create({
   timeout: 60000,
