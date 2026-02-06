@@ -240,10 +240,10 @@ export default function LoginContent() {
         title="Quick Connect Code"
         value={qcCode || ""}
       />
-      <Card className={cn("w-full border-border bg-card text-card-foreground", !providerLock ? "max-w-sm" : "max-w-xs")}>
+      <Card className={cn("w-full border-border bg-card text-card-foreground pt-0", !providerLock ? "max-w-sm" : "max-w-xs")}>
 
-      <CardHeader className="rounded-md mx-5 bg-linear-to-t dark:from-neutral-900 dark:to-neutral-800 from-neutral-500 to-neutral-300">
-        <CardTitle className="flex flex-row gap-3 items-center justify-center py-3">
+      <CardHeader className="bg-linear-to-t rounded-xl dark:from-neutral-900 dark:to-neutral-800 from-neutral-500 to-neutral-300">
+        <CardTitle className="flex flex-row gap-3 items-center justify-center py-3 mt-4">
           <Image src={logo} alt="Logo" className="size-7 invert mt-2 opacity-80" loading="eager" />
           <GradientText className="text-3xl mt-1">
            Swiparr

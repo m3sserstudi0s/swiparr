@@ -25,6 +25,7 @@ interface MovieListItemProps {
 
 export function MovieListItem({ movie, onClick, variant = "full", isLiked }: MovieListItemProps) {
   const queryClient = useQueryClient();
+  const { capabilities } = useRuntimeConfig();
 
   const { mutate: relike } = useMutation({
     mutationFn: async () => {
@@ -54,7 +55,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
     },
   });
 
-    const { data: sessionData} = useQuery({
+  const { data: sessionData } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
       const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
@@ -67,7 +68,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
       loading: "Removing from likes...",
       success: "Movie removed from likes",
       error: (err) => {
-        return { message: "Failed to remove from likes", description: getErrorMessage(err)}
+        return { message: "Failed to remove from likes", description: getErrorMessage(err) }
       },
       action: !isUnliking && {
         label: 'Undo',
@@ -158,7 +159,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           )}
 
           <div className="flex gap-2">
-            <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
+            {capabilities.requiresServerUrl && <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"
@@ -171,6 +172,20 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 Play
               </Button>
             </Link>
+            }
+            {capabilities.hasStreamingSettings && <div className="flex flex-1 flex-row gap-2 items-center">
+              {movie.WatchProviders?.map((provider) => (
+                <OptimizedImage
+                  key={provider.Id}
+                  src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
+                  alt={provider.Name}
+                  className="object-cover rounded-xs"
+                  unoptimized
+                  width={20}
+                  height={20}
+                />
+              ))}
+            </div>}
             {(movie.likedBy?.some(l => l.userId === sessionData?.userId) || isLiked) && <Button
               size="sm"
               variant="ghost"

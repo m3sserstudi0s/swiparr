@@ -60,7 +60,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                             />
                         </div>
                     </HybridTooltipTrigger>
-                    <HybridTooltipContent>
+                    <HybridTooltipContent className="w-fit">
                         <p>{user.userName}</p>
                     </HybridTooltipContent>
                 </HybridTooltip>

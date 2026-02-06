@@ -114,6 +114,11 @@ export function StreamingSettings() {
         );
     }
 
+    const handleSaveSelectedRegion = (region: MediaRegion | null) => {
+        setSelectedRegion(region);
+        saveSettings()
+    }
+
     return (
         <SettingsSection title="Streaming">
             <div className="space-y-6">
@@ -129,7 +134,7 @@ export function StreamingSettings() {
 
                     <Combobox
                         value={selectedRegion}
-                        onValueChange={setSelectedRegion}
+                        onValueChange={handleSaveSelectedRegion}
                         items={regions}
                         itemToStringValue={(r: MediaRegion) => r?.Name || ""}
                     >
@@ -138,7 +143,7 @@ export function StreamingSettings() {
                         </ComboboxTrigger>
                         <ComboboxContent container={container} className="min-w-40 z-1000">
                                 <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
-                            <ComboboxEmpty>No region found</ComboboxEmpty>
+                            <ComboboxEmpty>No regions found</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
                                     <ComboboxItem key={r.Id} value={r} className="cursor-pointer">

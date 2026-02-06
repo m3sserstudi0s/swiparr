@@ -247,16 +247,9 @@ export async function GET() {
   const settingsHash = userSettingsEntry?.value ? userSettingsEntry.value.length.toString(16) + userSettingsEntry.value.slice(-8) : 'default';
 
   // Check for custom profile picture
-  const { userProfiles } = await import("@/db/schema");
   const profile = await db.query.userProfiles.findFirst({
       where: eq(userProfiles.userId, session.user.Id),
   });
-
-  // Get a global version based on latest profile update in this session (approximate)
-  const latestProfile = await db.query.userProfiles.findFirst({
-      orderBy: [desc(userProfiles.updatedAt)],
-  });
-  const globalVersion = latestProfile?.updatedAt ? new Date(latestProfile.updatedAt).getTime() : 0;
 
   const response = { 
     code: session.sessionCode || null,
@@ -272,9 +265,7 @@ export async function GET() {
     capabilities: getMediaProvider(activeProvider).capabilities,
     serverUrl: activeServerUrl,
     settingsHash,
-    hasCustomProfilePicture: !!profile,
-    profileUpdatedAt: profile?.updatedAt || null,
-    globalVersion
+    hasCustomProfilePicture: !!profile
   };
 
 

@@ -19,36 +19,48 @@ export function SmoothAvatar({ userId, userName, className, fallbackClassName, s
     const [isLoaded, setIsLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
     
-    const globalVersion = sessionStatus?.globalVersion || 0;
-    const imageUrl = `/api/media/image/${userId}?type=user&v=${globalVersion}`;
-
-    // Reset state when userId or globalVersion changes
+    // We use a simple hash of the user state or just a fixed cache key
+    // Actually, simply using a timestamp that updates when session updates is enough
+    const version = sessionStatus ? "v1" : "v0"; 
+    
+    const imageUrl = userId && userId !== "undefined" && userId !== "null"
+        ? `/api/media/image/${userId}?type=user&_=${version}`
+        : null;
+    
+    // Reset state when userId changes
     useEffect(() => {
         setIsLoaded(false);
         setImageError(false);
-    }, [userId, globalVersion]);
+    }, [userId]);
 
     return (
         <Avatar className={cn("relative overflow-hidden", className)}>
-            {!isLoaded && !imageError && (
-                <Skeleton className="absolute inset-0 size-full rounded-full animate-pulse" />
+            {!isLoaded && !imageError && imageUrl && (
+                <Skeleton className="absolute inset-0 size-full rounded-full" />
             )}
             
-            <AvatarImage 
-                src={imageUrl} 
-                className={cn(
-                    "object-cover transition-opacity duration-300",
-                    isLoaded ? "opacity-100" : "opacity-0"
-                )}
-                onLoadingStatusChange={(status) => {
-                    if (status === "loaded") setIsLoaded(true);
-                    if (status === "error") setImageError(true);
-                }}
-            />
+            {imageUrl && (
+                <AvatarImage 
+                    src={imageUrl} 
+                    className={cn(
+                        "object-cover transition-opacity duration-300",
+                        isLoaded ? "opacity-100" : "opacity-0"
+                    )}
+                    onLoadingStatusChange={(status) => {
+                        if (status === "loaded") {
+                            setIsLoaded(true);
+                            setImageError(false);
+                        }
+                        if (status === "error") {
+                            setImageError(true);
+                        }
+                    }}
+                />
+            )}
             
-            {(imageError || (isLoaded && !imageUrl)) && (
+            {(imageError || !imageUrl) && (
                 <AvatarFallback className={cn("font-semibold", fallbackClassName)}>
-                    {userName.substring(0, 1).toUpperCase()}
+                    {userName ? userName.substring(0, 1).toUpperCase() : "?"}
                 </AvatarFallback>
             )}
         </Avatar>

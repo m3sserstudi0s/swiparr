@@ -31,8 +31,6 @@ export interface SessionStatus {
   serverUrl?: string;
   settingsHash?: string;
   hasCustomProfilePicture?: boolean;
-  profileUpdatedAt?: string | null;
-  globalVersion?: number;
 }
 
 

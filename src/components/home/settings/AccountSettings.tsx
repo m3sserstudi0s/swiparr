@@ -31,7 +31,7 @@ export function AccountSettings() {
         );
     }
 
-    const { userName, userId, isGuest, isAdmin, provider, hasCustomProfilePicture, globalVersion } = sessionStatus;
+    const { userName, userId, isGuest, isAdmin, provider, hasCustomProfilePicture } = sessionStatus;
     const { capabilities, provider: runtimeProvider } = runtimeConfig;
     const activeProvider = provider || runtimeProvider;
 
@@ -53,7 +53,7 @@ export function AccountSettings() {
         <SettingsSection title="Profile">
             <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/50">
                 <ProfilePicturePicker 
-                    currentImage={`/api/media/image/${userId}?type=user&v=${globalVersion || 0}`}
+                    currentImage={`/api/media/image/${userId}?type=user&_=${sessionStatus ? 'v1' : 'v0'}`}
                     hasCustomImage={hasCustomProfilePicture}
                     userName={userName}
                     onUpload={handleUpload}
