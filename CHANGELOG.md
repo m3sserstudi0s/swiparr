@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -
 
-## [0.1.67] - 2025-02-05
+## [1.1.78] - 2025-02-06
 
 ### Added
 - Emby provider support (experimental)
