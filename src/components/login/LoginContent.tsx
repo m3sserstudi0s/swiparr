@@ -190,12 +190,7 @@ export default function LoginContent() {
       <CardHeader>
         <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager" />
         <CardTitle className="text-center text-3xl">
-          <GradientText
-            colors={["#f0f0f0", "#999999"]}
-            direction="horizontal"
-            animationSpeed={8}
-            showBorder={false}
-          >
+          <GradientText>
            Swiparr
           </GradientText>
         </CardTitle>
