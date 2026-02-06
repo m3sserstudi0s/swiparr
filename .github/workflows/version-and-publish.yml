@@ -5,7 +5,6 @@ on:
     paths-ignore:
       - 'package.json'
       - 'package-lock.json'
-      - '.github/workflows/version-and-publish.yml'
       - 'CHANGELOG.md'
       - 'README.md'
       - '.github/CONTRIBUTING.md'
@@ -52,8 +51,8 @@ jobs:
       - name: Bump version
         id: npm-version
         run: |
-          git config user.email "action@github.com"
-          git config user.name "GitHub Action"
+          git config user.email "94932025+jakobbjelver@users.noreply.github.com"
+          git config user.name "jakobbjelver"
           NEW_VERSION=$(npm version ${{ steps.bump.outputs.type }} --no-git-tag-version)
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "version_number=${NEW_VERSION#v}" >> $GITHUB_OUTPUT
@@ -76,6 +75,8 @@ jobs:
           git push origin "$VERSION"
 
   sync_fork:
+    needs: version
+    if: needs.version.outputs.changes_detected == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
