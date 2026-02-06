@@ -113,7 +113,7 @@ This release rounds up all work from previous patches and features. It includes:
 - Swiparr evolves from Jellyfin-only to universal media discovery
 - Support for Jellyfin, Emby, Plex, and TMDB
 - BYOP mode enables mixed-provider sessions
-- Cloud hosting at swiparr.app launched
+- Cloud hosting at swiparr.com launched
 
 **🚀 v0.1.64 - Provider Expansion**
 - TMDB provider enables server-free usage

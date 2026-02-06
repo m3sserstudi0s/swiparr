@@ -253,7 +253,7 @@ Your contributions make Swiparr better for everyone. Whether it's a small bug fi
 
 <p>
   <a href="https://github.com/m3sserstudi0s/swiparr">🏠 Back to Main Repo</a> •
-  <a href="https://swiparr.app">🎬 Try Swiparr Cloud</a>
+  <a href="https://swiparr.com">🎬 Try Swiparr Cloud</a>
 </p>
 
 </div>

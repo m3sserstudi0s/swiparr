@@ -64,7 +64,7 @@ We all know the struggle: 30 minutes of "what should we watch?" that ends with w
 
 **No setup, no server, no problem.**
 
-🌐 **[swiparr.app](https://swiparr.app)** - Free to use, community-supported
+🌐 **[swiparr.com](https://swiparr.com)** - Free to use, community-supported
 
 ### Easiest: Deploy to Vercel
 
@@ -352,7 +352,7 @@ Swiparr is free, open source, and community-supported. Your contributions help:
 - ☕ [**Buy Me a Coffee**](https://www.buymeacoffee.com/jakobbjelver) - Quick one-time support
 - 🌟 **Star on GitHub** - Show your support (it's free!)
 - 📢 **Share Swiparr** - Tell friends, post on social media
-- 🏢 **Use swiparr.app** - The hosted version includes infrastructure funding
+- 🏢 **Use swiparr.com** - The hosted version includes infrastructure funding
 
 **All support directly funds development and infrastructure costs.**
 
@@ -425,7 +425,7 @@ You're free to use, modify, and distribute Swiparr. Commercial use is permitted.
 **Made with ❤️ and late nights**
 
 <p>
-  <a href="https://swiparr.app">🌐 Swiparr Global</a> • 
+  <a href="https://swiparr.com">🌐 Swiparr Global</a> • 
   <a href="https://github.com/m3sserstudi0s/swiparr">⭐ GitHub Repo</a> • 
   <a href="https://github.com/m3sserstudi0s/swiparr/discussions">💬 Community</a>
 </p>
