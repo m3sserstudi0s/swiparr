@@ -4,10 +4,10 @@ import { SessionStatus, Filters, SessionSettings } from "@/types";
 import { QUERY_KEYS } from "./query-keys";
 
 export function useSession() {
-  return useQuery<SessionStatus>({
+  return useQuery<SessionStatus | null>({
     queryKey: QUERY_KEYS.session,
     queryFn: async () => {
-      const res = await apiClient.get<SessionStatus>("/api/session");
+      const res = await apiClient.get<SessionStatus | null>("/api/session");
       return res.data;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -24,10 +24,10 @@ export function useUpdateSession() {
     },
     onMutate: async (payload) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.session });
-      const previousSession = queryClient.getQueryData<SessionStatus>(QUERY_KEYS.session);
+      const previousSession = queryClient.getQueryData<SessionStatus | null>(QUERY_KEYS.session);
 
       if (previousSession) {
-        queryClient.setQueryData<SessionStatus>(QUERY_KEYS.session, {
+        queryClient.setQueryData<SessionStatus | null>(QUERY_KEYS.session, {
           ...previousSession,
           filters: payload.filters !== undefined ? payload.filters : previousSession.filters,
           settings: payload.settings !== undefined ? payload.settings : previousSession.settings,

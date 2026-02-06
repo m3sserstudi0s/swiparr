@@ -26,7 +26,7 @@ function generateCode() {
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
-    if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
+  if (!session.isLoggedIn) return NextResponse.json(null);
 
     const body = await request.json();
     const validated = sessionActionSchema.safeParse(body);

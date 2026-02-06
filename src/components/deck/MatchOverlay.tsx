@@ -22,7 +22,7 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-5 flex flex-col items-center justify-center bg-background backdrop-blur-md overflow-visible"
+          className="fixed inset-0 z-5 flex flex-col items-center justify-center backdrop-blur-md overflow-visible"
         >
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
@@ -34,14 +34,14 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
             {/* Animated Heart Background */}
             <motion.div
               initial={{ scale: 0 }}
-              animate={{ scale: [1, 1.2, 1] }}
+              animate={{ scale: [1.2, 1.4, 1.2] }}
               transition={{ repeat: Infinity, duration: 2 }}
-              className="absolute -top-20 opacity-10 pointer-events-none"
+              className="absolute -top-20 opacity-100 pointer-events-none"
             >
               <Heart className="w-80 h-80 fill-primary text-primary" />
             </motion.div>
 
-            <h1 className="text-5xl font-black italic text-primary mb-2 drop-shadow-2xl tracking-tighter uppercase">
+            <h1 className="text-5xl font-black italic text-background mb-2 drop-shadow-2xl tracking-tighter uppercase">
               It's a match!
             </h1>
             <p className="text-muted-foreground text-lg mb-8 px-4">
@@ -76,7 +76,8 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
             >
               <Button
                 size="lg"
-                className="rounded-full text-lg h-12 w-40 font-bold shadow-lg shadow-primary/20"
+                variant={'secondary'}
+                className="rounded-full text-lg h-12 w-40 font-bold shadow-lg shadow-primary/20 hover:bg-background"
                 onClick={onClose}
               >
                 Continue
