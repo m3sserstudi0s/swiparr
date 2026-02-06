@@ -137,9 +137,7 @@ export function StreamingSettings() {
                             <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
                         </ComboboxTrigger>
                         <ComboboxContent container={container} className="min-w-40 z-1000">
-                            <div className="p-2 mt-2">
                                 <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
-                            </div>
                             <ComboboxEmpty>No region found</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
