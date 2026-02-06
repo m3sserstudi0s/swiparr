@@ -24,10 +24,13 @@ import {
   useLeaveSession 
 } from "@/hooks/api";
 import { apiClient } from "@/lib/api-client";
+import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
 
 export default function SessionContent() {
     const [inputCode, setInputCode] = useState("");
     const [isOpen, setIsOpen] = useState(false);
+    const [isFallbackOpen, setIsFallbackOpen] = useState(false);
+    const [fallbackValue, setFallbackValue] = useState("");
     const { settings } = useSettings();
 
     useHotkeys("m, c", () => setIsOpen(prev => !prev), []);
@@ -101,6 +104,13 @@ export default function SessionContent() {
         if (!activeCode) return;
         const { basePath } = getRuntimeConfig();
         const shareUrl = `${window.location.origin}${basePath}/?join=${activeCode}`;
+
+        if (!window.isSecureContext) {
+            setFallbackValue(shareUrl);
+            setIsFallbackOpen(true);
+            return;
+        }
+
         const shareData = {
             title: 'Swiparr session invite',
             text: `Join with code: ${activeCode}`,
@@ -112,14 +122,24 @@ export default function SessionContent() {
             } catch (err) {
                 console.log("Share cancelled");
             }
-        } else {
+        } else if (navigator.clipboard) {
             await navigator.clipboard.writeText(shareUrl);
             toast.success("Link copied to clipboard");
+        } else {
+            setFallbackValue(shareUrl);
+            setIsFallbackOpen(true);
         }
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <>
+            <SecureContextCopyFallback
+                open={isFallbackOpen}
+                onOpenChange={setIsFallbackOpen}
+                title="Share Session"
+                value={fallbackValue}
+            />
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="absolute left-6">
                 <Button variant="ghost" size="icon" className="text-foreground size-10 hover:bg-muted/30!">
                     <Users className="size-5" />
@@ -159,5 +179,6 @@ export default function SessionContent() {
                 />
             </SheetContent>
         </Sheet>
+        </>
     );
 }

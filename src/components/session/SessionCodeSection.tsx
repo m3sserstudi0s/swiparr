@@ -3,8 +3,10 @@ import { Input } from "@/components/ui/input";
 import { UserPlus, Plus, Share2, LogOut, Info, X, Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
 
 interface SessionCodeSectionProps {
+
   activeCode?: string;
   inputCode: string;
   setInputCode: (code: string) => void;
@@ -31,9 +33,14 @@ export function SessionCodeSection({
 }: SessionCodeSectionProps) {
 
   const [copied, setCopied] = useState(false);
+  const [isFallbackOpen, setIsFallbackOpen] = useState(false);
 
   const copyToClipboard = async () => {
     if (activeCode) {
+      if (!window.isSecureContext || !navigator.clipboard) {
+        setIsFallbackOpen(true);
+        return;
+      }
       await navigator.clipboard.writeText(activeCode);
       setCopied(true);
       toast.success("Code copied to clipboard");
@@ -42,7 +49,15 @@ export function SessionCodeSection({
   };
 
   return (
-    <div className="space-y-4">
+    <>
+      <SecureContextCopyFallback
+        open={isFallbackOpen}
+        onOpenChange={setIsFallbackOpen}
+        title="Copy Session Code"
+        value={activeCode || ""}
+      />
+      <div className="space-y-4">
+
       <div className="w-full p-6 rounded-xl bg-muted/50 border border-border flex flex-col justify-between h-44">
         <div className="h-6 flex items-center justify-center mb-2">
           {!activeCode ? (
@@ -127,5 +142,7 @@ export function SessionCodeSection({
         </div>
       </div>
     </div>
+    </>
   );
 }
+

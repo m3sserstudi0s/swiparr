@@ -17,6 +17,8 @@ import { AuthView } from "./AuthView";
 import { UniversalView } from "./UniversalView";
 import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
 import GradientText from "../GradientText";
+import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
+
 
 
 export default function LoginContent() {
@@ -37,10 +39,12 @@ export default function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [wasMadeAdmin, setWasMadeAdmin] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isFallbackOpen, setIsFallbackOpen] = useState(false);
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
+
 
   const sessionCodeParam = useMemo(() => {
     const directJoin = searchParams.get("join");
@@ -76,12 +80,17 @@ export default function LoginContent() {
 
   const copyToClipboard = async () => {
     if (qcCode) {
+      if (!window.isSecureContext || !navigator.clipboard) {
+        setIsFallbackOpen(true);
+        return;
+      }
       await navigator.clipboard.writeText(qcCode);
       setCopied(true);
       toast.success("Code copied to clipboard", { position: 'top-right' });
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
 
   const onAuthorized = useCallback((data?: any) => {
     if (data?.wasMadeAdmin) {
@@ -214,7 +223,15 @@ export default function LoginContent() {
   }, [wasMadeAdmin, selectedProvider, providerLock]);
 
   return (
-    <Card className={cn("w-full border-border bg-card text-card-foreground", !providerLock ? "max-w-sm" : "max-w-xs")}>
+    <>
+      <SecureContextCopyFallback
+        open={isFallbackOpen}
+        onOpenChange={setIsFallbackOpen}
+        title="Quick Connect Code"
+        value={qcCode || ""}
+      />
+      <Card className={cn("w-full border-border bg-card text-card-foreground", !providerLock ? "max-w-sm" : "max-w-xs")}>
+
       <CardHeader>
         <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager" />
         <CardTitle className="text-center text-3xl">
@@ -296,5 +313,7 @@ export default function LoginContent() {
         )}
       </CardContent>
     </Card>
+    </>
   );
 }
+
