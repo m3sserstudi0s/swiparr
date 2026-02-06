@@ -12,6 +12,7 @@ interface UniversalViewProps {
   setUsername: (val: string) => void;
   loading: boolean;
   handleLogin: (e: React.FormEvent) => void;
+  isJoining?: boolean;
 }
 
 export function UniversalView({
@@ -22,16 +23,19 @@ export function UniversalView({
   setUsername,
   loading,
   handleLogin,
+  isJoining,
 }: UniversalViewProps) {
   return (
     <div className="space-y-2">
       <CardDescription>
-        {providerLock
-          ? "Enter a name to start swiping"
-          : "Configure TMDB and enter a name"}
+        {isJoining 
+          ? "Enter a display name to join the session"
+          : (providerLock
+              ? "Enter a name to start swiping"
+              : "Configure TMDB and enter a name")}
       </CardDescription>
       <form onSubmit={handleLogin} className="space-y-5">
-        {!providerLock && (
+        {!providerLock && !isJoining && (
           <PasswordInput
             placeholder="TMDB API Read Access Token"
             value={tmdbToken}
@@ -49,7 +53,7 @@ export function UniversalView({
           autoFocus
         />
         <Button type="submit" className="w-full font-semibold" disabled={loading || !username}>
-          {loading ? "Starting..." : "Start"}
+          {loading ? (isJoining ? "Joining..." : "Starting...") : (isJoining ? "Join" : "Start")}
         </Button>
       </form>
     </div>

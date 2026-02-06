@@ -60,6 +60,17 @@ export default function LoginContent() {
   useEffect(() => {
     if (sessionCodeParam) {
       setGuestSessionCode(sessionCodeParam);
+      
+      // Fetch session provider to automatically switch to the correct UI
+      apiClient.get(`/api/session/provider?code=${sessionCodeParam}`)
+        .then(res => {
+          if (res.data.provider) {
+            setSelectedProvider(res.data.provider);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch session provider", err);
+        });
     }
   }, [sessionCodeParam]);
 
@@ -88,7 +99,17 @@ export default function LoginContent() {
     e.preventDefault();
     setLoading(true);
 
+    const isTmdbJoin = selectedProvider === "tmdb" && !!sessionCodeParam;
+
     const promise = async () => {
+      if (isTmdbJoin) {
+        const res = await apiClient.post("/api/auth/guest", { 
+          username, 
+          sessionCode: sessionCodeParam 
+        });
+        return res.data;
+      }
+
       const config: any = {};
       if (selectedProvider === ProviderType.JELLYFIN || selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY) {
         if (serverUrl) config.serverUrl = serverUrl;
@@ -106,21 +127,28 @@ export default function LoginContent() {
     };
 
     toast.promise(promise(), {
-      loading: selectedProvider !== "tmdb" ? "Logging in..." : "Initializing...",
+      loading: isTmdbJoin ? "Joining session..." : (selectedProvider !== "tmdb" ? "Logging in..." : "Initializing..."),
       success: (data) => {
         if (data.wasMadeAdmin) {
           setWasMadeAdmin(true);
           setLoading(false);
           return "Admin account initialized";
         }
-        const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
+        let callbackUrl = searchParams.get("callbackUrl");
+        if (!callbackUrl) {
+          callbackUrl = `${basePath}/`;
+          if (sessionCodeParam && !isTmdbJoin) {
+            callbackUrl += (callbackUrl.includes("?") ? "&" : "?") + `join=${sessionCodeParam}`;
+          }
+        }
         window.location.href = callbackUrl;
         setLoading(false);
+        if (isTmdbJoin) return `Joined as ${data.user.Name}`;
         return selectedProvider !== "tmdb" ? "Logged in successfully" : "Profile created";
       },
       error: (err) => {
         setLoading(false);
-        return { message: "Login failed", description: getErrorMessage(err, "Check your credentials") };
+        return { message: isTmdbJoin ? "Failed to join session" : "Login failed", description: getErrorMessage(err, isTmdbJoin ? undefined : "Check your credentials") };
       },
       position: 'top-right'
     });
@@ -235,6 +263,7 @@ export default function LoginContent() {
                 setUsername={setUsername}
                 loading={loading}
                 handleLogin={handleLogin}
+                isJoining={!!sessionCodeParam}
               />
             ) : (
               <AuthView
