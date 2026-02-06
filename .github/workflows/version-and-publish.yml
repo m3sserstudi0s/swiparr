@@ -5,10 +5,13 @@ on:
     paths-ignore:
       - 'package.json'
       - 'package-lock.json'
+      - '.github/workflows/version-and-publish.yml'
       - 'CHANGELOG.md'
       - 'README.md'
       - '.github/CONTRIBUTING.md'
+      - '.github/FUNDING.yml'
       - 'LICENSE'
+      - '.gitignore'
   workflow_dispatch:
 
 env:
