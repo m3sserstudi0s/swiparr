@@ -76,8 +76,6 @@ jobs:
           git push origin "$VERSION"
 
   sync_fork:
-    needs: version
-    if: needs.version.outputs.changes_detected == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
