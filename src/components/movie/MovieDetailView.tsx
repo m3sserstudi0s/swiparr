@@ -33,7 +33,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
   // 2. Define transforms based on that value (0 to 300px of scroll)
   const imgY = useTransform(scrollY, [0, 300], [0, 100]);
-  const imgOpacity = useTransform(scrollY, [0, 200], [0.7, 0.2]);
+  const imgOpacity = useTransform(scrollY, [0, 200], [0.85, 0.2]);
   const imgScale = useTransform(scrollY, [0, 300], [1, 1.1]);
 
   // Handle scroll event manually to update the motion value
@@ -182,7 +182,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
           onScroll={handleScroll} // Update motion value here
           className={cn(
             "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-3 no-scrollbar relative",
-            "mask-[linear-gradient(to_bottom,transparent_0%,black_60px,black_calc(100%-80px),transparent_100%)]"
+            "mask-[linear-gradient(to_bottom,transparent_0%,black_40px,black_calc(100%-80px),transparent_100%)]"
           )}>
 
           {isLoading ? (
@@ -234,7 +234,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     imageType="Primary"
                     width={75}
                     height={125}
-                    className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0"
+                    className="w-28 h-40 rounded-lg shadow-2xl shadow-background border border-foreground/10 object-cover z-10 shrink-0"
                     alt="Poster"
                   />
                   <div className="flex-1 mb-1 z-10 overflow-hidden">
