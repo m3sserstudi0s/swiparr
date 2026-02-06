@@ -16,7 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -
 
-## [1.1.78] - 2025-02-06
+## [1.0.0] - 2025-02-06
+
+This release rounds up all work from previous patches and features. It includes:
+- Better filters, and more stable features in general
+- TMDB (no media server needed), Emby, and Plex support (experimental)
+- BYOP (bring your own provider support) lets end users configure their provider
+- A better README, with instructions on how to auto deploy on Vercel (no server needed)
 
 ### Added
 - Emby provider support (experimental)
