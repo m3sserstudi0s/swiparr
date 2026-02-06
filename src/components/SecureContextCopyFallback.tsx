@@ -31,20 +31,17 @@ export function SecureContextCopyFallback({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            Automatic copy and sharing is disabled because Swiparr is not running in a secure context (HTTPS).
-          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <Alert variant="destructive">
+          <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Action Required</AlertTitle>
-            <AlertDescription>
-              Please manually select and copy the text below.
+            <AlertTitle>Manual copy required</AlertTitle>
+            <AlertDescription className="text-xs">
+              Automatic copy and sharing is disabled because Swiparr is not running in a secure context (HTTPS).
             </AlertDescription>
           </Alert>
           <div className="space-y-2">
-            <Label htmlFor="manual-copy">Copy this value</Label>
+            <Label htmlFor="manual-copy">Copy this text</Label>
             <Input
               id="manual-copy"
               value={value}
