@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
     const ids = likesResult.map((l: Like) => l.externalId);
     
     // We should ideally use the provider here to get full details for multiple IDs
-    // For now, I'll assume we can loop or the provider has a getMultiple method.
     // JellyfinProvider currently doesn't have getMultipleDetails, but we can call getItems with IDs if it supports it.
     
     // Let's add getItemsByIds to MediaProvider or just use getItemDetails in a loop (not ideal but safe for now)
@@ -47,7 +46,8 @@ export async function GET(request: NextRequest) {
         try {
             return await provider.getItemDetails(id, auth);
         } catch (error) {
-            console.warn(`Failed to fetch details for item ${id}:`, error instanceof Error ? error.message : error);
+            // TODO: Improve error handling here (for 404 when item does not exist in library anymore)
+            // console.warn(`Failed to fetch details for item ${id}:`, error instanceof Error ? error.message : error);
             return null;
         }
     });
