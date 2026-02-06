@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
 
     if (matches.length === 0) return NextResponse.json([]);
 
-    const ids = matches.map((m: Like) => m.externalId);
+    const ids = matches.map((m: any) => m.externalId);
     
-    const items = await Promise.all(ids.map(id => provider.getItemDetails(id, auth)));
+    const items = await Promise.all(ids.map((id: any) => provider.getItemDetails(id, auth)));
 
     // Fetch all likes for these items in this session to know who liked what
     const allLikesInSession = await db.query.likes.findMany({
@@ -42,10 +42,10 @@ export async function GET(request: NextRequest) {
 
     // Map likes to items
     const itemsWithLikes = items.map((item: any) => {
-        const itemLikes = allLikesInSession.filter(l => l.externalId === item.Id);
+        const itemLikes = allLikesInSession.filter((l: any) => l.externalId === item.Id);
         return {
             ...item,
-            likedBy: itemLikes.map(l => ({
+            likedBy: itemLikes.map((l: any) => ({
                 userId: l.externalUserId,
             }))
         };
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         ...item,
         likedBy: item.likedBy.map((lb: any) => ({
             ...lb,
-            userName: members.find(m => m.externalUserId === lb.userId)?.externalUserName || "Unknown"
+            userName: members.find((m: any) => m.externalUserId === lb.userId)?.externalUserName || "Unknown"
         }))
     }));
 

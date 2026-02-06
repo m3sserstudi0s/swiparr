@@ -142,9 +142,9 @@ export async function POST(request: NextRequest) {
             })
         ]);
 
-        likedBy = itemLikes.map(l => ({
+        likedBy = itemLikes.map((l: any) => ({
             userId: l.externalUserId,
-            userName: members.find(m => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown"
+            userName: members.find((m: any) => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown"
         }));
     }
 

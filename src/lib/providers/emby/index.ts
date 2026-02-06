@@ -25,6 +25,8 @@ export class EmbyProvider implements MediaProvider {
     hasSettings: true,
     requiresServerUrl: true,
     isExperimental: true,
+    hasStreamingSettings: false,
+    isAdminPanel: true,
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {

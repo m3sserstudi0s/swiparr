@@ -30,6 +30,8 @@ export class TmdbProvider implements MediaProvider {
     hasSettings: true,
     requiresServerUrl: false,
     isExperimental: false,
+    hasStreamingSettings: true,
+    isAdminPanel: false,
   };
 
   constructor(token?: string) {

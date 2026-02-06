@@ -24,7 +24,7 @@ export async function POST() {
             eq(likes.externalUserId, userId)
         )
     });
-    const likedItemIds = userLikes.map(l => l.externalId);
+    const likedItemIds = userLikes.map((l: any) => l.externalId);
 
     // 1. Remove member from session
     await db.delete(sessionMembers).where(

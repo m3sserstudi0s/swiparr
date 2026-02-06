@@ -43,11 +43,11 @@ export async function GET(request: NextRequest) {
     // JellyfinProvider currently doesn't have getMultipleDetails, but we can call getItems with IDs if it supports it.
     
     // Let's add getItemsByIds to MediaProvider or just use getItemDetails in a loop (not ideal but safe for now)
-    const items = await Promise.all(ids.map(id => provider.getItemDetails(id, auth)));
+    const items = await Promise.all(ids.map((id: any) => provider.getItemDetails(id, auth)));
 
     // Fetch all likes in this session for these items to identify contributors
     // Only if we have session items
-    const sessionCodes = [...new Set(likesResult.map(l => l.sessionCode).filter(Boolean))];
+    const sessionCodes = [...new Set(likesResult.map((l: any) => l.sessionCode).filter(Boolean))];
     let allRelatedLikes: any[] = [];
     let members: any[] = [];
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         allRelatedLikes = await db.query.likes.findMany({
             where: and(
                 inArray(likesTable.sessionCode, sessionCodes as string[]),
-                inArray(likesTable.externalId, items.map(i => i.Id))
+                inArray(likesTable.externalId, items.map((i: any) => i.Id))
             )
         });
         members = await db.query.sessionMembers.findMany({
@@ -65,16 +65,16 @@ export async function GET(request: NextRequest) {
 
     let merged: MergedLike[] = items.map((item: MediaItem) => {
         const likeData = likesResult.find((l: Like) => l.externalId === item.Id);
-        const itemLikes = allRelatedLikes.filter(l => l.externalId === item.Id && l.sessionCode === likeData?.sessionCode);
+        const itemLikes = allRelatedLikes.filter((l: any) => l.externalId === item.Id && l.sessionCode === likeData?.sessionCode);
         
         return {
             ...item,
             swipedAt: likeData?.createdAt,
             sessionCode: likeData?.sessionCode,
             isMatch: likeData?.isMatch ?? false,
-            likedBy: itemLikes.map(l => ({
+            likedBy: itemLikes.map((l: any) => ({
                 userId: l.externalUserId,
-                userName: members.find(m => m.externalUserId === l.externalUserId && m.sessionCode === l.sessionCode)?.externalUserName || "Unknown"
+                userName: members.find((m: any) => m.externalUserId === l.externalUserId && m.sessionCode === l.sessionCode)?.externalUserName || "Unknown"
             }))
         };
     });

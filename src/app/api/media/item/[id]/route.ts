@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             });
         }
 
-        item.likedBy = itemLikes.map(l => ({
+        item.likedBy = itemLikes.map((l: any) => ({
             userId: l.externalUserId,
             userName: session.sessionCode 
                 ? (members.find(m => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown")

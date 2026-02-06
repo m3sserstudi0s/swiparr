@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     if (!wantAll && accumulatedProviderIds.length > 0) {
         const filteredProviders = allProviders
             .filter(p => accumulatedProviderIds.includes(p.Id))
-            .map(p => ({
+            .map((p: any) => ({
                 ...p,
                 MemberUserIds: memberSelections[p.Id] || []
             }));

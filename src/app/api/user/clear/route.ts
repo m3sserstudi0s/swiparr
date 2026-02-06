@@ -19,7 +19,7 @@ export async function POST() {
   try {
     // 1. Find sessions hosted by this user
     const userSessions = await db.select().from(sessionsTable).where(eq(sessionsTable.hostUserId, userId));
-    const sessionCodes = userSessions.map(s => s.code);
+    const sessionCodes = userSessions.map((s: any) => s.code);
 
     // 2. Clear all likes/hiddens associated with those sessions (even from other users)
     // to avoid FK violations when deleting the session
