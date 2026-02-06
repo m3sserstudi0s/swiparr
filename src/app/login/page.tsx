@@ -1,6 +1,6 @@
 "use client";
 import { Footer } from "@/components/Footer";
-import LightRays from "@/components/login/LightRays";
+import LightRays from "@/components/ui/LightRays";
 import LoginContent from "@/components/login/LoginContent";
 import { Loader2 } from "lucide-react";
 import { Suspense } from "react";

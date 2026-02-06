@@ -16,7 +16,7 @@ import { AdminInitializedView } from "./AdminInitializedView";
 import { AuthView } from "./AuthView";
 import { UniversalView } from "./UniversalView";
 import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
-import GradientText from "../GradientText";
+import GradientText from "../ui/GradientText";
 import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
 
 
