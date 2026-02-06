@@ -24,13 +24,13 @@ export function UniversalView({
   handleLogin,
 }: UniversalViewProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <CardDescription>
         {providerLock
           ? "Enter a name to start swiping"
           : "Configure TMDB and enter a name"}
       </CardDescription>
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-5">
         {!providerLock && (
           <PasswordInput
             placeholder="TMDB API Read Access Token"

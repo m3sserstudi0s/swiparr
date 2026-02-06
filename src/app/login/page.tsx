@@ -2,9 +2,11 @@
 import { Footer } from "@/components/Footer";
 import LightRays from "@/components/login/LightRays";
 import LoginContent from "@/components/login/LoginContent";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import { Suspense } from "react";
 
 export default function LoginPage() {
+  const isSmallDevice = useMediaQuery("only screen and (max-width : 768px)");
   return (
     <div className="flex h-svh w-full items-center justify-center p-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <Suspense fallback={<div className="text-foreground">Loading...</div>}>
@@ -15,7 +17,7 @@ export default function LoginPage() {
             followMouse={false}
             raysSpeed={0.5}
             lightSpread={0.9}
-            fadeDistance={0.2}
+            fadeDistance={isSmallDevice ? 100 : 0.5}
             />
         </div>
       </Suspense>

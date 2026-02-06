@@ -16,6 +16,7 @@ import { AdminInitializedView } from "./AdminInitializedView";
 import { AuthView } from "./AuthView";
 import { UniversalView } from "./UniversalView";
 import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
+import GradientText from "../GradientText";
 
 
 export default function LoginContent() {
@@ -188,8 +189,15 @@ export default function LoginContent() {
     <Card className={cn("w-full border-border bg-card text-card-foreground", !providerLock ? "max-w-sm" : "max-w-xs")}>
       <CardHeader>
         <Image src={logo} alt="Logo" className="size-16 mx-auto mb-2" loading="eager" />
-        <CardTitle className="text-center text-2xl font-bold text-primary">
-          Swiparr
+        <CardTitle className="text-center text-3xl">
+          <GradientText
+            colors={["#f0f0f0", "#999999"]}
+            direction="horizontal"
+            animationSpeed={8}
+            showBorder={false}
+          >
+           Swiparr
+          </GradientText>
         </CardTitle>
       </CardHeader>
       <CardContent className={cn("transition-all duration-300", contentHeight, !providerLock && "px-5")}>
@@ -204,19 +212,19 @@ export default function LoginContent() {
               <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
                 <TabsList className="grid w-full grid-cols-4 h-9">
                   <TabsTrigger value="jellyfin" className="text-xs font-semibold">
-                    <SiJellyfin/>
+                    <SiJellyfin />
                     Jellyfin
                   </TabsTrigger>
                   <TabsTrigger value="emby" className="text-xs font-semibold">
-                    <SiEmby/>
+                    <SiEmby />
                     Emby
                   </TabsTrigger>
                   <TabsTrigger value="plex" className="text-xs font-semibold">
-                    <SiPlex/>
+                    <SiPlex />
                     Plex
                   </TabsTrigger>
                   <TabsTrigger value="tmdb" className="text-xs font-semibold">
-                    <SiThemoviedatabase/>
+                    <SiThemoviedatabase />
                     TMDB
                   </TabsTrigger>
                 </TabsList>
