@@ -51,13 +51,6 @@ export function SmoothAvatar({ userId, userName, className, fallbackClassName, s
                     {userName.substring(0, 1).toUpperCase()}
                 </AvatarFallback>
             )}
-            
-            {/* If we haven't loaded yet and haven't errored, we don't show the fallback yet to avoid the flash */}
-            {!isLoaded && imageError && (
-                 <AvatarFallback className={cn("font-semibold", fallbackClassName)}>
-                    {userName.substring(0, 1).toUpperCase()}
-                </AvatarFallback>
-            )}
         </Avatar>
     );
 }

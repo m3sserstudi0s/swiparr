@@ -34,17 +34,42 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { basePath } = await getAsyncRuntimeConfig();
+  const url = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
   return {
+    metadataBase: new URL(url),
     title: "Swiparr",
-    description: "Swipe on your Jellyfin media",
+    description: "Swipe on movies.",
     appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
     icons: {
       icon: `${basePath}/favicon.ico`,     
       shortcut: `${basePath}/icon1.png`,   
       apple: `${basePath}/apple-icon.png`,
     },
+    openGraph: {
+      title: "Swiparr",
+      description: "Swipe on movies.",
+      url: url,
+      siteName: "Swiparr",
+      images: [
+        {
+          url: `${basePath}/icon1.png`,
+          width: 512,
+          height: 512,
+        },
+      ],
+      locale: "en_US",
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: "Swiparr",
+      description: "Swipe on movies.",
+      images: [`${basePath}/icon1.png`],
+    },
   };
 }
+
 
 export default async function RootLayout({
   children,

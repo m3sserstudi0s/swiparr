@@ -147,9 +147,6 @@ export function ProfilePicturePicker({
                 onClick={triggerFilePicker}
             >
                 <Avatar className="size-full">
-                    {hasImage && !imageLoaded && (
-                        <Skeleton className="absolute inset-0 size-full rounded-full animate-pulse z-5" />
-                    )}
                     <AvatarImage 
                         src={preview || (!removed ? currentImage : undefined)} 
                         className={cn("object-cover transition-opacity duration-300", actuallyShowingImage ? "opacity-100" : "opacity-0")}
