@@ -11,7 +11,7 @@
 <p align="center">
   Swiparr turns the dreaded "what should we watch?" question into a fun, collaborative experience. 
   <br>
-  Like Tinder for movies & shows, but smarter and works for groups.
+  Like Tinder for movies, but smarter and works for groups.
 </p>
 
 <p align="center">
@@ -38,7 +38,7 @@ We all know the struggle: 30 minutes of "what should we watch?" that ends with w
 ## ✨ Features at a Glance
 
 ### 🎬 Content Discovery
-- **Intuitive Swipe Interface** - Browse movies & shows with a familiar card-based design
+- **Intuitive Swipe Interface** - Browse movies with a familiar card-based design
 - **Multi-Provider Support** - Works with Jellyfin, Emby, Plex, or TMDB directly
 - **Smart Matching** - Automatically finds content everyone in your group will enjoy
 - **Mobile-First** - Optimized for phones, with desktop keyboard shortcuts
