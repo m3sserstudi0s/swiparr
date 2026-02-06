@@ -1,9 +1,7 @@
 name: Version and Publish
-
 on:
   push:
-    branches:
-      - master
+    branches: [master]
     paths-ignore:
       - 'package.json'
       - 'package-lock.json'
@@ -18,22 +16,21 @@ env:
   IMAGE_NAME: m3sserstudi0s/swiparr
 
 jobs:
-  version-and-build:
-    # Prevents running this on my own fork
+  version:
     if: github.repository != 'jakobbjelver/swiparr'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
-
+    outputs:
+      changes_detected: ${{ steps.auto-commit.outputs.changes_detected }}
+      new_version: ${{ steps.npm-version.outputs.new_version }}
+      version_number: ${{ steps.npm-version.outputs.version_number }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '24'
 
@@ -69,32 +66,41 @@ jobs:
         if: steps.auto-commit.outputs.changes_detected == 'true'
         run: |
           VERSION=${{ steps.npm-version.outputs.new_version }}
-          git tag $VERSION ${{ steps.auto-commit.outputs.commit_hash }}
-          git push origin $VERSION
+          git tag "$VERSION" ${{ steps.auto-commit.outputs.commit_hash }}
+          git push origin "$VERSION"
 
-      # ---- Fork Sync ----
+  sync_fork:
+    needs: version
+    if: needs.version.outputs.changes_detected == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Sync fork
-        if: github.ref == 'refs/heads/master'
+      - name: Sync fork (branch + tags)
         env:
           SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
         run: |
           FORK_URL="https://x-access-token:${SYNC_TOKEN}@github.com/jakobbjelver/swiparr.git"
 
-          # Override the auth header that checkout configures, for THIS command only
+          # Important: override the checkout-injected auth header for these pushes
           git -c http.https://github.com/.extraheader= push "$FORK_URL" HEAD:master --force
           git -c http.https://github.com/.extraheader= push "$FORK_URL" --tags --force
 
-      # ---- Docker Build & Publish ----
+  build_and_publish:
+    needs: [version, sync_fork]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -107,15 +113,14 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=raw,value=${{ steps.npm-version.outputs.new_version }}
-            type=raw,value=${{ steps.npm-version.outputs.version_number }}
+            type=raw,value=${{ needs.version.outputs.new_version }}
+            type=raw,value=${{ needs.version.outputs.version_number }}
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6
         with:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            APP_VERSION=${{ steps.npm-version.outputs.new_version }}
+            APP_VERSION=${{ needs.version.outputs.new_version }}
