@@ -23,6 +23,7 @@ This release rounds up all work from previous patches and features. It includes:
 - TMDB (no media server needed), Emby, and Plex support (experimental)
 - BYOP (bring your own provider support) lets end users configure their provider
 - A better README, with instructions on how to auto deploy on Vercel (no server needed)
+- Improved error handling
 
 ### Added
 - Emby provider support (experimental)
