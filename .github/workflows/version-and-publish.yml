@@ -31,6 +31,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -76,10 +77,14 @@ jobs:
 
       - name: Sync fork
         if: github.ref == 'refs/heads/master'
+        env:
+          SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
         run: |
-          git remote add fork https://x-access-token:${{ secrets.FORK_SYNC_TOKEN }}@github.com/jakobbjelver/swiparr.git
-          git push fork master --force
-          git push fork --tags --force
+          # Just in case anything set an extraheader anyway
+          git config --local --unset-all http.https://github.com/.extraheader || true
+
+          git push "https://x-access-token:${SYNC_TOKEN}@github.com/jakobbjelver/swiparr.git" HEAD:master --force
+          git push "https://x-access-token:${SYNC_TOKEN}@github.com/jakobbjelver/swiparr.git" --tags --force
 
       # ---- Docker Build & Publish ----
 
