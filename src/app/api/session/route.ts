@@ -206,7 +206,7 @@ export async function GET() {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   
-  if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
+  if (!session.isLoggedIn) return NextResponse.json(null);
 
   let effectiveUserId = null;
   let activeProvider = session.user.provider || ProviderType.JELLYFIN;

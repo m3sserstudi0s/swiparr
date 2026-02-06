@@ -7,8 +7,15 @@ export function useSession() {
   return useQuery<SessionStatus | null>({
     queryKey: QUERY_KEYS.session,
     queryFn: async () => {
-      const res = await apiClient.get<SessionStatus | null>("/api/session");
-      return res.data;
+      try {
+        const res = await apiClient.get<SessionStatus | null>("/api/session");
+        return res.data;
+      } catch (err: any) {
+        if (err.response?.status === 401 || err.response?.status === 404) {
+          return null;
+        }
+        throw err;
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

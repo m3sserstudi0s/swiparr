@@ -38,13 +38,40 @@ export async function POST(request: NextRequest) {
         if (!code && !capabilities.hasAuth) {
             // TMDB mode: Create a new session if no code provided
             code = generateCode();
+            const hostId = `user-${uuidv4()}`;
             await db.insert(sessions).values({
                 id: uuidv4(),
                 code,
-                hostUserId: `guest-${uuidv4()}`, // Temporary ID, will be overwritten by guestId below
+                hostUserId: hostId, 
                 hostAccessToken: null,
                 hostDeviceId: "guest-device",
+                provider: "tmdb",
             });
+            
+            const cookieStore = await cookies();
+            const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
+
+            session.user = {
+                Id: hostId,
+                Name: username,
+                AccessToken: "", 
+                DeviceId: "guest-device",
+                isGuest: false,
+                provider: "tmdb",
+            };
+            session.isLoggedIn = true;
+            session.sessionCode = code;
+            await session.save();
+
+            // Register as member
+            await db.insert(sessionMembers).values({
+                sessionCode: code,
+                externalUserId: hostId,
+                externalUserName: username,
+            });
+
+            events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+            return NextResponse.json({ success: true, user: session.user });
         }
 
         if (!code) {
@@ -63,7 +90,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "This session does not allow guest lending" }, { status: 403 });
         }
 
-        const guestId = `guest-${uuidv4()}`;
+        const isGuest = capabilities.hasAuth;
+        const guestId = `${isGuest ? 'guest' : 'user'}-${uuidv4()}`;
         
         const cookieStore = await cookies();
         const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
@@ -71,21 +99,18 @@ export async function POST(request: NextRequest) {
         session.user = {
             Id: guestId,
             Name: username,
-            AccessToken: "", // Guests don't have their own token
+            AccessToken: "", 
             DeviceId: "guest-device",
-            isGuest: true,
+            isGuest: isGuest,
+            provider: isGuest ? undefined : (existingSession.provider || "tmdb"),
+            providerConfig: existingSession.providerConfig ? JSON.parse(existingSession.providerConfig) : undefined,
         };
         session.isLoggedIn = true;
         session.sessionCode = code;
     
         await session.save();
 
-        // If this was a newly created session in TMDB mode, update the hostUserId
-        if (!sessionCode && !capabilities.hasAuth) {
-            await db.update(sessions).set({ hostUserId: guestId }).where(eq(sessions.code, code));
-        }
-
-        // Register guest as member
+        // Register member
         try {
             await db.insert(sessionMembers).values({
                 sessionCode: code,
