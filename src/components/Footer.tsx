@@ -12,11 +12,11 @@ export function Footer({ className }: FooterProps) {
                 Support
             </a>
             <span className="mx-2">•</span>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors whitespace-nowrap">
                 Open Source
             </a>
             <span className="mx-2">•</span>
-            <a href={MESSER_STUDIOS_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+            <a href={MESSER_STUDIOS_URL} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors whitespace-nowrap">
                 Messer Studios
             </a>
         </div>
