@@ -3,8 +3,10 @@ import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
+import { TouchProvider } from '@/components/ui/hybrid-tooltip'
 
 export const dynamic = 'force-dynamic';
+
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -70,8 +72,11 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <TouchProvider>
+            {children}
+          </TouchProvider>
         </Providers>
+
       </body>
     </html>
   )

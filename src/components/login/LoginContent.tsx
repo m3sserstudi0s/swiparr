@@ -36,7 +36,9 @@ export default function LoginContent() {
   const [tmdbToken, setTmdbToken] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestSessionCode, setGuestSessionCode] = useState("");
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
   const [wasMadeAdmin, setWasMadeAdmin] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isFallbackOpen, setIsFallbackOpen] = useState(false);
@@ -114,7 +116,8 @@ export default function LoginContent() {
       if (isTmdbJoin) {
         const res = await apiClient.post("/api/auth/guest", { 
           username, 
-          sessionCode: sessionCodeParam 
+          sessionCode: sessionCodeParam,
+          profilePicture: profilePicture || undefined
         });
         return res.data;
       }
@@ -130,9 +133,11 @@ export default function LoginContent() {
         username,
         password,
         provider: providerLock ? undefined : selectedProvider,
-        config: providerLock ? undefined : config
+        config: providerLock ? undefined : config,
+        profilePicture: profilePicture || undefined
       });
       return res.data;
+
     };
 
     toast.promise(promise(), {
@@ -170,9 +175,14 @@ export default function LoginContent() {
     setLoading(true);
 
     const promise = async () => {
-      const res = await apiClient.post("/api/auth/guest", { username: guestName, sessionCode: code });
+      const res = await apiClient.post("/api/auth/guest", { 
+        username: guestName, 
+        sessionCode: code,
+        profilePicture: profilePicture || undefined
+      });
       return res.data;
     };
+
 
     toast.promise(promise(), {
       loading: "Joining as guest...",
@@ -218,7 +228,7 @@ export default function LoginContent() {
 
   const contentHeight = useMemo(() => {
     if (wasMadeAdmin) return "h-auto";
-    if (selectedProvider === "tmdb") return !providerLock ? "h-60" : "h-40";
+    if (selectedProvider === "tmdb") return !providerLock ? "h-80" : "h-60";
     return !providerLock ? "h-[420px]" : "h-80";
   }, [wasMadeAdmin, selectedProvider, providerLock]);
 
@@ -281,6 +291,7 @@ export default function LoginContent() {
                 loading={loading}
                 handleLogin={handleLogin}
                 isJoining={!!sessionCodeParam}
+                onProfilePictureChange={setProfilePicture}
               />
             ) : (
               <AuthView
@@ -307,8 +318,10 @@ export default function LoginContent() {
                 sessionCodeParam={sessionCodeParam}
                 hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === ProviderType.JELLYFIN)}
                 isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
+                onProfilePictureChange={setProfilePicture}
               />
             )}
+
           </div>
         )}
       </CardContent>

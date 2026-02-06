@@ -18,8 +18,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "Invalid input" }, { status: 400 });
         }
 
-        const { username, password, provider: bodyProvider, config: providerConfig } = validated.data;
+        const { username, password, provider: bodyProvider, config: providerConfig, profilePicture } = validated.data;
         usernameForLog = username;
+
 
         const baseDeviceId = crypto.randomUUID();
         const deviceId = `${baseDeviceId}-${username}`;
@@ -59,8 +60,20 @@ export async function POST(request: NextRequest) {
             providerConfig: providerConfig,
         };
         session.isLoggedIn = true;
+
+        if (profilePicture) {
+            try {
+                const { saveProfilePicture } = await import("@/lib/server/profile-picture");
+                const base64Data = profilePicture.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                await saveProfilePicture(userId, buffer, "image/webp");
+            } catch (e) {
+                console.error("[Auth] Failed to save profile picture:", e);
+            }
+        }
     
     await session.save();
+
     console.log("[Auth] Session cookie saved.");
 
     return NextResponse.json({ success: true, user: session.user, wasMadeAdmin });

@@ -30,7 +30,11 @@ export interface SessionStatus {
   capabilities: ProviderCapabilities;
   serverUrl?: string;
   settingsHash?: string;
+  hasCustomProfilePicture?: boolean;
+  profileUpdatedAt?: string | null;
+  globalVersion?: number;
 }
+
 
 export interface MergedLike extends MediaItem {
   swipedAt?: string;

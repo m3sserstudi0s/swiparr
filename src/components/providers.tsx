@@ -3,8 +3,9 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TooltipProvider } from "./ui/tooltip";
+import { HybridTooltipProvider } from "./ui/hybrid-tooltip";
 import { MovieDetailProvider } from "./movie/MovieDetailProvider";
+
 import { Toaster } from "@/components/ui/sonner"
 import { useUpdates } from "@/lib/use-updates";
 
@@ -22,14 +23,15 @@ export function Providers({
   return (
     <QueryClientProvider client={queryClient}>
       <NextThemesProvider {...props}>
-        <TooltipProvider>
+        <HybridTooltipProvider>
           <MovieDetailProvider>
             <Toaster position='bottom-right'/>
             <UpdatesSubscriber />
             {children}
           </MovieDetailProvider>
-        </TooltipProvider>
+        </HybridTooltipProvider>
       </NextThemesProvider>
+
     </QueryClientProvider>
   )
 }

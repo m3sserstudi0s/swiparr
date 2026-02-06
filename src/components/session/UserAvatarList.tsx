@@ -1,8 +1,10 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { SmoothAvatar } from "@/components/ui/smooth-avatar";
+import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "@/components/ui/hybrid-tooltip";
 import { cn } from "@/lib/utils";
+
 
 interface Member {
     userId: string;
@@ -43,29 +45,29 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
     return (
         <div className={cn("flex overflow-hidden", overlapClasses[size], className)}>
             {displayUsers.map((user, index) => (
-                <Tooltip key={user.userId}>
-                    <TooltipTrigger asChild>
-                        <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
-                            <AvatarImage src={`/api/media/image/${user.userId}?type=user`} />
-                            <AvatarFallback
-                                className={cn(
+                <HybridTooltip key={user.userId}>
+                    <HybridTooltipTrigger asChild>
+                        <div className={cn("inline-block border-2 border-background/20 rounded-full", sizeClasses[size])}>
+                            <SmoothAvatar 
+                                userId={user.userId} 
+                                userName={user.userName} 
+                                className="size-full"
+                                fallbackClassName={cn(
                                     "font-semibold",
                                     size === "sm" ? "text-[10px]" : "text-sm",
                                     grays[index % grays.length]
                                 )}
-                            >
-                                {user.userName.substring(0, 1).toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                    </TooltipTrigger>
-                    <TooltipContent>
+                            />
+                        </div>
+                    </HybridTooltipTrigger>
+                    <HybridTooltipContent>
                         <p>{user.userName}</p>
-                    </TooltipContent>
-                </Tooltip>
+                    </HybridTooltipContent>
+                </HybridTooltip>
             ))}
             {remainingCount > 0 && (
-                <Tooltip>
-                    <TooltipTrigger asChild>
+                <HybridTooltip>
+                    <HybridTooltipTrigger asChild>
                         <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
                             <AvatarFallback
                                 className={cn(
@@ -76,12 +78,13 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                                 +{remainingCount}
                             </AvatarFallback>
                         </Avatar>
-                    </TooltipTrigger>
-                    <TooltipContent>
+                    </HybridTooltipTrigger>
+                    <HybridTooltipContent>
                         <p>{users.slice(maxVisible).map(u => u.userName).join(", ")}</p>
-                    </TooltipContent>
-                </Tooltip>
+                    </HybridTooltipContent>
+                </HybridTooltip>
             )}
+
         </div>
     );
 }

@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "Invalid input" }, { status: 400 });
         }
 
-        const { username, sessionCode } = validated.data;
+        const { username, sessionCode, profilePicture } = validated.data;
+
 
         let code = sessionCode?.toUpperCase();
         
@@ -59,9 +60,21 @@ export async function POST(request: NextRequest) {
                 isGuest: false,
                 provider: "tmdb",
             };
-            session.isLoggedIn = true;
-            session.sessionCode = code;
-            await session.save();
+        session.isLoggedIn = true;
+        session.sessionCode = code;
+
+        if (profilePicture) {
+            try {
+                const { saveProfilePicture } = await import("@/lib/server/profile-picture");
+                const base64Data = profilePicture.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                await saveProfilePicture(hostId, buffer, "image/webp");
+            } catch (e) {
+                console.error("[Guest Auth] Failed to save profile picture:", e);
+            }
+        }
+
+        await session.save();
 
             // Register as member
             await db.insert(sessionMembers).values({
@@ -108,6 +121,17 @@ export async function POST(request: NextRequest) {
         session.isLoggedIn = true;
         session.sessionCode = code;
     
+        if (profilePicture) {
+            try {
+                const { saveProfilePicture } = await import("@/lib/server/profile-picture");
+                const base64Data = profilePicture.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                await saveProfilePicture(guestId, buffer, "image/webp");
+            } catch (e) {
+                console.error("[Guest Auth] Failed to save profile picture:", e);
+            }
+        }
+
         await session.save();
 
         // Register member

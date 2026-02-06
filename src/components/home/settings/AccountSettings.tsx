@@ -7,10 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "@/hooks/api";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { ProfilePicturePicker } from "../../profile/ProfilePicturePicker";
+import { apiClient } from "@/lib/api-client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function AccountSettings() {
     const { data: sessionStatus, isLoading } = useSession();
     const runtimeConfig = useRuntimeConfig();
+    const queryClient = useQueryClient();
+
 
     if (isLoading || !sessionStatus) {
         return (
@@ -26,21 +31,35 @@ export function AccountSettings() {
         );
     }
 
-    const { userName, userId, isGuest, isAdmin, provider } = sessionStatus;
+    const { userName, userId, isGuest, isAdmin, provider, hasCustomProfilePicture, globalVersion } = sessionStatus;
     const { capabilities, provider: runtimeProvider } = runtimeConfig;
     const activeProvider = provider || runtimeProvider;
 
+    const handleUpload = async (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        await apiClient.post("/api/user/profile-picture", formData);
+        // Refresh session/images
+        queryClient.invalidateQueries({ queryKey: ["session"] });
+    };
+
+    const handleDelete = async () => {
+        await apiClient.delete("/api/user/profile-picture");
+        // Refresh session/images
+        queryClient.invalidateQueries({ queryKey: ["session"] });
+    };
+
     return (
         <SettingsSection title="Profile">
-            <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
-                <Avatar className="inline-block">
-                    <AvatarImage src={`/api/media/image/${userId}?type=user`} />
-                    <AvatarFallback
-                        className="font-semibold"
-                    >
-                        {userName.substring(0, 1).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
+            <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/50">
+                <ProfilePicturePicker 
+                    currentImage={`/api/media/image/${userId}?type=user&v=${globalVersion || 0}`}
+                    hasCustomImage={hasCustomProfilePicture}
+                    userName={userName}
+                    onUpload={handleUpload}
+                    onDelete={handleDelete}
+                    size="sm"
+                />
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                         <span className="text-base font-medium truncate">{userName}</span>
@@ -73,3 +92,4 @@ export function AccountSettings() {
         </SettingsSection>
     );
 }
+

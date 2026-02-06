@@ -57,6 +57,13 @@
       "when": 1770154050300,
       "tag": "0007_mixed_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1770386782020,
+      "tag": "0008_warm_ultimatum",
+      "breakpoints": true
     }
   ]
 }

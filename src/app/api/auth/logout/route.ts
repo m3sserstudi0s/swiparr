@@ -3,19 +3,33 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { db, sessions, sessionMembers, likes, hiddens } from "@/lib/db";
+import { db, sessions, sessionMembers, likes, hiddens, userProfiles } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { SessionSettings } from "@/types";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function POST() {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
-  if (session.sessionCode && session.user?.Id) {
-    const code = session.sessionCode;
+  if (session.user?.Id) {
     const userId = session.user.Id;
-    const userName = session.user.Name;
+    const provider = session.user.provider;
+
+    // Delete profile picture if it's a guest or TMDB user (no persistent auth)
+    if (session.user.isGuest || provider === "tmdb") {
+      try {
+        await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
+      } catch (e) {
+        console.error("Failed to cleanup profile picture on logout", e);
+      }
+    }
+
+    if (session.sessionCode) {
+      const code = session.sessionCode;
+      const userName = session.user.Name;
+
 
     // 0. Find items this user liked in this session
     const userLikes = await db.query.likes.findMany({
@@ -53,49 +67,51 @@ export async function POST() {
         where: eq(sessionMembers.sessionCode, code),
     });
 
-    if (remainingMembers.length === 0) {
-        // 3. Delete session if no members left
-        await db.delete(sessions).where(eq(sessions.code, code));
-    } else {
-        // 4. Re-evaluate matches for the items the user liked
-        if (likedItemIds.length > 0) {
-            const currentSession = await db.query.sessions.findFirst({
-                where: eq(sessions.code, code)
-            });
-            const settings: SessionSettings = currentSession?.settings ? JSON.parse(currentSession.settings) : {};
-            const matchStrategy = settings.matchStrategy || "atLeastTwo";
-            const numMembers = remainingMembers.length;
-
-            for (const itemId of likedItemIds) {
-                const remainingItemLikes = await db.query.likes.findMany({
-                    where: and(
-                        eq(likes.sessionCode, code),
-                        eq(likes.externalId, itemId)
-                    )
+        if (remainingMembers.length === 0) {
+            // 3. Delete session if no members left
+            await db.delete(sessions).where(eq(sessions.code, code));
+        } else {
+            // 4. Re-evaluate matches for the items the user liked
+            if (likedItemIds.length > 0) {
+                const currentSession = await db.query.sessions.findFirst({
+                    where: eq(sessions.code, code)
                 });
+                const settings: SessionSettings = currentSession?.settings ? JSON.parse(currentSession.settings) : {};
+                const matchStrategy = settings.matchStrategy || "atLeastTwo";
+                const numMembers = remainingMembers.length;
 
-                let stillAMatch = false;
-                if (matchStrategy === "atLeastTwo") {
-                    stillAMatch = remainingItemLikes.length >= 2;
-                } else if (matchStrategy === "allMembers") {
-                    stillAMatch = remainingItemLikes.length >= numMembers && numMembers > 0;
-                }
-
-                if (!stillAMatch) {
-                    await db.update(likes)
-                        .set({ isMatch: false })
-                        .where(and(
+                for (const itemId of likedItemIds) {
+                    const remainingItemLikes = await db.query.likes.findMany({
+                        where: and(
                             eq(likes.sessionCode, code),
                             eq(likes.externalId, itemId)
-                        ));
+                        )
+                    });
+
+                    let stillAMatch = false;
+                    if (matchStrategy === "atLeastTwo") {
+                        stillAMatch = remainingItemLikes.length >= 2;
+                    } else if (matchStrategy === "allMembers") {
+                        stillAMatch = remainingItemLikes.length >= numMembers && numMembers > 0;
+                    }
+
+                    if (!stillAMatch) {
+                        await db.update(likes)
+                            .set({ isMatch: false })
+                            .where(and(
+                                eq(likes.sessionCode, code),
+                                eq(likes.externalId, itemId)
+                            ));
+                    }
                 }
             }
-        }
 
-        events.emit(EVENT_TYPES.USER_LEFT, { sessionCode: code, userName, userId });
-        events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+            events.emit(EVENT_TYPES.USER_LEFT, { sessionCode: code, userName, userId });
+            events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+        }
     }
   }
+
 
   session.destroy();
 

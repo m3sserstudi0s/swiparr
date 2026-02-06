@@ -46,8 +46,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const isUser = searchParams.get("type") === "user";
   const imageType = searchParams.get("imageType") || "Primary";
   const tag = searchParams.get("tag");
+
+  // Check for custom user profile picture first
+  if (isUser) {
+    const { getProfilePicture } = await import("@/lib/server/profile-picture");
+    const customProfile = await getProfilePicture(id);
+    if (customProfile && customProfile.image) {
+      return new NextResponse(customProfile.image as any, {
+        status: 200,
+        headers: {
+          "Content-Type": customProfile.contentType || "image/webp",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      });
+    }
+  }
   
   let provider = getMediaProvider(providerType);
+
   
   // Heuristic to detect if ID is likely TMDB (numeric or path-like) 
   // vs Jellyfin (usually UUID-like)
@@ -123,9 +139,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": isUser ? "no-cache, no-store, must-revalidate" : "public, max-age=31536000, immutable",
       },
     });
+
   } catch (error: any) {
     if (error.response?.status === 404) {
       return new NextResponse("Image not found", { status: 404 });

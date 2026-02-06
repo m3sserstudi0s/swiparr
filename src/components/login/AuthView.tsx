@@ -10,6 +10,7 @@ import { QuickConnectView } from "./QuickConnectView";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangleIcon } from "lucide-react"
 import { ProviderType } from "@/lib/providers/types";
+import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
 
 interface AuthViewProps {
   provider: string;
@@ -35,7 +36,9 @@ interface AuthViewProps {
   sessionCodeParam: string | null;
   hasQuickConnect: boolean;
   isExperimental: boolean;
+  onProfilePictureChange?: (base64: string | null) => void;
 }
+
 
 export function AuthView({
   provider,
@@ -60,9 +63,11 @@ export function AuthView({
   setQcCode,
   sessionCodeParam,
   hasQuickConnect,
-  isExperimental
+  isExperimental,
+  onProfilePictureChange
 }: AuthViewProps) {
   const [activeTab, setActiveTab] = useState<string>("login");
+
 
   useEffect(() => {
     if (sessionCodeParam) {
@@ -155,9 +160,16 @@ export function AuthView({
         )}
       </TabsContent>
       <TabsContent value="join" className="space-y-4">
-        <form onSubmit={handleGuestLogin} className="space-y-3">
-          <CardDescription>Enter a display name to continue</CardDescription>
+        <form onSubmit={handleGuestLogin} className="space-y-2">
+          <div className="flex justify-center pb-2">
+            <ProfilePicturePicker 
+                userName={guestName || "G"} 
+                onImageSelected={onProfilePictureChange}
+            />
+          </div>
+          <CardDescription>Enter a display name {!sessionCodeParam ? 'and code' : ''} to continue</CardDescription>
           <Input
+
             placeholder="Display name"
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
@@ -166,20 +178,21 @@ export function AuthView({
           />
           {!sessionCodeParam && (
             <>
-              <Label htmlFor="session-code" className="mt-1.5 mb-2 text-muted-foreground">
+              <Label htmlFor="session-code" className="mt-1 mb-2 text-muted-foreground">
                 {" "}
                 Session code
               </Label>
               <Input
                 id="session-code"
                 value={guestSessionCode}
+                placeholder="1234"
                 onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
                 className="bg-muted border-input font-mono tracking-widest uppercase"
                 maxLength={4}
               />
             </>
           )}
-          <div className="pt-2">
+          <div className="pt-1">
             <Button
               type="submit"
               className="w-full font-semibold"
@@ -188,8 +201,8 @@ export function AuthView({
               {loading ? "Joining..." : "Join"}
             </Button>
           </div>
-          <p className="text-xs text-center text-muted-foreground pt-2">
-            Joining as a guest lets you swipe in a session without an account.
+          <p className="text-xs text-center text-muted-foreground pt-1">
+            Joining as a guest lets you join a session without an account.
           </p>
         </form>
       </TabsContent>

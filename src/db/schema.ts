@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex, blob } from "drizzle-orm/sqlite-core";
 import { sql, type InferSelectModel, type InferInsertModel } from "drizzle-orm";
 
 export const sessions = sqliteTable("Session", {
@@ -74,3 +74,14 @@ export const config = sqliteTable("Config", {
 
 export type Config = InferSelectModel<typeof config>;
 export type NewConfig = InferInsertModel<typeof config>;
+
+export const userProfiles = sqliteTable("UserProfile", {
+  userId: text("userId").primaryKey(),
+  image: blob("image", { mode: "buffer" }),
+  contentType: text("contentType"),
+  updatedAt: text("updatedAt").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type UserProfile = InferSelectModel<typeof userProfiles>;
+export type NewUserProfile = InferInsertModel<typeof userProfiles>;
+

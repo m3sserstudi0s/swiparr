@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
-import { db, sessions, sessionMembers, likes, hiddens, config as configTable } from "@/lib/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { db, sessions, sessionMembers, likes, hiddens, config as configTable, userProfiles } from "@/lib/db";
+import { eq, and, inArray, desc } from "drizzle-orm";
+
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { v4 as uuidv4 } from "uuid";
@@ -245,6 +246,18 @@ export async function GET() {
   });
   const settingsHash = userSettingsEntry?.value ? userSettingsEntry.value.length.toString(16) + userSettingsEntry.value.slice(-8) : 'default';
 
+  // Check for custom profile picture
+  const { userProfiles } = await import("@/db/schema");
+  const profile = await db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, session.user.Id),
+  });
+
+  // Get a global version based on latest profile update in this session (approximate)
+  const latestProfile = await db.query.userProfiles.findFirst({
+      orderBy: [desc(userProfiles.updatedAt)],
+  });
+  const globalVersion = latestProfile?.updatedAt ? new Date(latestProfile.updatedAt).getTime() : 0;
+
   const response = { 
     code: session.sessionCode || null,
     userId: session.user.Id,
@@ -258,8 +271,12 @@ export async function GET() {
     provider: activeProvider,
     capabilities: getMediaProvider(activeProvider).capabilities,
     serverUrl: activeServerUrl,
-    settingsHash
+    settingsHash,
+    hasCustomProfilePicture: !!profile,
+    profileUpdatedAt: profile?.updatedAt || null,
+    globalVersion
   };
+
 
 
   return NextResponse.json(response);
@@ -269,90 +286,104 @@ export async function DELETE() {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     
-    if (session.isLoggedIn && session.user && session.sessionCode) {
-        const code = session.sessionCode;
+    if (session.isLoggedIn && session.user) {
         const userId = session.user.Id;
-        const userName = session.user.Name;
+        const provider = session.user.provider;
 
-        // 0. Find items this user liked in this session
-        const userLikes = await db.query.likes.findMany({
-            where: and(
-                eq(likes.sessionCode, code),
-                eq(likes.externalUserId, userId)
-            )
-        });
-        const likedItemIds = userLikes.map((l: { externalId: any; }) => l.externalId);
+        // Delete profile picture if it's a guest or TMDB user (no persistent auth)
+        if (session.user.isGuest || provider === "tmdb") {
+            try {
+                await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
+            } catch (e) {
+                console.error("Failed to cleanup profile picture on session leave", e);
+            }
+        }
 
-        // 1. Remove member from session
-        await db.delete(sessionMembers).where(
-            and(
-                eq(sessionMembers.sessionCode, code),
-                eq(sessionMembers.externalUserId, userId)
-            )
-        );
+        if (session.sessionCode) {
+            const code = session.sessionCode;
+            const userName = session.user.Name;
 
-        // 1.1 Clear user's traces (likes and hiddens) for this session
-        await db.delete(likes).where(
-            and(
-                eq(likes.sessionCode, code),
-                eq(likes.externalUserId, userId)
-            )
-        );
-        await db.delete(hiddens).where(
-            and(
-                eq(hiddens.sessionCode, code),
-                eq(hiddens.externalUserId, userId)
-            )
-        );
+            // 0. Find items this user liked in this session
+            const userLikes = await db.query.likes.findMany({
+                where: and(
+                    eq(likes.sessionCode, code),
+                    eq(likes.externalUserId, userId)
+                )
+            });
+            const likedItemIds = userLikes.map((l: { externalId: any; }) => l.externalId);
 
-        // 2. Check if any members left
-        const remainingMembers = await db.query.sessionMembers.findMany({
-            where: eq(sessionMembers.sessionCode, code),
-        });
+            // 1. Remove member from session
+            await db.delete(sessionMembers).where(
+                and(
+                    eq(sessionMembers.sessionCode, code),
+                    eq(sessionMembers.externalUserId, userId)
+                )
+            );
 
-        if (remainingMembers.length === 0) {
-            // 3. Delete session if no members left (will cascade to likes/hiddens)
-            await db.delete(sessions).where(eq(sessions.code, code));
-        } else {
-            // 4. Re-evaluate matches for the items the user liked
-            if (likedItemIds.length > 0) {
-                const currentSession = await db.query.sessions.findFirst({
-                    where: eq(sessions.code, code)
-                });
-                const settings = currentSession?.settings ? JSON.parse(currentSession.settings) : {};
-                const matchStrategy = settings.matchStrategy || "atLeastTwo";
-                const numMembers = remainingMembers.length;
+            // 1.1 Clear user's traces (likes and hiddens) for this session
+            await db.delete(likes).where(
+                and(
+                    eq(likes.sessionCode, code),
+                    eq(likes.externalUserId, userId)
+                )
+            );
+            await db.delete(hiddens).where(
+                and(
+                    eq(hiddens.sessionCode, code),
+                    eq(hiddens.externalUserId, userId)
+                )
+            );
 
-                for (const itemId of likedItemIds) {
-                    const remainingItemLikes = await db.query.likes.findMany({
-                        where: and(
-                            eq(likes.sessionCode, code),
-                            eq(likes.externalId, itemId)
-                        )
+            // 2. Check if any members left
+            const remainingMembers = await db.query.sessionMembers.findMany({
+                where: eq(sessionMembers.sessionCode, code),
+            });
+
+            if (remainingMembers.length === 0) {
+                // 3. Delete session if no members left (will cascade to likes/hiddens)
+                await db.delete(sessions).where(eq(sessions.code, code));
+            } else {
+                // 4. Re-evaluate matches for the items the user liked
+                if (likedItemIds.length > 0) {
+                    const currentSession = await db.query.sessions.findFirst({
+                        where: eq(sessions.code, code)
                     });
+                    const settings = currentSession?.settings ? JSON.parse(currentSession.settings) : {};
+                    const matchStrategy = settings.matchStrategy || "atLeastTwo";
+                    const numMembers = remainingMembers.length;
 
-                    let stillAMatch = false;
-                    if (matchStrategy === "atLeastTwo") {
-                        stillAMatch = remainingItemLikes.length >= 2;
-                    } else if (matchStrategy === "allMembers") {
-                        stillAMatch = remainingItemLikes.length >= numMembers && numMembers > 0;
-                    }
-
-                    if (!stillAMatch) {
-                        await db.update(likes)
-                            .set({ isMatch: false })
-                            .where(and(
+                    for (const itemId of likedItemIds) {
+                        const remainingItemLikes = await db.query.likes.findMany({
+                            where: and(
                                 eq(likes.sessionCode, code),
                                 eq(likes.externalId, itemId)
-                            ));
+                            )
+                        });
+
+                        let stillAMatch = false;
+                        if (matchStrategy === "atLeastTwo") {
+                            stillAMatch = remainingItemLikes.length >= 2;
+                        } else if (matchStrategy === "allMembers") {
+                            stillAMatch = remainingItemLikes.length >= numMembers && numMembers > 0;
+                        }
+
+                        if (!stillAMatch) {
+                            await db.update(likes)
+                                .set({ isMatch: false })
+                                .where(and(
+                                    eq(likes.sessionCode, code),
+                                    eq(likes.externalId, itemId)
+                                ));
+                        }
                     }
                 }
-            }
 
-            events.emit(EVENT_TYPES.USER_LEFT, { sessionCode: code, userName, userId });
-            events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+                events.emit(EVENT_TYPES.USER_LEFT, { sessionCode: code, userName, userId });
+                events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+            }
         }
     }
+
 
     session.sessionCode = undefined;
     await session.save();

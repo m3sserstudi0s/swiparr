@@ -1,8 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
-
 import { CardDescription } from "@/components/ui/card";
+import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
 
 interface UniversalViewProps {
   providerLock: boolean;
@@ -13,6 +13,7 @@ interface UniversalViewProps {
   loading: boolean;
   handleLogin: (e: React.FormEvent) => void;
   isJoining?: boolean;
+  onProfilePictureChange?: (base64: string | null) => void;
 }
 
 export function UniversalView({
@@ -24,18 +25,28 @@ export function UniversalView({
   loading,
   handleLogin,
   isJoining,
+  onProfilePictureChange,
 }: UniversalViewProps) {
   return (
     <div className="space-y-2">
-      <CardDescription>
-        {isJoining 
-          ? "Enter a display name to join the session"
-          : (providerLock
+      <form onSubmit={handleLogin} className="space-y-2">
+        <div className="flex justify-center pb-2">
+          <ProfilePicturePicker
+            userName={username || "U"}
+            onImageSelected={onProfilePictureChange}
+          />
+        </div>
+
+        <CardDescription>
+          {isJoining
+            ? "Enter a display name to join the session"
+            : (providerLock
               ? "Enter a name to start swiping"
               : "Configure TMDB and enter a name")}
-      </CardDescription>
-      <form onSubmit={handleLogin} className="space-y-5">
+        </CardDescription>
+
         {!providerLock && !isJoining && (
+
           <PasswordInput
             placeholder="TMDB API Read Access Token"
             value={tmdbToken}
@@ -52,7 +63,7 @@ export function UniversalView({
           className="bg-muted border-input"
           autoFocus
         />
-        <Button type="submit" className="w-full font-semibold" disabled={loading || !username}>
+        <Button type="submit" className="w-full font-semibold mt-4" disabled={loading || !username}>
           {loading ? (isJoining ? "Joining..." : "Starting...") : (isJoining ? "Join" : "Start")}
         </Button>
       </form>

@@ -8,12 +8,15 @@ export const loginSchema = z.object({
     serverUrl: z.string().optional(),
     tmdbToken: z.string().optional(),
   }).optional(),
+  profilePicture: z.string().optional(), // Base64 encoded
 });
 
 export const guestLoginSchema = z.object({
   username: z.string().min(1, "Username is required").max(50),
   sessionCode: z.string().max(4).optional().or(z.literal("")),
+  profilePicture: z.string().optional(), // Base64 encoded
 });
+
 
 export const swipeSchema = z.object({
   itemId: z.string().min(1),
