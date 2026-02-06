@@ -31,7 +31,17 @@ export async function GET(request: NextRequest) {
 
     const ids = matches.map((m: any) => m.externalId);
     
-    const items = await Promise.all(ids.map((id: any) => provider.getItemDetails(id, auth)));
+    const itemsPromises = ids.map(async (id: any) => {
+        try {
+            return await provider.getItemDetails(id, auth);
+        } catch (error) {
+            console.warn(`Failed to fetch details for match ${id}:`, error instanceof Error ? error.message : error);
+            return null;
+        }
+    });
+
+    const itemsResult = await Promise.all(itemsPromises);
+    const items = itemsResult.filter((item): item is any => item !== null);
 
     // Fetch all likes for these items in this session to know who liked what
     const allLikesInSession = await db.query.likes.findMany({

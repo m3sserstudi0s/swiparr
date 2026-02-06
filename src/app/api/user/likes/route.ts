@@ -43,7 +43,18 @@ export async function GET(request: NextRequest) {
     // JellyfinProvider currently doesn't have getMultipleDetails, but we can call getItems with IDs if it supports it.
     
     // Let's add getItemsByIds to MediaProvider or just use getItemDetails in a loop (not ideal but safe for now)
-    const items = await Promise.all(ids.map((id: any) => provider.getItemDetails(id, auth)));
+    const itemsPromises = ids.map(async (id: any) => {
+        try {
+            return await provider.getItemDetails(id, auth);
+        } catch (error) {
+            console.warn(`Failed to fetch details for item ${id}:`, error instanceof Error ? error.message : error);
+            return null;
+        }
+    });
+
+    const itemsResults = await Promise.all(itemsPromises);
+    const items = itemsResults.filter((item): item is MediaItem => item !== null);
+
 
     // Fetch all likes in this session for these items to identify contributors
     // Only if we have session items

@@ -111,10 +111,15 @@ export class JellyfinProvider implements MediaProvider {
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
     const { getAuthenticatedHeaders } = await import("@/lib/jellyfin/api");
-    const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any) + "?maxWidth=20&quality=50";
-    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
-    return await getBlurDataURL(itemId, imageUrl, headers) || "";
+    try {
+        const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any) + "?maxWidth=20&quality=50";
+        const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+        return await getBlurDataURL(itemId, imageUrl, headers) || "";
+    } catch (e) {
+        return "";
+    }
   }
+
 
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const { authenticateJellyfin } = await import("@/lib/jellyfin/api");
