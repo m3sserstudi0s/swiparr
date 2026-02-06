@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -
 
+## [1.0.3] - 2025-02-06
+
+Various bug fixes and improvements stemming from update to 1.0.0 on existing instances.
+
 ## [1.0.0] - 2025-02-06
 
 This release rounds up all work from previous patches and features. It includes:
