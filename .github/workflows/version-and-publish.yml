@@ -65,8 +65,8 @@ jobs:
           commit_message: "chore: bump version to ${{ steps.npm-version.outputs.new_version }} [skip ci]"
           file_pattern: 'package*.json'
           commit_user_name: jakobbjelver
-          commit_user_email: 1234567+jakobbjelver@users.noreply.github.com
-          commit_author: jakobbjelver <1234567+jakobbjelver@users.noreply.github.com>
+          commit_user_email: 94932025+jakobbjelver@users.noreply.github.com
+          commit_author: jakobbjelver <94932025+jakobbjelver@users.noreply.github.com>
 
       - name: Create tag
         if: steps.auto-commit.outputs.changes_detected == 'true'
