@@ -170,12 +170,7 @@ These types can be combined, like: `major: feat`.
 
 ## 🧪 Testing
 
-While we have minimal tests currently, we welcome test contributions:
-
-```bash
-# Add tests as needed for new features
-# Test patterns to be established
-```
+While we have minimal tests currently, we welcome test contributions.
 
 ## 📖 Documentation
 
@@ -183,7 +178,6 @@ When contributing, ensure:
 
 - Code is self-documenting with clear variable names
 - Complex logic has comments
-- API endpoints have JSDoc comments
 - User-facing features have help text
 - Update README.md if adding features
 
@@ -222,7 +216,6 @@ Contributors will be:
 - Listed in release notes
 - Mentioned in README.md (for significant contributions)
 - Awarded GitHub contributor badge
-- Invited to join the organization (for regular contributors)
 
 ## 🚫 What We Don't Accept
 
