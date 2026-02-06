@@ -11,6 +11,7 @@ import { isAdmin } from "@/lib/server/admin";
 import { getEffectiveCredentials, GuestKickedError } from "@/lib/server/auth-resolver";
 import { sessionActionSchema, sessionSettingsSchema } from "@/lib/validations";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { ProviderType } from "@/lib/providers/types";
 
 function generateCode() {
     // Simple 4-letter code (e.g., AXYZ)
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
             }
 
             // For server-based providers, validate server URL
-            if (["jellyfin", "emby", "plex"].includes(sessionProvider || "")) {
+            if ([ProviderType.JELLYFIN, ProviderType.EMBY, ProviderType.PLEX].includes(sessionProvider || "")) {
                 const sessionConfig = existingSession.providerConfig ? JSON.parse(existingSession.providerConfig) : {};
                 const userConfig = session.user.providerConfig || {};
                 
@@ -208,7 +209,7 @@ export async function GET() {
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
 
   let effectiveUserId = null;
-  let activeProvider = session.user.provider || "jellyfin";
+  let activeProvider = session.user.provider || ProviderType.JELLYFIN;
   let activeServerUrl = session.user.providerConfig?.serverUrl;
 
   try {
@@ -280,7 +281,7 @@ export async function DELETE() {
                 eq(likes.externalUserId, userId)
             )
         });
-        const likedItemIds = userLikes.map(l => l.externalId);
+        const likedItemIds = userLikes.map((l: { externalId: any; }) => l.externalId);
 
         // 1. Remove member from session
         await db.delete(sessionMembers).where(

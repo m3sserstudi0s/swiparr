@@ -13,6 +13,7 @@ import { getIncludedLibraries } from "@/lib/server/admin";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { getRuntimeConfig } from "@/lib/runtime-config";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     try {
         const auth = await getEffectiveCredentials(session);
         const provider = getMediaProvider(auth.provider);
-        const activeProviderName = auth.provider || session.user.provider || "jellyfin";
+        const activeProviderName = auth.provider || session.user.provider || ProviderType.JELLYFIN;
         const runtimeConfig = getRuntimeConfig();
 
         // 0. Get admin-defined libraries
@@ -52,8 +53,8 @@ export async function GET(request: NextRequest) {
         ]);
 
         const excludeIds = new Set([
-            ...liked.map(l => l.externalId),
-            ...hidden.map(h => h.externalId)
+            ...liked.map((l: { externalId: any; }) => l.externalId),
+            ...hidden.map((h: { externalId: any; }) => h.externalId)
         ]);
 
 
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
                 const sessionMembersList = await db.query.sessionMembers.findMany({
                     where: eq(sessionMembers.sessionCode, session.sessionCode)
                 });
-                sessionMembersList.forEach(m => {
+                sessionMembersList.forEach((m: { settings: string; }) => {
                     if (m.settings) {
                         try {
                             const s = JSON.parse(m.settings);

@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Set as admin if no admin exists
+    // Provider is Jellyfin since it is the only which has quick-connect for now
     const wasMadeAdmin = await setAdminUserId(authData.User.Id, "jellyfin");
     if (wasMadeAdmin) {
         console.log(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);

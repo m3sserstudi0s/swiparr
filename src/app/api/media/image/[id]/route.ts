@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
-import { apiClient } from "@/lib/jellyfin/api";
 import axios from "axios";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { config as appConfig } from "@/lib/config";
+import { ProviderType } from "@/lib/providers/types";
 
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
   });
   
-    // If the provider returned a full URL, use it. If it was relative to jellyfin, getJellyfinUrl would have been used.
+  // If the provider returned a full URL, use it. If it was relative to jellyfin, getJellyfinUrl would have been used.
   // Our JellyfinProvider currently returns full URLs.
   imageUrl = urlObj.toString().replace("http://n/", "/");
 
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const headers: any = {};
     const isTmdbImageUrl = imageUrl.includes("tmdb.org");
 
-    if (provider.name === "jellyfin" && accessToken && !isTmdbImageUrl) {
+    if (provider.name === ProviderType.JELLYFIN && accessToken && !isTmdbImageUrl) {
         const { getAuthenticatedHeaders } = await import("@/lib/jellyfin/api");
         Object.assign(headers, getAuthenticatedHeaders(accessToken, deviceId || "Swiparr"));
     } else if (provider.name === "plex" && !isTmdbImageUrl) {
@@ -102,14 +102,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
 
-    // Use axios directly for external TMDB images, use apiClient for Jellyfin/Plex
+    // Use axios directly for external TMDB images, use apiClient for Jellyfin/Plex/Emby
     let response;
     if (isTmdbImageUrl) {
         response = await axios.get(imageUrl, { responseType: "arraybuffer" });
     } else {
         const { apiClient } = await import("@/lib/jellyfin/api");
         const { plexClient } = await import("@/lib/plex/api");
-        const client = provider.name === "plex" ? plexClient : apiClient;
+        const { apiClient: embyClient } = await import("@/lib/emby/api");
+        const client = provider.name === "plex" ? plexClient : provider.name === "emby" ? embyClient : apiClient;
         response = await client.get(imageUrl, {
           responseType: "arraybuffer",
           headers,

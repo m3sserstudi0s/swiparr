@@ -9,6 +9,7 @@ import { CardDescription } from "@/components/ui/card";
 import { QuickConnectView } from "./QuickConnectView";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangleIcon } from "lucide-react"
+import { ProviderType } from "@/lib/providers/types";
 
 interface AuthViewProps {
   provider: string;
@@ -86,13 +87,13 @@ export function AuthView({
         ) : (
           <form onSubmit={handleLogin} className="space-y-3">
             <CardDescription>
-              Enter your {provider === "jellyfin" ? "Jellyfin" : provider === "emby" ? "Emby" : "Plex"} credentials
+              Enter your {provider === ProviderType.JELLYFIN ? "Jellyfin" : provider === ProviderType.EMBY ? "Emby" : "Plex"} credentials
             </CardDescription>
 
             {!providerLock && (
               <Input
                 placeholder={
-                  provider === "jellyfin"
+                  provider === ProviderType.JELLYFIN
                     ? "Jellyfin Server URL"
                     : provider === "emby"
                     ? "Emby Server URL"

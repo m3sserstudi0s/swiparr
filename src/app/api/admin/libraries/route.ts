@@ -44,7 +44,7 @@ export async function PATCH(request: NextRequest) {
         await setIncludedLibraries(libraries);
         
         // Purge Next.js cache
-        revalidateTag("jellyfin-libraries");
+        revalidateTag("jellyfin-libraries", "default");
 
         // Notify all clients
         events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {

@@ -9,6 +9,7 @@ import { db, sessionMembers, config as configTable } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     const sessionCode = searchParams.get("sessionCode");
 
     const auth = await getEffectiveCredentials(session);
-    const activeProvider = auth.provider || session.user.provider || "jellyfin";
+    const activeProvider = auth.provider || session.user.provider || ProviderType.JELLYFIN;
 
     if (activeProvider !== "tmdb") {
         return NextResponse.json({ providers: [] });
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
             where: eq(sessionMembers.sessionCode, sessionCode),
         });
         
-        members = dbMembers.map(m => ({ 
+        members = dbMembers.map((m: { externalUserId: any; externalUserName: any; }) => ({ 
             externalUserId: m.externalUserId, 
             externalUserName: m.externalUserName 
         }));

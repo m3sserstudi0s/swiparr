@@ -89,7 +89,7 @@ export default function LoginContent() {
 
     const promise = async () => {
       const config: any = {};
-      if (selectedProvider === "jellyfin" || selectedProvider === "plex" || selectedProvider === "emby") {
+      if (selectedProvider === ProviderType.JELLYFIN || selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY) {
         if (serverUrl) config.serverUrl = serverUrl;
       } else if (selectedProvider === "tmdb") {
         if (tmdbToken) config.tmdbToken = tmdbToken;
@@ -256,8 +256,8 @@ export default function LoginContent() {
                 copyToClipboard={copyToClipboard}
                 setQcCode={setQcCode}
                 sessionCodeParam={sessionCodeParam}
-                hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === "jellyfin")}
-                isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === "plex" || selectedProvider === "emby")}
+                hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === ProviderType.JELLYFIN)}
+                isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
               />
             )}
           </div>

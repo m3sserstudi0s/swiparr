@@ -12,6 +12,7 @@ import {
   MediaRating 
 } from "@/types/media";
 import { apiClient, getEmbyUrl, getAuthenticatedHeaders } from "@/lib/emby/api";
+import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/emby/cached-queries";
 
 export class EmbyProvider implements MediaProvider {
   readonly name = "emby";
@@ -56,42 +57,36 @@ export class EmbyProvider implements MediaProvider {
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
-    const res = await apiClient.get(getEmbyUrl("/Genres", auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
-    return (res.data.Items || []).map((g: any) => ({ Id: g.Name, Name: g.Name }));
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
+    const genres = await getCachedGenres(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    return genres.map((g: any) => ({ Id: g.Name, Name: g.Name }));
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
-    const res = await apiClient.get(getEmbyUrl("/Years", auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
-    return (res.data.Items || []).map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
+    const years = await getCachedYears(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    return years.map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    const res = await apiClient.get(getEmbyUrl("/Items", auth?.serverUrl), {
-      params: {
-        IncludeItemTypes: "Movie",
-        Recursive: true,
-        Fields: "OfficialRating",
-        EnableImages: false,
-      },
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
-
-    const items = res.data.Items || [];
+    if (!auth?.accessToken || !auth?.deviceId) {
+      throw new Error("Auth credentials required");
+    }
+    const items = await getCachedRatings(auth.accessToken, auth.deviceId, auth?.userId || "", auth?.serverUrl) || [];
     const ratings = Array.from(new Set(items.map((i: any) => i.OfficialRating).filter(Boolean))) as string[];
-    
     return ratings.sort().map(r => ({ Name: r, Value: r }));
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
-    const res = await apiClient.get(getEmbyUrl(`/Users/${auth?.userId}/Views`, auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
-    
-    return (res.data.Items || [])
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
+    const libraryItems = await getCachedLibraries(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    return libraryItems
       .filter((l: any) => l.CollectionType === "movies")
       .map((l: any) => ({
         Id: l.Id,

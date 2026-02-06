@@ -44,10 +44,19 @@ export async function PATCH(request: NextRequest) {
 
         await setUseStaticFilterValues(useStaticFilterValues);
 
-        // Purge Next.js cache
-        revalidateTag("jellyfin-years");
-        revalidateTag("jellyfin-genres");
-        revalidateTag("jellyfin-ratings");
+        // Purge Next.js cache for all providers
+        revalidateTag("jellyfin-years", "default");
+        revalidateTag("jellyfin-genres", "default");
+        revalidateTag("jellyfin-ratings", "default");
+        revalidateTag("jellyfin-libraries", "default");
+        revalidateTag("emby-years", "default");
+        revalidateTag("emby-genres", "default");
+        revalidateTag("emby-ratings", "default");
+        revalidateTag("emby-libraries", "default");
+        revalidateTag("plex-years", "default");
+        revalidateTag("plex-genres", "default");
+        revalidateTag("plex-ratings", "default");
+        revalidateTag("plex-libraries", "default");
 
         // Notify all clients
         events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {

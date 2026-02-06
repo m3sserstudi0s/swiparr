@@ -24,6 +24,8 @@ export class JellyfinProvider implements MediaProvider {
     hasSettings: true,
     requiresServerUrl: true,
     isExperimental: false,
+    hasStreamingSettings: true,
+    isAdminPanel: true
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {

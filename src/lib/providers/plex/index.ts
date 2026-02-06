@@ -14,6 +14,7 @@ import {
   MediaRating 
 } from "@/types/media";
 import { plexClient, getPlexUrl, getPlexHeaders } from "@/lib/plex/api";
+import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
 
 export class PlexProvider implements MediaProvider {
   readonly name = "plex";
@@ -82,71 +83,35 @@ export class PlexProvider implements MediaProvider {
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
-    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
-    const sections = await this.getLibraries(auth);
-    const movieSections = sections.filter(s => s.CollectionType === "movies");
-    
-    let allGenres = new Map<string, MediaGenre>();
-    
-    for (const section of movieSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/genre`, auth?.serverUrl);
-        const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
-        const genres = res.data.MediaContainer?.Directory || [];
-        genres.forEach((g: any) => {
-            allGenres.set(g.title, { Id: g.fastKey || g.key, Name: g.title });
-        });
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
     }
-    
-    return Array.from(allGenres.values());
+    const genres = await getCachedGenres(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    return Array.from(genres);
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
-    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
-    const sections = await this.getLibraries(auth);
-    const movieSections = sections.filter(s => s.CollectionType === "movies");
-    
-    let allYears = new Map<number, MediaYear>();
-    
-    for (const section of movieSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/year`, auth?.serverUrl);
-        const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
-        const years = res.data.MediaContainer?.Directory || [];
-        years.forEach((y: any) => {
-            const val = parseInt(y.title);
-            if (!isNaN(val)) {
-                allYears.set(val, { Name: y.title, Value: val });
-            }
-        });
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
     }
-    
-    return Array.from(allYears.values()).sort((a, b) => b.Value - a.Value);
+    const years = await getCachedYears(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    return Array.from(years);
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
-    const sections = await this.getLibraries(auth);
-    const movieSections = sections.filter(s => s.CollectionType === "movies");
-    
-    let allRatings = new Set<string>();
-    
-    for (const section of movieSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/contentRating`, auth?.serverUrl);
-        const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
-        const ratings = res.data.MediaContainer?.Directory || [];
-        ratings.forEach((r: any) => {
-            if (r.title) allRatings.add(r.title);
-        });
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
     }
-    
-    return Array.from(allRatings).sort().map(r => ({ Name: r, Value: r }));
+    const ratings = await getCachedRatings(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    return ratings.map((r: any) => ({ Name: r, Value: r }));
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
-    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
-    const url = getPlexUrl("/library/sections", auth?.serverUrl);
-    const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
-    
-    return (res.data.MediaContainer?.Directory || [])
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
+    const libraryItems = await getCachedLibraries(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    return libraryItems
       .filter((l: any) => l.type === "movie")
       .map((l: any) => ({
         Id: l.key,
