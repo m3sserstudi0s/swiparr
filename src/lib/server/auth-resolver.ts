@@ -41,13 +41,12 @@ export async function getEffectiveCredentials(session: SessionData) {
         throw new Error("Guest without session code");
     }
 
-    const currentSession = await db.query.sessions.findFirst({
-        where: eq(sessions.code, session.sessionCode)
-    });
+    const currentSession = await db.select().from(sessions).where(eq(sessions.code, session.sessionCode)).then((rows: any[]) => rows[0]);
 
     if (!currentSession) {
         throw new Error("Session not found");
     }
+
 
     if (capabilities.hasAuth && !currentSession.hostAccessToken) {
         throw new GuestKickedError();

@@ -9,7 +9,7 @@ export interface Filters {
 }
 
 export interface SessionSettings {
-  matchStrategy: "atLeastTwo" | "allMembers";
+  matchStrategy?: "atLeastTwo" | "allMembers";
   maxLeftSwipes?: number;
   maxRightSwipes?: number;
   maxMatches?: number;

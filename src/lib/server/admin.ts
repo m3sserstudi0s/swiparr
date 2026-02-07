@@ -17,9 +17,7 @@ export async function getActiveProvider(): Promise<ProviderType> {
         return appConfig.app.provider as ProviderType;
     }
 
-    const config = await db.query.config.findFirst({
-        where: eq(configTable.key, ACTIVE_PROVIDER_KEY),
-    });
+    const config = await db.select().from(configTable).where(eq(configTable.key, ACTIVE_PROVIDER_KEY)).then((rows: any[]) => rows[0]);
 
     return (config?.value || appConfig.app.provider) as ProviderType;
 }
@@ -40,22 +38,19 @@ export async function setActiveProvider(provider: ProviderType): Promise<void> {
 export async function getAdminUserId(provider?: string): Promise<string | null> {
     if (typeof window !== 'undefined') return null;
     const key = provider ? `${ADMIN_USER_ID_KEY}:${provider.toLowerCase()}` : ADMIN_USER_ID_KEY;
-    const adminConfig = await db.query.config.findFirst({
-        where: eq(configTable.key, key),
-    });
+    const adminConfig = await db.select().from(configTable).where(eq(configTable.key, key)).then((rows: any[]) => rows[0]);
 
     if (adminConfig) return adminConfig.value;
 
     // Fallback to global admin if provider-specific one isn't set
     if (provider) {
-        const globalAdminConfig = await db.query.config.findFirst({
-            where: eq(configTable.key, ADMIN_USER_ID_KEY),
-        });
+        const globalAdminConfig = await db.select().from(configTable).where(eq(configTable.key, ADMIN_USER_ID_KEY)).then((rows: any[]) => rows[0]);
         return globalAdminConfig?.value || null;
     }
 
     return null;
 }
+
 
 export async function isAdmin(userId: string, username?: string, provider?: string, isGuest?: boolean): Promise<boolean> {
     if (isGuest) return false;
@@ -115,9 +110,7 @@ export async function setAdminUserId(userId: string, provider?: string): Promise
 
 export async function getIncludedLibraries(): Promise<string[]> {
     if (typeof window !== 'undefined') return [];
-    const config = await db.query.config.findFirst({
-        where: eq(configTable.key, INCLUDED_LIBRARIES_KEY),
-    });
+    const config = await db.select().from(configTable).where(eq(configTable.key, INCLUDED_LIBRARIES_KEY)).then((rows: any[]) => rows[0]);
     if (!config) return [];
     try {
         return JSON.parse(config.value);
@@ -139,11 +132,10 @@ export async function setIncludedLibraries(libraries: string[]): Promise<void> {
 
 export async function getUseStaticFilterValues(): Promise<boolean> {
     if (typeof window !== 'undefined') return false;
-    const config = await db.query.config.findFirst({
-        where: eq(configTable.key, USE_STATIC_FILTER_VALUES_KEY),
-    });
+    const config = await db.select().from(configTable).where(eq(configTable.key, USE_STATIC_FILTER_VALUES_KEY)).then((rows: any[]) => rows[0]);
     return config?.value === "true";
 }
+
 
 export async function setUseStaticFilterValues(useStatic: boolean): Promise<void> {
     if (typeof window !== 'undefined') return;

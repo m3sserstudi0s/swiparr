@@ -112,6 +112,7 @@ export interface MediaProvider {
   fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse>;
 
   // Auth (optional, based on capabilities)
+  authenticate?(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any>;
 }
 
 export interface AuthContext {

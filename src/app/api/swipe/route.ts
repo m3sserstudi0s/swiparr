@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
-import { db, likes, hiddens, sessionMembers, sessions } from "@/lib/db";
-import { eq, and, ne, count, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { SessionData, SwipePayload, SessionSettings } from "@/types";
-import { events, EVENT_TYPES } from "@/lib/events";
-
-
+import { SessionData } from "@/types";
 import { swipeSchema } from "@/lib/validations";
+import { SessionService } from "@/lib/services/session-service";
 
 export async function POST(request: NextRequest) {
-
-    const cookieStore = await cookies();
+  const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -21,139 +16,16 @@ export async function POST(request: NextRequest) {
   if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   
   const body = validated.data;
-  let isMatch = false;
-  let matchBlockedByLimit = false;
 
   try {
     const sessionCode = body.sessionCode !== undefined ? body.sessionCode : session.sessionCode;
-    let settings: SessionSettings | null = null;
-    
-    // Fetch session and other data in parallel
-    const [sessionData, rightSwipeCount, totalMatchCount] = await Promise.all([
-        sessionCode ? db.query.sessions.findFirst({ where: eq(sessions.code, sessionCode) }) : Promise.resolve(null),
-        (sessionCode && body.direction === "right") ? db.select({ value: count() }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, session.user.Id))) : Promise.resolve(null),
-        (sessionCode && body.direction === "right") ? db.select({ value: sql<number>`count(distinct ${likes.externalId})` }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.isMatch, true))) : Promise.resolve(null)
-    ]);
-
-    if (sessionData?.settings) {
-        settings = JSON.parse(sessionData.settings);
+    const result = await SessionService.addSwipe(session.user, sessionCode, body.itemId, body.direction, body.item);
+    return NextResponse.json({ success: true, ...result });
+  } catch (error: any) {
+    if (error.message.includes("limit reached")) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
     }
-
-    if (body.direction === "right") {
-      // Check right swipe limit
-      if (settings?.maxRightSwipes && rightSwipeCount && rightSwipeCount[0].value >= settings.maxRightSwipes) {
-          return NextResponse.json({ error: "Right swipe limit reached" }, { status: 403 });
-      }
-
-      // Check max matches limit (informational/policy)
-      // Note: we'll check again before actually marking a match
-
-      // 1. Check if we are in a session
-      if (sessionCode) {
-        const [members, existingLikes] = await Promise.all([
-            db.query.sessionMembers.findMany({ where: eq(sessionMembers.sessionCode, sessionCode) }),
-            db.query.likes.findMany({
-                where: and(
-                    eq(likes.sessionCode, sessionCode),
-                    eq(likes.externalId, body.itemId),
-                    ne(likes.externalUserId, session.user.Id)
-                )
-            })
-        ]);
-
-        const numMembers = members.length;
-        const matchStrategy = settings?.matchStrategy || "atLeastTwo";
-        
-        if (matchStrategy === "atLeastTwo") {
-            if (existingLikes.length > 0) isMatch = true;
-        } else if (matchStrategy === "allMembers") {
-            if (existingLikes.length >= numMembers - 1 && numMembers > 1) isMatch = true;
-        }
-
-        // Check max matches limit again if we are about to create a match
-        if (isMatch && settings?.maxMatches && totalMatchCount && (totalMatchCount[0] as any).value >= settings.maxMatches) {
-            isMatch = false; // Block match creation
-            matchBlockedByLimit = true;
-        }
-
-        if (isMatch) {
-            // Update ALL other users' likes for this item to be a match
-            await db.update(likes)
-                .set({ isMatch: true })
-                .where(and(
-                    eq(likes.sessionCode, sessionCode),
-                    eq(likes.externalId, body.itemId)
-                ));
-            
-            // Notify other members of the match
-            events.emit(EVENT_TYPES.MATCH_FOUND, {
-              sessionCode: sessionCode,
-              itemId: body.itemId,
-              swiperId: session.user.Id,
-              itemName: body.item?.Name || "a movie",
-            });
-        }
-      }
-
-      // 3. Store OUR like
-      await db.insert(likes).values({
-          externalUserId: session.user.Id,
-          externalId: body.itemId,
-          sessionCode: sessionCode,
-          isMatch: isMatch,
-      });
-
-      if (sessionCode && !isMatch) {
-        // Notify other members of the like (even if not a match yet, to update contributor lists)
-        events.emit(EVENT_TYPES.LIKE_UPDATED, {
-          sessionCode: sessionCode,
-          itemId: body.itemId,
-          userId: session.user.Id,
-        });
-      }
-      
-    } else {
-      // Dislike logic (Hidden)
-      const leftSwipeCount = sessionCode ? await db.select({ value: count() }).from(hiddens).where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, session.user.Id))) : null;
-
-      if (settings?.maxLeftSwipes && leftSwipeCount && leftSwipeCount[0].value >= settings.maxLeftSwipes) {
-          return NextResponse.json({ error: "Left swipe limit reached" }, { status: 403 });
-      }
-
-      await db.insert(hiddens).values({
-          externalUserId: session.user.Id,
-          externalId: body.itemId,
-          sessionCode: sessionCode,
-      });
-    }
-
-    // Return isMatch status so Frontend can show a "Boom!" effect
-    let likedBy: any[] = [];
-    if (isMatch && sessionCode) {
-        const [itemLikes, members] = await Promise.all([
-            db.query.likes.findMany({
-                where: and(
-                    eq(likes.sessionCode, sessionCode),
-                    eq(likes.externalId, body.itemId)
-                )
-            }),
-            db.query.sessionMembers.findMany({
-                where: eq(sessionMembers.sessionCode, sessionCode)
-            })
-        ]);
-
-        likedBy = itemLikes.map((l: any) => ({
-            userId: l.externalUserId,
-            userName: members.find((m: any) => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown"
-        }));
-    }
-
-    return NextResponse.json({ success: true, isMatch, likedBy, matchBlockedByLimit });
-
-
-
-  } catch (error) {
-    // Duplicate swipes are ignored
+    // Duplicate swipes or other errors might just return success: true to avoid breaking the UI flow
     return NextResponse.json({ success: true, isMatch: false });
   }
 }
@@ -166,66 +38,7 @@ export async function DELETE(request: NextRequest) {
   const body: { itemId: string } = await request.json();
 
   try {
-    const sessionCode = session.sessionCode;
-
-    await db.delete(likes).where(
-      and(
-        eq(likes.externalUserId, session.user.Id),
-        eq(likes.externalId, body.itemId)
-      )
-    );
-
-    // If it was a session match, we might need to update other users' like.isMatch status
-    if (sessionCode) {
-        const [s, remainingLikes, members] = await Promise.all([
-            db.query.sessions.findFirst({ where: eq(sessions.code, sessionCode) }),
-            db.query.likes.findMany({
-                where: and(
-                    eq(likes.sessionCode, sessionCode),
-                    eq(likes.externalId, body.itemId)
-                )
-            }),
-            db.query.sessionMembers.findMany({ where: eq(sessionMembers.sessionCode, sessionCode) })
-        ]);
-
-        const settings: SessionSettings | null = s?.settings ? JSON.parse(s.settings) : null;
-        const matchStrategy = settings?.matchStrategy || "atLeastTwo";
-        const numMembers = members.length;
-
-        let stillAMatch = false;
-        if (matchStrategy === "atLeastTwo") {
-            stillAMatch = remainingLikes.length >= 2;
-        } else if (matchStrategy === "allMembers") {
-            stillAMatch = remainingLikes.length >= numMembers && numMembers > 0;
-        }
-
-        if (!stillAMatch) {
-            // No longer a match for anyone
-            await db.update(likes)
-                .set({ isMatch: false })
-                .where(
-                    and(
-                        eq(likes.sessionCode, sessionCode),
-                        eq(likes.externalId, body.itemId)
-                    )
-                );
-        }
-
-
-        // Notify that matches might have changed
-        events.emit(EVENT_TYPES.MATCH_REMOVED, {
-            sessionCode: sessionCode,
-            itemId: body.itemId,
-            userId: session.user.Id
-        });
-    }
-
-    await db.delete(hiddens).where(
-      and(
-        eq(hiddens.externalUserId, session.user.Id),
-        eq(hiddens.externalId, body.itemId)
-      )
-    );
+    await SessionService.deleteSwipe(session.user, body.itemId, session.sessionCode);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete swipe" }, { status: 500 });

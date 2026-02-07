@@ -255,7 +255,7 @@ useEffect(() => {
   const contentHeight = useMemo(() => {
     if (wasMadeAdmin) return "h-auto";
     if (selectedProvider === "tmdb") return !providerLock ? "h-80" : "h-60";
-    return !providerLock ? activeTab == 'login' ? "h-105" : 'h-115' : activeTab == 'login' ? "h-80" : 'h-100';
+    return !providerLock ? activeTab == 'login' ? "h-105" : sessionCodeParam ? 'h-95' : 'h-115' : activeTab == 'login' ? "h-80" : sessionCodeParam ? 'h-80' : 'h-100';
   }, [wasMadeAdmin, selectedProvider, providerLock]);
 
   return (

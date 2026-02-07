@@ -150,7 +150,7 @@ export function CardDeck() {
         } else if (data.matchBlockedByLimit) {
           toast.error("Match not registered", {
             description: "Max number of matches reached",
-            position: "top-center"
+            position: "top-right"
           });
         }
       },

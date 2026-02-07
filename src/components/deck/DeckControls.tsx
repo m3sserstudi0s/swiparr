@@ -25,6 +25,10 @@ export function DeckControls({
   leftSwipesRemaining,
   rightSwipesRemaining,
 }: DeckControlsProps) {
+
+  const isLeftSwipeDisabled = leftSwipesRemaining !== undefined ? leftSwipesRemaining < 1 : undefined
+  const isRightSwipeDisabled = rightSwipesRemaining !== undefined ? rightSwipesRemaining < 1 : undefined
+
   return (
     <div className="flex space-x-6 z-2 mt-4 items-center">
       <Button
@@ -39,8 +43,9 @@ export function DeckControls({
       <Button
         size="icon"
         variant="outline"
-        className={cn("h-18 w-18 rounded-full bg-background border-2 relative", leftSwipesRemaining && leftSwipesRemaining < 1 && "opacity-75")}
+        className="h-18 w-18 rounded-full bg-background border-2 relative"
         onClick={onSwipeLeft}
+        disabled={isLeftSwipeDisabled}
       >
         <X className="size-9" />
         {leftSwipesRemaining !== undefined && (
@@ -51,8 +56,9 @@ export function DeckControls({
       </Button>
       <Button
         size="icon"
-        className={cn("h-18 w-18 rounded-full relative", rightSwipesRemaining && rightSwipesRemaining < 1 && "opacity-75")}
+        className="h-18 w-18 rounded-full relative"
         onClick={onSwipeRight}
+        disabled={isRightSwipeDisabled}
       >
         <Heart className="size-9 fill-primary-foreground" />
         {rightSwipesRemaining !== undefined && (
