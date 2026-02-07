@@ -47,6 +47,16 @@ export default function LoginContent() {
 
   const searchParams = useSearchParams();
 
+  useEffect(() => {
+    const reason = searchParams.get("reason");
+    if (reason === "provider_mismatch") {
+      toast.error("Provider mismatch", {
+        description: "The server provider configuration has changed. You have been logged out.",
+        duration: 5000,
+      });
+    }
+  }, [searchParams]);
+
   const sessionCodeParam = useMemo(() => {
     const directJoin = searchParams.get("join");
     if (directJoin) return directJoin;

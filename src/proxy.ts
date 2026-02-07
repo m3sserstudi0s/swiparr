@@ -59,6 +59,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Safeguard: Log out if provider lock is enabled and provider mismatch
+  if (appConfig.app.providerLock && session.user?.provider !== appConfig.app.provider && !session.user?.isGuest) {
+    session.destroy();
+    
+    if (pathname.includes("/api/")) {
+        return new NextResponse(JSON.stringify({ error: "provider_mismatch" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
+    }
+
+    const loginUrl = new URL(`${basePath}/login`, request.url);
+    loginUrl.searchParams.set("reason", "provider_mismatch");
+    return NextResponse.redirect(loginUrl);
+  }
+
   // Configurable Iframe Headers
   const xFrameOptions = appConfig.proxy.xFrameOptions;
   if (xFrameOptions.toUpperCase() !== 'DISABLED') {
