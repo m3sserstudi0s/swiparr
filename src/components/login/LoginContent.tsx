@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
@@ -45,17 +45,26 @@ export default function LoginContent() {
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
 
-  const searchParams = useSearchParams();
+const searchParams = useSearchParams();
+const router = useRouter();
 
-  useEffect(() => {
-    const reason = searchParams.get("reason");
-    if (reason === "provider_mismatch") {
-      toast.error("Provider mismatch", {
-        description: "The server provider configuration has changed. You have been logged out.",
-        duration: 5000,
-      });
-    }
-  }, [searchParams]);
+useEffect(() => {
+  const reason = searchParams.get("reason");
+
+  if (reason === "provider_mismatch") {
+    toast.error("Provider mismatch", {
+      description: "The server provider configuration has changed. You have been logged out.",
+      duration: 5000,
+    });
+
+    // Remove `reason` from the URL after showing the toast
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("reason");
+
+    const query = params.toString();
+    router.replace(query ? `?${query}` : "?", { scroll: false });
+  }
+}, [searchParams, router]);
 
   const sessionCodeParam = useMemo(() => {
     const directJoin = searchParams.get("join");
@@ -246,7 +255,7 @@ export default function LoginContent() {
   const contentHeight = useMemo(() => {
     if (wasMadeAdmin) return "h-auto";
     if (selectedProvider === "tmdb") return !providerLock ? "h-80" : "h-60";
-    return !providerLock ? "h-[420px]" : activeTab == 'login' ? "h-80" : 'h-100';
+    return !providerLock ? activeTab == 'login' ? "h-105" : 'h-115' : activeTab == 'login' ? "h-80" : 'h-100';
   }, [wasMadeAdmin, selectedProvider, providerLock]);
 
   return (
