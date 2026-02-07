@@ -37,6 +37,8 @@ interface AuthViewProps {
   hasQuickConnect: boolean;
   isExperimental: boolean;
   onProfilePictureChange?: (base64: string | null) => void;
+  activeTab: string,
+  setActiveTab: (activeTab: string) => void;
 }
 
 
@@ -64,16 +66,12 @@ export function AuthView({
   sessionCodeParam,
   hasQuickConnect,
   isExperimental,
-  onProfilePictureChange
+  onProfilePictureChange,
+  activeTab,
+  setActiveTab
 }: AuthViewProps) {
-  const [activeTab, setActiveTab] = useState<string>("login");
 
-
-  useEffect(() => {
-    if (sessionCodeParam) {
-      setActiveTab("join");
-    }
-  }, [sessionCodeParam]);
+  const providerName = provider[0].toUpperCase() + provider.substring(1)
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -92,7 +90,7 @@ export function AuthView({
         ) : (
           <form onSubmit={handleLogin} className="space-y-3">
             <CardDescription>
-              Enter your {provider === ProviderType.JELLYFIN ? "Jellyfin" : provider === ProviderType.EMBY ? "Emby" : "Plex"} credentials
+              Enter your {providerName} credentials
             </CardDescription>
 
             {!providerLock && (
@@ -159,8 +157,8 @@ export function AuthView({
           </form>
         )}
       </TabsContent>
-      <TabsContent value="join" className="space-y-4">
-        <form onSubmit={handleGuestLogin} className="space-y-2">
+      <TabsContent value="join" className="space-y-5">
+        <form onSubmit={handleGuestLogin} className="space-y-3">
           <div className="flex justify-center pb-2">
             <ProfilePicturePicker 
                 userName={guestName || "G"} 
@@ -192,7 +190,7 @@ export function AuthView({
               />
             </>
           )}
-          <div className="pt-1">
+          <div className="pt-1.5">
             <Button
               type="submit"
               className="w-full font-semibold"

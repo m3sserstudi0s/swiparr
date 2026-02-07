@@ -13,6 +13,10 @@ export async function POST() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    if (session.user.isGuest) {
+        return NextResponse.json({ error: "Guests cannot claim admin role" }, { status: 403 });
+    }
+
     const currentAdmin = await getAdminUserId(session.user.provider);
     if (currentAdmin) {
         return NextResponse.json({ error: "Admin already exists" }, { status: 400 });

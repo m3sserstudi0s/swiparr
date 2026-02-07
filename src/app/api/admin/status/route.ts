@@ -17,6 +17,6 @@ export async function GET() {
 
     return NextResponse.json({
         hasAdmin: !!adminUserId,
-        isAdmin: adminUserId === session.user.Id,
+        isAdmin: !session.user.isGuest && adminUserId === session.user.Id,
     });
 }

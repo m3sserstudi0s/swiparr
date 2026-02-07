@@ -257,7 +257,7 @@ export async function GET() {
     userName: session.user.Name,
     effectiveUserId,
     isGuest: !!session.user.isGuest,
-    isAdmin: await isAdmin(session.user.Id, session.user.Name, activeProvider),
+    isAdmin: await isAdmin(session.user.Id, session.user.Name, activeProvider, !!session.user.isGuest),
     hostUserId,
     filters,
     settings,

@@ -10,11 +10,13 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 import { ProfilePicturePicker } from "../../profile/ProfilePicturePicker";
 import { apiClient } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUserStore } from "@/lib/user-store";
 
 export function AccountSettings() {
     const { data: sessionStatus, isLoading } = useSession();
     const runtimeConfig = useRuntimeConfig();
     const queryClient = useQueryClient();
+    const { notifyProfileUpdate, profileUpdateTicket } = useUserStore();
 
 
     if (isLoading || !sessionStatus) {
@@ -41,19 +43,23 @@ export function AccountSettings() {
         await apiClient.post("/api/user/profile-picture", formData);
         // Refresh session/images
         queryClient.invalidateQueries({ queryKey: ["session"] });
+        notifyProfileUpdate();
     };
 
     const handleDelete = async () => {
         await apiClient.delete("/api/user/profile-picture");
         // Refresh session/images
         queryClient.invalidateQueries({ queryKey: ["session"] });
+        notifyProfileUpdate();
     };
+
+    const profileImageUrl = `/api/user/profile-picture/${userId}?v=${profileUpdateTicket}`;
 
     return (
         <SettingsSection title="Profile">
             <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/50">
                 <ProfilePicturePicker 
-                    currentImage={`/api/media/image/${userId}?type=user&_=${sessionStatus ? 'v1' : 'v0'}`}
+                    currentImage={profileImageUrl}
                     hasCustomImage={hasCustomProfilePicture}
                     userName={userName}
                     onUpload={handleUpload}

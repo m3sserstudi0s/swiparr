@@ -12,19 +12,21 @@ export async function saveProfilePicture(userId: string, imageBuffer: Buffer, co
         .webp({ quality: 80 })
         .toBuffer();
 
+    const updatedAt = new Date().toISOString();
+
     await db.insert(userProfiles)
         .values({
             userId,
             image: processedImage,
             contentType: 'image/webp',
-            updatedAt: new Date().toISOString(),
+            updatedAt,
         })
         .onConflictDoUpdate({
             target: userProfiles.userId,
             set: {
                 image: processedImage,
                 contentType: 'image/webp',
-                updatedAt: new Date().toISOString(),
+                updatedAt,
             }
         });
 

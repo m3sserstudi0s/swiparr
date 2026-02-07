@@ -57,7 +57,8 @@ export async function getAdminUserId(provider?: string): Promise<string | null> 
     return null;
 }
 
-export async function isAdmin(userId: string, username?: string, provider?: string): Promise<boolean> {
+export async function isAdmin(userId: string, username?: string, provider?: string, isGuest?: boolean): Promise<boolean> {
+    if (isGuest) return false;
 
     // 0. Check if provider has auth
     const activeProvider = (provider || await getActiveProvider()) as ProviderType;

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Camera, X, Plus, Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Camera, X, Plus, Loader } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProfilePicturePickerProps {
     currentImage?: string; // URL
@@ -30,26 +29,28 @@ export function ProfilePicturePicker({
     onDelete
 }: ProfilePicturePickerProps) {
     const [preview, setPreview] = useState<string | null>(null);
-    const [imageLoaded, setImageLoaded] = useState(false);
+    const [status, setStatus] = useState<'loading' | 'success' | 'error'>(currentImage ? 'loading' : 'error');
     const [removed, setRemoved] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Reset removed state when props change (e.g. after a successful delete/upload)
+    // Reset state when props change
     useEffect(() => {
         setRemoved(false);
-        setImageLoaded(false);
-    }, [currentImage, hasCustomImage]);
+        if (preview) {
+             setStatus('success');
+        } else if (currentImage && !removed) {
+            setStatus('loading');
+        } else {
+            setStatus('error');
+        }
+    }, [currentImage, hasCustomImage, preview, removed]);
 
-    // If we have a preview, we definitely have an image.
-    // If we don't have a preview, we check if we have a custom image (from DB) or a currentImage (like provider one)
-    // and that it hasn't been removed. We also wait for it to load if we don't have hasCustomImage.
-    // Actually, if we have hasCustomImage, we know it exists.
-    const hasImage = !!preview || ((hasCustomImage || !!currentImage) && !removed);
-    const actuallyShowingImage = !!preview || (hasImage && imageLoaded);
+    const hasImage = (!!preview || (!!currentImage && !removed));
+    const isSuccess = status === 'success' && hasImage;
 
-    const showRemoveButton = (actuallyShowingImage || hasCustomImage) && !removed;
-    const showDashedBorder = !actuallyShowingImage;
+    const showRemoveButton = (isSuccess && hasCustomImage) && !removed;
+    const showDashedBorder = !isSuccess && status !== 'loading';
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -60,8 +61,8 @@ export function ProfilePicturePicker({
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("Image must be smaller than 5MB");
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("Image must be smaller than 10MB");
             return;
         }
 
@@ -70,6 +71,7 @@ export function ProfilePicturePicker({
             const base64 = reader.result as string;
             setPreview(base64);
             setRemoved(false);
+            setStatus('success'); // Preview is immediate
             if (onImageSelected) {
                 onImageSelected(base64);
             }
@@ -92,14 +94,12 @@ export function ProfilePicturePicker({
     const handleRemove = async (e: React.MouseEvent) => {
         e.stopPropagation();
         
-        // If we were showing a preview of a newly selected file, just clear it
         if (preview) {
             setPreview(null);
             if (onImageSelected) {
                 onImageSelected(null);
             }
         } else {
-            // If we were showing the current/custom image, mark it as removed
             setRemoved(true);
         }
 
@@ -107,10 +107,6 @@ export function ProfilePicturePicker({
             fileInputRef.current.value = "";
         }
 
-        // Only call onDelete if we are actually deleting a persisted image (custom one)
-        // If we have a preview, we might have ALREADY uploaded it (in AccountSettings)
-        // so we should call onDelete if hasCustomImage is true OR if we have a preview.
-        // Actually, in AccountSettings, onUpload is called immediately after selection.
         if (onDelete) {
             setIsUploading(true);
             try {
@@ -131,9 +127,10 @@ export function ProfilePicturePicker({
     };
 
     const containerSizeClassName = size == 'sm' ? 'size-12' : size == 'md' ? 'size-16' : 'size-20'
-    const buttonSizeClassName = size == 'sm' ? 'size-5' : size == 'md' ? 'size-6' : 'size-7'
-    const buttonIconSizeClassName = size == 'sm' ? 'size-3' : size == 'md' ? 'size-3' : 'size-4'
-    const cameraIconSizeClassName = size == 'sm' ? 'size-6' : size == 'md' ? 'size-8' : 'size-10'
+    const buttonSizeClassName = size == 'sm' ? 'size-6' : size == 'md' ? 'size-6.5' : 'size-7'
+    const buttonIconSizeClassName = size == 'sm' ? 'size-4' : size == 'md' ? 'size-4.5' : 'size-5'
+    const cameraIconSizeClassName = size == 'sm' ? 'size-6' : size == 'md' ? 'size-7' : 'size-8'
+    const buttonPositionLength = size == 'sm' ? '-bottom-2 -right-2' : size == 'md' ? '-bottom-1.5 -right-1.5' : '-bottom-1 -right-1'
 
     return (
         <div className={cn("relative flex flex-col items-center", className, containerSizeClassName)}>
@@ -146,30 +143,39 @@ export function ProfilePicturePicker({
                 )}
                 onClick={triggerFilePicker}
             >
-                <Avatar className="size-full">
-                    <AvatarImage 
-                        src={preview || (!removed ? currentImage : undefined)} 
-                        className={cn("object-cover transition-opacity duration-300", actuallyShowingImage ? "opacity-100" : "opacity-0")}
-                        onLoadingStatusChange={(status) => {
-                            if (status === "loaded") {
-                                // Small delay to ensure browser has rendered
-                                setTimeout(() => setImageLoaded(true), 50);
-                            }
-                            if (status === "error") {
-                                setImageLoaded(false);
-                            }
-                        }}
-                    />
-                    <AvatarFallback className="bg-transparent text-muted-foreground/50">
-                        <Camera className={cameraIconSizeClassName} />
-                    </AvatarFallback>
-                </Avatar>
+                <div className="relative size-full overflow-hidden rounded-full bg-muted">
+                    {/* Skeleton Layer */}
+                    {status === 'loading' && hasImage && (
+                        <Skeleton className="absolute inset-0 z-10 size-full rounded-full" />
+                    )}
+
+                    {/* Image Layer */}
+                    {hasImage && (
+                        <img 
+                            src={preview || currentImage || undefined} 
+                            alt="Profile"
+                            className={cn(
+                                "aspect-square h-full w-full object-cover transition-opacity duration-500", 
+                                isSuccess ? "opacity-100" : "opacity-0"
+                            )}
+                            onLoad={() => setStatus('success')}
+                            onError={() => setStatus('error')}
+                        />
+                    )}
+                    
+                    {/* Camera Icon Layer */}
+                    {(status === 'error' || !hasImage) && (
+                        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50 animate-in fade-in duration-300">
+                            <Camera className={cameraIconSizeClassName} />
+                        </div>
+                    )}
+                </div>
 
 
                 {/* Loading State Overlay */}
                 {isUploading && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 z-10">
-                        <Loader2 className="size-6 animate-spin text-primary" />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 z-20">
+                        <Loader className="size-6 animate-spin text-primary" />
                     </div>
                 )}
 
@@ -177,9 +183,10 @@ export function ProfilePicturePicker({
                 {editable && (
                     <div 
                         className={cn(
-                            "absolute -bottom-1 -right-1 rounded-full flex items-center justify-center shadow-md transition-transform active:scale-95 z-20",
+                            "absolute rounded-full flex items-center justify-center shadow-md transition-transform active:scale-95 z-30",
                             showRemoveButton ? "bg-background text-foreground" : "bg-primary text-primary-foreground",
-                            buttonSizeClassName
+                            buttonSizeClassName,
+                            buttonPositionLength
                         )}
                         onClick={(e) => showRemoveButton ? handleRemove(e) : triggerFilePicker()}
                     >

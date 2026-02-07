@@ -12,7 +12,7 @@ import { ProviderType } from "@/lib/providers/types";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!id || id === "undefined" || id === "null") {
+  if (!id || id === "undefined") {
     return new NextResponse("Invalid ID", { status: 400 });
   }
   const searchParams = request.nextUrl.searchParams;
@@ -47,21 +47,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const imageType = searchParams.get("imageType") || "Primary";
   const tag = searchParams.get("tag");
 
-  // Check for custom user profile picture first
-  if (isUser) {
-    const { getProfilePicture } = await import("@/lib/server/profile-picture");
-    const customProfile = await getProfilePicture(id);
-    if (customProfile && customProfile.image) {
-      return new NextResponse(customProfile.image as any, {
-        status: 200,
-        headers: {
-          "Content-Type": customProfile.contentType || "image/webp",
-          "Cache-Control": "public, max-age=3600, must-revalidate",
-        },
-      });
-    }
-  }
-  
   let provider = getMediaProvider(providerType);
 
   
@@ -139,7 +124,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": isUser ? "public, max-age=3600, must-revalidate" : "public, max-age=31536000, immutable",
+        "Cache-Control": isUser ? "no-cache, no-store, must-revalidate" : "public, max-age=31536000, immutable",
       },
     });
 

@@ -86,7 +86,7 @@ export function AdminSettings() {
         });
     };
 
-    if (adminStatus?.hasAdmin && !adminStatus.isAdmin) {
+    if (sessionStatus?.isGuest || (adminStatus?.hasAdmin && !adminStatus.isAdmin)) {
         return null;
     }
 

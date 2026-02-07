@@ -11,7 +11,7 @@ export async function GET() {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
-    if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id, session.user.Name, session.user.provider))) {
+    if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id, session.user.Name, session.user.provider, !!session.user.isGuest))) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest) {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
-    if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id, session.user.Name, session.user.provider))) {
+    if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id, session.user.Name, session.user.provider, !!session.user.isGuest))) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 

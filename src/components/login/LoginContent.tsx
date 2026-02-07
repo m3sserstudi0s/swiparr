@@ -47,7 +47,6 @@ export default function LoginContent() {
 
   const searchParams = useSearchParams();
 
-
   const sessionCodeParam = useMemo(() => {
     const directJoin = searchParams.get("join");
     if (directJoin) return directJoin;
@@ -77,6 +76,14 @@ export default function LoginContent() {
         .catch(err => {
           console.error("Failed to fetch session provider", err);
         });
+    }
+  }, [sessionCodeParam]);
+
+  const [activeTab, setActiveTab] = useState<string>("login");
+
+  useEffect(() => {
+    if (sessionCodeParam) {
+      setActiveTab("join");
     }
   }, [sessionCodeParam]);
 
@@ -229,7 +236,7 @@ export default function LoginContent() {
   const contentHeight = useMemo(() => {
     if (wasMadeAdmin) return "h-auto";
     if (selectedProvider === "tmdb") return !providerLock ? "h-80" : "h-60";
-    return !providerLock ? "h-[420px]" : "h-80";
+    return !providerLock ? "h-[420px]" : activeTab == 'login' ? "h-80" : 'h-100';
   }, [wasMadeAdmin, selectedProvider, providerLock]);
 
   return (
@@ -243,7 +250,7 @@ export default function LoginContent() {
       <Card className={cn("w-full border-border bg-card text-card-foreground pt-0", !providerLock ? "max-w-sm" : "max-w-xs")}>
       <CardHeader className="rounded-t-xl bg-linear-to-t to-foreground/20 via-foreground/5">
         <CardTitle className="flex flex-row gap-3 items-center justify-center py-3 mt-4">
-          <Image src={logo} alt="Logo" className="size-7 invert mt-2 opacity-80" loading="eager" />
+          <Image src={logo} alt="Logo" className="size-7 dark:invert mt-2 dark:opacity-80 opacity-70" loading="eager" />
           <GradientText className="text-3xl mt-1">
            Swiparr
           </GradientText>
@@ -318,6 +325,8 @@ export default function LoginContent() {
                 hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === ProviderType.JELLYFIN)}
                 isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
                 onProfilePictureChange={setProfilePicture}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
               />
             )}
 
