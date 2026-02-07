@@ -109,18 +109,25 @@ export interface MediaProvider {
   // Images
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string;
   getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string>;
+  fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse>;
 
   // Auth (optional, based on capabilities)
-  authenticate?(username: string, password?: string, deviceId?: string, config?: string): Promise<any>;
-
-  // User Actions (optional)
-  toggleWatchlist?(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void>;
-  toggleFavorite?(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void>;
-
-  // Quick Connect (optional)
-  initiateQuickConnect?(deviceId: string): Promise<any>;
-  checkQuickConnect?(secret: string, deviceId: string): Promise<any>;
 }
+
+export interface AuthContext {
+  accessToken?: string;
+  deviceId?: string;
+  userId?: string;
+  serverUrl?: string;
+  tmdbToken?: string;
+  watchRegion?: string;
+}
+
+export interface ImageResponse {
+  data: Buffer | ArrayBuffer;
+  contentType: string;
+}
+
 
 export interface AuthContext {
   accessToken?: string;

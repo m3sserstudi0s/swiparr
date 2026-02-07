@@ -2,8 +2,10 @@ import {
   MediaProvider, 
   ProviderCapabilities, 
   SearchFilters, 
-  AuthContext 
+  AuthContext,
+  ImageResponse
 } from "../types";
+
 import { 
   MediaItem, 
   MediaLibrary, 
@@ -118,6 +120,22 @@ export class JellyfinProvider implements MediaProvider {
     } catch (e) {
         return "";
     }
+  }
+
+  async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
+    const url = this.getImageUrl(itemId, type as any, tag, auth);
+    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+    
+    const res = await apiClient.get(url, {
+      responseType: "arraybuffer",
+      headers,
+      params: options
+    });
+
+    return {
+      data: res.data,
+      contentType: res.headers["content-type"] || "image/webp"
+    };
   }
 
 

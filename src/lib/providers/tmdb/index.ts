@@ -5,8 +5,11 @@ import {
   MediaProvider, 
   ProviderCapabilities, 
   SearchFilters, 
-  AuthContext 
+  AuthContext,
+  ImageResponse
 } from "../types";
+import axios from "axios";
+
 
 import { 
   MediaItem, 
@@ -190,6 +193,22 @@ export class TmdbProvider implements MediaProvider {
         return "";
     }
   }
+
+  async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
+    const url = this.getImageUrl(itemId, type as any, tag);
+    
+    // TMDB images are public, but we can still proxy them through axios to be consistent
+    const res = await axios.get(url, {
+      responseType: "arraybuffer",
+      params: options
+    });
+
+    return {
+      data: res.data,
+      contentType: res.headers["content-type"] || "image/webp"
+    };
+  }
+
 
   async authenticate(username: string, password?: string, deviceId?: string, tmdbToken?: string): Promise<any> {
     return {

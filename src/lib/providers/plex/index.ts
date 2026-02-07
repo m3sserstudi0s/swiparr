@@ -3,7 +3,8 @@ import {
   MediaProvider, 
   ProviderCapabilities, 
   SearchFilters, 
-  AuthContext 
+  AuthContext,
+  ImageResponse
 } from "../types";
 
 import { 
@@ -157,6 +158,24 @@ export class PlexProvider implements MediaProvider {
         return "";
     }
   }
+
+  async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
+    const url = this.getImageUrl(itemId, type as any, tag, auth);
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
+    const headers = getPlexHeaders(token);
+    
+    const res = await plexClient.get(url, {
+      responseType: "arraybuffer",
+      headers,
+      params: options
+    });
+
+    return {
+      data: res.data,
+      contentType: res.headers["content-type"] || "image/webp"
+    };
+  }
+
 
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const token = password || appConfig.PLEX_TOKEN;
