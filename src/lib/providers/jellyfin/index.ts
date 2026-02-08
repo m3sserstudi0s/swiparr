@@ -73,13 +73,14 @@ export class JellyfinProvider implements MediaProvider {
     return (res.data.Items || []).map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
   }
 
-  async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
+   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
     const res = await apiClient.get(getJellyfinUrl("/Items", auth?.serverUrl), {
       params: {
         IncludeItemTypes: "Movie",
         Recursive: true,
         Fields: "OfficialRating",
         EnableImages: false,
+        UserId: auth?.userId,
       },
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });

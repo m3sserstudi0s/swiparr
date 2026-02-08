@@ -311,13 +311,16 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               </div>
             </div>
 
-            {/* Official Ratings Section */}
+             {/* Official Ratings Section */}
             {ratings && ratings.length > 0 && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <Label className="text-base font-semibold">
                     Maturity Rating
                   </Label>
+                  {selectedRatings.length > 0 && (
+                    <button onClick={() => setSelectedRatings([])} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {ratings.map((rating: MediaRating) => (
