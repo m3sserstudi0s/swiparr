@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Google_Sans_Flex, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
@@ -8,7 +8,7 @@ import { TouchProvider } from '@/components/ui/hybrid-tooltip'
 export const dynamic = 'force-dynamic';
 
 
-const inter = Inter({ 
+const sansFlex = Google_Sans_Flex({ 
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-sans',
@@ -93,7 +93,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className={`${sansFlex.variable} ${jetbrainsMono.variable}`}>
 
         <Providers
           attribute="class"
