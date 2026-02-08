@@ -413,7 +413,6 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <Label className="text-base font-semibold flex items-center gap-2">
-                  <Globe className="size-4 text-primary" />
                   Language
                 </Label>
                 {selectedLanguages.length !== DEFAULT_LANGUAGES.length && (
