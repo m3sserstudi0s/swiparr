@@ -63,9 +63,14 @@ export class PlexProvider implements MediaProvider {
             // better: implement proper Plex filtering if we have the IDs.
         }
 
-        const res = await plexClient.get(url, { headers, params });
+         const res = await plexClient.get(url, { headers, params });
         const items = res.data.MediaContainer?.Metadata || [];
         allItems = [...allItems, ...items];
+    }
+
+    // Client-side filtering for ratings if provided, as Plex API filtering is complex
+    if (filters.ratings && filters.ratings.length > 0) {
+        allItems = allItems.filter(item => item.contentRating && filters.ratings?.includes(item.contentRating));
     }
 
     // Sort and limit if we combined from multiple sections

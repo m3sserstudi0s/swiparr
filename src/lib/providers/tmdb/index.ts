@@ -82,8 +82,13 @@ export class TmdbProvider implements MediaProvider {
         }
     }
 
-    if (filters.minCommunityRating && filters.minCommunityRating > 0) {
+     if (filters.minCommunityRating && filters.minCommunityRating > 0) {
         discoverOptions['vote_average.gte'] = filters.minCommunityRating;
+    }
+
+    if (filters.ratings && filters.ratings.length > 0) {
+        discoverOptions.certification_country = filters.watchRegion || auth?.watchRegion || 'US';
+        discoverOptions.certification = filters.ratings.join('|');
     }
 
     // If no specific filters and sortBy is Random, we can use trending or discover with a random page
@@ -105,14 +110,22 @@ export class TmdbProvider implements MediaProvider {
     }
 
     const discoverRes = await this.client.discover.movie(discoverOptions);
-    return discoverRes.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));
+    return discoverRes.results.map((m: any) => {
+        const item = this.mapMovieToMediaItem(m, genreNameMap);
+        // If we filtered by rating, we know these items match, so we can "fake" the rating 
+        // for the client-side filter to not discard them, since TMDB list doesn't include it.
+        if (filters.ratings && filters.ratings.length === 1) {
+            item.OfficialRating = filters.ratings[0];
+        }
+        return item;
+    });
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
     if (auth?.tmdbToken) {
         this.client = new TMDB(auth.tmdbToken);
     }
-    const movie = await this.client.movies.details(parseInt(id), ['credits', 'images' as any, 'watch/providers' as any]);
+    const movie = await this.client.movies.details(parseInt(id), ['credits', 'images' as any, 'watch/providers' as any, 'release_dates' as any]);
     return this.mapMovieDetailsToMediaItem(movie as any, auth?.watchRegion);
   }
 
@@ -250,7 +263,19 @@ export class TmdbProvider implements MediaProvider {
             Type: "Director",
             PrimaryImageTag: p.profile_path,
         })) || [])
-    ];
+     ];
+    
+    // Extract certification (OfficialRating)
+    let officialRating: string | undefined = undefined;
+    const releaseDates = movie.release_dates?.results || [];
+    const targetRegion = region || 'US';
+    
+    const regionRelease = releaseDates.find((r: any) => r.iso_3166_1 === targetRegion) || releaseDates.find((r: any) => r.iso_3166_1 === 'US') || releaseDates[0];
+    
+    if (regionRelease) {
+        // Find the first non-empty certification
+        officialRating = regionRelease.release_dates.find((rd: any) => rd.certification)?.certification;
+    }
 
     return {
       Id: movie.id.toString(),
@@ -261,6 +286,7 @@ export class TmdbProvider implements MediaProvider {
       CommunityRating: movie.vote_average,
       RunTimeTicks: movie.runtime ? movie.runtime * 60 * 10000000 : undefined,
       Taglines: movie.tagline ? [movie.tagline] : [],
+      OfficialRating: officialRating,
       Genres: movie.genres?.map((g: any) => g.name),
       ImageTags: {
         Primary: movie.poster_path,
