@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Swiparr',
     short_name: 'Swiparr',
-    description: 'Swipe on your Jellyfin media',
+    description: 'Swipe on what to watch next, by yourself or together.',
     start_url: `${basePath}/`,
     display: 'standalone',
     background_color: '#000000',

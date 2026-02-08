@@ -6,7 +6,7 @@ import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData, type MediaItem, type MergedLike } from "@/types";
 import { events, EVENT_TYPES } from "@/lib/events";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const filter = searchParams.get("filter") || "all";
 
   try {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
 
     const conditions = [eq(likesTable.externalUserId, session.user.Id)];
@@ -38,16 +38,10 @@ export async function GET(request: NextRequest) {
 
     const ids = likesResult.map((l: Like) => l.externalId);
     
-    // We should ideally use the provider here to get full details for multiple IDs
-    // JellyfinProvider currently doesn't have getMultipleDetails, but we can call getItems with IDs if it supports it.
-    
-    // Let's add getItemsByIds to MediaProvider or just use getItemDetails in a loop (not ideal but safe for now)
     const itemsPromises = ids.map(async (id: any) => {
         try {
             return await provider.getItemDetails(id, auth);
         } catch (error) {
-            // TODO: Improve error handling here (for 404 when item does not exist in library anymore)
-            // console.warn(`Failed to fetch details for item ${id}:`, error instanceof Error ? error.message : error);
             return null;
         }
     });
@@ -55,23 +49,18 @@ export async function GET(request: NextRequest) {
     const itemsResults = await Promise.all(itemsPromises);
     const items = itemsResults.filter((item): item is MediaItem => item !== null);
 
-
-    // Fetch all likes in this session for these items to identify contributors
-    // Only if we have session items
     const sessionCodes = [...new Set(likesResult.map((l: any) => l.sessionCode).filter(Boolean))];
     let allRelatedLikes: any[] = [];
     let members: any[] = [];
 
     if (sessionCodes.length > 0) {
-        allRelatedLikes = await db.query.likes.findMany({
-            where: and(
-                inArray(likesTable.sessionCode, sessionCodes as string[]),
-                inArray(likesTable.externalId, items.map((i: any) => i.Id))
-            )
-        });
-        members = await db.query.sessionMembers.findMany({
-            where: inArray(sessionMembers.sessionCode, sessionCodes as string[])
-        });
+        allRelatedLikes = await db.select().from(likesTable).where(and(
+            inArray(likesTable.sessionCode, sessionCodes as string[]),
+            inArray(likesTable.externalId, items.map((i: any) => i.Id))
+        ));
+        members = await db.select().from(sessionMembers).where(
+            inArray(sessionMembers.sessionCode, sessionCodes as string[])
+        );
     }
 
     let merged: MergedLike[] = items.map((item: MediaItem) => {
@@ -127,7 +116,6 @@ export async function DELETE(request: NextRequest) {
     : (session.sessionCode || null);
 
   try {
-    // Delete the user's like for this item
     await db.delete(likesTable).where(
         and(
             eq(likesTable.externalUserId, session.user.Id),
@@ -136,17 +124,13 @@ export async function DELETE(request: NextRequest) {
         )
     );
 
-    // If it was a session match, we might need to update other users' like.isMatch status
     if (targetSessionCode) {
-        const remainingLikes = await db.query.likes.findMany({
-            where: and(
-                eq(likesTable.sessionCode, targetSessionCode),
-                eq(likesTable.externalId, itemId)
-            )
-        });
+        const remainingLikes = await db.select().from(likesTable).where(and(
+            eq(likesTable.sessionCode, targetSessionCode),
+            eq(likesTable.externalId, itemId)
+        ));
 
         if (remainingLikes.length < 2) {
-            // No longer a match for anyone
             await db.update(likesTable)
                 .set({ isMatch: false })
                 .where(
@@ -157,7 +141,6 @@ export async function DELETE(request: NextRequest) {
                 );
         }
 
-        // Notify that matches might have changed
         events.emit(EVENT_TYPES.MATCH_REMOVED, {
             sessionCode: targetSessionCode,
             itemId: itemId,

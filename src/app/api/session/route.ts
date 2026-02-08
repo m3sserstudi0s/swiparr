@@ -3,13 +3,13 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { isAdmin } from "@/lib/server/admin";
-import { getEffectiveCredentials, GuestKickedError } from "@/lib/server/auth-resolver";
 import { sessionActionSchema, sessionSettingsSchema } from "@/lib/validations";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { ProviderType } from "@/lib/providers/types";
 import { SessionService } from "@/lib/services/session-service";
-import { db, sessions, config as configTable, userProfiles } from "@/lib/db";
+import { AuthService, GuestKickedError } from "@/lib/services/auth-service";
+import { ConfigService } from "@/lib/services/config-service";
+import { db, sessions, userProfiles } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
@@ -81,7 +81,7 @@ export async function GET() {
   let activeServerUrl = session.user.providerConfig?.serverUrl;
 
   try {
-    const creds = await getEffectiveCredentials(session);
+    const creds = await AuthService.getEffectiveCredentials(session);
     effectiveUserId = creds.userId;
     if (creds.provider) activeProvider = creds.provider;
     if (creds.serverUrl) activeServerUrl = creds.serverUrl;
@@ -104,14 +104,10 @@ export async function GET() {
     hostUserId = currentSession?.hostUserId || null;
   }
 
-  const userSettingsEntry = await db.query.config.findFirst({
-    where: eq(configTable.key, `user_settings:${session.user.Id}`),
-  });
-  const settingsHash = userSettingsEntry?.value ? userSettingsEntry.value.length.toString(16) + userSettingsEntry.value.slice(-8) : 'default';
+  const userSettings = await ConfigService.getUserSettings(session.user.Id);
+  const settingsHash = userSettings ? JSON.stringify(userSettings).length.toString(16) : 'default';
 
-  const profile = await db.query.userProfiles.findFirst({
-      where: eq(userProfiles.userId, session.user.Id),
-  });
+  const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, session.user.Id)).then((rows: any[]) => rows[0]);
 
   return NextResponse.json({ 
     code: session.sessionCode || null,
@@ -119,7 +115,7 @@ export async function GET() {
     userName: session.user.Name,
     effectiveUserId,
     isGuest: !!session.user.isGuest,
-    isAdmin: await isAdmin(session.user.Id, session.user.Name, activeProvider, !!session.user.isGuest),
+    isAdmin: await AuthService.isAdmin(session.user.Id, session.user.Name, activeProvider, !!session.user.isGuest),
     hostUserId,
     filters,
     settings,

@@ -38,7 +38,9 @@ const envSchema = z.object({
 
   // UI / Proxy
   URL_BASE_PATH: z.string().default(''),
+  APP_PUBLIC_URL: z.string().default('swiparr.com'),
   JELLYFIN_USE_WATCHLIST: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+
   APP_VERSION: z.string().optional(),
   X_FRAME_OPTIONS: z.string().default('DENY'),
   CSP_FRAME_ANCESTORS: z.string().default('none'),
@@ -87,7 +89,9 @@ export const config = {
   app: {
     version: (parsedEnv.APP_VERSION || packageJson.version).replace(/^v/i, ''),
     basePath: BASE_PATH,
+    appPublicUrl: parsedEnv.APP_PUBLIC_URL,
     provider: parsedEnv.PROVIDER,
+
     providerLock: parsedEnv.PROVIDER_LOCK,
     useWatchlist: parsedEnv.JELLYFIN_USE_WATCHLIST,
   },

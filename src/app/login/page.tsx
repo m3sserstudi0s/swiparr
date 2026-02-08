@@ -13,20 +13,23 @@ type Props = {
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = await searchParams;
   const join = params.join;
-  const { basePath } = await getAsyncRuntimeConfig();
+  const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
+  const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
   
-  const ogUrl = new URL(`${basePath}/api/og`, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+  const ogUrl = new URL(`${basePath}/api/og`, origin);
   if (join && typeof join === 'string') {
     ogUrl.searchParams.set('join', join);
   }
 
   if (join) {
+    const title = "Swipe together on Swiparr";
+    const description = `You've been invited to join a session on Swiparr with code: ${join}.`;
     return {
-      title: "Join Session - Swiparr",
-      description: `You've been invited to join a session on Swiparr with code: ${join}.`,
+      title,
+      description,
       openGraph: {
-        title: "Join Session - Swiparr",
-        description: `You've been invited to join a session on Swiparr with code: ${join}.`,
+        title,
+        description,
         images: [
           {
             url: ogUrl.toString(),
@@ -37,19 +40,21 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       },
       twitter: {
         card: "summary_large_image",
-        title: "Join Session - Swiparr",
-        description: `You've been invited to join a session on Swiparr with code: ${join}.`,
+        title,
+        description,
         images: [ogUrl.toString()],
       }
     };
   }
 
+  const title = "Login to Swiparr - Start swiping on movies";
+  const description = "Login to Swiparr to start swiping on what to watch next, by yourself or together. A Tinder-like experience for your movie and TV show library.";
   return {
-    title: "Login - Swiparr",
-    description: "Login to Swiparr to start swiping on movies.",
+    title,
+    description,
     openGraph: {
-      title: "Login - Swiparr",
-      description: "Login to Swiparr to start swiping on movies.",
+      title,
+      description,
       images: [
         {
           url: ogUrl.toString(),
@@ -60,8 +65,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     },
     twitter: {
       card: "summary_large_image",
-      title: "Login - Swiparr",
-      description: "Login to Swiparr to start swiping on movies.",
+      title,
+      description,
       images: [ogUrl.toString()],
     }
   };

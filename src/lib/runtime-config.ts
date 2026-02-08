@@ -4,7 +4,6 @@
  * in Docker/Compose while still making them available to the browser.
  */
 
-import packageJson from "../../package.json";
 import { ProviderCapabilities, ProviderType, PROVIDER_CAPABILITIES } from "./providers/types";
 import { config } from "./config";
 
@@ -17,7 +16,9 @@ export interface RuntimeConfig {
   useStaticFilterValues: boolean;
   version: string;
   basePath: string;
+  appPublicUrl: string;
 }
+
 
 /**
  * Shared logic to get the config.
@@ -43,6 +44,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     useStaticFilterValues: !!overrides?.useStaticFilterValues,
     version: config.app.version,
     basePath: config.app.basePath,
+    appPublicUrl: config.app.appPublicUrl,
     ...overrides
   };
 }
@@ -53,12 +55,14 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
  * executed on the client.
  */
 export async function getAsyncRuntimeConfig(): Promise<RuntimeConfig> {
-    // Only fetch from DB if we are on the server
     if (typeof window === 'undefined') {
-        // We use a dynamic import to avoid static analysis pulling the server code into client bundles
-        const [admin, sessionLib, { cookies }, { getIronSession }, { getSessionOptions }] = await Promise.all([
-            import("./server/admin"),
-            import("./server/auth-resolver"),
+        const [
+            { ConfigService }, 
+            { cookies }, 
+            { getIronSession }, 
+            { getSessionOptions }
+        ] = await Promise.all([
+            import("./services/config-service"),
             import("next/headers"),
             import("iron-session"),
             import("./session")
@@ -72,12 +76,12 @@ export async function getAsyncRuntimeConfig(): Promise<RuntimeConfig> {
         if (session?.user?.provider) {
             provider = session.user.provider;
         } else if (!config.app.providerLock) {
-            provider = await admin.getActiveProvider();
+            provider = await ConfigService.getActiveProvider();
         } else {
             provider = config.app.provider;
         }
 
-        const useStaticFilterValues = await admin.getUseStaticFilterValues();
+        const useStaticFilterValues = await ConfigService.getUseStaticFilterValues();
 
         return getRuntimeConfig({ 
             provider: provider as ProviderType,

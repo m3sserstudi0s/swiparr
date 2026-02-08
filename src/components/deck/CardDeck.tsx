@@ -146,7 +146,10 @@ export function CardDeck() {
     swipeMutation.mutate({ itemId: id, direction, item }, {
       onSuccess: (data) => {
         if (data.isMatch) {
-          setMatchedItem(item);
+          setMatchedItem({
+            ...item,
+            likedBy: data.likedBy
+          });
         } else if (data.matchBlockedByLimit) {
           toast.error("Match not registered", {
             description: "Max number of matches reached",
@@ -266,6 +269,7 @@ export function CardDeck() {
               const prevent: ("left" | "right")[] = [];
               if (sessionSettings?.maxLeftSwipes && (stats?.mySwipes.left || 0) >= sessionSettings.maxLeftSwipes) prevent.push("left");
               if (sessionSettings?.maxRightSwipes && (stats?.mySwipes.right || 0) >= sessionSettings.maxRightSwipes) prevent.push("right");
+              console.log("prevent", prevent)
 
               return (
                 <SwipeCard

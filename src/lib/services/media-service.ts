@@ -1,20 +1,20 @@
 import { eq, and, isNull } from "drizzle-orm";
-import { db, likes, hiddens, sessions, sessionMembers, config as configTable } from "@/lib/db";
+import { db, likes, hiddens, sessions, sessionMembers } from "@/lib/db";
 import { SessionData, Filters } from "@/types";
 import { MediaItem } from "@/types/media";
 import { shuffleWithSeed } from "@/lib/utils";
-import { getIncludedLibraries } from "@/lib/server/admin";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { ProviderType } from "@/lib/providers/types";
+import { AuthService } from "./auth-service";
+import { ConfigService } from "./config-service";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string) {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     const activeProviderName = auth.provider || session.user.provider || ProviderType.JELLYFIN;
 
-    const includedLibraries = await getIncludedLibraries();
+    const includedLibraries = await ConfigService.getIncludedLibraries();
 
     // 1. Get existing interactions to exclude
     const [liked, hidden] = await Promise.all([
@@ -88,15 +88,10 @@ export class MediaService {
           }
         });
       } else {
-        const userSettingsEntry = await db.query.config.findFirst({
-          where: eq(configTable.key, `user_settings:${session.user.Id}`),
-        });
-        if (userSettingsEntry) {
-          try {
-            const s = JSON.parse(userSettingsEntry.value);
-            if (s.watchProviders) s.watchProviders.forEach((p: string) => accumulated.add(p));
-            if (s.watchRegion) watchRegion = s.watchRegion;
-          } catch(e) {}
+        const settings = await ConfigService.getUserSettings(session.user.Id);
+        if (settings) {
+          if (settings.watchProviders) settings.watchProviders.forEach((p: string) => accumulated.add(p));
+          if (settings.watchRegion) watchRegion = settings.watchRegion;
         }
       }
       watchProviders = accumulated.size > 0 ? Array.from(accumulated) : undefined;
@@ -134,6 +129,10 @@ export class MediaService {
   private static async getSoloItems(sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number) {
     const soloYears = sessionFilters?.yearRange ? Array.from({ length: (sessionFilters.yearRange[1] ?? 2025) - (sessionFilters.yearRange[0] ?? 1900) + 1 }, (_, i) => (sessionFilters.yearRange?.[0] ?? 1900) + i) : undefined;
     
+    // If we have filters but the provider might not support them all (like Plex), 
+    // we fetch more items to ensure we have enough after client-side filtering.
+    const fetchLimit = (sessionFilters && (sessionFilters.genres?.length || sessionFilters.yearRange)) ? Math.max(limit * 4, 100) : limit;
+
     const fetchedItems = await provider.getItems({
       libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
       genres: sessionFilters?.genres,
@@ -144,56 +143,58 @@ export class MediaService {
       watchRegion,
       sortBy: "Random",
       unplayedOnly: true,
-      limit: limit,
+      limit: fetchLimit,
       offset: page * limit
     }, auth);
     
     let items = this.applyClientFilters(fetchedItems, sessionFilters);
     items = items.filter(item => !excludeIds.has(item.Id));
+    
+    const slicedItems = items.slice(0, limit);
 
-    if (items.length > 0) {
-      items[0].BlurDataURL = await provider.getBlurDataUrl(items[0].Id, "Primary", auth);
+    if (slicedItems.length > 0) {
+      slicedItems[0].BlurDataURL = await provider.getBlurDataUrl(slicedItems[0].Id, "Primary", auth);
     }
 
     return {
-      items,
-      hasMore: fetchedItems.length === limit
+      items: slicedItems,
+      hasMore: fetchedItems.length === fetchLimit
     };
   }
 
   static async getLibraries(session: SessionData) {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     return provider.getLibraries(auth);
   }
 
   static async getGenres(session: SessionData) {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     return provider.getGenres(auth);
   }
 
   static async getYears(session: SessionData) {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     return provider.getYears(auth);
   }
 
   static async getRatings(session: SessionData) {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     return provider.getRatings(auth);
   }
 
   static async getRegions(session: SessionData) {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     if (provider.getRegions) return provider.getRegions(auth);
     return [];
   }
 
   static async getWatchProviders(session: SessionData, region: string, sessionCode?: string | null, wantAll?: boolean) {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     const activeProvider = auth.provider || session.user.provider || ProviderType.JELLYFIN;
 
@@ -234,14 +235,9 @@ export class MediaService {
         }
         accumulatedProviderIds = Object.keys(memberSelections);
     } else {
-        const userSettingsEntry = await db.query.config.findFirst({
-            where: eq(configTable.key, `user_settings:${session.user.Id}`),
-        });
-        if (userSettingsEntry) {
-            try {
-                const s = JSON.parse(userSettingsEntry.value);
-                if (s.watchProviders) accumulatedProviderIds = s.watchProviders;
-            } catch(e) {}
+        const settings = await ConfigService.getUserSettings(session.user.Id);
+        if (settings) {
+            if (settings.watchProviders) accumulatedProviderIds = settings.watchProviders;
         }
     }
 
@@ -264,7 +260,30 @@ export class MediaService {
 
   private static applyClientFilters(items: MediaItem[], filters: Filters | null): MediaItem[] {
     let result = items;
-    if (filters?.runtimeRange) {
+
+    if (!filters) return result;
+
+    if (filters.genres && filters.genres.length > 0) {
+      result = result.filter(item => 
+        item.Genres?.some(g => filters.genres.includes(g))
+      );
+    }
+
+    if (filters.yearRange) {
+      const [min, max] = filters.yearRange;
+      result = result.filter(item => {
+        if (!item.ProductionYear) return false;
+        return item.ProductionYear >= min && item.ProductionYear <= max;
+      });
+    }
+
+    if (filters.officialRatings && filters.officialRatings.length > 0) {
+      result = result.filter(item => 
+        item.OfficialRating && filters.officialRatings!.includes(item.OfficialRating)
+      );
+    }
+
+    if (filters.runtimeRange) {
       const [min, max] = filters.runtimeRange;
       result = result.filter(item => {
         const minutes = (item.RunTimeTicks || 0) / 600000000;
@@ -274,7 +293,7 @@ export class MediaService {
       });
     }
 
-    if (filters?.minCommunityRating) {
+    if (filters.minCommunityRating) {
       result = result.filter(item => (item.CommunityRating || 0) >= filters.minCommunityRating!);
     }
     return result;

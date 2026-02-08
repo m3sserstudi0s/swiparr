@@ -3,10 +3,11 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { db, config, sessionMembers } from "@/lib/db";
+import { db, sessionMembers } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { userSettingsSchema } from "@/lib/validations";
 import { events, EVENT_TYPES } from "@/lib/events";
+import { ConfigService } from "@/lib/services/config-service";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -16,25 +17,17 @@ export async function GET() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const userId = session.user.Id;
-    const userSettingsKey = `user_settings:${userId}`;
-    
-    const settingsEntry = await db.query.config.findFirst({
-        where: eq(config.key, userSettingsKey),
-    });
+    const settings = await ConfigService.getUserSettings(session.user.Id);
 
-    if (!settingsEntry) {
-        // Return default settings with null watchProviders to signify "all" or handle in frontend
-        // But better to return the actual list if possible. 
-        // For now let's return a flag or empty list and let frontend fetch all.
+    if (!settings) {
         return NextResponse.json({
-            watchProviders: [], // Frontend will interpret empty + first load as "select all"
+            watchProviders: [],
             watchRegion: "SE",
             isNew: true
         });
     }
 
-    return NextResponse.json(JSON.parse(settingsEntry.value));
+    return NextResponse.json(settings);
 }
 
 export async function PATCH(request: NextRequest) {
@@ -46,7 +39,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const userId = session.user.Id;
-    const userSettingsKey = `user_settings:${userId}`;
 
     try {
         const body = await request.json();
@@ -57,27 +49,16 @@ export async function PATCH(request: NextRequest) {
         }
 
         const newSettings = validated.data;
-        const settingsValue = JSON.stringify(newSettings);
+        await ConfigService.setUserSettings(userId, newSettings);
 
-        // Update global user settings
-        await db.insert(config).values({
-            key: userSettingsKey,
-            value: settingsValue,
-        }).onConflictDoUpdate({
-            target: config.key,
-            set: { value: settingsValue },
-        });
-
-        // If user is in a session, update their SessionMember settings too
         if (session.sessionCode) {
             await db.update(sessionMembers)
-                .set({ settings: settingsValue })
+                .set({ settings: JSON.stringify(newSettings) })
                 .where(and(
                     eq(sessionMembers.sessionCode, session.sessionCode),
                     eq(sessionMembers.externalUserId, userId)
                 ));
             
-            // Notify session that a user's settings (and thus accumulated providers) changed
             events.emit(EVENT_TYPES.SESSION_UPDATED, session.sessionCode);
             events.emit(EVENT_TYPES.FILTERS_UPDATED, {
                 sessionCode: session.sessionCode,

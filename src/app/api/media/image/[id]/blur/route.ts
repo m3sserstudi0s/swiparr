@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const searchParams = request.nextUrl.searchParams;
     const imageType = searchParams.get("imageType") || "Primary";
-    const creds = await getEffectiveCredentials(session);
+    const creds = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(creds.provider);
     
     const blurDataURL = await provider.getBlurDataUrl(id, imageType, creds);

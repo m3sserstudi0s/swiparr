@@ -38,7 +38,7 @@ export class EmbyProvider implements MediaProvider {
         Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData",
         SortBy: filters.sortBy || "Id", 
         ParentId: filters.libraries?.join(",") || undefined,
-        Genres: filters.genres?.join(",") || undefined,
+        GenreNames: filters.genres?.join(",") || undefined,
         Years: filters.years?.join(",") || undefined,
         OfficialRatings: filters.ratings?.join(",") || undefined,
         Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,

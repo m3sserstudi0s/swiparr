@@ -3,30 +3,29 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { isAdmin, getIncludedLibraries, setIncludedLibraries } from "@/lib/server/admin";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { revalidateTag } from "next/cache";
+import { ConfigService } from "@/lib/services/config-service";
+import { AuthService } from "@/lib/services/auth-service";
+import { libraryUpdateSchema } from "@/lib/validations";
 
 export async function GET() {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
-    if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id, session.user.Name, session.user.provider, !!session.user.isGuest))) {
+    if (!session.isLoggedIn || !session.user.Id || !(await AuthService.isAdmin(session.user.Id, session.user.Name, session.user.provider, !!session.user.isGuest))) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-
-    const libraries = await getIncludedLibraries();
+    const libraries = await ConfigService.getIncludedLibraries();
     return NextResponse.json(libraries);
 }
-
-import { libraryUpdateSchema } from "@/lib/validations";
 
 export async function PATCH(request: NextRequest) {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
-    if (!session.isLoggedIn || !session.user.Id || !(await isAdmin(session.user.Id, session.user.Name, session.user.provider, !!session.user.isGuest))) {
+    if (!session.isLoggedIn || !session.user.Id || !(await AuthService.isAdmin(session.user.Id, session.user.Name, session.user.provider, !!session.user.isGuest))) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -39,14 +38,10 @@ export async function PATCH(request: NextRequest) {
         }
 
         const libraries = validated.data;
-
-
-        await setIncludedLibraries(libraries);
+        await ConfigService.setIncludedLibraries(libraries);
         
-        // Purge Next.js cache
         revalidateTag("jellyfin-libraries", "default");
 
-        // Notify all clients
         events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
             type: 'libraries',
             userId: session.user.Id

@@ -40,7 +40,7 @@ export function LikesList() {
             </div>
 
             {/* List Content */}
-            <ScrollArea className="flex-1 h-[calc(100svh-135px)] -mr-5 pr-5">
+            <ScrollArea className="flex-1 h-[calc(100svh-155px)] -mr-5 pr-5">
                 {isLoading && <LikesSkeleton />}
 
                 {!isLoading && likes?.length === 0 && (
@@ -59,7 +59,7 @@ export function LikesList() {
                         </Empty>
                     </div>
                 )}
-                <div className="mt-5 mb-14">
+                <div className="mt-7 mb-14">
                 {likes?.map((movie: MergedLike) => (
                     <MovieListItem
                         key={movie.Id}

@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { setAdminUserId, getAdminUserId } from "@/lib/server/admin";
+import { ConfigService } from "@/lib/services/config-service";
 
 export async function POST() {
     const cookieStore = await cookies();
@@ -17,18 +17,17 @@ export async function POST() {
         return NextResponse.json({ error: "Guests cannot claim admin role" }, { status: 403 });
     }
 
-    const currentAdmin = await getAdminUserId(session.user.provider);
+    const currentAdmin = await ConfigService.getAdminUserId(session.user.provider);
     if (currentAdmin) {
         return NextResponse.json({ error: "Admin already exists" }, { status: 400 });
     }
 
-    const success = await setAdminUserId(session.user.Id, session.user.provider);
-    if (success) {
-        // Update session
+    try {
+        await ConfigService.setAdminUserId(session.user.Id, session.user.provider as any);
         session.user.isAdmin = true;
         await session.save();
         return NextResponse.json({ success: true });
+    } catch (e) {
+        return NextResponse.json({ error: "Failed to claim admin role" }, { status: 500 });
     }
-
-    return NextResponse.json({ error: "Failed to claim admin role" }, { status: 500 });
 }

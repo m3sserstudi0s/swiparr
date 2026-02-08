@@ -14,6 +14,11 @@ export interface SwipeResponse {
   success: boolean;
   isMatch: boolean;
   matchBlockedByLimit?: boolean;
+  likedBy?: {
+    userId: string;
+    userName: string;
+    sessionCode?: string | null;
+  }[];
 }
 
 export interface SessionStatus {

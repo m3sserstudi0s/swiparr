@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
-import { eq, and, ne, count, sql, inArray } from "drizzle-orm";
-import { db, sessions, sessionMembers, likes, hiddens, config as configTable, userProfiles } from "@/lib/db";
+import { eq, and, ne, count, sql } from "drizzle-orm";
+import { db, sessions, sessionMembers, likes, hiddens, userProfiles } from "@/lib/db";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { SessionSettings, Filters, SessionData } from "@/types";
 import { ProviderType } from "@/lib/providers/types";
+import { ConfigService } from "./config-service";
 
 export class SessionService {
   private static generateCode(): string {
@@ -28,15 +29,13 @@ export class SessionService {
       providerConfig: user.providerConfig ? JSON.stringify(user.providerConfig) : null,
     });
 
-    const userSettingsEntry = await db.query.config.findFirst({
-      where: eq(configTable.key, `user_settings:${user.Id}`),
-    });
+    const settings = await ConfigService.getUserSettings(user.Id);
 
     await db.insert(sessionMembers).values({
       sessionCode: code,
       externalUserId: user.Id,
       externalUserName: user.Name,
-      settings: userSettingsEntry?.value || null,
+      settings: settings ? JSON.stringify(settings) : null,
     });
 
     events.emit(EVENT_TYPES.SESSION_UPDATED, code);
@@ -65,18 +64,16 @@ export class SessionService {
       }
     }
 
-    const userSettingsEntry = await db.query.config.findFirst({
-      where: eq(configTable.key, `user_settings:${user.Id}`),
-    });
+    const settings = await ConfigService.getUserSettings(user.Id);
 
     await db.insert(sessionMembers).values({
       sessionCode: upperCode,
       externalUserId: user.Id,
       externalUserName: user.Name,
-      settings: userSettingsEntry?.value || null,
+      settings: settings ? JSON.stringify(settings) : null,
     }).onConflictDoUpdate({
       target: [sessionMembers.sessionCode, sessionMembers.externalUserId],
-      set: { settings: userSettingsEntry?.value || null }
+      set: { settings: settings ? JSON.stringify(settings) : null }
     });
 
     events.emit(EVENT_TYPES.USER_JOINED, { sessionCode: upperCode, userName: user.Name, userId: user.Id });

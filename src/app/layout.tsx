@@ -33,13 +33,17 @@ export const viewport: Viewport = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { basePath } = await getAsyncRuntimeConfig();
-  const url = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
+  const url = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
+  const tagline = "Swipe on what to watch next, by yourself or together.";
   
   return {
     metadataBase: new URL(url),
-    title: "Swiparr",
-    description: "Swipe on movies.",
+    title: {
+      default: "Swiparr",
+      template: "%s | Swiparr"
+    },
+    description: tagline,
     appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
     icons: {
       icon: `${basePath}/favicon.ico`,     
@@ -47,8 +51,8 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: `${basePath}/apple-icon.png`,
     },
     openGraph: {
-      title: "Swiparr",
-      description: "Swipe on movies.",
+      title: "Swiparr - Disover what to watch next",
+      description: tagline,
       url: url,
       siteName: "Swiparr",
       images: [
@@ -63,8 +67,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary",
-      title: "Swiparr",
-      description: "Swipe on movies.",
+      title: "Swiparr - Disover what to watch next",
+      description: tagline,
       images: [`${basePath}/icon1.png`],
     },
   };

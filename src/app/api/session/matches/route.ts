@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
-import { db, likes, sessionMembers, type Like } from "@/lib/db";
+import { db, likes, sessionMembers } from "@/lib/db";
 import { eq, and, desc } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   if (!session.sessionCode) return NextResponse.json([]);
 
   try {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
 
     const matches = await db.select().from(likes)
@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
         try {
             return await provider.getItemDetails(id, auth);
         } catch (error) {
-            console.warn(`Failed to fetch details for match ${id}:`, error instanceof Error ? error.message : error);
             return null;
         }
     });
@@ -43,36 +42,21 @@ export async function GET(request: NextRequest) {
     const itemsResult = await Promise.all(itemsPromises);
     const items = itemsResult.filter((item): item is any => item !== null);
 
-    // Fetch all likes for these items in this session to know who liked what
-    const allLikesInSession = await db.query.likes.findMany({
-        where: and(
-            eq(likes.sessionCode, session.sessionCode as string),
-        )
-    });
+    const [allLikesInSession, members] = await Promise.all([
+        db.select().from(likes).where(eq(likes.sessionCode, session.sessionCode as string)),
+        db.select().from(sessionMembers).where(eq(sessionMembers.sessionCode, session.sessionCode as string))
+    ]);
 
-    // Map likes to items
-    const itemsWithLikes = items.map((item: any) => {
+    const finalItems = items.map((item: any) => {
         const itemLikes = allLikesInSession.filter((l: any) => l.externalId === item.Id);
         return {
             ...item,
-            likedBy: itemLikes.map((l: any) => ({
-                userId: l.externalUserId,
+            likedBy: itemLikes.map((lb: any) => ({
+                userId: lb.externalUserId,
+                userName: members.find((m: any) => m.externalUserId === lb.externalUserId)?.externalUserName || "Unknown"
             }))
         };
     });
-
-    // To get usernames, let's also fetch session members
-    const members = await db.query.sessionMembers.findMany({
-        where: eq(sessionMembers.sessionCode, session.sessionCode as string)
-    });
-
-    const finalItems = itemsWithLikes.map((item: any) => ({
-        ...item,
-        likedBy: item.likedBy.map((lb: any) => ({
-            ...lb,
-            userName: members.find((m: any) => m.externalUserId === lb.userId)?.externalUserName || "Unknown"
-        }))
-    }));
 
     return NextResponse.json(finalItems);
 

@@ -3,10 +3,11 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { isAdmin, setAdminUserId } from "@/lib/server/admin";
 import axios from "axios";
 import { loginSchema } from "@/lib/validations";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { ConfigService } from "@/lib/services/config-service";
+import { AuthService } from "@/lib/services/auth-service";
 
 export async function POST(request: NextRequest) {
     let usernameForLog = "unknown";
@@ -20,7 +21,6 @@ export async function POST(request: NextRequest) {
 
         const { username, password, provider: bodyProvider, config: providerConfig, profilePicture } = validated.data;
         usernameForLog = username;
-
 
         const baseDeviceId = crypto.randomUUID();
         const deviceId = `${baseDeviceId}-${username}`;
@@ -40,10 +40,13 @@ export async function POST(request: NextRequest) {
 
         console.log("[Auth] Provider accepted credentials. User ID:", userId);
 
-        // Set as admin if no admin exists
-        const wasMadeAdmin = await setAdminUserId(userId, bodyProvider);
-        if (wasMadeAdmin) {
-            console.log(`[Auth] User ${userName} (${userId}) set as initial admin.`);
+        // Set as admin if no admin exists for this provider
+        const existingAdmin = await ConfigService.getAdminUserId(bodyProvider);
+        let wasMadeAdmin = false;
+        if (!existingAdmin) {
+            await ConfigService.setAdminUserId(userId, bodyProvider as any);
+            wasMadeAdmin = true;
+            console.log(`[Auth] User ${userName} (${userId}) set as initial admin for ${bodyProvider}.`);
         }
 
         const cookieStore = await cookies();
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
             Name: userName,
             AccessToken: accessToken,
             DeviceId: deviceId,
-            isAdmin: await isAdmin(userId, userName, bodyProvider),
+            isAdmin: await AuthService.isAdmin(userId, userName, bodyProvider),
             wasMadeAdmin: wasMadeAdmin,
             provider: bodyProvider || provider.name,
             providerConfig: providerConfig,
@@ -82,19 +85,11 @@ export async function POST(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`[Auth] Login Failed for user ${usernameForLog}:`, errorMessage);
 
-    
-    // Check for specific Axios error response from Jellyfin
     if (axios.isAxiosError(error)) {
        if (error.response) {
-         console.error("[Auth] Jellyfin Status:", error.response.status);
-         console.error("[Auth] Jellyfin Data:", JSON.stringify(error.response.data));
-         
          if (error.response.status === 401) {
              return NextResponse.json({ message: "Invalid username or password" }, { status: 401 });
          }
-       } else if (error.request) {
-         console.error("[Auth] No response from Jellyfin. Check JELLYFIN_URL.");
-         console.error("[Auth] Request details:", error.config?.url);
        }
     }
 

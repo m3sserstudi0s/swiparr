@@ -5,11 +5,10 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { db, likes, sessionMembers } from "@/lib/db";
 import { eq, and, isNull, or } from "drizzle-orm";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return new NextResponse("Unauthorized", { status: 401 });
@@ -17,27 +16,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
 
   try {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
-
     const item = await provider.getItemDetails(id, auth);
 
-    // Add likes info
-    const itemLikes = await db.query.likes.findMany({
-        where: and(
-            eq(likes.externalId, id),
-            session.sessionCode 
-                ? or(eq(likes.sessionCode, session.sessionCode), isNull(likes.sessionCode))
-                : isNull(likes.sessionCode)
-        )
-    });
+    const itemLikes = await db.select().from(likes).where(and(
+        eq(likes.externalId, id),
+        session.sessionCode 
+            ? or(eq(likes.sessionCode, session.sessionCode), isNull(likes.sessionCode))
+            : isNull(likes.sessionCode)
+    ));
 
     if (itemLikes.length > 0) {
         let members: any[] = [];
         if (session.sessionCode) {
-            members = await db.query.sessionMembers.findMany({
-                where: eq(sessionMembers.sessionCode, session.sessionCode)
-            });
+            members = await db.select().from(sessionMembers).where(eq(sessionMembers.sessionCode, session.sessionCode));
         }
 
         item.likedBy = itemLikes.map((l: any) => ({

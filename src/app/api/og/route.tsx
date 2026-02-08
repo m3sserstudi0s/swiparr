@@ -1,11 +1,15 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
+import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
 
 export const runtime = 'edge'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const join = searchParams.get('join')
+  const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
+  const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
+  const logoUrl = `${origin}${basePath}/icon1.png`;
 
   return new ImageResponse(
     (
@@ -29,44 +33,39 @@ export async function GET(req: NextRequest) {
             marginBottom: '40px',
           }}
         >
-          <div
-            style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '30px',
-              background: 'linear-gradient(to bottom right, #ff4b2b, #ff416c)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '80px',
-              color: 'white',
-              fontWeight: 'bold',
-            }}
-          >
-            S
-          </div>
+          <img 
+            src={logoUrl} 
+            alt="Swiparr Logo" 
+            style={{ 
+              width: '140px', 
+              height: '140px',
+              borderRadius: '35px',
+            }} 
+          />
         </div>
         
         {join ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div
               style={{
-                fontSize: '60px',
+                fontSize: '64px',
                 fontWeight: 'bold',
                 color: 'white',
                 marginBottom: '20px',
               }}
             >
-              You're Invited
+              You're Invited!
             </div>
             <div
               style={{
                 fontSize: '32px',
                 color: '#a0a0a0',
                 marginBottom: '40px',
+                maxWidth: '800px',
+                textAlign: 'center'
               }}
             >
-              Join a Swiparr session and start swiping together.
+              Join a session and start swiping on what to watch next together.
             </div>
             <div
               style={{
@@ -99,9 +98,10 @@ export async function GET(req: NextRequest) {
                 fontSize: '32px',
                 color: '#a0a0a0',
                 textAlign: 'center',
+                maxWidth: '800px'
               }}
             >
-              Login to start swiping on movies.
+              Swipe on what to watch next, by yourself or together.
             </div>
           </div>
         )}

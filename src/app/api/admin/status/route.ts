@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { getAdminUserId } from "@/lib/server/admin";
+import { ConfigService } from "@/lib/services/config-service";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -13,7 +13,7 @@ export async function GET() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const adminUserId = await getAdminUserId(session.user.provider);
+    const adminUserId = await ConfigService.getAdminUserId(session.user.provider);
 
     return NextResponse.json({
         hasAdmin: !!adminUserId,

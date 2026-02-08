@@ -7,9 +7,10 @@ import { useSession } from "./use-session";
 export function useDeck() {
   const { data: session } = useSession();
   const sessionCode = session?.code || null;
+  const filters = session?.filters || null;
 
   return useInfiniteQuery<{ items: MediaItem[]; hasMore: boolean }>({
-    queryKey: QUERY_KEYS.deck(sessionCode),
+    queryKey: [...QUERY_KEYS.deck(sessionCode), filters],
     queryFn: async ({ pageParam = 0 }) => {
       const res = await apiClient.get<{ items: MediaItem[]; hasMore: boolean }>("/api/media/items", {
         params: {

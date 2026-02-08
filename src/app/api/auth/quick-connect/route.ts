@@ -4,7 +4,9 @@ import { getSessionOptions } from "@/lib/session";
 import { initiateQuickConnect, checkQuickConnect } from "@/lib/jellyfin/api";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { isAdmin, setAdminUserId } from "@/lib/server/admin";
+import { ConfigService } from "@/lib/services/config-service";
+import { AuthService } from "@/lib/services/auth-service";
+import { quickConnectSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,8 +30,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-import { quickConnectSchema } from "@/lib/validations";
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
     
     const { secret } = validated.data;
 
-    
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     
@@ -48,15 +47,15 @@ export async function POST(request: NextRequest) {
 
     const authData = await checkQuickConnect(secret, session.tempDeviceId, session.providerConfig?.serverUrl);
 
-    // If not yet authorized, authData will not contain AccessToken
     if (!authData.AccessToken || !authData.User?.Id) {
       return NextResponse.json({ success: false, message: "Pending" });
     }
 
-    // Set as admin if no admin exists
-    // Provider is Jellyfin since it is the only which has quick-connect for now
-    const wasMadeAdmin = await setAdminUserId(authData.User.Id, "jellyfin");
-    if (wasMadeAdmin) {
+    const existingAdmin = await ConfigService.getAdminUserId("jellyfin");
+    let wasMadeAdmin = false;
+    if (!existingAdmin) {
+        await ConfigService.setAdminUserId(authData.User.Id, "jellyfin" as any);
+        wasMadeAdmin = true;
         console.log(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
     }
 
@@ -65,7 +64,7 @@ export async function POST(request: NextRequest) {
       Name: authData.User.Name,
       AccessToken: authData.AccessToken,
       DeviceId: session.tempDeviceId,
-      isAdmin: await isAdmin(authData.User.Id, authData.User.Name, "jellyfin"),
+      isAdmin: await AuthService.isAdmin(authData.User.Id, authData.User.Name, "jellyfin"),
       wasMadeAdmin: wasMadeAdmin,
       provider: "jellyfin",
       providerConfig: session.providerConfig,

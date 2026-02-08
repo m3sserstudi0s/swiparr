@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { getEffectiveCredentials } from "@/lib/server/auth-resolver";
+import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
 
   try {
-    const auth = await getEffectiveCredentials(session);
+    const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
 
     if (useWatchlist && provider.toggleWatchlist) {
