@@ -6,6 +6,9 @@ export interface Filters {
   runtimeRange?: [number, number];
   watchProviders?: string[];
   watchRegion?: string;
+  sortBy?: string;
+  themes?: string[];
+  languages?: string[];
 }
 
 export interface SessionSettings {

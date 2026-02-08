@@ -108,11 +108,18 @@ export class MediaService {
       minCommunityRating: sessionFilters?.minCommunityRating,
       watchProviders,
       watchRegion,
+      sortBy: sessionFilters?.sortBy,
+      themes: sessionFilters?.themes,
+      languages: sessionFilters?.languages,
       limit: 1000,
     }, auth);
 
     let filteredItems = this.applyClientFilters(allItems, sessionFilters);
-    const shuffledItems = shuffleWithSeed(filteredItems, sessionCode);
+    
+    // Deterministic Shuffle:
+    // If we are in a session, we MUST use shuffleWithSeed for ALL sort modes except "Random".
+    const isSorted = sessionFilters?.sortBy && sessionFilters.sortBy !== "Random";
+    const shuffledItems = isSorted ? filteredItems : shuffleWithSeed(filteredItems, sessionCode);
     const slicedItems = shuffledItems.slice(page * limit, (page + 1) * limit);
     const items = slicedItems.filter(item => !excludeIds.has(item.Id));
 
@@ -131,7 +138,7 @@ export class MediaService {
     
     // If we have filters but the provider might not support them all (like Plex), 
     // we fetch more items to ensure we have enough after client-side filtering.
-    const fetchLimit = (sessionFilters && (sessionFilters.genres?.length || sessionFilters.yearRange)) ? Math.max(limit * 4, 100) : limit;
+    const fetchLimit = (sessionFilters && (sessionFilters.genres?.length || sessionFilters.yearRange || sessionFilters.themes?.length)) ? Math.max(limit * 4, 100) : limit;
 
     const fetchedItems = await provider.getItems({
       libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
@@ -141,7 +148,9 @@ export class MediaService {
       minCommunityRating: sessionFilters?.minCommunityRating,
       watchProviders,
       watchRegion,
-      sortBy: "Random",
+      sortBy: sessionFilters?.sortBy || "Random",
+      themes: sessionFilters?.themes,
+      languages: sessionFilters?.languages,
       unplayedOnly: true,
       limit: fetchLimit,
       offset: page * limit
@@ -180,10 +189,21 @@ export class MediaService {
     return provider.getYears(auth);
   }
 
-  static async getRatings(session: SessionData) {
+  static async getRatings(session: SessionData, regionOverride?: string) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
+    // If region override is provided, use it
+    if (regionOverride) {
+      auth.watchRegion = regionOverride;
+    }
     return provider.getRatings(auth);
+  }
+
+  static async getThemes(session: SessionData) {
+    const auth = await AuthService.getEffectiveCredentials(session);
+    const provider = getMediaProvider(auth.provider);
+    if (provider.getThemes) return provider.getThemes(auth);
+    return [];
   }
 
   static async getRegions(session: SessionData) {
@@ -269,6 +289,13 @@ export class MediaService {
       );
     }
 
+    if (filters.themes && filters.themes.length > 0) {
+      // Tags/Keywords filtering usually done provider side, but we can double check here
+      // if the provider doesn't support it or returns raw data.
+      // We check if any of the item's genres or other metadata match the themes if possible
+      // but usually themes are provider-side specific tags.
+    }
+
     if (filters.yearRange) {
       const [min, max] = filters.yearRange;
       result = result.filter(item => {
@@ -296,6 +323,13 @@ export class MediaService {
     if (filters.minCommunityRating) {
       result = result.filter(item => (item.CommunityRating || 0) >= filters.minCommunityRating!);
     }
+
+    if (filters.themes && filters.themes.length > 0) {
+      // Tags/Keywords filtering usually done provider side, but we can double check here
+      // if the provider doesn't support it or returns raw data.
+      // For now we assume provider side is sufficient but keep the door open.
+    }
+
     return result;
   }
 }

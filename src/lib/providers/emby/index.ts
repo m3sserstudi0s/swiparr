@@ -35,16 +35,25 @@ export class EmbyProvider implements MediaProvider {
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
+    const hasLanguageFilter = filters.languages && filters.languages.length > 0;
+    
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People",
-      SortBy: filters.sortBy === "Random" ? "Random" : (filters.sortBy || "SortName"),
-      SortOrder: filters.sortBy === "Random" ? undefined : "Ascending",
+      Fields: hasLanguageFilter 
+        ? "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People,MediaStreams"
+        : "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People",
+      SortBy: filters.sortBy === "Random" ? "Random" : 
+              filters.sortBy === "Popular" ? "CommunityRating" :
+              filters.sortBy === "Newest" ? "PremiereDate" :
+              filters.sortBy === "Top Rated" ? "CommunityRating" :
+              (filters.sortBy || "SortName"),
+      SortOrder: (filters.sortBy === "Random" || filters.sortBy === "Popular" || filters.sortBy === "Newest" || filters.sortBy === "Top Rated") ? "Descending" : "Ascending",
       ParentId: filters.libraries?.join(",") || undefined,
       Genres: filters.genres?.join("|") || undefined, 
       Years: filters.years?.join(",") || undefined,
       OfficialRatings: filters.ratings?.join("|") || undefined,
+      Tags: filters.themes?.join("|") || undefined,
       Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,
       MinCommunityRating: filters.minCommunityRating || undefined, 
       Limit: filters.limit || 50,
@@ -62,7 +71,30 @@ export class EmbyProvider implements MediaProvider {
     });
 
     const data = JellyfinQueryResultSchema.parse(res.data);
-    return data.Items.map((item) => this.mapToMediaItem(item));
+    let items = data.Items.map((item) => this.mapToMediaItem(item));
+    
+    // Client-side language filtering for Emby
+    if (hasLanguageFilter) {
+      items = items.filter((item: any) => {
+        // Check if any media stream matches the selected languages
+        const streams = item.MediaStreams || [];
+        const audioStreams = streams.filter((s: any) => s.Type === "Audio");
+        
+        // If no audio streams, check PreferredMetadataLanguage
+        if (audioStreams.length === 0) {
+          const prefLang = item.PreferredMetadataLanguage;
+          return prefLang && filters.languages!.includes(prefLang);
+        }
+        
+        // Check if any audio stream matches the selected languages
+        return audioStreams.some((stream: any) => {
+          const lang = stream.Language;
+          return lang && filters.languages!.includes(lang);
+        });
+      });
+    }
+    
+    return items;
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
@@ -78,6 +110,22 @@ export class EmbyProvider implements MediaProvider {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return (res.data.Items || []).map((g: any) => ({ Id: g.Name, Name: g.Name }));
+  }
+
+  async getThemes(auth?: AuthContext): Promise<string[]> {
+    // Use /Items/Filters2 to get all available tags for movies
+    // This is the correct Emby API endpoint for getting filter values (same as Jellyfin)
+    const res = await apiClient.get(getEmbyUrl("/Items/Filters2", auth?.serverUrl), {
+      params: {
+        userId: auth?.userId,
+        includeItemTypes: "Movie",
+        recursive: true,
+      },
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+    });
+
+    // The response contains a Tags array directly
+    return (res.data.Tags || []).slice(0, 15);
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {

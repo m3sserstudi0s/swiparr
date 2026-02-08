@@ -38,12 +38,18 @@ export function useUpdates() {
 
         const eventSource = new EventSource(`${basePath}/api/events`);
 
-        const handleSessionUpdated = (event: MessageEvent) => {
+        const handleSessionUpdated = async (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
+                // First refetch session to get updated data
+                await queryClient.refetchQueries({ queryKey: QUERY_KEYS.session });
+                // Refetch user settings to get any updated watch region
+                await queryClient.refetchQueries({ queryKey: QUERY_KEYS.user.settings });
+                // Then invalidate related queries
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: ["media", "watchProviders"] });
+                queryClient.invalidateQueries({ queryKey: ["deck"] });
             }
         };
 
@@ -74,14 +80,30 @@ export function useUpdates() {
             }
         };
 
-        const handleFiltersUpdated = (event: MessageEvent) => {
+        const handleFiltersUpdated = async (event: MessageEvent) => {
             const data = JSON.parse(event.data);
+            console.log("[useUpdates] Filters updated event:", { 
+                sessionCode: data.sessionCode, 
+                currentSessionCode: sessionCode,
+                updaterUserId: data.userId, 
+                myUserId: userId,
+                updaterUserName: data.userName
+            });
+            
             if (data.sessionCode === sessionCode) {
-                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
+                // First refetch session to get new filters
+                await queryClient.refetchQueries({ queryKey: QUERY_KEYS.session });
+                // Then invalidate deck to trigger refetch with new filters
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: ["deck"] });
                 
-                if (userId && data.userId !== userId) {
-                    toast.info(`${data.userName} ${data.isSettingsUpdate ? 'updated their streaming services' : 'changed the filters'}`, {
+                // Show toast to everyone EXCEPT the user who made the change
+                // Use String comparison to handle type differences
+                const isDifferentUser = String(data.userId) !== String(userId);
+                console.log("[useUpdates] Should show toast?", { isDifferentUser, userId, updaterId: data.userId });
+                
+                if (userId && isDifferentUser) {
+                    toast.info(`${data.userName} changed the filters`, {
                         description: "The cards have been updated.",
                         position: 'top-right'
                     });
@@ -168,7 +190,7 @@ export function useUpdates() {
             } else if (data.type === 'filters') {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.genres });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.years });
-                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.ratings });
+                queryClient.invalidateQueries({ queryKey: ["media", "ratings"] });
                 queryClient.invalidateQueries({ queryKey: ["deck"] });
             }
 

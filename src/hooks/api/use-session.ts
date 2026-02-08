@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { SessionStatus, Filters, SessionSettings } from "@/types";
 import { QUERY_KEYS } from "./query-keys";
+import { toast } from "sonner";
 
 export function useSession() {
   return useQuery<SessionStatus | null>({
@@ -47,9 +48,22 @@ export function useUpdateSession() {
       if (context?.previousSession) {
         queryClient.setQueryData(QUERY_KEYS.session, context.previousSession);
       }
+      // Show error toast
+      const errorMessage = (err as any)?.response?.data?.error || "Failed to update session";
+      toast.error(errorMessage);
     },
-    onSettled: () => {
+    onSettled: (data, error, variables, context) => {
+      // Get the current session to find the session code
+      const currentSession = queryClient.getQueryData<SessionStatus | null>(QUERY_KEYS.session);
+      const sessionCode = currentSession?.code;
+      
+      // Invalidate session first
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
+      
+      // Then invalidate deck with the correct query key pattern
+      if (sessionCode) {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+      }
       queryClient.invalidateQueries({ queryKey: ["deck"] });
     },
   });

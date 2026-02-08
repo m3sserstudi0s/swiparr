@@ -85,14 +85,14 @@ export function StreamingSettings() {
         setSelectedProviders([]);
     };
 
-    const saveSettings = async () => {
+    const saveSettings = async (region: MediaRegion | null = selectedRegion) => {
         if (selectedProviders.length === 0) {
             toast.error("At least one streaming service must be selected");
             return;
         }
 
         toast.promise(updateSettingsMutation.mutateAsync({
-            watchRegion: selectedRegion?.Id || "SE",
+            watchRegion: region?.Id || "SE",
             watchProviders: selectedProviders,
         }), {
             loading: "Updating streaming settings...",
@@ -115,8 +115,9 @@ export function StreamingSettings() {
     }
 
     const handleSaveSelectedRegion = (region: MediaRegion | null) => {
+        console.log("Selected region:", region);
         setSelectedRegion(region);
-        saveSettings()
+        saveSettings(region);
     }
 
     return (
@@ -243,7 +244,7 @@ export function StreamingSettings() {
                             variant="secondary"
                             size="sm"
                             className="w-full"
-                            onClick={saveSettings}
+                            onClick={() => saveSettings()}
                             disabled={updateSettingsMutation.isPending || isLoadingProviders}
                         >
                             {updateSettingsMutation.isPending && <Spinner />}

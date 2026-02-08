@@ -59,12 +59,20 @@ export class PlexProvider implements MediaProvider {
 
         if (filters.sortBy === "Random") {
             params.sort = "random";
-        } else if (filters.sortBy === "ProductionYear") {
+        } else if (filters.sortBy === "ProductionYear" || filters.sortBy === "Newest") {
             params.sort = "year:desc";
+        } else if (filters.sortBy === "Popular") {
+            params.sort = "rating:desc";
+        } else if (filters.sortBy === "Top Rated") {
+            params.sort = "audienceRating:desc";
         }
 
         if (filters.searchTerm) {
             params.title = filters.searchTerm;
+        }
+
+        if (filters.themes && filters.themes.length > 0) {
+            params.label = filters.themes.join(',');
         }
 
         // Plex filtering usually requires internal IDs for genres/ratings
@@ -106,6 +114,31 @@ export class PlexProvider implements MediaProvider {
     }
     const genres = await getCachedGenres(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
     return Array.from(genres);
+  }
+
+  async getThemes(auth?: AuthContext): Promise<string[]> {
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+        throw new Error("Auth credentials required");
+    }
+    const token = auth.accessToken;
+    const headers = getPlexHeaders(token);
+    
+    try {
+        const sections = await this.getLibraries(auth);
+        const allLabels = new Set<string>();
+        
+        for (const section of sections) {
+            const url = getPlexUrl(`/library/sections/${section.Id}/label`, auth.serverUrl);
+            const res = await plexClient.get(url, { headers });
+            const data = res.data.MediaContainer?.Directory || [];
+            data.forEach((d: any) => allLabels.add(d.title));
+            if (allLabels.size >= 15) break;
+        }
+        
+        return Array.from(allLabels).slice(0, 15);
+    } catch (e) {
+        return [];
+    }
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {

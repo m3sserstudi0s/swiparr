@@ -25,12 +25,34 @@ export function useUpdateUserSettings() {
     mutationFn: async (settings: UserSettings) => {
       await apiClient.patch("/api/user/settings", settings);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user.settings });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
-      // Force a complete refresh of the deck
+    onSuccess: async (_, variables) => {
+      // Invalidate user settings first
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user.settings });
+
+      // Get the current session to find the session code
+      const currentSession = queryClient.getQueryData<any>(QUERY_KEYS.session);
+      const sessionCode = currentSession?.code;
+
+      // Invalidate session
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
+
+      // Invalidate ratings for the new region
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.ratings(variables.watchRegion) });
+
+      // Force a complete refresh of the deck - remove ALL deck queries
       queryClient.removeQueries({ queryKey: ["deck"] });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.watchProviders("", null) });
+      if (sessionCode) {
+        queryClient.removeQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+      }
+
+      // Also invalidate watch providers
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.media.watchProviders("", null) });
+
+      // Then force refetch of deck to ensure it reloads
+      if (sessionCode) {
+        queryClient.refetchQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+      }
+      queryClient.refetchQueries({ queryKey: ["deck"] });
     },
   });
 }

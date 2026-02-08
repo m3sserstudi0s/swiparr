@@ -209,14 +209,24 @@ export class SessionService {
     });
 
     if (!currentSession) throw new Error("Session not found");
-    if (currentSession.hostUserId !== user.Id) throw new Error("Only the host can modify session settings");
 
     const updateData: any = {};
-    if (updates.filters !== undefined) updateData.filters = JSON.stringify(updates.filters);
-    if (updates.settings !== undefined) updateData.settings = JSON.stringify(updates.settings);
-    if (updates.allowGuestLending !== undefined) {
-      updateData.hostAccessToken = updates.allowGuestLending ? user.AccessToken : null;
-      updateData.hostDeviceId = updates.allowGuestLending ? user.DeviceId : null;
+    
+    // Filters can be updated by any session member
+    if (updates.filters !== undefined) {
+      updateData.filters = JSON.stringify(updates.filters);
+    }
+    
+    // Settings and guest lending can only be updated by the host
+    if (updates.settings !== undefined || updates.allowGuestLending !== undefined) {
+      if (currentSession.hostUserId !== user.Id) {
+        throw new Error("Only the host can modify session settings");
+      }
+      if (updates.settings !== undefined) updateData.settings = JSON.stringify(updates.settings);
+      if (updates.allowGuestLending !== undefined) {
+        updateData.hostAccessToken = updates.allowGuestLending ? user.AccessToken : null;
+        updateData.hostDeviceId = updates.allowGuestLending ? user.DeviceId : null;
+      }
     }
 
     await db.update(sessions).set(updateData).where(eq(sessions.code, sessionCode));

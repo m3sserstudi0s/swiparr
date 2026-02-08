@@ -36,16 +36,25 @@ export class JellyfinProvider implements MediaProvider {
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
+    const hasLanguageFilter = filters.languages && filters.languages.length > 0;
+    
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People",
-      SortBy: filters.sortBy === "Random" ? "Random" : (filters.sortBy || "SortName"),
-      SortOrder: filters.sortBy === "Random" ? undefined : "Ascending",
+      Fields: hasLanguageFilter 
+        ? "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People,MediaStreams"
+        : "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People",
+      SortBy: filters.sortBy === "Random" ? "Random" : 
+              filters.sortBy === "Popular" ? "CommunityRating" :
+              filters.sortBy === "Newest" ? "PremiereDate" :
+              filters.sortBy === "Top Rated" ? "CommunityRating" :
+              (filters.sortBy || "SortName"),
+      SortOrder: (filters.sortBy === "Random" || filters.sortBy === "Popular" || filters.sortBy === "Newest" || filters.sortBy === "Top Rated") ? "Descending" : "Ascending",
       ParentId: filters.libraries?.join(",") || undefined,
       Genres: filters.genres?.join("|") || undefined, // Jellyfin uses pipe for multiple genres
       Years: filters.years?.join(",") || undefined,
       OfficialRatings: filters.ratings?.join("|") || undefined,
+      Tags: filters.themes?.join("|") || undefined,
       Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,
       MinCommunityRating: filters.minCommunityRating || undefined, 
       Limit: filters.limit || 50,
@@ -63,7 +72,30 @@ export class JellyfinProvider implements MediaProvider {
     });
 
     const data = JellyfinQueryResultSchema.parse(res.data);
-    return data.Items.map((item) => this.mapToMediaItem(item));
+    let items = data.Items.map((item) => this.mapToMediaItem(item));
+    
+    // Client-side language filtering for Jellyfin
+    if (hasLanguageFilter) {
+      items = items.filter((item: any) => {
+        // Check if any media stream matches the selected languages
+        const streams = item.MediaStreams || [];
+        const audioStreams = streams.filter((s: any) => s.Type === "Audio");
+        
+        // If no audio streams, check PreferredMetadataLanguage
+        if (audioStreams.length === 0) {
+          const prefLang = item.PreferredMetadataLanguage;
+          return prefLang && filters.languages!.includes(prefLang);
+        }
+        
+        // Check if any audio stream matches the selected languages
+        return audioStreams.some((stream: any) => {
+          const lang = stream.Language;
+          return lang && filters.languages!.includes(lang);
+        });
+      });
+    }
+    
+    return items;
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
@@ -79,6 +111,45 @@ export class JellyfinProvider implements MediaProvider {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     return (res.data.Items || []).map((g: any) => ({ Id: g.Name, Name: g.Name }));
+  }
+
+  async getThemes(auth?: AuthContext): Promise<string[]> {
+    console.log("[JellyfinProvider.getThemes] Starting with auth:", { userId: auth?.userId, serverUrl: auth?.serverUrl });
+    
+    try {
+      // Use /Items/Filters2 to get all available tags for movies
+      // This is the correct Jellyfin API endpoint for getting filter values
+      const url = getJellyfinUrl("/Items/Filters2", auth?.serverUrl);
+      console.log("[JellyfinProvider.getThemes] Fetching from URL:", url);
+      
+      const res = await apiClient.get(url, {
+        params: {
+          userId: auth?.userId,
+          includeItemTypes: "Movie",
+          recursive: true,
+        },
+        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+      });
+
+      console.log("[JellyfinProvider.getThemes] Response data:", res.data);
+      console.log("[JellyfinProvider.getThemes] Tags from response:", res.data?.Tags);
+      
+      const tags = res.data.Tags || [];
+      
+      // If no tags exist in the library, fall back to static themes
+      if (tags.length === 0) {
+        console.log("[JellyfinProvider.getThemes] No tags found in library, using fallback themes");
+        return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
+      }
+      
+      const result = tags.slice(0, 15);
+      console.log("[JellyfinProvider.getThemes] Returning tags:", result);
+      return result;
+    } catch (error) {
+      console.error("[JellyfinProvider.getThemes] Error fetching themes:", error);
+      // Return fallback themes on error
+      return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
+    }
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {

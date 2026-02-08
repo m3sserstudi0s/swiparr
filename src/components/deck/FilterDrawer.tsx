@@ -11,16 +11,26 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { RotateCcw, Star, Check } from "lucide-react";
+import { RotateCcw, Star, Check, Sparkles } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
-import { useFilters, useSession, useWatchProviders, useUserSettings } from "@/hooks/api";
+import { useFilters, useThemes, useSession, useWatchProviders, useUserSettings, useAdminConfig } from "@/hooks/api";
 import { MediaGenre, MediaRating, MediaYear, WatchProvider } from "@/types/media";
 import { OptimizedImage } from "../ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { cn } from "@/lib/utils";
+import { LANGUAGES, DEFAULT_LANGUAGES } from "@/lib/constants";
+import { Globe } from "lucide-react";
+
+const SORT_OPTIONS = [
+  "Trending",
+  "Popular",
+  "Top Rated",
+  "Newest",
+  "Random"
+];
 
 interface FilterDrawerProps {
   open: boolean;
@@ -33,6 +43,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedWatchProviders, setSelectedWatchProviders] = useState<string[]>([]);
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(DEFAULT_LANGUAGES);
+  const [sortBy, setSortBy] = useState<string>("Trending");
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
@@ -40,8 +53,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const { data: session } = useSession();
   const { capabilities } = useRuntimeConfig();
 
+  const { data: adminConfig } = useAdminConfig();
   const { data: userSettings, isLoading: isLoadingSettings } = useUserSettings();
-  const { genres, years, ratings, isLoading } = useFilters(open);
+  const watchRegion = userSettings?.watchRegion || "SE";
+  const { genres, years, ratings, isLoading: isLoadingFilters } = useFilters(open, watchRegion);
+  const { data: themes = [], isLoading: isLoadingThemes } = useThemes(open);
+
+  const isLoading = isLoadingFilters || isLoadingThemes;
 
   const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(
     userSettings?.watchRegion || "SE",
@@ -78,6 +96,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       const genresList = currentFilters?.genres || [];
       const officialRatings = currentFilters?.officialRatings || [];
       const watchProviders = currentFilters?.watchProviders || availableWatchProviders.map(p => p.Id);
+      const themes = currentFilters?.themes || [];
+      const languages = currentFilters?.languages || DEFAULT_LANGUAGES;
+      const currentSort = currentFilters?.sortBy || "Trending";
       const yearRange = currentFilters?.yearRange || [minYearLimit, maxYearLimit];
       const runtimeRange = currentFilters?.runtimeRange || [0, 240];
       const minCommunityRating = currentFilters?.minCommunityRating || 0;
@@ -85,6 +106,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setSelectedGenres(genresList);
       setSelectedRatings(officialRatings);
       setSelectedWatchProviders(watchProviders);
+      setSelectedThemes(themes);
+      setSelectedLanguages(languages);
+      setSortBy(currentSort);
       setYearRange(yearRange);
       setRuntimeRange(runtimeRange);
       setMinRating(minCommunityRating);
@@ -94,6 +118,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         genres: genresList,
         officialRatings,
         watchProviders,
+        themes,
+        languages,
+        sortBy: currentSort,
         yearRange: currentFilters?.yearRange,
         runtimeRange: currentFilters?.runtimeRange,
         minCommunityRating: minCommunityRating > 0 ? minCommunityRating : undefined
@@ -112,6 +139,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         genres: selectedGenres,
         officialRatings: selectedRatings,
         watchProviders: selectedWatchProviders,
+        themes: selectedThemes,
+        languages: selectedLanguages.length === 1 && selectedLanguages[0] === "en" ? undefined : selectedLanguages,
+        sortBy: sortBy === "Trending" ? undefined : sortBy,
         yearRange: isYearDefault ? undefined : yearRange,
         runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
         minCommunityRating: minRating > 0 ? minRating : undefined
@@ -123,7 +153,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       hasInitializedRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, minYearLimit, maxYearLimit, onSave, selectedGenres, selectedRatings, selectedWatchProviders, yearRange, runtimeRange, minRating]);
+  }, [open, minYearLimit, maxYearLimit, onSave, selectedGenres, selectedRatings, selectedWatchProviders, selectedThemes, selectedLanguages, sortBy, yearRange, runtimeRange, minRating]);
 
 
   const toggleGenre = (genreName: string) => {
@@ -131,6 +161,22 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       prev.includes(genreName)
         ? prev.filter((g) => g !== genreName)
         : [...prev, genreName]
+    );
+  };
+
+  const toggleTheme = (theme: string) => {
+    setSelectedThemes((prev) =>
+      prev.includes(theme)
+        ? prev.filter((t) => t !== theme)
+        : [...prev, theme]
+    );
+  };
+
+  const toggleLanguage = (languageCode: string) => {
+    setSelectedLanguages((prev) =>
+      prev.includes(languageCode)
+        ? prev.filter((l) => l !== languageCode)
+        : [...prev, languageCode]
     );
   };
 
@@ -158,10 +204,18 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setSelectedGenres([]);
     setSelectedRatings([]);
     setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
+    setSelectedThemes([]);
+    setSelectedLanguages(DEFAULT_LANGUAGES);
+    setSortBy("Trending");
     setYearRange([minYearLimit, maxYearLimit]);
     setRuntimeRange([0, 240]);
     setMinRating(0);
   };
+
+  const isSession = !!session?.code;
+  const filteredSortOptions = isSession 
+    ? SORT_OPTIONS.filter(opt => opt !== "Random")
+    : SORT_OPTIONS;
 
   if (isLoading) {
 
@@ -204,6 +258,23 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
         <ScrollArea className="flex-1 h-[50vh]">
           <div className="flex flex-col gap-8 pt-8 pb-12 px-6">
+
+            {/* Sort Section */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Sort By</Label>
+              <div className="flex flex-wrap gap-2">
+                {filteredSortOptions.map((option) => (
+                  <Badge
+                    key={option}
+                    variant={sortBy === option ? "default" : "outline"}
+                    className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
+                    onClick={() => setSortBy(option)}
+                  >
+                    {option}
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             {/* Rating Section */}
             <div className="space-y-4">
@@ -311,12 +382,70 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               </div>
             </div>
 
+            {/* Themes Section */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  Themes
+                </Label>
+                {selectedThemes.length > 0 && (
+                  <button onClick={() => setSelectedThemes([])} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {themes.map((theme: string) => (
+                  <Badge
+                    key={theme}
+                    variant={selectedThemes.includes(theme) ? "secondary" : "outline"}
+                    className={cn(
+                      "cursor-pointer text-sm py-2 px-4 rounded-full transition-colors",
+                      selectedThemes.includes(theme) ? "bg-primary/20 text-primary border-primary/30" : ""
+                    )}
+                    onClick={() => toggleTheme(theme)}
+                  >
+                    {theme}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Language Section */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Globe className="size-4 text-primary" />
+                  Language
+                </Label>
+                {selectedLanguages.length !== DEFAULT_LANGUAGES.length && (
+                  <button onClick={() => setSelectedLanguages(DEFAULT_LANGUAGES)} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Reset</button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {LANGUAGES.map((lang) => (
+                  <Badge
+                    key={lang.code}
+                    variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
+                    className={cn(
+                      "cursor-pointer text-sm py-2 px-4 rounded-full transition-colors",
+                      selectedLanguages.includes(lang.code) ? "bg-primary/20 text-primary border-primary/30" : ""
+                    )}
+                    onClick={() => toggleLanguage(lang.code)}
+                  >
+                    {lang.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
              {/* Official Ratings Section */}
             {ratings && ratings.length > 0 && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <Label className="text-base font-semibold">
                     Maturity Rating
+                    <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                      {watchRegion}
+                    </span>
                   </Label>
                   {selectedRatings.length > 0 && (
                     <button onClick={() => setSelectedRatings([])} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>

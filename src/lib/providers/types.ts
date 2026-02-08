@@ -86,6 +86,8 @@ export interface SearchFilters {
   searchTerm?: string;
   sortBy?: string;
   unplayedOnly?: boolean;
+  themes?: string[];
+  languages?: string[];
   limit?: number;
   offset?: number;
 }
@@ -100,6 +102,7 @@ export interface MediaProvider {
   
   // Metadata
   getGenres(auth?: AuthContext): Promise<MediaGenre[]>;
+  getThemes?(auth?: AuthContext): Promise<string[]>;
   getYears(auth?: AuthContext): Promise<MediaYear[]>;
   getRatings(auth?: AuthContext): Promise<MediaRating[]>;
   getLibraries(auth?: AuthContext): Promise<MediaLibrary[]>;

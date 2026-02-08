@@ -30,3 +30,18 @@ export const DEFAULT_GENRES = [
 export const DEFAULT_RATINGS = [
     "G", "PG", "PG-13", "R", "NC-17", "TV-G", "TV-PG", "TV-14", "TV-MA"
 ];
+
+export const LANGUAGES = [
+    { code: "en", name: "English" },
+    { code: "es", name: "Spanish" },
+    { code: "fr", name: "French" },
+    { code: "de", name: "German" },
+    { code: "it", name: "Italian" },
+    { code: "ja", name: "Japanese" },
+    { code: "ko", name: "Korean" },
+    { code: "pt", name: "Portuguese" },
+    { code: "ru", name: "Russian" },
+    { code: "zh", name: "Chinese" },
+];
+
+export const DEFAULT_LANGUAGES = ["en"]; // English is default selected

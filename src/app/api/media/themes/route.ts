@@ -11,11 +11,9 @@ export async function GET(request: NextRequest) {
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const { searchParams } = new URL(request.url);
-        const region = searchParams.get("region") || undefined;
-        const ratings = await MediaService.getRatings(session, region);
-        return NextResponse.json(ratings);
+        const themes = await MediaService.getThemes(session);
+        return NextResponse.json(themes);
     } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch ratings" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to fetch themes" }, { status: 500 });
     }
 }

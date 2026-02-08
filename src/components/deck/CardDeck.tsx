@@ -108,12 +108,17 @@ export function CardDeck() {
 
   const hasAppliedFilters = useMemo(() => {
     if (!sessionStatus?.filters) return false;
-    const { genres, yearRange, minCommunityRating, officialRatings, runtimeRange } = sessionStatus.filters;
+    const { genres, yearRange, minCommunityRating, officialRatings, runtimeRange, themes, sortBy, languages } = sessionStatus.filters;
+    const hasNonDefaultLanguages = !!(languages && 
+      (languages.length > 1 || (languages.length === 1 && languages[0] !== "en")));
     return (genres && genres.length > 0) || 
            (minCommunityRating !== undefined && minCommunityRating > 0) || 
            (yearRange !== undefined) || 
            (officialRatings && officialRatings.length > 0) || 
-           (runtimeRange !== undefined);
+           (runtimeRange !== undefined) ||
+           (themes && themes.length > 0) ||
+           (sortBy !== undefined && sortBy !== "Trending") ||
+           hasNonDefaultLanguages;
   }, [sessionStatus?.filters]);
 
   const onSwipe = useCallback((id: string, direction: "left" | "right") => {
@@ -267,7 +272,6 @@ export function CardDeck() {
               const prevent: ("left" | "right")[] = [];
               if (sessionSettings?.maxLeftSwipes && (stats?.mySwipes.left || 0) >= sessionSettings.maxLeftSwipes) prevent.push("left");
               if (sessionSettings?.maxRightSwipes && (stats?.mySwipes.right || 0) >= sessionSettings.maxRightSwipes) prevent.push("right");
-              console.log("prevent", prevent)
 
               return (
                 <SwipeCard

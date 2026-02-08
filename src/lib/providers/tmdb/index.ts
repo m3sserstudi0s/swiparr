@@ -73,12 +73,36 @@ export class TmdbProvider implements MediaProvider {
         return searchRes.results.map(m => this.mapMovieToMediaItem(m, genreNameMap));
     }
 
+    if (filters.sortBy === "Trending") {
+        const data = await this.fetchTmdb<any>('trending/movie/week', {
+            page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1
+        });
+        const searchRes = TmdbSearchResponseSchema.parse(data);
+        const results = searchRes.results.map(m => this.mapMovieToMediaItem(m, genreNameMap));
+        // Client-side filtering for trending as it's a separate endpoint
+        return this.applyTrendingFilters(results, filters);
+    }
+
     // Default to discover
     // Docs: https://developer.themoviedb.org/reference/discover-movie-get
     const discoverParams: Record<string, any> = {
         page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1,
         with_genres: filters.genres?.map(name => genreIdMap.get(name)).filter(Boolean).join(','),
+        sort_by: filters.sortBy === "Popular" ? "popularity.desc" : 
+                 filters.sortBy === "Top Rated" ? "vote_average.desc" : 
+                 filters.sortBy === "Newest" ? "primary_release_date.desc" : "popularity.desc"
     };
+
+    if (filters.themes && filters.themes.length > 0) {
+        const themeKeywords = await Promise.all(filters.themes.map(async (theme) => {
+            const searchData = await this.fetchTmdb<any>('search/keyword', { query: theme });
+            return searchData.results?.[0]?.id;
+        }));
+        const keywordIds = themeKeywords.filter(Boolean);
+        if (keywordIds.length > 0) {
+            discoverParams.with_keywords = keywordIds.join('|');
+        }
+    }
 
     if (filters.watchProviders && filters.watchProviders.length > 0) {
         discoverParams.with_watch_providers = filters.watchProviders.join('|');
@@ -102,8 +126,36 @@ export class TmdbProvider implements MediaProvider {
     }
 
     if (filters.ratings && filters.ratings.length > 0) {
-        discoverParams.certification_country = filters.watchRegion || auth?.watchRegion || 'US';
+        // Map region codes to TMDB certification country codes
+        const regionMapping: Record<string, string> = {
+            'US': 'US',
+            'UK': 'GB',
+            'DE': 'DE',
+            'FR': 'FR',
+            'SE': 'SE',
+            'AU': 'AU',
+            'CA': 'CA',
+            'ES': 'ES',
+            'IT': 'IT',
+            'JP': 'JP',
+            'NL': 'NL',
+            'NO': 'NO',
+            'NZ': 'NZ',
+            'RU': 'RU',
+        };
+        const region = filters.watchRegion || auth?.watchRegion || 'US';
+        const certCountry = regionMapping[region] || 'US';
+        discoverParams.certification_country = certCountry;
         discoverParams.certification = filters.ratings.join('|');
+        console.log("[TMDBProvider.getItems] Applying certification filter:", { certCountry, ratings: filters.ratings });
+    }
+
+    if (filters.languages && filters.languages.length > 0) {
+        // TMDB uses ISO 639-1 codes for with_original_language
+        // If only one language selected, use it directly
+        // If multiple, use pipe separator for OR logic
+        discoverParams.with_original_language = filters.languages.join('|');
+        console.log("[TMDBProvider.getItems] Applying language filter:", { languages: filters.languages });
     }
 
     if (filters.sortBy === "Random") {
@@ -144,6 +196,10 @@ export class TmdbProvider implements MediaProvider {
     }
     const data = await this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/movie/list');
     return data.genres.map(g => ({ Id: g.id.toString(), Name: g.name }));
+  }
+
+  async getThemes(auth?: AuthContext): Promise<string[]> {
+    return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
@@ -327,5 +383,18 @@ export class TmdbProvider implements MediaProvider {
         for (const r of regions) processRegion(r);
     }
     return Array.from(providers.values());
+  }
+
+  private applyTrendingFilters(items: MediaItem[], filters: SearchFilters): MediaItem[] {
+    let result = items;
+    if (filters.years && filters.years.length > 0) {
+      const minYear = Math.min(...filters.years);
+      const maxYear = Math.max(...filters.years);
+      result = result.filter(i => i.ProductionYear && i.ProductionYear >= minYear && i.ProductionYear <= maxYear);
+    }
+    if (filters.minCommunityRating) {
+      result = result.filter(i => (i.CommunityRating || 0) >= filters.minCommunityRating!);
+    }
+    return result;
   }
 }

@@ -6,9 +6,10 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useSession } from "./use-session";
 import { DEFAULT_GENRES, DEFAULT_RATINGS } from "@/lib/constants";
 
-export function useFilters(open: boolean) {
+export function useFilters(open: boolean, watchRegion?: string) {
   const { useStaticFilterValues, capabilities } = useRuntimeConfig();
   const isExternal = !capabilities.hasAuth;
+  const region = watchRegion || "SE";
 
   const genresQuery = useQuery({
     queryKey: QUERY_KEYS.media.genres,
@@ -43,12 +44,12 @@ export function useFilters(open: boolean) {
   });
 
   const ratingsQuery = useQuery({
-    queryKey: QUERY_KEYS.media.ratings,
+    queryKey: QUERY_KEYS.media.ratings(region),
     queryFn: async () => {
       if (useStaticFilterValues && !isExternal) {
          return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
       }
-      const res = await apiClient.get<MediaRating[]>("/api/media/ratings");
+      const res = await apiClient.get<MediaRating[]>(`/api/media/ratings?region=${region}`);
       // Fallback if provider returns empty or fails (e.g. TMDB might not have dynamic maturity ratings)
       if (!res.data || res.data.length === 0) {
           return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
@@ -65,4 +66,31 @@ export function useFilters(open: boolean) {
     ratings: ratingsQuery.data || [],
     isLoading: genresQuery.isLoading || yearsQuery.isLoading || ratingsQuery.isLoading,
   };
+}
+
+export function useThemes(open: boolean) {
+  const { useStaticFilterValues, capabilities } = useRuntimeConfig();
+  const isExternal = !capabilities.hasAuth;
+
+  return useQuery({
+    queryKey: QUERY_KEYS.media.themes,
+    queryFn: async () => {
+      if (useStaticFilterValues && !isExternal) {
+          return [
+              "Christmas",
+              "Halloween",
+              "Summer",
+              "Action-Packed",
+              "Date Night"
+          ];
+      }
+      const res = await apiClient.get<string[]>("/api/media/themes");
+      if (!res.data || res.data.length === 0) {
+        return [];
+      }
+      return res.data;
+    },
+    enabled: open,
+    staleTime: 1000 * 60 * 60,
+  });
 }
