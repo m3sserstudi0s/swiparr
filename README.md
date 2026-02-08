@@ -212,7 +212,7 @@ PROVIDER_LOCK=false                          # Let users choose and configure th
 
 [^1]: Can be set to a local file (internal to container) OR external URL. Mostly relevant for Vercel deployments, which uses the Turso integration in the set-up workflow by default where these values are auto-generated and -injected. Can of course be swapped out with a database service provider of choice.
 
-[^2]: Only applicable for providers with authentication (Jellyfin, Plex, Emby). Admin role ownership is tracked per-provider. Defaults to the first user of that provider that logs in, or matching env vars.
+[^2]: Only applicable for providers with authentication (Jellyfin, Plex, Emby). Admin role ownership is tracked per-provider. Defaults to the first user of that provider that logs in (if supported), or matching env vars. Admin capabilities are disabled for providers without built-in authentication (like TMDB).
 
 
 ✳️ = Required conditionally
@@ -274,7 +274,7 @@ When you create a session, customize it for your group:
 - Configure included media libraries for the provider
 - Manage global provider settings
 - Override session restrictions
-- Access admin dashboard (disabled for TMDB)
+- Access admin dashboard (only for providers with authentication)
 
 
 ---

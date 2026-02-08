@@ -45,26 +45,26 @@ export default function LoginContent() {
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
 
-const searchParams = useSearchParams();
-const router = useRouter();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-useEffect(() => {
-  const reason = searchParams.get("reason");
+  useEffect(() => {
+    const reason = searchParams.get("reason");
 
-  if (reason === "provider_mismatch") {
-    toast.error("Provider mismatch", {
-      description: "The server provider configuration has changed. You have been logged out.",
-      duration: 5000,
-    });
+    if (reason === "provider_mismatch") {
+      toast.error("Provider mismatch", {
+        description: "The server provider configuration has changed. You have been logged out.",
+        duration: 5000,
+      });
 
-    // Remove `reason` from the URL after showing the toast
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("reason");
+      // Remove `reason` from the URL after showing the toast
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("reason");
 
-    const query = params.toString();
-    router.replace(query ? `?${query}` : "?", { scroll: false });
-  }
-}, [searchParams, router]);
+      const query = params.toString();
+      router.replace(query ? `?${query}` : "?", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const sessionCodeParam = useMemo(() => {
     const directJoin = searchParams.get("join");
@@ -84,7 +84,7 @@ useEffect(() => {
   useEffect(() => {
     if (sessionCodeParam) {
       setGuestSessionCode(sessionCodeParam);
-      
+
       // Fetch session provider to automatically switch to the correct UI
       apiClient.get(`/api/session/provider?code=${sessionCodeParam}`)
         .then(res => {
@@ -140,8 +140,8 @@ useEffect(() => {
 
     const promise = async () => {
       if (isTmdbJoin) {
-        const res = await apiClient.post("/api/auth/guest", { 
-          username, 
+        const res = await apiClient.post("/api/auth/guest", {
+          username,
           sessionCode: sessionCodeParam,
           profilePicture: profilePicture || undefined
         });
@@ -201,8 +201,8 @@ useEffect(() => {
     setLoading(true);
 
     const promise = async () => {
-      const res = await apiClient.post("/api/auth/guest", { 
-        username: guestName, 
+      const res = await apiClient.post("/api/auth/guest", {
+        username: guestName,
         sessionCode: code,
         profilePicture: profilePicture || undefined
       });
@@ -254,9 +254,23 @@ useEffect(() => {
 
   const contentHeight = useMemo(() => {
     if (wasMadeAdmin) return "h-auto";
-    if (selectedProvider === "tmdb") return !providerLock ? "h-80" : "h-60";
-    return !providerLock ? activeTab == 'login' ? "h-105" : sessionCodeParam ? 'h-95' : 'h-115' : activeTab == 'login' ? "h-80" : sessionCodeParam ? 'h-80' : 'h-100';
-  }, [wasMadeAdmin, selectedProvider, providerLock]);
+
+    if (selectedProvider === "tmdb") {
+      return providerLock ? "h-60" : "h-80";
+    }
+
+    // Logic for default providers
+    if (providerLock) {
+      if (activeTab === 'login' || sessionCodeParam) return "h-80";
+      return "h-105";
+    }
+
+    // Logic for default providers (unlocked)
+    if (activeTab === 'login') return "h-105";
+    if (sessionCodeParam) return "h-95"; // Guest log in with link
+
+    return "h-115";
+  }, [wasMadeAdmin, selectedProvider, providerLock, activeTab, sessionCodeParam]);
 
   return (
     <>
@@ -267,92 +281,92 @@ useEffect(() => {
         value={qcCode || ""}
       />
       <Card className={cn("w-full border-border bg-card text-card-foreground pt-0", !providerLock ? "max-w-sm" : "max-w-xs")}>
-      <CardHeader className="rounded-t-xl bg-linear-to-t to-foreground/20 via-foreground/5">
-        <CardTitle className="flex flex-row gap-3 items-center justify-center py-3 mt-4">
-          <Image src={logo} alt="Logo" className="size-7 dark:invert mt-2 dark:opacity-80 opacity-70" loading="eager" />
-          <GradientText className="text-3xl mt-1">
-           Swiparr
-          </GradientText>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className={cn("transition-all duration-300", contentHeight, !providerLock && "px-5")}>
-        {wasMadeAdmin ? (
-          <AdminInitializedView onContinue={() => {
-            const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
-            window.location.href = callbackUrl;
-          }} />
-        ) : (
-          <div className="space-y-4">
-            {!providerLock && (
-              <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 h-9">
-                  <TabsTrigger value="jellyfin" className="text-xs font-semibold">
-                    <SiJellyfin />
-                    Jellyfin
-                  </TabsTrigger>
-                  <TabsTrigger value="emby" className="text-xs font-semibold">
-                    <SiEmby />
-                    Emby
-                  </TabsTrigger>
-                  <TabsTrigger value="plex" className="text-xs font-semibold">
-                    <SiPlex />
-                    Plex
-                  </TabsTrigger>
-                  <TabsTrigger value="tmdb" className="text-xs font-semibold">
-                    <SiThemoviedatabase />
-                    TMDB
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
+        <CardHeader className="rounded-t-xl bg-linear-to-t to-foreground/20 via-foreground/5">
+          <CardTitle className="flex flex-row gap-3 justify-center items-center py-3 mt-4">
+            <Image src={logo} alt="Logo" className="size-5.5 dark:invert dark:opacity-80 opacity-70" loading="eager" />
+            <GradientText className="text-3xl font-sans">
+              Swiparr
+            </GradientText>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className={cn("transition-all duration-300", contentHeight, !providerLock && "px-5")}>
+          {wasMadeAdmin ? (
+            <AdminInitializedView onContinue={() => {
+              const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
+              window.location.href = callbackUrl;
+            }} />
+          ) : (
+            <div className="space-y-4">
+              {!providerLock && (
+                <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 h-9">
+                    <TabsTrigger value="jellyfin" className="text-xs font-semibold">
+                      <SiJellyfin />
+                      Jellyfin
+                    </TabsTrigger>
+                    <TabsTrigger value="emby" className="text-xs font-semibold">
+                      <SiEmby />
+                      Emby
+                    </TabsTrigger>
+                    <TabsTrigger value="plex" className="text-xs font-semibold">
+                      <SiPlex />
+                      Plex
+                    </TabsTrigger>
+                    <TabsTrigger value="tmdb" className="text-xs font-semibold">
+                      <SiThemoviedatabase />
+                      TMDB
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
 
-            {selectedProvider === "tmdb" ? (
-              <UniversalView
-                providerLock={providerLock}
-                tmdbToken={tmdbToken}
-                setTmdbToken={setTmdbToken}
-                username={username}
-                setUsername={setUsername}
-                loading={loading}
-                handleLogin={handleLogin}
-                isJoining={!!sessionCodeParam}
-                onProfilePictureChange={setProfilePicture}
-              />
-            ) : (
-              <AuthView
-                provider={selectedProvider}
-                providerLock={providerLock}
-                serverUrl={serverUrl}
-                setServerUrl={setServerUrl}
-                username={username}
-                setUsername={setUsername}
-                password={password}
-                setPassword={setPassword}
-                guestName={guestName}
-                setGuestName={setGuestName}
-                guestSessionCode={guestSessionCode}
-                setGuestSessionCode={setGuestSessionCode}
-                loading={loading}
-                handleLogin={handleLogin}
-                handleGuestLogin={handleGuestLogin}
-                startQuickConnect={startQuickConnect}
-                qcCode={qcCode}
-                copied={copied}
-                copyToClipboard={copyToClipboard}
-                setQcCode={setQcCode}
-                sessionCodeParam={sessionCodeParam}
-                hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === ProviderType.JELLYFIN)}
-                isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
-                onProfilePictureChange={setProfilePicture}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            )}
+              {selectedProvider === "tmdb" ? (
+                <UniversalView
+                  providerLock={providerLock}
+                  tmdbToken={tmdbToken}
+                  setTmdbToken={setTmdbToken}
+                  username={username}
+                  setUsername={setUsername}
+                  loading={loading}
+                  handleLogin={handleLogin}
+                  isJoining={!!sessionCodeParam}
+                  onProfilePictureChange={setProfilePicture}
+                />
+              ) : (
+                <AuthView
+                  provider={selectedProvider}
+                  providerLock={providerLock}
+                  serverUrl={serverUrl}
+                  setServerUrl={setServerUrl}
+                  username={username}
+                  setUsername={setUsername}
+                  password={password}
+                  setPassword={setPassword}
+                  guestName={guestName}
+                  setGuestName={setGuestName}
+                  guestSessionCode={guestSessionCode}
+                  setGuestSessionCode={setGuestSessionCode}
+                  loading={loading}
+                  handleLogin={handleLogin}
+                  handleGuestLogin={handleGuestLogin}
+                  startQuickConnect={startQuickConnect}
+                  qcCode={qcCode}
+                  copied={copied}
+                  copyToClipboard={copyToClipboard}
+                  setQcCode={setQcCode}
+                  sessionCodeParam={sessionCodeParam}
+                  hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === ProviderType.JELLYFIN)}
+                  isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
+                  onProfilePictureChange={setProfilePicture}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                />
+              )}
 
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }

@@ -22,7 +22,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   }
 
   if (join) {
-    const title = "Swipe together on Swiparr";
+    const title = "Join Session";
     const description = `You've been invited to join a session on Swiparr with code: ${join}.`;
     return {
       title,
@@ -47,7 +47,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     };
   }
 
-  const title = "Login to Swiparr - Start swiping on movies";
+  const title = "Login";
   const description = "Login to Swiparr to start swiping on what to watch next, by yourself or together. A Tinder-like experience for your movie and TV show library.";
   return {
     title,
@@ -74,14 +74,14 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 export default function LoginPage() {
   return (
-    <div className="flex h-svh w-full items-center justify-center p-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <main className="flex items-center justify-center overflow-hidden h-svh pt-[env(safe-area-inset-top)] font-sans">
       <Suspense fallback={
         <div className="text-foreground">
           <Loader2 className="animate-spin" />
         </div>}>
         <LoginContent />
         <Footer className="pb-6 absolute bottom-5" />
-        <div className="absolute w-screen h-screen top-0 left-0 -z-1">
+        <div className="absolute w-full h-full top-0 left-0 -z-1">
           <LightRays
             followMouse={false}
             raysSpeed={0.5}
@@ -98,6 +98,6 @@ export default function LoginPage() {
           />
         </div>
       </Suspense>
-    </div>
+    </main>
   );
 }

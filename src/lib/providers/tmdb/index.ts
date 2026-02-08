@@ -146,8 +146,20 @@ export class TmdbProvider implements MediaProvider {
     return years;
   }
 
-  async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    return []; // Return empty so hook uses fallback
+   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
+    if (auth?.tmdbToken) {
+        this.client = new TMDB(auth.tmdbToken);
+    }
+    try {
+        const region = auth?.watchRegion || 'US';
+        const res = await axios.get(`https://api.themoviedb.org/3/certification/movie/list`, {
+            params: { api_key: appConfig.TMDB_ACCESS_TOKEN || (this.client as any).apiKey }
+        });
+        const certs = res.data.certifications?.[region] || res.data.certifications?.['US'] || [];
+        return certs.map((c: any) => ({ Name: c.certification, Value: c.certification }));
+    } catch (e) {
+        return []; 
+    }
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {

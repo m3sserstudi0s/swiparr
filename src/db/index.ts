@@ -19,6 +19,9 @@ export function getDb() {
   }
 
   if (!client) {
+    if (config.db.url && !config.db.url.startsWith('file:') && !config.db.authToken) {
+        console.warn('[DB] DATABASE_URL is remote but DATABASE_AUTH_TOKEN is missing. This may cause 401 errors.');
+    }
     client = createClient({
       url: config.db.url,
       authToken: config.db.authToken,

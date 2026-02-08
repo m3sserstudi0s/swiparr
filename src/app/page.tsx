@@ -19,7 +19,7 @@ export default function Home() {
   useHotkeys("2", () => setTab("likes"), []);
 
   return (
-    <main className="overflow-hidden h-screen pt-[env(safe-area-inset-top)]">
+    <main className="overflow-hidden h-lvh pt-[env(safe-area-inset-top)] font-sans">
       <DynamicBackground show={tab === "swipe"} />
       <div className="grid justify-center my-[3svh] relative">
 

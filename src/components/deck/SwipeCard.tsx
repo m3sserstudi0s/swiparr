@@ -135,11 +135,6 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                       {ticksToTime(item.RunTimeTicks)}
                     </Badge>
                   )}
-                  {item.OfficialRating && (
-                    <Badge variant="outline" className="text-[10px] border-neutral-700/70 bg-neutral-700/20 text-neutral-100 uppercase">
-                      {item.OfficialRating}
-                    </Badge>
-                  )}
                 </div>
                 <p className="line-clamp-3 text-sm text-neutral-400">
                   {item.Overview}

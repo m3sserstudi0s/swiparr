@@ -4,6 +4,7 @@ import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { ConfigService } from "@/lib/services/config-service";
+import { getMediaProvider } from "@/lib/providers/factory";
 
 export async function POST() {
     const cookieStore = await cookies();
@@ -15,6 +16,11 @@ export async function POST() {
 
     if (session.user.isGuest) {
         return NextResponse.json({ error: "Guests cannot claim admin role" }, { status: 403 });
+    }
+
+    const provider = getMediaProvider(session.user.provider);
+    if (!provider.capabilities.hasAuth) {
+        return NextResponse.json({ error: "This provider does not support admin capabilities" }, { status: 403 });
     }
 
     const currentAdmin = await ConfigService.getAdminUserId(session.user.provider);

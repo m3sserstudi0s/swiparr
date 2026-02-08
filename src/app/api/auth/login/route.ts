@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
         console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
 
         const provider = getMediaProvider(bodyProvider);
+        const activeProviderName = bodyProvider || provider.name;
+        
         if (!provider.authenticate) {
             return NextResponse.json({ message: "Authentication not supported by this provider" }, { status: 400 });
         }
@@ -40,13 +42,13 @@ export async function POST(request: NextRequest) {
 
         console.log("[Auth] Provider accepted credentials. User ID:", userId);
 
-        // Set as admin if no admin exists for this provider
-        const existingAdmin = await ConfigService.getAdminUserId(bodyProvider);
+        // Set as admin if no admin exists for this provider and provider supports auth
+        const existingAdmin = await ConfigService.getAdminUserId(activeProviderName);
         let wasMadeAdmin = false;
-        if (!existingAdmin) {
-            await ConfigService.setAdminUserId(userId, bodyProvider as any);
+        if (!existingAdmin && provider.capabilities.hasAuth) {
+            await ConfigService.setAdminUserId(userId, activeProviderName as any);
             wasMadeAdmin = true;
-            console.log(`[Auth] User ${userName} (${userId}) set as initial admin for ${bodyProvider}.`);
+            console.log(`[Auth] User ${userName} (${userId}) set as initial admin for ${activeProviderName}.`);
         }
 
         const cookieStore = await cookies();
@@ -57,9 +59,9 @@ export async function POST(request: NextRequest) {
             Name: userName,
             AccessToken: accessToken,
             DeviceId: deviceId,
-            isAdmin: await AuthService.isAdmin(userId, userName, bodyProvider),
+            isAdmin: await AuthService.isAdmin(userId, userName, activeProviderName),
             wasMadeAdmin: wasMadeAdmin,
-            provider: bodyProvider || provider.name,
+            provider: activeProviderName,
             providerConfig: providerConfig,
         };
         session.isLoggedIn = true;

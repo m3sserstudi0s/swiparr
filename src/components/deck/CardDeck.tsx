@@ -78,12 +78,10 @@ export function CardDeck() {
     setDisplayDeck([]);
   }, [sessionCode, filtersJson, settingsHash]);
 
-  // Update displayDeck when new items are fetched
+   // Update displayDeck when new items are fetched
   useEffect(() => {
     if (deck && Array.isArray(deck)) {
-      if (deck.length > 0) {
-        setIsTransitioning(false);
-      }
+      setIsTransitioning(false);
       setDisplayDeck((prev) => {
         const existingIds = new Set(prev.map((i) => i.Id));
         const newItems = deck.filter((item) => !existingIds.has(item.Id));

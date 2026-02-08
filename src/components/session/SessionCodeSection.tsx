@@ -65,7 +65,7 @@ export function SessionCodeSection({
               Enter code or create session
             </span>
           ) : (
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">
+            <span className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold">
               Session code
             </span>
           )}
