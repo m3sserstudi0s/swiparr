@@ -14,7 +14,12 @@ import {
   MediaRating 
 } from "@/types/media";
 import { apiClient, getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 
+/**
+ * Jellyfin Provider
+ * Docs: https://api.jellyfin.org/
+ */
 export class JellyfinProvider implements MediaProvider {
   readonly name = "jellyfin";
   
@@ -31,32 +36,42 @@ export class JellyfinProvider implements MediaProvider {
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
+    const params: Record<string, any> = {
+      IncludeItemTypes: "Movie",
+      Recursive: true,
+      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People",
+      SortBy: filters.sortBy === "Random" ? "Random" : (filters.sortBy || "SortName"),
+      SortOrder: filters.sortBy === "Random" ? undefined : "Ascending",
+      ParentId: filters.libraries?.join(",") || undefined,
+      Genres: filters.genres?.join("|") || undefined, // Jellyfin uses pipe for multiple genres
+      Years: filters.years?.join(",") || undefined,
+      OfficialRatings: filters.ratings?.join("|") || undefined,
+      Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,
+      MinCommunityRating: filters.minCommunityRating || undefined, 
+      Limit: filters.limit || 50,
+      StartIndex: filters.offset || 0,
+      EnableUserData: true,
+    };
+
+    if (filters.searchTerm) {
+      params.SearchTerm = filters.searchTerm;
+    }
+
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
-      params: {
-        IncludeItemTypes: "Movie",
-        Recursive: true,
-        Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData",
-        SortBy: filters.sortBy || "Id", 
-        ParentId: filters.libraries?.join(",") || undefined,
-        GenreNames: filters.genres?.join(",") || undefined,
-        Years: filters.years?.join(",") || undefined,
-        OfficialRatings: filters.ratings?.join(",") || undefined,
-        Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,
-        MinCommunityRating: filters.minCommunityRating || undefined, 
-        Limit: filters.limit || 50,
-        StartIndex: filters.offset || 0,
-      },
+      params,
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
 
-    return (res.data.Items || []).map((item: any) => this.mapToMediaItem(item));
+    const data = JellyfinQueryResultSchema.parse(res.data);
+    return data.Items.map((item) => this.mapToMediaItem(item));
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
-    return this.mapToMediaItem(res.data);
+    const data = JellyfinItemSchema.parse(res.data);
+    return this.mapToMediaItem(data);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
@@ -73,7 +88,7 @@ export class JellyfinProvider implements MediaProvider {
     return (res.data.Items || []).map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
   }
 
-   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
+  async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
     const res = await apiClient.get(getJellyfinUrl("/Items", auth?.serverUrl), {
       params: {
         IncludeItemTypes: "Movie",
@@ -87,7 +102,6 @@ export class JellyfinProvider implements MediaProvider {
 
     const items = res.data.Items || [];
     const ratings = Array.from(new Set(items.map((i: any) => i.OfficialRating).filter(Boolean))) as string[];
-    
     return ratings.sort().map(r => ({ Name: r, Value: r }));
   }
 
@@ -95,7 +109,6 @@ export class JellyfinProvider implements MediaProvider {
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Views`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
-    
     return (res.data.Items || [])
       .filter((l: any) => l.CollectionType === "movies")
       .map((l: any) => ({
@@ -113,9 +126,8 @@ export class JellyfinProvider implements MediaProvider {
 
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
-    const { getAuthenticatedHeaders } = await import("@/lib/jellyfin/api");
     try {
-        const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any) + "?maxWidth=20&quality=50";
+        const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any, undefined, auth) + "?maxWidth=20&quality=50";
         const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
         return await getBlurDataURL(itemId, imageUrl, headers) || "";
     } catch (e) {
@@ -126,19 +138,16 @@ export class JellyfinProvider implements MediaProvider {
   async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
     const url = this.getImageUrl(itemId, type as any, tag, auth);
     const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
-    
     const res = await apiClient.get(url, {
       responseType: "arraybuffer",
       headers,
       params: options
     });
-
     return {
       data: res.data,
       contentType: res.headers["content-type"] || "image/webp"
     };
   }
-
 
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const { authenticateJellyfin } = await import("@/lib/jellyfin/api");
@@ -147,14 +156,10 @@ export class JellyfinProvider implements MediaProvider {
 
   async toggleWatchlist(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
     const url = getJellyfinUrl(`/Users/${auth?.userId}/Items/${itemId}/Rating`, auth?.serverUrl);
-    await apiClient.post(
-      url,
-      null,
-      { 
-          params: { Likes: action === "add" },
-          headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {}
-      }
-    );
+    await apiClient.post(url, null, { 
+      params: { Likes: action === "add" },
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {}
+    });
   }
 
   async toggleFavorite(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
@@ -165,16 +170,6 @@ export class JellyfinProvider implements MediaProvider {
     } else {
       await apiClient.delete(url, { headers });
     }
-  }
-
-  async initiateQuickConnect(deviceId: string, serverUrl?: string): Promise<any> {
-    const { initiateQuickConnect } = await import("@/lib/jellyfin/api");
-    return initiateQuickConnect(deviceId, serverUrl);
-  }
-
-  async checkQuickConnect(secret: string, deviceId: string, serverUrl?: string): Promise<any> {
-    const { checkQuickConnect } = await import("@/lib/jellyfin/api");
-    return checkQuickConnect(secret, deviceId, serverUrl);
   }
 
   private mapToMediaItem(item: any): MediaItem {
@@ -195,10 +190,6 @@ export class JellyfinProvider implements MediaProvider {
         Role: p.Role,
         Type: p.Type,
         PrimaryImageTag: p.PrimaryImageTag,
-      })),
-      Studios: item.Studios?.map((s: any) => ({
-        Name: s.Name,
-        Id: s.Id,
       })),
       ImageTags: item.ImageTags,
       BackdropImageTags: item.BackdropImageTags,

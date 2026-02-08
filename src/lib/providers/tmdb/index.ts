@@ -1,4 +1,3 @@
-import { MovieQueryOptions, TMDB } from 'tmdb-ts';
 import { v4 as uuidv4 } from "uuid";
 import { config as appConfig } from "@/lib/config";
 import { 
@@ -9,8 +8,6 @@ import {
   ImageResponse
 } from "../types";
 import axios from "axios";
-
-
 import { 
   MediaItem, 
   MediaLibrary, 
@@ -20,10 +17,16 @@ import {
   WatchProvider,
   MediaRegion
 } from "@/types/media";
+import { TmdbSearchResponseSchema, TmdbMovieSchema } from "../schemas";
 
+/**
+ * TMDB Provider
+ * Uses pure REST API calls.
+ * Official Docs: https://developer.themoviedb.org/reference/intro/getting-started
+ */
 export class TmdbProvider implements MediaProvider {
   readonly name = "tmdb";
-  private client: TMDB;
+  private apiKey: string;
   
   readonly capabilities: ProviderCapabilities = {
     hasAuth: false,
@@ -38,82 +41,86 @@ export class TmdbProvider implements MediaProvider {
   };
 
   constructor(token?: string) {
-    const finalToken = token || appConfig.TMDB_ACCESS_TOKEN || '';
-    this.client = new TMDB(finalToken);
+    this.apiKey = token || appConfig.TMDB_ACCESS_TOKEN || '';
   }
 
+  private async fetchTmdb<T>(path: string, params: Record<string, any> = {}): Promise<T> {
+    const res = await axios.get(`https://api.themoviedb.org/3/${path.replace(/^\//, '')}`, {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        Accept: 'application/json',
+      },
+      params
+    });
+    return res.data;
+  }
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     if (auth?.tmdbToken) {
-        this.client = new TMDB(auth.tmdbToken);
+        this.apiKey = auth.tmdbToken;
     }
+    
     const genres = await this.getGenres(auth);
     const genreIdMap = new Map(genres.map(g => [g.Name, g.Id]));
     const genreNameMap = new Map(genres.map(g => [g.Id, g.Name]));
 
     if (filters.searchTerm) {
-        const searchRes = await this.client.search.movies({ 
+        const data = await this.fetchTmdb<any>('search/movie', {
             query: filters.searchTerm,
             page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1
         });
-        return searchRes.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));
+        const searchRes = TmdbSearchResponseSchema.parse(data);
+        return searchRes.results.map(m => this.mapMovieToMediaItem(m, genreNameMap));
     }
 
     // Default to discover
-    const discoverOptions: MovieQueryOptions = {
+    // Docs: https://developer.themoviedb.org/reference/discover-movie-get
+    const discoverParams: Record<string, any> = {
         page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1,
         with_genres: filters.genres?.map(name => genreIdMap.get(name)).filter(Boolean).join(','),
     };
 
     if (filters.watchProviders && filters.watchProviders.length > 0) {
-        discoverOptions.with_watch_providers = filters.watchProviders.join('|');
-        discoverOptions.watch_region = filters.watchRegion || auth?.watchRegion || 'SE';
-        (discoverOptions as any).with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
+        discoverParams.with_watch_providers = filters.watchProviders.join('|');
+        discoverParams.watch_region = filters.watchRegion || auth?.watchRegion || 'US';
+        discoverParams.with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
     }
 
     if (filters.years && filters.years.length > 0) {
         const minYear = Math.min(...filters.years);
         const maxYear = Math.max(...filters.years);
         if (minYear === maxYear) {
-            discoverOptions.primary_release_year = minYear;
+            discoverParams.primary_release_year = minYear;
         } else {
-            discoverOptions['primary_release_date.gte'] = `${minYear}-01-01`;
-            discoverOptions['primary_release_date.lte'] = `${maxYear}-12-31`;
+            discoverParams['primary_release_date.gte'] = `${minYear}-01-01`;
+            discoverParams['primary_release_date.lte'] = `${maxYear}-12-31`;
         }
     }
 
-     if (filters.minCommunityRating && filters.minCommunityRating > 0) {
-        discoverOptions['vote_average.gte'] = filters.minCommunityRating;
+    if (filters.minCommunityRating && filters.minCommunityRating > 0) {
+        discoverParams['vote_average.gte'] = filters.minCommunityRating;
     }
 
     if (filters.ratings && filters.ratings.length > 0) {
-        discoverOptions.certification_country = filters.watchRegion || auth?.watchRegion || 'US';
-        discoverOptions.certification = filters.ratings.join('|');
-    }
-
-    // If no specific filters and sortBy is Random, we can use trending or discover with a random page
-    if (!filters.genres?.length && !filters.years?.length && !filters.ratings?.length && !filters.watchProviders?.length && !filters.minCommunityRating && filters.sortBy === "Random") {
-        const page = Math.floor(Math.random() * 10) + 1;
-        const trending = await this.client.trending.trending("movie", "week", { page });
-        return trending.results.map((m: any) => this.mapMovieToMediaItem(m, genreNameMap));
+        discoverParams.certification_country = filters.watchRegion || auth?.watchRegion || 'US';
+        discoverParams.certification = filters.ratings.join('|');
     }
 
     if (filters.sortBy === "Random") {
-        // To get better randomness with discover, we first get total pages
         try {
-            const initialRes = await this.client.discover.movie({ ...discoverOptions, page: 1 });
-            const totalPages = Math.min(initialRes.total_pages, 500); // TMDB limits to 500 pages for discover
-            discoverOptions.page = Math.floor(Math.random() * totalPages) + 1;
+            const initialRes = await this.fetchTmdb<any>('discover/movie', { ...discoverParams, page: 1 });
+            const totalPages = Math.min(initialRes.total_pages, 500);
+            discoverParams.page = Math.floor(Math.random() * totalPages) + 1;
         } catch (e) {
-            discoverOptions.page = Math.floor(Math.random() * 20) + 1;
+            discoverParams.page = Math.floor(Math.random() * 20) + 1;
         }
     }
 
-    const discoverRes = await this.client.discover.movie(discoverOptions);
-    return discoverRes.results.map((m: any) => {
+    const data = await this.fetchTmdb<any>('discover/movie', discoverParams);
+    const discoverRes = TmdbSearchResponseSchema.parse(data);
+    
+    return discoverRes.results.map(m => {
         const item = this.mapMovieToMediaItem(m, genreNameMap);
-        // If we filtered by rating, we know these items match, so we can "fake" the rating 
-        // for the client-side filter to not discard them, since TMDB list doesn't include it.
         if (filters.ratings && filters.ratings.length === 1) {
             item.OfficialRating = filters.ratings[0];
         }
@@ -123,18 +130,20 @@ export class TmdbProvider implements MediaProvider {
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
     if (auth?.tmdbToken) {
-        this.client = new TMDB(auth.tmdbToken);
+        this.apiKey = auth.tmdbToken;
     }
-    const movie = await this.client.movies.details(parseInt(id), ['credits', 'images' as any, 'watch/providers' as any, 'release_dates' as any]);
-    return this.mapMovieDetailsToMediaItem(movie as any, auth?.watchRegion);
+    const movie = await this.fetchTmdb<any>(`movie/${id}`, {
+        append_to_response: 'credits,images,watch/providers,release_dates'
+    });
+    return this.mapMovieDetailsToMediaItem(movie, auth?.watchRegion);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
     if (auth?.tmdbToken) {
-        this.client = new TMDB(auth.tmdbToken);
+        this.apiKey = auth.tmdbToken;
     }
-    const res = await this.client.genres.movies();
-    return res.genres.map(g => ({ Id: g.id.toString(), Name: g.name }));
+    const data = await this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/movie/list');
+    return data.genres.map(g => ({ Id: g.id.toString(), Name: g.name }));
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
@@ -146,16 +155,11 @@ export class TmdbProvider implements MediaProvider {
     return years;
   }
 
-   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    if (auth?.tmdbToken) {
-        this.client = new TMDB(auth.tmdbToken);
-    }
+  async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
     try {
         const region = auth?.watchRegion || 'US';
-        const res = await axios.get(`https://api.themoviedb.org/3/certification/movie/list`, {
-            params: { api_key: appConfig.TMDB_ACCESS_TOKEN || (this.client as any).apiKey }
-        });
-        const certs = res.data.certifications?.[region] || res.data.certifications?.['US'] || [];
+        const data = await this.fetchTmdb<any>('certification/movie/list');
+        const certs = data.certifications?.[region] || data.certifications?.['US'] || [];
         return certs.map((c: any) => ({ Name: c.certification, Value: c.certification }));
     } catch (e) {
         return []; 
@@ -168,10 +172,10 @@ export class TmdbProvider implements MediaProvider {
 
   async getWatchProviders(region: string, auth?: AuthContext): Promise<WatchProvider[]> {
     if (auth?.tmdbToken) {
-        this.client = new TMDB(auth.tmdbToken);
+        this.apiKey = auth.tmdbToken;
     }
-    const res = await this.client.watchProviders.getMovieProviders({ watch_region: region as any });
-    return res.results.map(p => ({
+    const data = await this.fetchTmdb<any>('watch/providers/movie', { watch_region: region });
+    return data.results.map((p: any) => ({
       Id: p.provider_id.toString(),
       Name: p.provider_name,
       LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`,
@@ -180,10 +184,10 @@ export class TmdbProvider implements MediaProvider {
 
   async getRegions(auth?: AuthContext): Promise<MediaRegion[]> {
     if (auth?.tmdbToken) {
-        this.client = new TMDB(auth.tmdbToken);
+        this.apiKey = auth.tmdbToken;
     }
-    const res = await this.client.configuration.getCountries();
-    return res.map(c => ({
+    const data = await this.fetchTmdb<any[]>('configuration/countries');
+    return data.map(c => ({
       Id: c.iso_3166_1,
       Name: c.english_name,
     })).sort((a, b) => a.Name.localeCompare(b.Name));
@@ -195,19 +199,15 @@ export class TmdbProvider implements MediaProvider {
         const cleanTag = tag.startsWith('/') ? tag : `/${tag}`;
         return `https://image.tmdb.org/t/p/${size}${cleanTag}`;
     }
-    
-    // Fallback if no tag provided but we have an itemId that might be the path
     if (itemId && (itemId.startsWith('/') || itemId.length > 20)) {
         const cleanTag = itemId.startsWith('/') ? itemId : `/${itemId}`;
         return `https://image.tmdb.org/t/p/${size}${cleanTag}`;
     }
-
     return "";
   }
 
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
-
     try {
         const details = await this.getItemDetails(itemId, auth);
         const tag = type === "Backdrop" ? details.ImageTags?.Backdrop : details.ImageTags?.Primary;
@@ -221,19 +221,15 @@ export class TmdbProvider implements MediaProvider {
 
   async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
     const url = this.getImageUrl(itemId, type as any, tag);
-    
-    // TMDB images are public, but we can still proxy them through axios to be consistent
     const res = await axios.get(url, {
       responseType: "arraybuffer",
       params: options
     });
-
     return {
       data: res.data,
       contentType: res.headers["content-type"] || "image/webp"
     };
   }
-
 
   async authenticate(username: string, password?: string, deviceId?: string, tmdbToken?: string): Promise<any> {
     return {
@@ -277,15 +273,12 @@ export class TmdbProvider implements MediaProvider {
         })) || [])
      ];
     
-    // Extract certification (OfficialRating)
     let officialRating: string | undefined = undefined;
     const releaseDates = movie.release_dates?.results || [];
     const targetRegion = region || 'US';
-    
     const regionRelease = releaseDates.find((r: any) => r.iso_3166_1 === targetRegion) || releaseDates.find((r: any) => r.iso_3166_1 === 'US') || releaseDates[0];
     
     if (regionRelease) {
-        // Find the first non-empty certification
         officialRating = regionRelease.release_dates.find((rd: any) => rd.certification)?.certification;
     }
 
@@ -312,7 +305,6 @@ export class TmdbProvider implements MediaProvider {
 
   private mapWatchProviders(results: any, preferredRegion?: string): WatchProvider[] {
     if (!results) return [];
-    
     const providers = new Map<number, WatchProvider>();
     const processRegion = (regionCode: string) => {
         const data = results[regionCode];
@@ -328,16 +320,12 @@ export class TmdbProvider implements MediaProvider {
             }
         }
     };
-
     if (preferredRegion && results[preferredRegion]) {
         processRegion(preferredRegion);
     } else {
-        // Fallback: process all regions but prioritize some common ones if we want to be generous
-        // For now, if no region, we still aggregate all as before to not break things
         const regions = Object.keys(results);
         for (const r of regions) processRegion(r);
     }
-
     return Array.from(providers.values());
   }
 }

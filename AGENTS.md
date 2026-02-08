@@ -1,5 +1,8 @@
 # Swiparr - Agent Development Guide
 
+When you need to search docs, use `context7` tools.
+If you are unsure how to do something, use `gh_grep` to search code examples from GitHub.
+
 ## Project Overview
 **Swiparr** is a media discovery tool for Jellyfin, Emby, Plex, and TMDB, featuring a Tinder-like swipe interface.
 - **Framework**: Next.js 16 (App Router), React 19 (React Compiler enabled)

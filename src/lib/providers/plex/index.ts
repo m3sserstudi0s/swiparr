@@ -16,7 +16,13 @@ import {
 } from "@/types/media";
 import { plexClient, getPlexUrl, getPlexHeaders } from "@/lib/plex/api";
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
+import { PlexContainerSchema, PlexMetadataSchema } from "../schemas";
 
+/**
+ * Plex Provider
+ * Uses REST API. Plex uses complex query parameters for advanced filtering.
+ * Filter pattern: ?genre=ID&contentRating=ID&year=YEAR&sort=random
+ */
 export class PlexProvider implements MediaProvider {
   readonly name = "plex";
   
@@ -36,48 +42,51 @@ export class PlexProvider implements MediaProvider {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const headers = getPlexHeaders(token);
     
-    // If we have libraries filtered, we fetch from those sections
-    // If not, we might need to fetch from all movie sections
     let allItems: any[] = [];
-    
     const sections = await this.getLibraries(auth);
     const targetSections = filters.libraries && filters.libraries.length > 0 
       ? sections.filter(s => filters.libraries?.includes(s.Id))
       : sections.filter(s => s.CollectionType === "movies");
 
     for (const section of targetSections) {
-        const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
-        const params: any = {
+        // Build query for Plex Advanced Filtering
+        // Docs (Community): https://github.com/Arcanemagus/plex-api/wiki/Library-Sections
+        const params: Record<string, any> = {
             type: 1, // Movies
             'X-Plex-Container-Start': filters.offset || 0,
             'X-Plex-Container-Size': filters.limit || 50,
         };
 
-        // Plex filtering is complex via URL params (e.g. ?genre=123)
-        // For now, let's do basic fetching and we can refine later
-        // Plex often uses "all" but you can filter with keys
-        
-        if (filters.genres && filters.genres.length > 0) {
-            // This requires knowing the ID of the genre in Plex, which we get from getGenres
-            // For now, we'll fetch all and filter in memory if needed, or 
-            // better: implement proper Plex filtering if we have the IDs.
+        if (filters.sortBy === "Random") {
+            params.sort = "random";
+        } else if (filters.sortBy === "ProductionYear") {
+            params.sort = "year:desc";
         }
 
-         const res = await plexClient.get(url, { headers, params });
-        const items = res.data.MediaContainer?.Metadata || [];
+        if (filters.searchTerm) {
+            params.title = filters.searchTerm;
+        }
+
+        // Plex filtering usually requires internal IDs for genres/ratings
+        // The cached-queries.ts should have resolved these already if they are in the filters
+        if (filters.genres && filters.genres.length > 0) {
+            params.genre = filters.genres.join(',');
+        }
+        if (filters.ratings && filters.ratings.length > 0) {
+            params.contentRating = filters.ratings.join(',');
+        }
+        if (filters.years && filters.years.length > 0) {
+            params.year = filters.years.join(',');
+        }
+
+        const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
+        const res = await plexClient.get(url, { headers, params });
+        const data = PlexContainerSchema.parse(res.data);
+        const items = data.MediaContainer.Metadata || [];
         allItems = [...allItems, ...items];
     }
 
-    // Client-side filtering for ratings if provided, as Plex API filtering is complex
-    if (filters.ratings && filters.ratings.length > 0) {
-        allItems = allItems.filter(item => item.contentRating && filters.ratings?.includes(item.contentRating));
-    }
-
-    // Sort and limit if we combined from multiple sections
-    if (filters.sortBy === "Random") {
-        allItems = allItems.sort(() => Math.random() - 0.5);
-    }
-
+    // Secondary client-side limit if multiple sections merged
     return allItems.slice(0, filters.limit || 50).map(item => this.mapToMediaItem(item));
   }
 
@@ -85,7 +94,8 @@ export class PlexProvider implements MediaProvider {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const url = getPlexUrl(`/library/metadata/${id}`, auth?.serverUrl);
     const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
-    const item = res.data.MediaContainer?.Metadata?.[0];
+    const data = PlexContainerSchema.parse(res.data);
+    const item = data.MediaContainer.Metadata?.[0];
     if (!item) throw new Error("Item not found");
     return this.mapToMediaItem(item);
   }
@@ -129,35 +139,23 @@ export class PlexProvider implements MediaProvider {
   }
 
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string {
-    // If tag is provided, it's usually the Plex path (e.g. /library/metadata/123/thumb/123456789)
-    if (tag) {
-        return getPlexUrl(tag, auth?.serverUrl);
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
+    const path = tag || itemId;
+    if (path.startsWith('/')) {
+        return getPlexUrl(`${path}?X-Plex-Token=${token}`, auth?.serverUrl);
     }
-    
-    // Fallback: If itemId is a path, use it
-    if (itemId.startsWith('/')) {
-        return getPlexUrl(itemId, auth?.serverUrl);
-    }
-
-    // Otherwise, we might need to fetch details to get the image path, 
-    // but Swiparr expects a sync URL construction if possible.
-    // For Plex, we usually have the thumb/art paths in the items already.
     return "";
   }
 
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
-    
     try {
         const details = await this.getItemDetails(itemId, auth);
         const tag = type === "Backdrop" ? details.ImageTags?.Backdrop : details.ImageTags?.Primary;
         if (!tag) return "";
-        
-        // Plex images often need the token even for thumbnails if not public
-        const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any, tag);
+        const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any, tag, auth);
         const headers = getPlexHeaders(token);
-        
         return await getBlurDataURL(itemId, imageUrl, headers) || "";
     } catch (e) {
         return "";
@@ -168,29 +166,23 @@ export class PlexProvider implements MediaProvider {
     const url = this.getImageUrl(itemId, type as any, tag, auth);
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const headers = getPlexHeaders(token);
-    
     const res = await plexClient.get(url, {
       responseType: "arraybuffer",
       headers,
       params: options
     });
-
     return {
       data: res.data,
       contentType: res.headers["content-type"] || "image/webp"
     };
   }
 
-
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const token = password || appConfig.PLEX_TOKEN;
     if (!token) throw new Error("Plex Token is required");
-    
     const headers = getPlexHeaders(token);
     const url = getPlexUrl("/myplex/account", serverUrl);
     const res = await plexClient.get(url, { headers });
-    
-    // Normalize to what Swiparr expects: { User: { Id, Name }, AccessToken }
     const user = res.data.MyPlex;
     return {
       User: {
@@ -206,7 +198,7 @@ export class PlexProvider implements MediaProvider {
       Id: item.ratingKey,
       Name: item.title,
       OriginalTitle: item.originalTitle,
-      RunTimeTicks: item.duration ? item.duration * 10000 : undefined, // ms to ticks
+      RunTimeTicks: item.duration ? item.duration * 10000 : undefined, 
       ProductionYear: item.year,
       CommunityRating: item.rating,
       Overview: item.summary,
@@ -228,15 +220,13 @@ export class PlexProvider implements MediaProvider {
               Type: "Director",
           })) || [])
       ],
-      Studios: item.Studio ? [{ Name: item.Studio, Id: item.Studio }] : [],
       ImageTags: {
         Primary: item.thumb,
         Backdrop: item.art,
       },
       BackdropImageTags: item.art ? [item.art] : [],
       UserData: {
-        IsFavorite: false, // Plex doesn't have a simple "Favorite" in the same way, but it has user rating/watchlist
-        Likes: undefined,
+        IsFavorite: false,
       },
     };
   }

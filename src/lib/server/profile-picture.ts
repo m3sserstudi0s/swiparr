@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 export async function saveProfilePicture(userId: string, imageBuffer: Buffer, contentType: string) {
     // Process image: resize to 128x128 and convert to webp
     const processedImage = await sharp(imageBuffer)
+        .rotate()
         .resize(128, 128, {
             fit: 'cover',
             position: 'center'
