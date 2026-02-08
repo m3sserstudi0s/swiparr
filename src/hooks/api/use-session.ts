@@ -52,19 +52,21 @@ export function useUpdateSession() {
       const errorMessage = (err as any)?.response?.data?.error || "Failed to update session";
       toast.error(errorMessage);
     },
-    onSettled: (data, error, variables, context) => {
-      // Get the current session to find the session code
+    onSettled: async (data, error, variables, context) => {
+      // Refetch session first to ensure we have the latest data (including filters)
+      // This is critical because the session query has a 5-minute staleTime
+      await queryClient.refetchQueries({ queryKey: QUERY_KEYS.session });
+      
+      // Get the fresh session data after refetch
       const currentSession = queryClient.getQueryData<SessionStatus | null>(QUERY_KEYS.session);
       const sessionCode = currentSession?.code;
       
-      // Invalidate session first
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session });
-      
       // Then invalidate deck with the correct query key pattern
+      // This ensures the deck reloads with the updated filters
       if (sessionCode) {
-        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+        await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
       }
-      queryClient.invalidateQueries({ queryKey: ["deck"] });
+      await queryClient.invalidateQueries({ queryKey: ["deck"] });
     },
   });
 }
