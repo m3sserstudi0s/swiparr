@@ -172,7 +172,7 @@ export function CardDeck() {
     return displayDeck.filter((item: MediaItem) => !removedIds.includes(item.Id));
   }, [displayDeck, removedIds]);
 
-  const activeDeck = useMemo(() => {
+    const activeDeck = useMemo(() => {
     return filteredDeck.filter((item: MediaItem) => !swipedIdsRef.current.has(item.Id));
   }, [filteredDeck]);
 

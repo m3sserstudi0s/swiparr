@@ -191,7 +191,7 @@ export class MediaService {
 
     return {
       items: slicedItems,
-      hasMore: fetchedItems.length === fetchLimit
+      hasMore: auth.provider === 'tmdb' ? fetchedItems.length >= 20 : fetchedItems.length >= fetchLimit // Provider specific fix since TMDB returns 20 per page (others 50)
     };
   }
 

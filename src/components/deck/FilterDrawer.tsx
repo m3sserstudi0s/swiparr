@@ -265,8 +265,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                   <div className="flex justify-between items-center">
                     <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Genres</Label>
                     <div className="flex gap-3">
-                      <button onClick={() => setSelectedGenres(genres.map(g => g.Name))} className="text-xs text-primary hover:underline">Select all</button>
-                      <button onClick={() => setSelectedGenres([])} className="text-xs text-muted-foreground hover:underline">Clear</button>
+                      <button onClick={() => setSelectedGenres(genres.map(g => g.Name))} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
+                      <button onClick={() => setSelectedGenres([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -359,8 +359,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                     <div className="flex justify-between items-center">
                       <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Streaming Services</Label>
                       <div className="flex gap-3">
-                        <button onClick={() => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id))} className="text-xs text-primary hover:underline">Select all</button>
-                        <button onClick={() => setSelectedWatchProviders([])} className="text-xs text-muted-foreground hover:underline">Clear</button>
+                        <button onClick={() => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id))} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
+                        <button onClick={() => setSelectedWatchProviders([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -379,7 +379,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             key={p.Id}
                             onClick={() => setSelectedWatchProviders(prev => prev.includes(p.Id) ? prev.filter(id => id !== p.Id) : [...prev, p.Id])}
                             className={cn(
-                              "relative flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                              "relative flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer",
                               isSelected
                                 ? "bg-primary/5 border-primary shadow-sm"
                                 : "bg-background border-input text-muted-foreground opacity-85 grayscale-[0.5]"

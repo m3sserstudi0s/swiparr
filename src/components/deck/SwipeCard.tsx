@@ -107,7 +107,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {item.Genres?.[0] && (
+                  {!!item.Genres?.[0] && (
                     <Badge
                       variant="secondary"
                       className="text-neutral-100 bg-primary/20 border border-primary/10 hover:bg-primary/30"
@@ -115,7 +115,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                       {item.Genres[0]}
                     </Badge>
                   )}
-                  {item.ProductionYear && (
+                  {!!item.ProductionYear && (
                     <Badge
                       variant="secondary"
                       className="bg-neutral-600/70 hover:bg-accent text-neutral-100 border-0 flex"
@@ -123,13 +123,13 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                       {item.ProductionYear}
                     </Badge>
                   )}
-                  {item.CommunityRating && (
+                  {!!item.CommunityRating && (
                     <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
                       <Star className="w-3 h-3 fill-neutral-100" />
                       {item.CommunityRating.toFixed(1)}
                     </Badge>
                   )}
-                   {item.RunTimeTicks && (
+                   {!!item.RunTimeTicks && (
                     <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
                       <Clock className="w-3 h-3" />
                       {ticksToTime(item.RunTimeTicks)}
