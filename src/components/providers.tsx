@@ -25,7 +25,7 @@ export function Providers({
       <NextThemesProvider {...props}>
         <HybridTooltipProvider>
           <MovieDetailProvider>
-            <Toaster position='bottom-right'/>
+            <Toaster position='bottom-right' className="pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"/>
             <UpdatesSubscriber />
             {children}
           </MovieDetailProvider>
