@@ -15,6 +15,7 @@ import { RotateCcw, Star, Check } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
+import { Switch } from "../ui/switch";
 import { useFilters, useThemes, useSession, useWatchProviders, useUserSettings } from "@/hooks/api";
 import { MediaGenre, MediaRating, MediaYear, WatchProvider } from "@/types/media";
 import { OptimizedImage } from "../ui/optimized-image";
@@ -45,6 +46,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(DEFAULT_LANGUAGES);
   const [sortBy, setSortBy] = useState<string>("Trending");
+  const [unplayedOnly, setUnplayedOnly] = useState<boolean>(true);
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
@@ -85,6 +87,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setSelectedThemes(currentFilters?.themes || []);
       setSelectedLanguages(currentFilters?.languages || DEFAULT_LANGUAGES);
       setSortBy(currentFilters?.sortBy || "Trending");
+      setUnplayedOnly(currentFilters?.unplayedOnly ?? true);
       setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
@@ -104,6 +107,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       themes: selectedThemes,
       languages: isLanguageDefault ? undefined : selectedLanguages,
       sortBy: sortBy === "Trending" ? undefined : sortBy,
+      unplayedOnly: unplayedOnly,
       yearRange: isYearDefault ? undefined : yearRange,
       runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
       minCommunityRating: minRating > 0 ? minRating : undefined
@@ -139,6 +143,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setSelectedThemes([]);
     setSelectedLanguages(DEFAULT_LANGUAGES);
     setSortBy("Trending");
+    setUnplayedOnly(true);
     setYearRange([minYearLimit, maxYearLimit]);
     setRuntimeRange([0, 240]);
     setMinRating(0);
@@ -195,6 +200,20 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                     ))}
                   </div>
                 </div>
+
+                {/* Watched Section */}
+                {capabilities.hasAuth && (
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold tracking-tight">Hide Watched</Label>
+                      <p className="text-xs text-muted-foreground font-medium">Only show items you haven't seen yet</p>
+                    </div>
+                    <Switch
+                      checked={unplayedOnly}
+                      onCheckedChange={setUnplayedOnly}
+                    />
+                  </div>
+                )}
 
                 {/* Rating Section */}
                 <div className="space-y-4">

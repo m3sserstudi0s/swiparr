@@ -128,6 +128,7 @@ export class MediaService {
       sortBy: sessionFilters?.sortBy,
       themes: sessionFilters?.themes,
       languages: sessionFilters?.languages,
+      unplayedOnly: sessionFilters?.unplayedOnly,
       limit: 1000,
     }, auth);
 
@@ -175,7 +176,7 @@ export class MediaService {
       sortBy: sessionFilters?.sortBy || "Random",
       themes: sessionFilters?.themes,
       languages: sessionFilters?.languages,
-      unplayedOnly: true,
+      unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
       limit: fetchLimit,
       offset: page * limit
     }, auth);

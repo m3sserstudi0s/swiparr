@@ -9,6 +9,7 @@ export interface Filters {
   sortBy?: string;
   themes?: string[];
   languages?: string[];
+  unplayedOnly?: boolean;
 }
 
 export interface SessionSettings {

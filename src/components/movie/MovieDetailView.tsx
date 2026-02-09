@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, Users, HeartOff, Plus, Minus, Info } from "lucide-react";
+import { Play, Clock, Star, Users, HeartOff, Plus, Minus, Info, Bookmark } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MediaItem, Filters, WatchProvider } from "@/types";
@@ -307,11 +307,10 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         onClick={() => handleToggleWatchlist()}
                         disabled={isTogglingWatchlist}
                       >
-                        {isInList ? (
-                          <Minus className="w-4 h-4 mr-2" />
-                        ) : (
-                          <Plus className="w-4 h-4 mr-2" />
-                        )}
+                        {useWatchlist ?
+                          <Bookmark className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
+                          : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
+                        }
                         {useWatchlist ? "Watchlist" : "Favorite"}
                       </Button>
                     )}

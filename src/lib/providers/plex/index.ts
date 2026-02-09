@@ -87,6 +87,10 @@ export class PlexProvider implements MediaProvider {
             params.year = filters.years.join(',');
         }
 
+        if (filters.unplayedOnly) {
+            params.unwatched = 1;
+        }
+
         const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
         const res = await plexClient.get(url, { headers, params });
         const data = PlexContainerSchema.parse(res.data);

@@ -1,7 +1,7 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Star, Calendar, HeartOff, Clock } from "lucide-react";
+import { Play, Star, Calendar, HeartOff, Clock, Plus, Minus, Bookmark } from "lucide-react";
 import { cn, ticksToTime, getErrorMessage } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -13,6 +13,8 @@ import { apiClient } from "@/lib/api-client";
 
 import { MergedLike, MediaItem } from "@/types";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { useSettings } from "@/lib/settings";
+
 
 interface MovieListItemProps {
 
@@ -26,8 +28,65 @@ interface MovieListItemProps {
 export function MovieListItem({ movie, onClick, variant = "full", isLiked }: MovieListItemProps) {
   const queryClient = useQueryClient();
   const { capabilities } = useRuntimeConfig();
+  const { settings } = useSettings();
+
+  const useWatchlist = settings.useWatchlist;
+  const isInList = (useWatchlist ? movie?.UserData?.Likes : movie?.UserData?.IsFavorite) ?? false;
+
+  const { data: sessionData } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
+      return res.data;
+    },
+  });
+
+  const isGuest = sessionData?.isGuest || false;
+
+  const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
+    mutationFn: async (actionOverride?: "add" | "remove") => {
+      if (isGuest) return;
+      const action = actionOverride || (isInList ? "remove" : "add");
+      await apiClient.post("/api/user/watchlist", {
+        itemId: movie.Id,
+        action,
+        useWatchlist
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["movie", movie.Id] });
+      queryClient.invalidateQueries({ queryKey: ["likes"] });
+    },
+  });
+
+  const handleToggleWatchlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isGuest) return;
+
+    const action = isInList ? "remove" : "add";
+
+    toast.promise(toggleWatchlist(undefined), {
+      loading: "Updating...",
+      success: () => {
+        return {
+          message: action === "remove"
+            ? `Removed from ${useWatchlist ? "watchlist" : "favorites"}`
+            : `Added to ${useWatchlist ? "watchlist" : "favorites"}`,
+          action: {
+            label: 'Undo',
+            onClick: () => toggleWatchlist(action === "remove" ? "add" : "remove")
+          }
+        };
+      },
+      error: (err) => ({
+        message: `Failed to update ${useWatchlist ? "watchlist" : "favorites"}`,
+        description: getErrorMessage(err)
+      }),
+    });
+  };
 
   const { mutate: relike } = useMutation({
+
     mutationFn: async () => {
       await apiClient.post("/api/swipe", {
         itemId: movie.Id,
@@ -55,15 +114,8 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
     },
   });
 
-  const { data: sessionData } = useQuery({
-    queryKey: ["session"],
-    queryFn: async () => {
-      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
-      return res.data;
-    },
-  });
-
   const handleUnlike = () => {
+
     toast.promise(unlike(), {
       loading: "Removing from likes...",
       success: "Movie removed from likes",
@@ -186,7 +238,25 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 />
               ))}
             </div>}
+            {!isGuest && capabilities.hasWatchlist && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className={cn(
+                  "h-7 w-7 p-0 text-muted-foreground hover:bg-muted",
+                  isInList && "text-primary"
+                )}
+                onClick={handleToggleWatchlist}
+                disabled={isTogglingWatchlist}
+              >
+                {useWatchlist ?
+                  <Bookmark className={cn("w-4 h-4", isInList && "fill-foreground")} />
+                  : <Star className={cn("w-4 h-4", isInList && "fill-foreground")} />
+                }
+              </Button>
+            )}
             {(movie.likedBy?.some(l => l.userId === sessionData?.userId) || isLiked) && <Button
+
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
