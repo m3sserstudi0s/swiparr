@@ -8,10 +8,12 @@ import { TouchProvider } from '@/components/ui/hybrid-tooltip'
 export const dynamic = 'force-dynamic';
 
 
-const sansFlex = Google_Sans_Flex({ 
+const sansFlex = Google_Sans_Flex({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-sans',
+  fallback: ['Arial', 'sans-serif'],
+  adjustFontFallback: false,
 })
 
 const jetbrainsMono = JetBrains_Mono({
