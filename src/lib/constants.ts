@@ -40,8 +40,9 @@ export const LANGUAGES = [
     { code: "ja", name: "Japanese" },
     { code: "ko", name: "Korean" },
     { code: "pt", name: "Portuguese" },
-    { code: "ru", name: "Russian" },
     { code: "zh", name: "Chinese" },
+    { code: "sv", name: "Swedish" },
+    { code: "da", name: "Danish" },
 ];
 
 export const DEFAULT_LANGUAGES = ["en"]; // English is default selected

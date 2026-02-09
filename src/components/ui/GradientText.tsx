@@ -14,7 +14,7 @@ export default function GradientText({
       className={`
         inline-block font-bold
         text-transparent bg-clip-text
-        bg-linear-to-b from-foreground/90 via-foreground/70 to-foreground/20
+        bg-linear-to-b from-foreground/50 via-foreground/80 to-foreground
         ${className}
       `}
     >

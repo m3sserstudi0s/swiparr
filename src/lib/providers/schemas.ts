@@ -41,6 +41,13 @@ export const JellyfinItemSchema = z.object({
   Overview: z.string().optional(),
   Taglines: z.array(z.string()).optional(),
   Genres: z.array(z.string()).optional(),
+  MediaStreams: z.array(z.object({
+    Type: z.string().optional(),
+    Language: z.string().optional(),
+    IsDefault: z.boolean().optional(),
+  })).optional(),
+  PreferredMetadataLanguage: z.string().optional(),
+  ProductionLocations: z.array(z.string()).optional(),
   ImageTags: z.record(z.string(), z.string()).optional(),
   BackdropImageTags: z.array(z.string()).optional(),
   UserData: z.object({

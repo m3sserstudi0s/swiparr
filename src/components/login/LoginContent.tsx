@@ -283,7 +283,7 @@ export default function LoginContent() {
       <Card className={cn("w-full border-border bg-card text-card-foreground pt-0", !providerLock ? "max-w-sm" : "max-w-xs")}>
         <CardHeader className="rounded-t-xl bg-linear-to-t to-foreground/20 via-foreground/5">
           <CardTitle className="flex flex-row gap-3 justify-center items-center py-3 mt-4">
-            <Image src={logo} alt="Logo" className="size-5.5 dark:invert dark:opacity-80 opacity-70" loading="eager" />
+            <Image src={logo} alt="Logo" className="size-5.5 dark:invert opacity-80" loading="eager" />
             <GradientText className="text-3xl font-sans">
               Swiparr
             </GradientText>

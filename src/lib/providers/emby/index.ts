@@ -41,7 +41,7 @@ export class EmbyProvider implements MediaProvider {
       IncludeItemTypes: "Movie",
       Recursive: true,
       Fields: hasLanguageFilter 
-        ? "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People,MediaStreams"
+        ? "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People,MediaStreams,PreferredMetadataLanguage,ProductionLocations"
         : "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People",
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Popular" ? "CommunityRating" :
@@ -73,30 +73,57 @@ export class EmbyProvider implements MediaProvider {
     });
 
     const data = JellyfinQueryResultSchema.parse(res.data);
-    let items = data.Items.map((item) => this.mapToMediaItem(item));
+    let rawItems = data.Items;
     
-    // Client-side language filtering for Emby
+    // Client-side language/country filtering for Emby
     if (hasLanguageFilter) {
-      items = items.filter((item: any) => {
-        // Check if any media stream matches the selected languages
+      const selectedLangs = filters.languages!;
+      
+      rawItems = rawItems.filter((item: any) => {
+        // 1. Check PreferredMetadataLanguage
+        const prefLang = item.PreferredMetadataLanguage?.toLowerCase();
+        if (prefLang && selectedLangs.some(l => prefLang.includes(l.toLowerCase()))) {
+          return true;
+        }
+
+        // 2. Check MediaStreams (Audio)
         const streams = item.MediaStreams || [];
         const audioStreams = streams.filter((s: any) => s.Type === "Audio");
-        
-        // If no audio streams, check PreferredMetadataLanguage
-        if (audioStreams.length === 0) {
-          const prefLang = item.PreferredMetadataLanguage;
-          return prefLang && filters.languages!.includes(prefLang);
+        if (audioStreams.some((stream: any) => {
+          const lang = stream.Language?.toLowerCase();
+          return lang && selectedLangs.some(l => lang.includes(l.toLowerCase()));
+        })) {
+          return true;
         }
-        
-        // Check if any audio stream matches the selected languages
-        return audioStreams.some((stream: any) => {
-          const lang = stream.Language;
-          return lang && filters.languages!.includes(lang);
-        });
+
+        // 3. Fallback: Check ProductionLocations (Country filtering)
+        const countryMap: Record<string, string[]> = {
+          'en': ['usa', 'united states', 'united kingdom', 'uk', 'canada', 'australia'],
+          'es': ['spain', 'mexico', 'argentina'],
+          'fr': ['france', 'belgium', 'canada'],
+          'de': ['germany', 'austria', 'switzerland'],
+          'it': ['italy'],
+          'ja': ['japan'],
+          'ko': ['korea', 'south korea'],
+          'pt': ['portugal', 'brazil'],
+          'zh': ['china', 'hong kong', 'taiwan'],
+          'sv': ['sweden'],
+          'da': ['denmark']
+        };
+
+        const locations = (item.ProductionLocations || []).map((l: string) => l.toLowerCase());
+        if (locations.length > 0) {
+          return selectedLangs.some(langCode => {
+            const countries = countryMap[langCode.toLowerCase()] || [];
+            return countries.some(c => locations.some((loc: string) => loc.includes(c)));
+          });
+        }
+
+        return false;
       });
     }
     
-    return items;
+    return rawItems.map((item) => this.mapToMediaItem(item));
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
