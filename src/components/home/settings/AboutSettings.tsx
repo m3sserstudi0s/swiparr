@@ -31,6 +31,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                     : `New version ${latest} available`;
             },
             error: "Failed to check for updates",
+            position: "bottom-right"
         });
     };
 
