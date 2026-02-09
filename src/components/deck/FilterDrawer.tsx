@@ -47,7 +47,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending"; // Popular works better with TMDB
   const { capabilities } = useRuntimeConfig();
   const { data: userSettings } = useUserSettings();
-  const watchRegion = userSettings?.watchRegion || "SE";
+  const watchRegion = session?.provider === 'tmdb' ? (userSettings?.watchRegion || "SE") : undefined;
 
   const { genres, years, ratings, isLoading: isLoadingFilters } = useFilters(open, watchRegion);
   const { data: themes = [], isLoading: isLoadingThemes } = useThemes(open);
@@ -351,9 +351,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                           Maturity
                         </Label>
-                        <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-bold opacity-70">
+                        {watchRegion && <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-bold opacity-70">
                           {watchRegion}
-                        </Badge>
+                        </Badge>}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">

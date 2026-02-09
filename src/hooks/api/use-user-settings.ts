@@ -57,7 +57,8 @@ export function useUpdateUserSettings() {
   });
 }
 
-export function useWatchProviders(region: string, sessionCode?: string | null, all: boolean = false) {
+export function useWatchProviders(region?: string, sessionCode?: string | null, all: boolean = false) {
+  if(!region) return { data: undefined, isLoading: undefined}
   return useQuery({
     queryKey: [...QUERY_KEYS.media.watchProviders(region, sessionCode), all],
     queryFn: async () => {
