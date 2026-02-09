@@ -81,13 +81,13 @@ export function CardDeck() {
    // Update displayDeck when new items are fetched
   useEffect(() => {
     if (deck && Array.isArray(deck)) {
-      setIsTransitioning(false);
       setDisplayDeck((prev) => {
         const existingIds = new Set(prev.map((i) => i.Id));
         const newItems = deck.filter((item) => !existingIds.has(item.Id));
         if (newItems.length === 0) return prev;
         return [...prev, ...newItems];
       });
+      setIsTransitioning(false);
     }
   }, [deck]);
 
@@ -236,7 +236,7 @@ export function CardDeck() {
   useHotkeys("right", () => handleSwipeAction("right"), { enabled: !isFilterOpen && activeDeck.length > 0 });
   useHotkeys("up", () => activeDeck[0] && openMovie(activeDeck[0].Id, {showLikedBy: false}), { enabled: !isFilterOpen && activeDeck.length > 0 });
 
-  if (isLoadingSession || isTransitioning || (activeDeck.length === 0 && (isLoading || isFetching || isFetchingNextPage))) {
+  if (isLoadingSession || isTransitioning || (activeDeck.length === 0 && (isLoading || isFetchingNextPage))) {
     return <DeckLoading />;
   }
 
