@@ -72,30 +72,38 @@ export function CardDeck() {
   const settingsHash = sessionStatus?.settingsHash;
   useEffect(() => {
     setIsTransitioning(true);
-    setRemovedIds([]);
-    swipedIdsRef.current.clear();
-    setLastSwipe(null);
-    setDisplayDeck([]);
+    // Note: We don't clear displayDeck or other state here anymore. 
+    // We wait until the new data actually arrives to provide a smoother transition.
   }, [sessionCode, filtersJson, settingsHash]);
 
-   // Update displayDeck when new items are fetched
+   // Update displayDeck when new items are fetched or filters change
   useEffect(() => {
-    if (deck && Array.isArray(deck)) {
-      setDisplayDeck((prev) => {
-        const existingIds = new Set(prev.map((i) => i.Id));
-        const newItems = deck.filter((item) => !existingIds.has(item.Id));
-        if (newItems.length === 0) return prev;
-        return [...prev, ...newItems];
-      });
+    if (deck && Array.isArray(deck) && !isLoading) {
+      if (isTransitioning) {
+        // First batch of data for new filters has arrived
+        setDisplayDeck(deck);
+        setRemovedIds([]);
+        swipedIdsRef.current.clear();
+        setLastSwipe(null);
+        setIsTransitioning(false);
+      } else {
+        // Pagination: append new items
+        setDisplayDeck((prev) => {
+          const existingIds = new Set(prev.map((i) => i.Id));
+          const newItems = deck.filter((item) => !existingIds.has(item.Id));
+          if (newItems.length === 0) return prev;
+          return [...prev, ...newItems];
+        });
+      }
     }
-  }, [deck]);
+  }, [deck, deckData, isLoading, isTransitioning]);
 
-  // Handle transitioning state separately to be more robust
+  // Fallback to clear transition state if data is already there but effect didn't catch it
   useEffect(() => {
-    if (deckData && !isLoading) {
+    if (isTransitioning && deckData && !isLoading) {
       setIsTransitioning(false);
     }
-  }, [deckData, isLoading]);
+  }, [isTransitioning, deckData, isLoading]);
 
   const cardRefs = useRef<Record<string, React.RefObject<TinderCardHandle | null>>>({});
 
