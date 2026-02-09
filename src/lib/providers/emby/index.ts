@@ -42,6 +42,7 @@ export class EmbyProvider implements MediaProvider {
       Recursive: true,
       Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations",
       SortBy: filters.sortBy === "Random" ? "Random" : 
+              filters.sortBy === "Trending" ? "CommunityRating" :
               filters.sortBy === "Popular" ? "CommunityRating" :
               filters.sortBy === "Newest" ? "PremiereDate" :
               filters.sortBy === "Top Rated" ? "CommunityRating" :

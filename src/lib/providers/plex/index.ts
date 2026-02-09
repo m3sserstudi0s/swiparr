@@ -61,10 +61,10 @@ export class PlexProvider implements MediaProvider {
 
         if (filters.sortBy === "Random") {
             params.sort = "random";
+        } else if (filters.sortBy === "Trending" || filters.sortBy === "Popular") {
+            params.sort = "rating:desc";
         } else if (filters.sortBy === "ProductionYear" || filters.sortBy === "Newest") {
             params.sort = "year:desc";
-        } else if (filters.sortBy === "Popular") {
-            params.sort = "rating:desc";
         } else if (filters.sortBy === "Top Rated") {
             params.sort = "audienceRating:desc";
         } else if (filters.sortBy === "SortName") {
