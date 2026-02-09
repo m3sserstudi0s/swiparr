@@ -26,6 +26,5 @@ export function useDeck() {
     },
     initialPageParam: 0,
     enabled: !!session,
-    staleTime: 1000 * 60 * 5,
   });
 }

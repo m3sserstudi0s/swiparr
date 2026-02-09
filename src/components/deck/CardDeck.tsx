@@ -87,9 +87,15 @@ export function CardDeck() {
         if (newItems.length === 0) return prev;
         return [...prev, ...newItems];
       });
-      setIsTransitioning(false);
     }
   }, [deck]);
+
+  // Handle transitioning state separately to be more robust
+  useEffect(() => {
+    if (deckData && !isLoading) {
+      setIsTransitioning(false);
+    }
+  }, [deckData, isLoading]);
 
   const cardRefs = useRef<Record<string, React.RefObject<TinderCardHandle | null>>>({});
 
