@@ -25,8 +25,8 @@ import { cn } from "@/lib/utils";
 import { LANGUAGES, DEFAULT_LANGUAGES } from "@/lib/constants";
 
 const SORT_OPTIONS = [
-  "Trending",
   "Popular",
+  "Trending",
   "Top Rated",
   "Newest",
   "Random"
@@ -52,6 +52,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [minRating, setMinRating] = useState<number>(0);
 
   const { data: session } = useSession();
+  const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending";
   const { capabilities } = useRuntimeConfig();
   const { data: userSettings } = useUserSettings();
   const watchRegion = userSettings?.watchRegion || "SE";
@@ -86,13 +87,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setSelectedWatchProviders(currentFilters?.watchProviders || availableWatchProviders.map(p => p.Id));
       setSelectedThemes(currentFilters?.themes || []);
       setSelectedLanguages(currentFilters?.languages || DEFAULT_LANGUAGES);
-      setSortBy(currentFilters?.sortBy || "Trending");
+      setSortBy(currentFilters?.sortBy || defaultSort);
       setUnplayedOnly(currentFilters?.unplayedOnly ?? true);
       setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
     }
-  }, [open, currentFilters, availableWatchProviders, minYearLimit, maxYearLimit]);
+  }, [open, currentFilters, availableWatchProviders, minYearLimit, maxYearLimit, defaultSort]);
 
   const normalizeFilters = (f: Filters): Filters => {
     const isYearDefault = !f.yearRange || (f.yearRange[0] === minYearLimit && f.yearRange[1] === maxYearLimit);
@@ -113,7 +114,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       watchProviders: isWatchProvidersDefault ? undefined : f.watchProviders,
       themes: f.themes?.length ? f.themes : undefined,
       languages: isLanguageDefault ? undefined : f.languages,
-      sortBy: (f.sortBy === "Trending" || !f.sortBy) ? undefined : f.sortBy,
+      sortBy: (f.sortBy === defaultSort || !f.sortBy) ? undefined : f.sortBy,
       unplayedOnly: f.unplayedOnly ?? true,
       yearRange: isYearDefault ? undefined : f.yearRange,
       runtimeRange: isRuntimeDefault ? undefined : f.runtimeRange,
@@ -160,7 +161,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
     setSelectedThemes([]);
     setSelectedLanguages(DEFAULT_LANGUAGES);
-    setSortBy("Trending");
+    setSortBy(defaultSort);
     setUnplayedOnly(true);
     setYearRange([minYearLimit, maxYearLimit]);
     setRuntimeRange([0, 240]);

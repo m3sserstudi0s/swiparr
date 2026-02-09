@@ -51,6 +51,7 @@ export class MediaService {
     }
 
     const { watchProviders, watchRegion } = await this.resolveWatchProviders(session, sessionFilters, auth, activeProviderName);
+    const defaultSort = activeProviderName === 'tmdb' ? "Popular" : "Trending";
 
     // 3. Handle Search
     if (searchTerm) {
@@ -125,7 +126,7 @@ export class MediaService {
       runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
-      sortBy: sessionFilters?.sortBy || "Trending",
+      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
       themes: sessionFilters?.themes,
       languages: sessionFilters?.languages,
       unplayedOnly: sessionFilters?.unplayedOnly,
@@ -170,7 +171,7 @@ export class MediaService {
       runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
-      sortBy: sessionFilters?.sortBy || "Trending",
+      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
       themes: sessionFilters?.themes,
       languages: sessionFilters?.languages,
       unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,

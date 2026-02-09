@@ -125,13 +125,14 @@ export function CardDeck() {
     const { genres, yearRange, minCommunityRating, officialRatings, runtimeRange, themes, sortBy, languages } = sessionStatus.filters;
     const hasNonDefaultLanguages = !!(languages && 
       (languages.length > 1 || (languages.length === 1 && languages[0] !== "en")));
+    const defaultSort = sessionStatus?.provider === 'tmdb' ? "Popular" : "Trending";
     return (genres && genres.length > 0) || 
            (minCommunityRating !== undefined && minCommunityRating > 0) || 
            (yearRange !== undefined) || 
            (officialRatings && officialRatings.length > 0) || 
            (runtimeRange !== undefined) ||
            (themes && themes.length > 0) ||
-           (sortBy !== undefined && sortBy !== "Trending") ||
+           (sortBy !== undefined && sortBy !== defaultSort) ||
            hasNonDefaultLanguages;
   }, [sessionStatus?.filters]);
 
