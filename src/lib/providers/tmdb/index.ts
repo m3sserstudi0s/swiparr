@@ -73,10 +73,11 @@ export class TmdbProvider implements MediaProvider {
         return searchRes.results.map(m => this.mapMovieToMediaItem(m, genreNameMap));
     }
 
-    if (filters.sortBy === "Trending") {
+    if (filters.sortBy === "Trending" && (!filters.watchProviders || filters.watchProviders.length === 0)) {
         const data = await this.fetchTmdb<any>('trending/movie/week', {
             page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1
         });
+
         const searchRes = TmdbSearchResponseSchema.parse(data);
         const results = searchRes.results.map(m => this.mapMovieToMediaItem(m, genreNameMap));
         // Client-side filtering for trending as it's a separate endpoint

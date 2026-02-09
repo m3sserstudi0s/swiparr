@@ -94,34 +94,52 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     }
   }, [open, currentFilters, availableWatchProviders, minYearLimit, maxYearLimit]);
 
-  const getCurrentFiltersObject = (): Filters => {
-    const isYearDefault = yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
-    const isRuntimeDefault = runtimeRange[0] === 0 && runtimeRange[1] === 240;
-    const isLanguageDefault = selectedLanguages.length === DEFAULT_LANGUAGES.length && 
-                             selectedLanguages.every(l => DEFAULT_LANGUAGES.includes(l));
+  const normalizeFilters = (f: Filters): Filters => {
+    const isYearDefault = !f.yearRange || (f.yearRange[0] === minYearLimit && f.yearRange[1] === maxYearLimit);
+    const isRuntimeDefault = !f.runtimeRange || (f.runtimeRange[0] === 0 && f.runtimeRange[1] === 240);
+    const isLanguageDefault = !f.languages || (f.languages.length === DEFAULT_LANGUAGES.length && 
+                             f.languages.every(l => DEFAULT_LANGUAGES.includes(l)));
+    
+    // Logic: 
+    // - If all providers are selected OR none are selected, we treat it as "no filter" (undefined)
+    // - If a specific subset is selected, we send the explicit list
+    const isWatchProvidersDefault = !f.watchProviders || 
+                                    f.watchProviders.length === 0 || 
+                                    f.watchProviders.length === availableWatchProviders.length;
 
     return {
+      genres: f.genres?.length ? f.genres : [],
+      officialRatings: f.officialRatings?.length ? f.officialRatings : undefined,
+      watchProviders: isWatchProvidersDefault ? undefined : f.watchProviders,
+      themes: f.themes?.length ? f.themes : undefined,
+      languages: isLanguageDefault ? undefined : f.languages,
+      sortBy: (f.sortBy === "Trending" || !f.sortBy) ? undefined : f.sortBy,
+      unplayedOnly: f.unplayedOnly ?? true,
+      yearRange: isYearDefault ? undefined : f.yearRange,
+      runtimeRange: isRuntimeDefault ? undefined : f.runtimeRange,
+      minCommunityRating: (f.minCommunityRating && f.minCommunityRating > 0) ? f.minCommunityRating : undefined
+    };
+  };
+
+  const getCurrentFiltersObject = (): Filters => {
+    return normalizeFilters({
       genres: selectedGenres,
       officialRatings: selectedRatings,
       watchProviders: selectedWatchProviders,
       themes: selectedThemes,
-      languages: isLanguageDefault ? undefined : selectedLanguages,
-      sortBy: sortBy === "Trending" ? undefined : sortBy,
+      languages: selectedLanguages,
+      sortBy: sortBy,
       unplayedOnly: unplayedOnly,
-      yearRange: isYearDefault ? undefined : yearRange,
-      runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
-      minCommunityRating: minRating > 0 ? minRating : undefined
-    };
+      yearRange: yearRange,
+      runtimeRange: runtimeRange,
+      minCommunityRating: minRating
+    });
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       const newFilters = getCurrentFiltersObject();
-      const currentFiltersNorm = {
-        ...currentFilters,
-        sortBy: currentFilters.sortBy === "Trending" ? undefined : currentFilters.sortBy,
-        languages: currentFilters.languages || undefined,
-      };
+      const currentFiltersNorm = normalizeFilters(currentFilters);
 
       if (JSON.stringify(newFilters) !== JSON.stringify(currentFiltersNorm)) {
         onSave(newFilters);

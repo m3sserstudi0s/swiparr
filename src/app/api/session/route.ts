@@ -9,7 +9,7 @@ import { ProviderType } from "@/lib/providers/types";
 import { SessionService } from "@/lib/services/session-service";
 import { AuthService, GuestKickedError } from "@/lib/services/auth-service";
 import { ConfigService } from "@/lib/services/config-service";
-import { db, sessions, userProfiles } from "@/lib/db";
+import { db, sessions, userProfiles, sessionMembers } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
@@ -105,7 +105,24 @@ export async function GET() {
   }
 
   const userSettings = await ConfigService.getUserSettings(session.user.Id);
-  const settingsHash = userSettings ? JSON.stringify(userSettings).length.toString(16) : 'default';
+  let settingsHash = userSettings ? JSON.stringify(userSettings).length.toString(16) : 'default';
+
+  if (session.sessionCode) {
+    const members = await db.select().from(sessionMembers).where(eq(sessionMembers.sessionCode, session.sessionCode));
+    const membersSettingsHash = members.map((m: any) => {
+        // Use the settings string length as a proxy for the hash
+        const len = m.settings?.length || 0;
+        // Also include a small "checksum" of the settings content to be safer
+        let sum = 0;
+        if (m.settings) {
+            for (let i = 0; i < Math.min(m.settings.length, 100); i++) {
+                sum += m.settings.charCodeAt(i);
+            }
+        }
+        return `${len.toString(16)}x${sum.toString(16)}`;
+    }).join('.');
+    settingsHash += `-${membersSettingsHash}`;
+  }
 
   const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, session.user.Id)).then((rows: any[]) => rows[0]);
 

@@ -16,10 +16,14 @@ export async function GET(request: NextRequest) {
             let closed = false;
             let keepAlive: any;
 
-            const onSessionUpdate = (sessionCode: string) => {
+            const onSessionUpdate = (payload: any) => {
+                const isString = typeof payload === 'string';
+                const sessionCode = isString ? payload : payload.sessionCode;
+                
                 if (!closed && session.sessionCode === sessionCode) {
                     try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.SESSION_UPDATED}\ndata: ${JSON.stringify({ sessionCode })}\n\n`));
+                        const data = isString ? { sessionCode } : payload;
+                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.SESSION_UPDATED}\ndata: ${JSON.stringify(data)}\n\n`));
                     } catch (e) {
                         cleanup();
                     }

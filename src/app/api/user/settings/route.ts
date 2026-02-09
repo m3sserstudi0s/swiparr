@@ -59,7 +59,12 @@ export async function PATCH(request: NextRequest) {
                     eq(sessionMembers.externalUserId, userId)
                 ));
             
-            events.emit(EVENT_TYPES.SESSION_UPDATED, session.sessionCode);
+            events.emit(EVENT_TYPES.SESSION_UPDATED, {
+                sessionCode: session.sessionCode,
+                userId: session.user.Id,
+                userName: session.user.Name,
+                isSettingsUpdate: true
+            });
             events.emit(EVENT_TYPES.FILTERS_UPDATED, {
                 sessionCode: session.sessionCode,
                 userId: session.user.Id,

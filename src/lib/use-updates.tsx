@@ -45,6 +45,7 @@ export function useUpdates() {
                 await queryClient.refetchQueries({ queryKey: QUERY_KEYS.session });
                 // Refetch user settings to get any updated watch region
                 await queryClient.refetchQueries({ queryKey: QUERY_KEYS.user.settings });
+                
                 // Then invalidate related queries
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });

@@ -381,10 +381,9 @@ export class MediaService {
       result = result.filter(item => (item.CommunityRating || 0) >= filters.minCommunityRating!);
     }
 
-    if (filters.themes && filters.themes.length > 0) {
-      // Tags/Keywords filtering usually done provider side, but we can double check here
-      // if the provider doesn't support it or returns raw data.
-      // For now we assume provider side is sufficient but keep the door open.
+    if (filters.unplayedOnly === false) {
+        // If explicitly false, we don't filter out anything based on played status here
+        // The exclusion of swiped items is handled outside this function
     }
 
     return result;
