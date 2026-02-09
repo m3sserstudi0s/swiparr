@@ -80,6 +80,7 @@ export interface SearchFilters {
   years?: number[];
   ratings?: string[];
   minCommunityRating?: number;
+  runtimeRange?: [number, number];
   libraries?: string[];
   watchProviders?: string[];
   watchRegion?: string;

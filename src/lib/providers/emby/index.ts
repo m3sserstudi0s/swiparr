@@ -56,6 +56,8 @@ export class EmbyProvider implements MediaProvider {
       Tags: filters.themes?.join("|") || undefined,
       Filters: filters.unplayedOnly ? "IsUnplayed" : undefined,
       MinCommunityRating: filters.minCommunityRating || undefined, 
+      MinRunTimeTicks: filters.runtimeRange?.[0] ? filters.runtimeRange[0] * 600000000 : undefined,
+      MaxRunTimeTicks: (filters.runtimeRange?.[1] && filters.runtimeRange[1] < 240) ? filters.runtimeRange[1] * 600000000 : undefined,
       Limit: filters.limit || 50,
       StartIndex: filters.offset || 0,
       EnableUserData: true,
@@ -136,20 +138,37 @@ export class EmbyProvider implements MediaProvider {
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
-    const res = await apiClient.get(getEmbyUrl("/Items", auth?.serverUrl), {
-      params: {
-        IncludeItemTypes: "Movie",
-        Recursive: true,
-        Fields: "OfficialRating",
-        EnableImages: false,
-        UserId: auth?.userId,
-      },
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
+    try {
+      const res = await apiClient.get(getEmbyUrl("/Items/Filters2", auth?.serverUrl), {
+        params: {
+          userId: auth?.userId,
+          includeItemTypes: "Movie",
+          recursive: true,
+        },
+        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+      });
 
-    const items = res.data.Items || [];
-    const ratings = Array.from(new Set(items.map((i: any) => i.OfficialRating).filter(Boolean))) as string[];
-    return ratings.sort().map(r => ({ Name: r, Value: r }));
+      const ratings = res.data.ContentRatings || [];
+      if (ratings.length === 0) {
+          return [
+              { Name: "G", Value: "G" },
+              { Name: "PG", Value: "PG" },
+              { Name: "PG-13", Value: "PG-13" },
+              { Name: "R", Value: "R" },
+              { Name: "NC-17", Value: "NC-17" }
+          ];
+      }
+      return ratings.map((r: any) => ({ Name: r.Name, Value: r.Name }));
+    } catch (error) {
+        console.error("[EmbyProvider.getRatings] Error:", error);
+        return [
+            { Name: "G", Value: "G" },
+            { Name: "PG", Value: "PG" },
+            { Name: "PG-13", Value: "PG-13" },
+            { Name: "R", Value: "R" },
+            { Name: "NC-17", Value: "NC-17" }
+        ];
+    }
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {

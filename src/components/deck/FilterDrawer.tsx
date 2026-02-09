@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -11,18 +11,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { RotateCcw, Star, Check, Sparkles } from "lucide-react";
+import { RotateCcw, Star, Check } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
-import { useFilters, useThemes, useSession, useWatchProviders, useUserSettings, useAdminConfig } from "@/hooks/api";
+import { useFilters, useThemes, useSession, useWatchProviders, useUserSettings } from "@/hooks/api";
 import { MediaGenre, MediaRating, MediaYear, WatchProvider } from "@/types/media";
 import { OptimizedImage } from "../ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { cn } from "@/lib/utils";
 import { LANGUAGES, DEFAULT_LANGUAGES } from "@/lib/constants";
-import { Globe } from "lucide-react";
 
 const SORT_OPTIONS = [
   "Trending",
@@ -52,32 +51,19 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
   const { data: session } = useSession();
   const { capabilities } = useRuntimeConfig();
-
-  const { data: adminConfig } = useAdminConfig();
-  const { data: userSettings, isLoading: isLoadingSettings } = useUserSettings();
+  const { data: userSettings } = useUserSettings();
   const watchRegion = userSettings?.watchRegion || "SE";
+  
   const { genres, years, ratings, isLoading: isLoadingFilters } = useFilters(open, watchRegion);
   const { data: themes = [], isLoading: isLoadingThemes } = useThemes(open);
-
-  const isLoading = isLoadingFilters || isLoadingThemes;
-
   const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(
-    userSettings?.watchRegion || "SE",
+    watchRegion,
     session?.code
   );
 
   const availableWatchProviders = watchProvidersData?.providers || [];
   const members = watchProvidersData?.members || [];
-
-  const formatRuntime = (mins: number) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ""}` : `${m}m`;
-  };
-
-
-  const initialFiltersRef = useRef<string>("");
-  const hasInitializedRef = useRef(false);
+  const isLoading = isLoadingFilters || isLoadingThemes || isLoadingProviders;
 
   const minYearLimit = useMemo(() => {
     if (!years || years.length === 0) return 1900;
@@ -92,113 +78,59 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   }, [years]);
 
   useEffect(() => {
-    if (open && !isLoading) {
-      const genresList = currentFilters?.genres || [];
-      const officialRatings = currentFilters?.officialRatings || [];
-      const watchProviders = currentFilters?.watchProviders || availableWatchProviders.map(p => p.Id);
-      const themes = currentFilters?.themes || [];
-      const languages = currentFilters?.languages || DEFAULT_LANGUAGES;
-      const currentSort = currentFilters?.sortBy || "Trending";
-      const yearRange = currentFilters?.yearRange || [minYearLimit, maxYearLimit];
-      const runtimeRange = currentFilters?.runtimeRange || [0, 240];
-      const minCommunityRating = currentFilters?.minCommunityRating || 0;
-
-      setSelectedGenres(genresList);
-      setSelectedRatings(officialRatings);
-      setSelectedWatchProviders(watchProviders);
-      setSelectedThemes(themes);
-      setSelectedLanguages(languages);
-      setSortBy(currentSort);
-      setYearRange(yearRange);
-      setRuntimeRange(runtimeRange);
-      setMinRating(minCommunityRating);
-
-      // Store a normalized version of currentFilters for comparison
-      const normalizedInitial = {
-        genres: genresList,
-        officialRatings,
-        watchProviders,
-        themes,
-        languages,
-        sortBy: currentSort,
-        yearRange: currentFilters?.yearRange,
-        runtimeRange: currentFilters?.runtimeRange,
-        minCommunityRating: minCommunityRating > 0 ? minCommunityRating : undefined
-      };
-      initialFiltersRef.current = JSON.stringify(normalizedInitial);
-      hasInitializedRef.current = true;
+    if (open) {
+      setSelectedGenres(currentFilters?.genres || []);
+      setSelectedRatings(currentFilters?.officialRatings || []);
+      setSelectedWatchProviders(currentFilters?.watchProviders || availableWatchProviders.map(p => p.Id));
+      setSelectedThemes(currentFilters?.themes || []);
+      setSelectedLanguages(currentFilters?.languages || DEFAULT_LANGUAGES);
+      setSortBy(currentFilters?.sortBy || "Trending");
+      setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
+      setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
+      setMinRating(currentFilters?.minCommunityRating || 0);
     }
-  }, [open, isLoading, minYearLimit, maxYearLimit, currentFilters, availableWatchProviders]);
+  }, [open, currentFilters, availableWatchProviders, minYearLimit, maxYearLimit]);
 
-  useEffect(() => {
-    if (!open && hasInitializedRef.current) {
-      const isYearDefault = yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
-      const isRuntimeDefault = runtimeRange[0] === 0 && runtimeRange[1] === 240;
+  const getCurrentFiltersObject = (): Filters => {
+    const isYearDefault = yearRange[0] === minYearLimit && yearRange[1] === maxYearLimit;
+    const isRuntimeDefault = runtimeRange[0] === 0 && runtimeRange[1] === 240;
+    const isLanguageDefault = selectedLanguages.length === DEFAULT_LANGUAGES.length && 
+                             selectedLanguages.every(l => DEFAULT_LANGUAGES.includes(l));
 
-      const newFilters: Filters = {
-        genres: selectedGenres,
-        officialRatings: selectedRatings,
-        watchProviders: selectedWatchProviders,
-        themes: selectedThemes,
-        languages: selectedLanguages.length === 1 && selectedLanguages[0] === "en" ? undefined : selectedLanguages,
-        sortBy: sortBy === "Trending" ? undefined : sortBy,
-        yearRange: isYearDefault ? undefined : yearRange,
-        runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
-        minCommunityRating: minRating > 0 ? minRating : undefined
+    return {
+      genres: selectedGenres,
+      officialRatings: selectedRatings,
+      watchProviders: selectedWatchProviders,
+      themes: selectedThemes,
+      languages: isLanguageDefault ? undefined : selectedLanguages,
+      sortBy: sortBy === "Trending" ? undefined : sortBy,
+      yearRange: isYearDefault ? undefined : yearRange,
+      runtimeRange: isRuntimeDefault ? undefined : runtimeRange,
+      minCommunityRating: minRating > 0 ? minRating : undefined
+    };
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      const newFilters = getCurrentFiltersObject();
+      const currentFiltersNorm = {
+        ...currentFilters,
+        sortBy: currentFilters.sortBy === "Trending" ? undefined : currentFilters.sortBy,
+        languages: currentFilters.languages || undefined,
       };
 
-      if (JSON.stringify(newFilters) !== initialFiltersRef.current) {
+      if (JSON.stringify(newFilters) !== JSON.stringify(currentFiltersNorm)) {
         onSave(newFilters);
       }
-      hasInitializedRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, minYearLimit, maxYearLimit, onSave, selectedGenres, selectedRatings, selectedWatchProviders, selectedThemes, selectedLanguages, sortBy, yearRange, runtimeRange, minRating]);
-
-
-  const toggleGenre = (genreName: string) => {
-    setSelectedGenres((prev) =>
-      prev.includes(genreName)
-        ? prev.filter((g) => g !== genreName)
-        : [...prev, genreName]
-    );
+    onOpenChange(newOpen);
   };
 
-  const toggleTheme = (theme: string) => {
-    setSelectedThemes((prev) =>
-      prev.includes(theme)
-        ? prev.filter((t) => t !== theme)
-        : [...prev, theme]
-    );
+  const formatRuntime = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}:${m.toString().padStart(2, '0')}`;
   };
-
-  const toggleLanguage = (languageCode: string) => {
-    setSelectedLanguages((prev) =>
-      prev.includes(languageCode)
-        ? prev.filter((l) => l !== languageCode)
-        : [...prev, languageCode]
-    );
-  };
-
-  const toggleRating = (rating: string) => {
-    setSelectedRatings((prev) =>
-      prev.includes(rating) ? [] : [rating]
-    );
-  };
-
-  const toggleWatchProvider = (id: string) => {
-    setSelectedWatchProviders((prev) =>
-      prev.includes(id)
-        ? prev.filter((p) => p !== id)
-        : [...prev, id]
-    );
-  };
-
-  const selectAllGenres = () => setSelectedGenres(genres.map(g => g.Name));
-  const deselectAllGenres = () => setSelectedGenres([]);
-
-  const selectAllProviders = () => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
-  const deselectAllProviders = () => setSelectedWatchProviders([]);
 
   const resetAll = () => {
     setSelectedGenres([]);
@@ -217,318 +149,273 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     ? SORT_OPTIONS.filter(opt => opt !== "Random")
     : SORT_OPTIONS;
 
-  if (isLoading) {
-
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[66vh]">
-          <DrawerHeader className="border-b pb-4">
-            <DrawerTitle>Filters</DrawerTitle>
-          </DrawerHeader>
-          <div className="flex-1 px-6 py-6 space-y-10">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ))}
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="h-[66vh] flex flex-col">
-        <DrawerHeader className="border-b pb-4 shrink-0">
-          <DrawerTitle>
+        <DrawerHeader className="border-b pb-4 shrink-0 relative">
+          <DrawerTitle className="text-center w-full">
             Filters
-            <Button
-              variant="outline"
-              size={'sm'}
-              className="absolute right-5 w-22 h-7 gap-2 text-muted-foreground hover:text-foreground text-xs"
-              onClick={resetAll}
-            >
-              <RotateCcw className="size-3 mt-px" />
-              Reset all
-            </Button>
           </DrawerTitle>
+          <Button
+            variant="ghost"
+            size='sm'
+            className="h-8 gap-2 text-muted-foreground hover:text-foreground text-xs absolute right-4 top-4"
+            onClick={resetAll}
+          >
+            <RotateCcw className="size-3" />
+            Reset
+          </Button>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1 h-[50vh]">
-          <div className="flex flex-col gap-8 pt-8 pb-12 px-6">
-
-            {/* Sort Section */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Sort By</Label>
-              <div className="flex flex-wrap gap-2">
-                {filteredSortOptions.map((option) => (
-                  <Badge
-                    key={option}
-                    variant={sortBy === option ? "default" : "outline"}
-                    className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
-                    onClick={() => setSortBy(option)}
-                  >
-                    {option}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Rating Section */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold">
-                  Rating
-                </Label>
-                <span className="text-sm font-medium text-muted-foreground">
-                  {minRating > 0 ? `At least ${minRating} stars` : "Any rating"}
-                </span>
-              </div>
-              <div className="flex gap-1.5 justify-between">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setMinRating(star === minRating ? 0 : star)}
-                    className="focus:outline-none transition-transform active:scale-90"
-                  >
-                    <Star
-                      className={`size-7 ${star <= minRating
-                        ? "fill-foreground text-foreground"
-                        : "text-muted-foreground/30"
-                        }`}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Release Section (Years) */}
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold">
-                  Release
-                </Label>
-                <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                  {yearRange[0]} — {yearRange[1]}
-                </span>
-              </div>
-              <div className="px-2">
-                <Slider
-                  value={yearRange}
-                  min={minYearLimit}
-                  max={maxYearLimit}
-                  step={1}
-                  onValueChange={(val) => setYearRange(val as [number, number])}
-                  className="py-4"
-                />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                <span>{minYearLimit}</span>
-                <span>{maxYearLimit}</span>
-              </div>
-            </div>
-
-            {/* Runtime Section */}
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold">
-                  Runtime
-                </Label>
-                <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                  {formatRuntime(runtimeRange[0])} — {runtimeRange[1] === 240 ? `${formatRuntime(240)}+` : formatRuntime(runtimeRange[1])}
-                </span>
-              </div>
-              <div className="px-2">
-                <Slider
-                  value={runtimeRange}
-                  min={0}
-                  max={240}
-                  step={5}
-                  onValueChange={(val) => setRuntimeRange(val as [number, number])}
-                  className="py-4"
-                />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                <span>{formatRuntime(0)}</span>
-                <span>{formatRuntime(240)}+</span>
-              </div>
-            </div>
-
-            {/* Genres Section */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold">
-                  Genres
-                </Label>
-                <div className="flex gap-2">
-                  <button onClick={selectAllGenres} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
-                  <button onClick={deselectAllGenres} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {genres?.map((genre: MediaGenre) => (
-                  <Badge
-                    key={genre.Id}
-                    variant={selectedGenres.includes(genre.Name) ? "default" : "outline"}
-                    className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
-                    onClick={() => toggleGenre(genre.Name)}
-                  >
-                    {genre.Name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Themes Section */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold flex items-center gap-2">
-                  Themes
-                </Label>
-                {selectedThemes.length > 0 && (
-                  <button onClick={() => setSelectedThemes([])} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {themes.map((theme: string) => (
-                  <Badge
-                    key={theme}
-                    variant={selectedThemes.includes(theme) ? "secondary" : "outline"}
-                    className={cn(
-                      "cursor-pointer text-sm py-2 px-4 rounded-full transition-colors",
-                      selectedThemes.includes(theme) ? "bg-primary/20 text-primary border-primary/30" : ""
-                    )}
-                    onClick={() => toggleTheme(theme)}
-                  >
-                    {theme}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Language Section */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold flex items-center gap-2">
-                  Language
-                </Label>
-                {selectedLanguages.length !== DEFAULT_LANGUAGES.length && (
-                  <button onClick={() => setSelectedLanguages(DEFAULT_LANGUAGES)} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Reset</button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {LANGUAGES.map((lang) => (
-                  <Badge
-                    key={lang.code}
-                    variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
-                    className={cn(
-                      "cursor-pointer text-sm py-2 px-4 rounded-full transition-colors",
-                      selectedLanguages.includes(lang.code) ? "bg-primary/20 text-primary border-primary/30" : ""
-                    )}
-                    onClick={() => toggleLanguage(lang.code)}
-                  >
-                    {lang.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-             {/* Official Ratings Section */}
-            {ratings && ratings.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-base font-semibold">
-                    Maturity Rating
-                    <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                      {watchRegion}
-                    </span>
-                  </Label>
-                  {selectedRatings.length > 0 && (
-                    <button onClick={() => setSelectedRatings([])} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {ratings.map((rating: MediaRating) => (
-                    <Badge
-                      key={rating.Value}
-                      variant={selectedRatings.includes(rating.Value) ? "default" : "outline"}
-                      className="cursor-pointer text-sm py-2 px-4 rounded-full transition-colors"
-                      onClick={() => toggleRating(rating.Value)}
-                    >
-                      {rating.Name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Watch Providers Section */}
-            {capabilities.hasStreamingSettings && availableWatchProviders.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-base font-semibold">
-                    Streaming Services
-                  </Label>
-                  <div className="flex gap-2">
-                    <button onClick={selectAllProviders} className="text-sm cursor-pointer font-medium text-primary hover:underline">Select all</button>
-                    <button onClick={deselectAllProviders} className="text-sm cursor-pointer font-medium text-muted-foreground hover:underline">Clear</button>
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-8 pt-6 pb-12 px-6">
+            {isLoading ? (
+               <div className="space-y-10">
+                 {[1, 2, 3].map((i) => (
+                   <div key={i} className="space-y-4">
+                     <Skeleton className="h-6 w-24" />
+                     <Skeleton className="h-12 w-full rounded-xl" />
+                   </div>
+                 ))}
+               </div>
+            ) : (
+              <>
+                {/* Sort Section */}
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {filteredSortOptions.map((option) => (
+                      <Badge
+                        key={option}
+                        variant={sortBy === option ? "default" : "outline"}
+                        className="cursor-pointer text-sm py-1.5 px-4 rounded-full transition-colors"
+                        onClick={() => setSortBy(option)}
+                      >
+                        {option}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {availableWatchProviders.map((p: WatchProvider & { MemberUserIds?: string[] }) => {
-                    const isSelected = selectedWatchProviders.includes(p.Id);
-                    const providerMembers = (p.MemberUserIds || [])
-                      .map(id => {
-                        const m = members.find(m => m.externalUserId === id);
-                        if (!m) return null;
-                        return { userId: m.externalUserId, userName: m.externalUserName };
-                      })
-                      .filter(Boolean) as { userId: string, userName: string }[];
 
-                    return (
+                {/* Rating Section */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Community Rating</Label>
+                    <span className="text-sm font-medium text-primary">
+                      {minRating > 0 ? `${minRating}+ Stars` : "Any"}
+                    </span>
+                  </div>
+                  <div className="flex gap-1 justify-between">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                       <button
-                        key={p.Id}
-                        onClick={() => toggleWatchProvider(p.Id)}
-                        className={cn(
-                          "relative flex items-center gap-2 p-3 rounded-xl border transition-all text-left group",
-                          isSelected
-                            ? "bg-primary/5 border-primary text-primary shadow-sm"
-                            : "bg-background hover:bg-muted/50 border-input text-muted-foreground"
-                        )}
+                        key={star}
+                        onClick={() => setMinRating(star === minRating ? 0 : star)}
+                        className="focus:outline-none transition-transform active:scale-90"
                       >
-                        <div className="relative size-8 shrink-0 rounded-lg overflow-hidden border group-hover:scale-105 transition-transform">
-                          <OptimizedImage
-                            src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
-                            alt={p.Name}
-                            className="object-cover"
-                            unoptimized
-                            width={32}
-                            height={32}
-                          />
-                        </div>
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <span className="text-xs font-medium truncate">{p.Name}</span>
-                          {providerMembers.length > 0 && (
-                            <UserAvatarList
-                              users={providerMembers.map(m => ({ userId: m.userId, userName: m.userName }))}
-                              size="sm"
-                              className="mt-1"
-                            />
+                        <Star
+                          className={cn(
+                            "size-6 transition-colors",
+                            star <= minRating ? "fill-primary text-primary" : "text-muted-foreground/30"
                           )}
-                        </div>
-                        {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground rounded-full p-0.5">
-                            <Check className="size-2.5" />
-                          </div>
-                        )}
+                        />
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
+
+                {/* Release Section */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Release Year</Label>
+                    <Badge variant="secondary" className="font-mono">
+                      {yearRange[0]} — {yearRange[1]}
+                    </Badge>
+                  </div>
+                  <div className="px-2">
+                    <Slider
+                      value={yearRange}
+                      min={minYearLimit}
+                      max={maxYearLimit}
+                      step={1}
+                      onValueChange={(val) => setYearRange(val as [number, number])}
+                    />
+                  </div>
+                </div>
+
+                {/* Runtime Section */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Runtime</Label>
+                    <Badge variant="secondary" className="font-mono">
+                      {formatRuntime(runtimeRange[0])} — {runtimeRange[1] === 240 ? "4:00+" : formatRuntime(runtimeRange[1])}
+                    </Badge>
+                  </div>
+                  <div className="px-2">
+                    <Slider
+                      value={runtimeRange}
+                      min={0}
+                      max={240}
+                      step={5}
+                      onValueChange={(val) => setRuntimeRange(val as [number, number])}
+                    />
+                  </div>
+                </div>
+
+                {/* Genres Section */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Genres</Label>
+                    <div className="flex gap-3">
+                      <button onClick={() => setSelectedGenres(genres.map(g => g.Name))} className="text-xs text-primary hover:underline">Select all</button>
+                      <button onClick={() => setSelectedGenres([])} className="text-xs text-muted-foreground hover:underline">Clear</button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {genres?.map((genre: MediaGenre) => (
+                      <Badge
+                        key={genre.Id}
+                        variant={selectedGenres.includes(genre.Name) ? "default" : "outline"}
+                        className="cursor-pointer text-sm py-1.5 px-4 rounded-full"
+                        onClick={() => setSelectedGenres(prev => prev.includes(genre.Name) ? prev.filter(g => g !== genre.Name) : [...prev, genre.Name])}
+                      >
+                        {genre.Name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Themes Section */}
+                {themes.length > 0 && (
+                  <div className="space-y-4">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Themes</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {themes.map((theme: string) => (
+                        <Badge
+                          key={theme}
+                          variant={selectedThemes.includes(theme) ? "secondary" : "outline"}
+                          className={cn(
+                            "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                            selectedThemes.includes(theme) && "bg-primary/20 text-primary border-primary/30"
+                          )}
+                          onClick={() => setSelectedThemes(prev => prev.includes(theme) ? prev.filter(t => t !== theme) : [...prev, theme])}
+                        >
+                          {theme}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Maturity Ratings Section */}
+                {ratings && ratings.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                          Maturity
+                        </Label>
+                        <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-bold opacity-70">
+                          {watchRegion}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {ratings.map((rating: MediaRating) => (
+                        <Badge
+                          key={rating.Value}
+                          variant={selectedRatings.includes(rating.Value) ? "default" : "outline"}
+                          className="cursor-pointer text-sm py-1.5 px-4 rounded-full"
+                          onClick={() => setSelectedRatings(prev => prev.includes(rating.Value) ? prev.filter(r => r !== rating.Value) : [...prev, rating.Value])}
+                        >
+                          {rating.Name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Language Section */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Language</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {LANGUAGES.map((lang) => (
+                      <Badge
+                        key={lang.code}
+                        variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
+                        className={cn(
+                          "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                          selectedLanguages.includes(lang.code) && "bg-primary/20 text-primary border-primary/30"
+                        )}
+                        onClick={() => setSelectedLanguages([lang.code])}
+                      >
+                        {lang.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Watch Providers Section */}
+                {capabilities.hasStreamingSettings && availableWatchProviders.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Streaming Services</Label>
+                      <div className="flex gap-3">
+                        <button onClick={() => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id))} className="text-xs text-primary hover:underline">Select all</button>
+                        <button onClick={() => setSelectedWatchProviders([])} className="text-xs text-muted-foreground hover:underline">Clear</button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {availableWatchProviders.map((p: WatchProvider & { MemberUserIds?: string[] }) => {
+                        const isSelected = selectedWatchProviders.includes(p.Id);
+                        const providerMembers = (p.MemberUserIds || [])
+                          .map(id => {
+                            const m = members.find(m => m.externalUserId === id);
+                            if (!m) return null;
+                            return { userId: m.externalUserId, userName: m.externalUserName };
+                          })
+                          .filter(Boolean) as { userId: string, userName: string }[];
+
+                        return (
+                          <button
+                            key={p.Id}
+                            onClick={() => setSelectedWatchProviders(prev => prev.includes(p.Id) ? prev.filter(id => id !== p.Id) : [...prev, p.Id])}
+                            className={cn(
+                              "relative flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                              isSelected
+                                ? "bg-primary/5 border-primary shadow-sm"
+                                : "bg-background border-input text-muted-foreground opacity-85 grayscale-[0.5]"
+                            )}
+                          >
+                            <div className="relative size-10 shrink-0 rounded-lg overflow-hidden border">
+                              <OptimizedImage
+                                src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
+                                alt={p.Name}
+                                className="object-cover"
+                                unoptimized
+                                width={40}
+                                height={40}
+                              />
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-xs font-bold truncate">{p.Name}</span>
+                              {providerMembers.length > 0 && (
+                                <UserAvatarList
+                                  users={providerMembers.map(m => ({ userId: m.userId, userName: m.userName }))}
+                                  size="sm"
+                                  className="mt-1"
+                                />
+                              )}
+                            </div>
+                            {isSelected && (
+                              <Check className="size-4 text-primary shrink-0 stroke-3" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              </>
             )}
           </div>
         </ScrollArea>

@@ -125,6 +125,12 @@ export class TmdbProvider implements MediaProvider {
         discoverParams['vote_average.gte'] = filters.minCommunityRating;
     }
 
+    if (filters.runtimeRange) {
+        const [min, max] = filters.runtimeRange;
+        if (min > 0) discoverParams['with_runtime.gte'] = min;
+        if (max < 240) discoverParams['with_runtime.lte'] = max;
+    }
+
     if (filters.ratings && filters.ratings.length > 0) {
         // Map region codes to TMDB certification country codes
         const regionMapping: Record<string, string> = {

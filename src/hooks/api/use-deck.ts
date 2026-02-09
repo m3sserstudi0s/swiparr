@@ -16,6 +16,7 @@ export function useDeck() {
         params: {
           page: pageParam,
           limit: 50,
+          filters: filters ? JSON.stringify(filters) : undefined,
         },
       });
       return res.data;

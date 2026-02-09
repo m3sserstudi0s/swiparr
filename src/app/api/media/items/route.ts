@@ -14,9 +14,18 @@ export async function GET(request: NextRequest) {
     const searchTerm = searchParams.get("searchTerm") || undefined;
     const page = parseInt(searchParams.get("page") || "0");
     const limit = parseInt(searchParams.get("limit") || "50");
+    const filtersParam = searchParams.get("filters");
+    let overrideFilters = undefined;
+    if (filtersParam) {
+        try {
+            overrideFilters = JSON.parse(filtersParam);
+        } catch (e) {
+            console.error("Failed to parse filters param", e);
+        }
+    }
 
     try {
-        const result = await MediaService.getMediaItems(session, page, limit, searchTerm);
+        const result = await MediaService.getMediaItems(session, page, limit, searchTerm, overrideFilters);
         return NextResponse.json(result);
     } catch (error) {
         console.error("Fetch Items Error", error);

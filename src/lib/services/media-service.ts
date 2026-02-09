@@ -9,7 +9,7 @@ import { AuthService } from "./auth-service";
 import { ConfigService } from "./config-service";
 
 export class MediaService {
-  static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string) {
+  static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     const activeProviderName = auth.provider || session.user.provider || ProviderType.JELLYFIN;
@@ -39,12 +39,16 @@ export class MediaService {
     ]);
 
     // 2. Get Filters
-    const sessionFilters = session.sessionCode 
-      ? await (async () => {
-          const currentSession = await db.select().from(sessions).where(eq(sessions.code, session.sessionCode!)).then((rows: any[]) => rows[0]);
-          return currentSession?.filters ? JSON.parse(currentSession.filters) : null;
-        })()
-      : session.soloFilters;
+    let sessionFilters: Filters | null = overrideFilters || null;
+
+    if (!sessionFilters) {
+      sessionFilters = session.sessionCode 
+        ? await (async () => {
+            const currentSession = await db.select().from(sessions).where(eq(sessions.code, session.sessionCode!)).then((rows: any[]) => rows[0]);
+            return currentSession?.filters ? JSON.parse(currentSession.filters) : null;
+          })()
+        : session.soloFilters;
+    }
 
     const { watchProviders, watchRegion } = await this.resolveWatchProviders(session, sessionFilters, auth, activeProviderName);
 
@@ -72,30 +76,42 @@ export class MediaService {
     let watchProviders = sessionFilters?.watchProviders;
     let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || "SE";
 
-    if (!watchProviders && activeProviderName === "tmdb") {
+    if (session.sessionCode && activeProviderName === "tmdb") {
       const accumulated = new Set<string>();
-      if (session.sessionCode) {
-        const sessionMembersList = await db.query.sessionMembers.findMany({
-          where: eq(sessionMembers.sessionCode, session.sessionCode)
-        });
-        sessionMembersList.forEach((m: any) => {
-          if (m.settings) {
-            try {
-              const s = JSON.parse(m.settings);
-              if (s.watchProviders) s.watchProviders.forEach((p: string) => accumulated.add(p));
-              if (s.watchRegion) watchRegion = s.watchRegion;
-            } catch(e) {}
-          }
-        });
-      } else {
-        const settings = await ConfigService.getUserSettings(session.user.Id);
-        if (settings) {
-          if (settings.watchProviders) settings.watchProviders.forEach((p: string) => accumulated.add(p));
-          if (settings.watchRegion) watchRegion = settings.watchRegion;
+      const sessionMembersList = await db.query.sessionMembers.findMany({
+        where: eq(sessionMembers.sessionCode, session.sessionCode)
+      });
+      
+      // Use the host's region as the default for the session if not explicitly set in filters
+      const hostMember = sessionMembersList.find((m: any) => m.externalUserId === session.user.Id); // This might not be the host, but the current user
+      // Actually, sessions table has hostUserId.
+      const currentSession = await db.query.sessions.findFirst({ where: eq(sessions.code, session.sessionCode) });
+      const hostId = currentSession?.hostUserId;
+      
+      sessionMembersList.forEach((m: any) => {
+        if (m.settings) {
+          try {
+            const s = JSON.parse(m.settings);
+            if (s.watchProviders) s.watchProviders.forEach((p: string) => accumulated.add(p));
+            // Only take region from host to be deterministic, or keep current if host not found
+            if (m.externalUserId === hostId && !sessionFilters?.watchRegion) {
+                watchRegion = s.watchRegion || watchRegion;
+            }
+          } catch(e) {}
         }
+      });
+
+      if (!watchProviders) {
+        watchProviders = accumulated.size > 0 ? Array.from(accumulated) : undefined;
       }
-      watchProviders = accumulated.size > 0 ? Array.from(accumulated) : undefined;
+    } else if (!watchProviders && !session.sessionCode) {
+      const settings = await ConfigService.getUserSettings(session.user.Id);
+      if (settings) {
+        if (settings.watchProviders) watchProviders = settings.watchProviders;
+        if (settings.watchRegion) watchRegion = settings.watchRegion;
+      }
     }
+    
     return { watchProviders, watchRegion };
   }
 
@@ -106,6 +122,7 @@ export class MediaService {
       years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
       ratings: sessionFilters?.officialRatings,
       minCommunityRating: sessionFilters?.minCommunityRating,
+      runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
       sortBy: sessionFilters?.sortBy,
@@ -138,7 +155,13 @@ export class MediaService {
     
     // If we have filters but the provider might not support them all (like Plex), 
     // we fetch more items to ensure we have enough after client-side filtering.
-    const fetchLimit = (sessionFilters && (sessionFilters.genres?.length || sessionFilters.yearRange || sessionFilters.themes?.length)) ? Math.max(limit * 4, 100) : limit;
+    const fetchLimit = (sessionFilters && (
+      sessionFilters.genres?.length || 
+      sessionFilters.yearRange || 
+      sessionFilters.themes?.length || 
+      sessionFilters.runtimeRange ||
+      sessionFilters.minCommunityRating
+    )) ? Math.max(limit * 4, 100) : limit;
 
     const fetchedItems = await provider.getItems({
       libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
@@ -146,6 +169,7 @@ export class MediaService {
       years: soloYears,
       ratings: sessionFilters?.officialRatings,
       minCommunityRating: sessionFilters?.minCommunityRating,
+      runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
       sortBy: sessionFilters?.sortBy || "Random",
@@ -177,12 +201,6 @@ export class MediaService {
     return provider.getLibraries(auth);
   }
 
-  static async getGenres(session: SessionData) {
-    const auth = await AuthService.getEffectiveCredentials(session);
-    const provider = getMediaProvider(auth.provider);
-    return provider.getGenres(auth);
-  }
-
   static async getYears(session: SessionData) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
@@ -190,19 +208,59 @@ export class MediaService {
   }
 
   static async getRatings(session: SessionData, regionOverride?: string) {
+    const useStatic = await ConfigService.getUseStaticFilterValues();
+    if (useStatic && !session.user.isGuest && session.user.provider !== "tmdb") {
+        const { DEFAULT_RATINGS } = await import("@/lib/constants");
+        return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
+    }
+
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
-    // If region override is provided, use it
+    
     if (regionOverride) {
       auth.watchRegion = regionOverride;
     }
-    return provider.getRatings(auth);
+    
+    try {
+        const ratings = await provider.getRatings(auth);
+        if (!ratings || ratings.length === 0) {
+            const { DEFAULT_RATINGS } = await import("@/lib/constants");
+            return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
+        }
+        return ratings;
+    } catch (e) {
+        const { DEFAULT_RATINGS } = await import("@/lib/constants");
+        return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
+    }
+  }
+
+  static async getGenres(session: SessionData) {
+    const useStatic = await ConfigService.getUseStaticFilterValues();
+    if (useStatic && !session.user.isGuest && session.user.provider !== "tmdb") {
+        const { DEFAULT_GENRES } = await import("@/lib/constants");
+        return DEFAULT_GENRES;
+    }
+
+    const auth = await AuthService.getEffectiveCredentials(session);
+    const provider = getMediaProvider(auth.provider);
+    
+    try {
+        const genres = await provider.getGenres(auth);
+        if (!genres || genres.length === 0) {
+            const { DEFAULT_GENRES } = await import("@/lib/constants");
+            return DEFAULT_GENRES;
+        }
+        return genres;
+    } catch (e) {
+        const { DEFAULT_GENRES } = await import("@/lib/constants");
+        return DEFAULT_GENRES;
+    }
   }
 
   static async getThemes(session: SessionData) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
-    if (provider.getThemes) return provider.getThemes(auth);
+    if (typeof provider.getThemes === 'function') return provider.getThemes(auth);
     return [];
   }
 
@@ -313,7 +371,8 @@ export class MediaService {
     if (filters.runtimeRange) {
       const [min, max] = filters.runtimeRange;
       result = result.filter(item => {
-        const minutes = (item.RunTimeTicks || 0) / 600000000;
+        if (!item.RunTimeTicks) return true; 
+        const minutes = item.RunTimeTicks / 600000000;
         if (min && minutes < min) return false;
         if (max && max < 240 && minutes > max) return false;
         return true;
