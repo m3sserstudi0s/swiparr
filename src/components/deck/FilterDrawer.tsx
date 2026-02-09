@@ -22,15 +22,7 @@ import { OptimizedImage } from "../ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { cn } from "@/lib/utils";
-import { LANGUAGES, DEFAULT_LANGUAGES } from "@/lib/constants";
-
-const SORT_OPTIONS = [
-  "Popular",
-  "Trending",
-  "Top Rated",
-  "Newest",
-  "Random"
-];
+import { LANGUAGES, DEFAULT_LANGUAGES, SORT_OPTIONS } from "@/lib/constants";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -52,11 +44,11 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [minRating, setMinRating] = useState<number>(0);
 
   const { data: session } = useSession();
-  const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending";
+  const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending"; // Popular works better with TMDB
   const { capabilities } = useRuntimeConfig();
   const { data: userSettings } = useUserSettings();
   const watchRegion = userSettings?.watchRegion || "SE";
-  
+
   const { genres, years, ratings, isLoading: isLoadingFilters } = useFilters(open, watchRegion);
   const { data: themes = [], isLoading: isLoadingThemes } = useThemes(open);
   const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(
@@ -80,6 +72,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     return yearNums.length > 0 ? Math.max(...yearNums) : new Date().getFullYear();
   }, [years]);
 
+
+  const sortOptions = useMemo(() => {
+    return [
+      defaultSort,
+      ...SORT_OPTIONS.filter(option => option !== defaultSort)
+    ];
+  }, [defaultSort]);
+
   useEffect(() => {
     if (open) {
       setSelectedGenres(currentFilters?.genres || []);
@@ -98,15 +98,15 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const normalizeFilters = (f: Filters): Filters => {
     const isYearDefault = !f.yearRange || (f.yearRange[0] === minYearLimit && f.yearRange[1] === maxYearLimit);
     const isRuntimeDefault = !f.runtimeRange || (f.runtimeRange[0] === 0 && f.runtimeRange[1] === 240);
-    const isLanguageDefault = !f.languages || (f.languages.length === DEFAULT_LANGUAGES.length && 
-                             f.languages.every(l => DEFAULT_LANGUAGES.includes(l)));
-    
+    const isLanguageDefault = !f.languages || (f.languages.length === DEFAULT_LANGUAGES.length &&
+      f.languages.every(l => DEFAULT_LANGUAGES.includes(l)));
+
     // Logic: 
     // - If all providers are selected OR none are selected, we treat it as "no filter" (undefined)
     // - If a specific subset is selected, we send the explicit list
-    const isWatchProvidersDefault = !f.watchProviders || 
-                                    f.watchProviders.length === 0 || 
-                                    f.watchProviders.length === availableWatchProviders.length;
+    const isWatchProvidersDefault = !f.watchProviders ||
+      f.watchProviders.length === 0 ||
+      f.watchProviders.length === availableWatchProviders.length;
 
     return {
       genres: f.genres?.length ? f.genres : [],
@@ -169,9 +169,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   };
 
   const isSession = !!session?.code;
-  const filteredSortOptions = isSession 
-    ? SORT_OPTIONS.filter(opt => opt !== "Random")
-    : SORT_OPTIONS;
+  const filteredSortOptions = isSession
+    ? sortOptions.filter(opt => opt !== "Random")
+    : sortOptions;
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
@@ -194,14 +194,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         <ScrollArea className="flex-1 overflow-y-auto">
           <div className="flex flex-col gap-8 pt-6 pb-12 px-6">
             {isLoading ? (
-               <div className="space-y-10">
-                 {[1, 2, 3].map((i) => (
-                   <div key={i} className="space-y-4">
-                     <Skeleton className="h-6 w-24" />
-                     <Skeleton className="h-12 w-full rounded-xl" />
-                   </div>
-                 ))}
-               </div>
+              <div className="space-y-10">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-4">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-12 w-full rounded-xl" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
                 {/* Sort Section */}

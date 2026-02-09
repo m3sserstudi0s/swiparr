@@ -31,6 +31,14 @@ export const DEFAULT_RATINGS = [
     "G", "PG", "PG-13", "R", "NC-17", "TV-G", "TV-PG", "TV-14", "TV-MA"
 ];
 
+export const SORT_OPTIONS = [
+  "Popular",
+  "Trending",
+  "Top Rated",
+  "Newest",
+  "Random"
+];
+
 export const LANGUAGES = [
     { code: "en", name: "English" },
     { code: "es", name: "Spanish" },
