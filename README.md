@@ -24,9 +24,9 @@
 
 ---
 
-## 🎯 The Problem We're Solving
+## 🎯 The Problem
 
-We all know the struggle: 30 minutes of "what should we watch?" that ends with watching the same show again. Swiparr fixes this by:
+The struggle is real: 30 minutes of "what should we watch?" that ends with watching the same show again. Swiparr fixes this by:
 
 ✨ Turning discovery into a fun, game-like experience  
 🤝 Finding content everyone actually wants to watch  
@@ -35,7 +35,7 @@ We all know the struggle: 30 minutes of "what should we watch?" that ends with w
 
 ---
 
-## ✨ Features at a Glance
+## ✨ Features
 
 ### 🎬 Content Discovery
 - **Intuitive Swipe Interface** - Browse movies with a familiar card-based design
@@ -64,7 +64,7 @@ We all know the struggle: 30 minutes of "what should we watch?" that ends with w
 
 **No setup, no server, no problem.**
 
-🌐 **[swiparr.com](https://swiparr.com)** - Free to use, community-supported
+🌐 **[swiparr.com](https://swiparr.com)** - Free to use, community-supported (hopefully)
 
 ### Easiest: Deploy to Vercel
 
@@ -219,7 +219,7 @@ PROVIDER_LOCK=false                          # Let users choose and configure th
 
 ---
 
-## 🎮 Deep Dive: Features
+## Features (Deep dive)
 
 ### Session Settings
 
@@ -252,7 +252,9 @@ When you create a session, customize it for your group:
   - Perfect for when you just need 3-4 solid picks
 </details>
 
-### Guest Lending (Account Sharing)
+<details>
+<summary><strong>Guest Lending (Account Sharing)</strong></summary>
+
 
 **How it works:**
 
@@ -263,41 +265,46 @@ When you create a session, customize it for your group:
 5. Guests cannot access host account or modify settings
 
 **Perfect for:** Movie nights with friends who don't have media servers
+</details>
 
-### Admin Privileges
+<details>
+<summary><strong>Admin Role</strong></summary>
+
 
 **Automatically Assigned:** First user to log in for each provider becomes that provider's admin.
 
 **Manual Assignment:** Set `ADMIN_USERNAME` (global) or `[PROVIDER]_ADMIN_USERNAME` (e.g., `JELLYFIN_ADMIN_USERNAME`) environment variables.
 
-**Admin Powers:**
+**Admin Privileges:**
 - Configure included media libraries for the provider
 - Manage global provider settings
 - Override session restrictions
 - Access admin dashboard (only for providers with authentication)
-
+</details>
 
 ---
 
 ## 🔄 Provider Flexibility: Two Modes
 
-### Server Lock Mode (PROVIDER_LOCK=true)
+### Server Lock Mode
+
+>PROVIDER_LOCK=true
 
 **One provider, admin-controlled**
 
 - Admin configures ONE provider in environment variables
 - All users automatically use this provider
 - Best for: Families, roommates, shared media servers
-- **Use case:** Everyone in the house uses the same Jellyfin server
 
-### BYOP Mode (PROVIDER_LOCK=false)
+### BYOP Mode
+
+>PROVIDER_LOCK=false
 
 **Bring Your Own Provider**
 
 - Each user connects their own provider during onboarding
 - Users can switch providers anytime
-- Best for: Friends with different media servers
-- **Use case:** Alice uses her Jellyfin, Bob uses Plex, Charlie uses TMDB - all in the same session
+- Best for: Users with different media servers, and/or you have none
 
 ---
 
@@ -352,7 +359,6 @@ Swiparr is free, open source, and community-supported. Your contributions help:
 
 - ☕ [**Buy Me a Coffee**](https://www.buymeacoffee.com/jakobbjelver) - Quick one-time support
 - 🌟 **Star on GitHub** - Show your support (it's free!)
-- 📢 **Share Swiparr** - Tell friends, post on social media
 - 🏢 **Use swiparr.com** - The hosted version includes infrastructure funding
 
 **All support directly funds development and infrastructure costs.**
