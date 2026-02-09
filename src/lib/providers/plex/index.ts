@@ -48,13 +48,15 @@ export class PlexProvider implements MediaProvider {
       ? sections.filter(s => filters.libraries?.includes(s.Id))
       : sections.filter(s => s.CollectionType === "movies");
 
+    // Distribute limit across sections
+    const limitPerSection = Math.max(Math.ceil((filters.limit || 20) * 1.5 / targetSections.length), 20);
+
     for (const section of targetSections) {
         // Build query for Plex Advanced Filtering
-        // Docs (Community): https://github.com/Arcanemagus/plex-api/wiki/Library-Sections
         const params: Record<string, any> = {
             type: 1, // Movies
             'X-Plex-Container-Start': filters.offset || 0,
-            'X-Plex-Container-Size': filters.limit || 50,
+            'X-Plex-Container-Size': limitPerSection,
         };
 
         if (filters.sortBy === "Random") {
@@ -65,6 +67,8 @@ export class PlexProvider implements MediaProvider {
             params.sort = "rating:desc";
         } else if (filters.sortBy === "Top Rated") {
             params.sort = "audienceRating:desc";
+        } else if (filters.sortBy === "SortName") {
+            params.sort = "titleSort:asc";
         }
 
         if (filters.searchTerm) {
@@ -99,7 +103,7 @@ export class PlexProvider implements MediaProvider {
     }
 
     // Secondary client-side limit if multiple sections merged
-    return allItems.slice(0, filters.limit || 50).map(item => this.mapToMediaItem(item));
+    return allItems.slice(0, filters.limit || 20).map(item => this.mapToMediaItem(item));
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
@@ -242,21 +246,7 @@ export class PlexProvider implements MediaProvider {
       Taglines: item.tagline ? [item.tagline] : [],
       OfficialRating: item.contentRating,
       Genres: item.Genre?.map((g: any) => g.tag) || [],
-      People: [
-          ...(item.Role?.map((r: any) => ({
-              Name: r.tag,
-              Id: r.id?.toString() || r.tag,
-              Role: r.role,
-              Type: "Actor",
-              PrimaryImageTag: r.thumb,
-          })) || []),
-          ...(item.Director?.map((d: any) => ({
-              Name: d.tag,
-              Id: d.id?.toString() || d.tag,
-              Role: "Director",
-              Type: "Director",
-          })) || [])
-      ],
+      People: [], // Remove people from list view for performance
       ImageTags: {
         Primary: item.thumb,
         Backdrop: item.art,

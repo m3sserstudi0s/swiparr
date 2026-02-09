@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const searchTerm = searchParams.get("searchTerm") || undefined;
     const page = parseInt(searchParams.get("page") || "0");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limit = parseInt(searchParams.get("limit") || "20");
     const filtersParam = searchParams.get("filters");
     let overrideFilters = undefined;
     if (filtersParam) {

@@ -28,7 +28,7 @@ export class MediaService {
         .from(hiddens)
         .where(
           session.sessionCode 
-            ? eq(hiddens.sessionCode, session.sessionCode) 
+            ? and(eq(hiddens.externalUserId, session.user.Id), eq(hiddens.sessionCode, session.sessionCode))
             : and(eq(hiddens.externalUserId, session.user.Id), isNull(hiddens.sessionCode))
         )
     ]);
@@ -116,7 +116,7 @@ export class MediaService {
   }
 
   private static async getSessionItems(sessionCode: string, sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number) {
-    const allItems = await provider.getItems({
+    const fetchedItems = await provider.getItems({
       libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
       genres: sessionFilters?.genres,
       years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
@@ -125,29 +125,26 @@ export class MediaService {
       runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
-      sortBy: sessionFilters?.sortBy,
+      sortBy: sessionFilters?.sortBy || "SortName",
       themes: sessionFilters?.themes,
       languages: sessionFilters?.languages,
       unplayedOnly: sessionFilters?.unplayedOnly,
-      limit: 1000,
+      limit: limit * 2, // Fetch a bit more to account for exclusions
+      offset: page * limit,
     }, auth);
 
-    let filteredItems = this.applyClientFilters(allItems, sessionFilters);
+    let items = this.applyClientFilters(fetchedItems, sessionFilters);
+    items = items.filter(item => !excludeIds.has(item.Id));
     
-    // Deterministic Shuffle:
-    // If we are in a session, we MUST use shuffleWithSeed for ALL sort modes except "Random".
-    const isSorted = sessionFilters?.sortBy && sessionFilters.sortBy !== "Random";
-    const shuffledItems = isSorted ? filteredItems : shuffleWithSeed(filteredItems, sessionCode);
-    const slicedItems = shuffledItems.slice(page * limit, (page + 1) * limit);
-    const items = slicedItems.filter(item => !excludeIds.has(item.Id));
+    const slicedItems = items.slice(0, limit);
 
-    if (items.length > 0) {
-      items[0].BlurDataURL = await provider.getBlurDataUrl(items[0].Id, "Primary", auth);
+    if (slicedItems.length > 0) {
+      slicedItems[0].BlurDataURL = await provider.getBlurDataUrl(slicedItems[0].Id, "Primary", auth);
     }
 
     return {
-      items,
-      hasMore: (page + 1) * limit < shuffledItems.length
+      items: slicedItems,
+      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' ? 20 : limit * 2)
     };
   }
 
@@ -192,7 +189,7 @@ export class MediaService {
 
     return {
       items: slicedItems,
-      hasMore: auth.provider === 'tmdb' ? fetchedItems.length >= 20 : fetchedItems.length >= fetchLimit // Provider specific fix since TMDB returns 20 per page (others 50)
+      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' ? 20 : fetchLimit)
     };
   }
 

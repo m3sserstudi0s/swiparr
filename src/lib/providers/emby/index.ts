@@ -40,9 +40,7 @@ export class EmbyProvider implements MediaProvider {
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
-      Fields: hasLanguageFilter 
-        ? "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People,MediaStreams,PreferredMetadataLanguage,ProductionLocations"
-        : "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,People",
+      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations",
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Popular" ? "CommunityRating" :
               filters.sortBy === "Newest" ? "PremiereDate" :
@@ -58,7 +56,7 @@ export class EmbyProvider implements MediaProvider {
       MinCommunityRating: filters.minCommunityRating || undefined, 
       MinRunTimeTicks: filters.runtimeRange?.[0] ? filters.runtimeRange[0] * 600000000 : undefined,
       MaxRunTimeTicks: (filters.runtimeRange?.[1] && filters.runtimeRange[1] < 240) ? filters.runtimeRange[1] * 600000000 : undefined,
-      Limit: filters.limit || 50,
+      Limit: filters.limit || 20,
       StartIndex: filters.offset || 0,
       EnableUserData: true,
     };
@@ -77,30 +75,20 @@ export class EmbyProvider implements MediaProvider {
     
     // Client-side language/country filtering for Emby
     if (hasLanguageFilter) {
-      const selectedLangs = filters.languages!;
+      const selectedLangs = filters.languages!.map(l => l.toLowerCase());
       
       rawItems = rawItems.filter((item: any) => {
         // 1. Check PreferredMetadataLanguage
         const prefLang = item.PreferredMetadataLanguage?.toLowerCase();
-        if (prefLang && selectedLangs.some(l => prefLang.includes(l.toLowerCase()))) {
+        if (prefLang && selectedLangs.some(l => prefLang.includes(l))) {
           return true;
         }
 
-        // 2. Check MediaStreams (Audio)
-        const streams = item.MediaStreams || [];
-        const audioStreams = streams.filter((s: any) => s.Type === "Audio");
-        if (audioStreams.some((stream: any) => {
-          const lang = stream.Language?.toLowerCase();
-          return lang && selectedLangs.some(l => lang.includes(l.toLowerCase()));
-        })) {
-          return true;
-        }
-
-        // 3. Fallback: Check ProductionLocations (Country filtering)
+        // 2. Fallback: Check ProductionLocations (Country filtering)
         const countryMap: Record<string, string[]> = {
           'en': ['usa', 'united states', 'united kingdom', 'uk', 'canada', 'australia'],
-          'es': ['spain', 'mexico', 'argentina'],
-          'fr': ['france', 'belgium', 'canada'],
+          'es': ['spain', 'mexico', 'argentina', 'colombia', 'peru', 'chile'],
+          'fr': ['france', 'belgium', 'canada', 'switzerland'],
           'de': ['germany', 'austria', 'switzerland'],
           'it': ['italy'],
           'ja': ['japan'],
@@ -108,13 +96,21 @@ export class EmbyProvider implements MediaProvider {
           'pt': ['portugal', 'brazil'],
           'zh': ['china', 'hong kong', 'taiwan'],
           'sv': ['sweden'],
-          'da': ['denmark']
+          'da': ['denmark'],
+          'no': ['norway'],
+          'fi': ['finland'],
+          'nl': ['netherlands', 'belgium'],
+          'pl': ['poland'],
+          'ru': ['russia'],
+          'tr': ['turkey'],
+          'hi': ['india'],
+          'ar': ['egypt', 'saudi arabia', 'uae'],
         };
 
         const locations = (item.ProductionLocations || []).map((l: string) => l.toLowerCase());
         if (locations.length > 0) {
           return selectedLangs.some(langCode => {
-            const countries = countryMap[langCode.toLowerCase()] || [];
+            const countries = countryMap[langCode] || [];
             return countries.some(c => locations.some((loc: string) => loc.includes(c)));
           });
         }
