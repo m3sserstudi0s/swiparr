@@ -37,17 +37,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     ));
 
     if (itemLikes.length > 0) {
-        let members: any[] = [];
         if (targetSessionCode) {
-            members = await db.select().from(sessionMembers).where(eq(sessionMembers.sessionCode, targetSessionCode));
+            const members = await db.select().from(sessionMembers).where(eq(sessionMembers.sessionCode, targetSessionCode));
             
             item.likedBy = itemLikes.map((l: any) => ({
                 userId: l.externalUserId,
-                userName: members.find(m => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown",
+                userName: members.find((m: any) => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown",
                 sessionCode: l.sessionCode
             }));
         } else {
-            item.likedBy = [];
+            // Solo mode: only show if the CURRENT user liked it
+            const myLike = itemLikes.find((l: any) => l.externalUserId === session.user.Id);
+            if (myLike) {
+                item.likedBy = [{
+                    userId: session.user.Id,
+                    userName: session.user.Name,
+                    sessionCode: null
+                }];
+            } else {
+                item.likedBy = [];
+            }
         }
     } else {
         item.likedBy = [];

@@ -90,7 +90,10 @@ export async function GET(request: NextRequest) {
                     hasCustomProfilePicture: !!member?.hasCustomProfilePicture,
                     profileUpdatedAt: member?.profileUpdatedAt,
                 };
-            }) : []
+            }) : [{
+                userId: session.user.Id,
+                userName: session.user.Name
+            }]
         };
     }).filter((l: MergedLike | null): l is MergedLike => l !== null);
 
