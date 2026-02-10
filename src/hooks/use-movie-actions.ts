@@ -1,49 +1,99 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { MediaItem } from "@/types";
 import { apiClient } from "@/lib/api-client";
 import { useSettings } from "@/lib/settings";
 import { useSession } from "@/hooks/api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
+import { QUERY_KEYS } from "@/hooks/api/query-keys";
 
 interface UseMovieActionsOptions {
+  isLiked?: boolean;
   onUnlikeSuccess?: () => void;
   sessionCode?: string | null;
+  syncData?: boolean;
 }
 
-export function useMovieActions(movie: MediaItem | null, options: UseMovieActionsOptions = {}) {
-  const { onUnlikeSuccess, sessionCode } = options;
+export function useMovieActions<T extends MediaItem>(initialMovie: T | null, options: UseMovieActionsOptions = {}) {
+  const { onUnlikeSuccess, sessionCode, syncData = true } = options;
   const queryClient = useQueryClient();
   const { settings } = useSettings();
   const { data: sessionData } = useSession();
 
+  // Subscribe to the movie query to keep state in sync across components
+  const { data: syncedMovie } = useQuery({
+    queryKey: QUERY_KEYS.movie(initialMovie?.Id || null),
+    queryFn: async () => {
+      if (!initialMovie?.Id) return null;
+      const res = await apiClient.get<MediaItem>(`/api/media/item/${initialMovie.Id}`);
+      return res.data;
+    },
+    enabled: !!initialMovie?.Id && syncData,
+    initialData: initialMovie || undefined,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Merge synced data with initial data to preserve extra fields like swipedAt for MergedLike
+  const currentMovie = (syncedMovie && initialMovie 
+    ? { ...initialMovie, ...syncedMovie } 
+    : (syncedMovie || initialMovie)) as T | null;
+
   const isGuest = sessionData?.isGuest || false;
   const useWatchlist = settings.useWatchlist;
 
-  const isInList = (useWatchlist ? movie?.UserData?.Likes : movie?.UserData?.IsFavorite) ?? false;
-  const isLikedByMe = movie?.likedBy?.some(l => l.userId === sessionData?.userId) ?? false;
+  const isInList = (useWatchlist ? currentMovie?.UserData?.Likes : currentMovie?.UserData?.IsFavorite) ?? false;
+  
+  // A movie is liked by me if it's in the likedBy list OR if it's a MergedLike and we're in the likes list
+  const isLikedByMe = options.isLiked || (currentMovie?.likedBy?.some(l => l.userId === sessionData?.userId) ?? false);
 
   const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
     mutationFn: async (actionOverride?: "add" | "remove") => {
-      if (isGuest || !movie) return;
+      if (isGuest || !currentMovie) return;
       const action = actionOverride || (isInList ? "remove" : "add");
       await apiClient.post("/api/user/watchlist", {
-        itemId: movie.Id,
+        itemId: currentMovie.Id,
         action,
         useWatchlist
       });
     },
+    onMutate: async (actionOverride) => {
+        // Optimistic update
+        const action = actionOverride || (isInList ? "remove" : "add");
+        const nextValue = action === "add";
+        
+        const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
+        
+        if (currentMovie?.Id) {
+            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    UserData: {
+                        ...old.UserData,
+                        [useWatchlist ? 'Likes' : 'IsFavorite']: nextValue
+                    }
+                };
+            });
+        }
+        
+        return { previousMovie };
+    },
+    onError: (err, variables, context) => {
+        if (currentMovie?.Id && context?.previousMovie) {
+            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), context.previousMovie);
+        }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["movie", movie?.Id] });
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
     },
   });
 
   const handleToggleWatchlist = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (isGuest || !movie) return;
+    if (isGuest || !currentMovie) return;
     const action = isInList ? "remove" : "add";
 
     toast.promise(toggleWatchlist(undefined), {
@@ -69,22 +119,21 @@ export function useMovieActions(movie: MediaItem | null, options: UseMovieAction
 
   const { mutateAsync: relike } = useMutation({
     mutationFn: async () => {
-      if (!movie) return;
-      const userLike = movie.likedBy?.find(l => l.userId === sessionData?.userId);
-      // For MergedLike, we might have sessionCode on the movie object itself (from MovieListItem)
-      const movieSessionCode = (movie as any).sessionCode;
+      if (!currentMovie) return;
+      const userLike = currentMovie.likedBy?.find(l => l.userId === sessionData?.userId);
+      const movieSessionCode = (currentMovie as any).sessionCode;
       const targetSessionCode = userLike?.sessionCode ?? movieSessionCode ?? sessionCode;
 
       await apiClient.post("/api/swipe", {
-        itemId: movie.Id,
+        itemId: currentMovie.Id,
         direction: "right",
-        item: movie,
+        item: currentMovie,
         sessionCode: targetSessionCode || null
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
-      queryClient.invalidateQueries({ queryKey: ["movie", movie?.Id] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
     },
     onError: (err) => {
       toast.error("Failed to re-like movie", {
@@ -95,24 +144,27 @@ export function useMovieActions(movie: MediaItem | null, options: UseMovieAction
 
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
     mutationFn: async () => {
-      if (!movie) return;
-      const userLike = movie.likedBy?.find(l => l.userId === sessionData?.userId);
-      const movieSessionCode = (movie as any).sessionCode;
+      if (!currentMovie) return;
+      const userLike = currentMovie.likedBy?.find(l => l.userId === sessionData?.userId);
+      const movieSessionCode = (currentMovie as any).sessionCode;
       const targetSessionCode = userLike?.sessionCode ?? movieSessionCode ?? sessionCode;
-      const sessionParam = targetSessionCode !== undefined ? `&sessionCode=${targetSessionCode ?? ""}` : "";
+      
+      // Use empty string for solo likes if we have a null sessionCode
+      const codeParam = targetSessionCode === null ? "" : (targetSessionCode ?? "");
+      const sessionParam = (targetSessionCode !== undefined) ? `&sessionCode=${codeParam}` : "";
 
-      await apiClient.delete(`/api/user/likes?itemId=${movie.Id}${sessionParam}`);
+      await apiClient.delete(`/api/user/likes?itemId=${currentMovie.Id}${sessionParam}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
-      queryClient.invalidateQueries({ queryKey: ["movie", movie?.Id] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
       onUnlikeSuccess?.();
     },
   });
 
   const handleUnlike = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!movie) return;
+    if (!currentMovie) return;
 
     toast.promise(unlike(), {
       loading: "Removing from likes...",
@@ -130,6 +182,7 @@ export function useMovieActions(movie: MediaItem | null, options: UseMovieAction
   };
 
   return {
+    movie: currentMovie,
     isInList,
     isLikedByMe,
     isTogglingWatchlist,

@@ -18,6 +18,7 @@ import { useSession } from "@/hooks/api";
 import { ticksToTime, cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 import { useMovieActions } from "@/hooks/use-movie-actions";
+import { QUERY_KEYS } from "@/hooks/api/query-keys";
 
 interface Props {
   movieId: string | null;
@@ -41,7 +42,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   };
 
   const { data: movie, isLoading: isMovieLoading } = useQuery({
-    queryKey: ["movie", movieId],
+    queryKey: QUERY_KEYS.movie(movieId),
     queryFn: async () => {
       if (!movieId) return null;
       const res = await apiClient.get<MediaItem>(`/api/media/item/${movieId}`);

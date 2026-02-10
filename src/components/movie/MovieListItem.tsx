@@ -35,6 +35,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
   });
 
   const {
+    movie: syncedMovie,
     isInList,
     isLikedByMe,
     isTogglingWatchlist,
@@ -42,9 +43,11 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
     handleToggleWatchlist,
     handleUnlike,
     useWatchlist
-  } = useMovieActions(movie);
+  } = useMovieActions(movie, { isLiked });
 
-  const swipeDate = movie.swipedAt ? new Date(movie.swipedAt) : "";
+  const currentMovie = syncedMovie || movie;
+
+  const swipeDate = currentMovie.swipedAt ? new Date(currentMovie.swipedAt) : "";
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
@@ -62,17 +65,17 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
         isCondensed ? "relative shrink-0 w-15 h-22" : "relative shrink-0 w-20 h-28",
       )}>
         <OptimizedImage
-          src={`/api/media/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
-          alt={movie.Name}
-          externalId={movie.Id}
+          src={`/api/media/image/${currentMovie.Id}?tag=${currentMovie.ImageTags?.Primary}`}
+          alt={currentMovie.Name}
+          externalId={currentMovie.Id}
           height={100}
           width={50}
-          blurDataURL={movie.BlurDataURL}
+          blurDataURL={currentMovie.BlurDataURL}
           className="w-full h-full object-cover rounded-md"
           sizes="(max-width: 768px) 75px, 100px"
         />
         {/* Match Indicator */}
-        {!isCondensed && movie.isMatch && (
+        {!isCondensed && currentMovie.isMatch && (
           <Badge className="absolute -top-2 -right-2 h-5 px-1.5 text-[10px]">
             MATCH
           </Badge>
@@ -85,27 +88,27 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           <h3 className={cn(
             "font-bold line-clamp-2 leading-tight mb-1 text-foreground",
           )}>
-            {movie.Name}
+            {currentMovie.Name}
           </h3>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground h-6">
-            <span>{movie.ProductionYear}</span>
-            {!!movie.CommunityRating && '•'}
-            {!!movie.CommunityRating && (
+            <span>{currentMovie.ProductionYear}</span>
+            {!!currentMovie.CommunityRating && '•'}
+            {!!currentMovie.CommunityRating && (
               <span className="flex items-center">
                 <Star className="size-2.5 mr-0.5 mb-0.5" />
-                {movie.CommunityRating.toFixed(1)}
+                {currentMovie.CommunityRating.toFixed(1)}
               </span>
             )}
             •
-            {!!movie.RunTimeTicks && (
+            {!!currentMovie.RunTimeTicks && (
               <span className="flex items-center">
-                <Clock className="size-2.5 mr-0.5 mb-0.5" /> {ticksToTime(movie.RunTimeTicks)}
+                <Clock className="size-2.5 mr-0.5 mb-0.5" /> {ticksToTime(currentMovie.RunTimeTicks)}
               </span>
             )}
             <div className="ml-auto">
-              {movie.likedBy && movie.likedBy.length > 0 && (
+              {currentMovie.likedBy && currentMovie.likedBy.length > 0 && (
                 <UserAvatarList
-                  users={movie.likedBy}
+                  users={currentMovie.likedBy}
                   size="sm"
                   className="translate-y-0.5 mr-1"
                 />
@@ -116,7 +119,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
 
         <div className="flex flex-col gap-2 mt-2">
           {/* Only show date in full view */}
-          {movie.swipedAt && (
+          {currentMovie.swipedAt && (
             <div className="text-xs text-muted-foreground flex items-center">
               <Calendar className="size-2.5 mr-1 mb-0.5" />
               {formattedDateText}
@@ -124,7 +127,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           )}
 
           <div className="flex gap-2">
-            {capabilities.requiresServerUrl && <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
+            {capabilities.requiresServerUrl && <Link href={`${serverPublicUrl}/web/index.html#/details?id=${currentMovie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"
@@ -139,7 +142,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
             </Link>
             }
             {capabilities.hasStreamingSettings && <div className="flex flex-1 flex-row gap-2 items-center">
-              {movie.WatchProviders?.slice(0, 10).map((provider) => (
+              {currentMovie.WatchProviders?.slice(0, 10).map((provider) => (
                 <OptimizedImage
                   key={provider.Id}
                   src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
@@ -150,9 +153,9 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                   height={20}
                 />
               ))}
-              {movie.WatchProviders && movie.WatchProviders.length > 10 && (
+              {currentMovie.WatchProviders && currentMovie.WatchProviders.length > 10 && (
                 <span className="text-[10px] text-muted-foreground font-medium">
-                  +{movie.WatchProviders.length - 10}
+                  +{currentMovie.WatchProviders.length - 10}
                 </span>
               )}
             </div>}
