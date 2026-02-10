@@ -5,7 +5,7 @@ import Image, { ImageLoaderProps, ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useBlurData } from "@/hooks/use-blur-data";
-import { Image as ImageIcon } from "lucide-react";
+import { ImageOff } from "lucide-react";
 
 import { Skeleton } from "./skeleton";
 
@@ -93,7 +93,7 @@ export function OptimizedImage({
 
       {hasError ? (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/10">
-          <ImageIcon className="w-8 h-8 text-muted-foreground" />
+          <ImageOff className="w-8 h-8 text-muted-foreground" />
         </div>
       ) : (
         <Image

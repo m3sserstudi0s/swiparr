@@ -1,23 +1,21 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Star, Calendar, HeartOff, Clock, Plus, Minus, Bookmark } from "lucide-react";
-import { cn, ticksToTime, getErrorMessage } from "@/lib/utils";
+import { Play, Star, Calendar, HeartOff, Clock, Bookmark } from "lucide-react";
+import { cn, ticksToTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
-import { MergedLike, MediaItem } from "@/types";
+import { MergedLike } from "@/types";
 import { useRuntimeConfig } from "@/lib/runtime-config";
-import { useSettings } from "@/lib/settings";
+import { useMovieActions } from "@/hooks/use-movie-actions";
 
 
 interface MovieListItemProps {
-
   movie: MergedLike;
   onClick?: () => void;
   variant?: "full" | "condensed";
@@ -26,12 +24,7 @@ interface MovieListItemProps {
 
 
 export function MovieListItem({ movie, onClick, variant = "full", isLiked }: MovieListItemProps) {
-  const queryClient = useQueryClient();
-  const { capabilities } = useRuntimeConfig();
-  const { settings } = useSettings();
-
-  const useWatchlist = settings.useWatchlist;
-  const isInList = (useWatchlist ? movie?.UserData?.Likes : movie?.UserData?.IsFavorite) ?? false;
+  const { capabilities, serverPublicUrl } = useRuntimeConfig();
 
   const { data: sessionData } = useQuery({
     queryKey: ["session"],
@@ -41,99 +34,19 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
     },
   });
 
-  const isGuest = sessionData?.isGuest || false;
-
-  const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
-    mutationFn: async (actionOverride?: "add" | "remove") => {
-      if (isGuest) return;
-      const action = actionOverride || (isInList ? "remove" : "add");
-      await apiClient.post("/api/user/watchlist", {
-        itemId: movie.Id,
-        action,
-        useWatchlist
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["movie", movie.Id] });
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
-    },
-  });
-
-  const handleToggleWatchlist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isGuest) return;
-
-    const action = isInList ? "remove" : "add";
-
-    toast.promise(toggleWatchlist(undefined), {
-      loading: "Updating...",
-      success: () => {
-        return {
-          message: action === "remove"
-            ? `Removed from ${useWatchlist ? "watchlist" : "favorites"}`
-            : `Added to ${useWatchlist ? "watchlist" : "favorites"}`,
-          action: {
-            label: 'Undo',
-            onClick: () => toggleWatchlist(action === "remove" ? "add" : "remove")
-          }
-        };
-      },
-      error: (err) => ({
-        message: `Failed to update ${useWatchlist ? "watchlist" : "favorites"}`,
-        description: getErrorMessage(err)
-      }),
-    });
-  };
-
-  const { mutate: relike } = useMutation({
-
-    mutationFn: async () => {
-      await apiClient.post("/api/swipe", {
-        itemId: movie.Id,
-        direction: "right",
-        sessionCode: movie.sessionCode
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
-    },
-    onError: (err) => {
-      toast.error("Failed to re-like movie", {
-        description: getErrorMessage(err)
-      });
-    }
-  });
-
-  const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
-    mutationFn: async () => {
-      const sessionParam = movie.sessionCode !== undefined ? `&sessionCode=${movie.sessionCode ?? ""}` : "";
-      await apiClient.delete(`/api/user/likes?itemId=${movie.Id}${sessionParam}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
-    },
-  });
-
-  const handleUnlike = () => {
-
-    toast.promise(unlike(), {
-      loading: "Removing from likes...",
-      success: "Movie removed from likes",
-      error: (err) => {
-        return { message: "Failed to remove from likes", description: getErrorMessage(err) }
-      },
-      action: !isUnliking && {
-        label: 'Undo',
-        onClick: () => relike()
-      },
-    });
-  };
+  const {
+    isInList,
+    isLikedByMe,
+    isTogglingWatchlist,
+    isUnliking,
+    handleToggleWatchlist,
+    handleUnlike,
+    useWatchlist
+  } = useMovieActions(movie);
 
   const swipeDate = movie.swipedAt ? new Date(movie.swipedAt) : "";
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
-
-  const { serverPublicUrl } = useRuntimeConfig();
 
   const isCondensed = variant === "condensed";
 
@@ -176,17 +89,17 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           </h3>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground h-6">
             <span>{movie.ProductionYear}</span>
-            •
-            {movie.CommunityRating && (
+            {!!movie.CommunityRating && '•'}
+            {!!movie.CommunityRating && (
               <span className="flex items-center">
-                <Star className="size-2.5 mr-0.5" />
+                <Star className="size-2.5 mr-0.5 mb-0.5" />
                 {movie.CommunityRating.toFixed(1)}
               </span>
             )}
             •
-            {movie.RunTimeTicks && (
+            {!!movie.RunTimeTicks && (
               <span className="flex items-center">
-                <Clock className="size-2.5 mr-0.5" /> {ticksToTime(movie.RunTimeTicks)}
+                <Clock className="size-2.5 mr-0.5 mb-0.5" /> {ticksToTime(movie.RunTimeTicks)}
               </span>
             )}
             <div className="ml-auto">
@@ -205,7 +118,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           {/* Only show date in full view */}
           {movie.swipedAt && (
             <div className="text-xs text-muted-foreground flex items-center">
-              <Calendar className="size-2.5 mr-1" />
+              <Calendar className="size-2.5 mr-1 mb-0.5" />
               {formattedDateText}
             </div>
           )}
@@ -238,7 +151,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 />
               ))}
             </div>}
-            {!isGuest && capabilities.hasWatchlist && (
+            {!sessionData?.isGuest && capabilities.hasWatchlist && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -255,15 +168,11 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 }
               </Button>
             )}
-            {(movie.likedBy?.some(l => l.userId === sessionData?.userId) || isLiked) && <Button
-
+            {(isLikedByMe || isLiked) && <Button
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleUnlike();
-              }}
+              onClick={handleUnlike}
               disabled={isUnliking}
             >
               <HeartOff className="w-3.5 h-3.5" />

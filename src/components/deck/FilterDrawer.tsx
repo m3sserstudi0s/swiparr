@@ -395,7 +395,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {capabilities.hasStreamingSettings && availableWatchProviders.length > 0 && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Streaming Services</Label>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                          Streaming Services
+                        </Label>
+                        {watchRegion && <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-bold opacity-70">
+                          {watchRegion}
+                        </Badge>}
+                      </div>
                       <div className="flex gap-3">
                         <button onClick={() => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id))} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
                         <button onClick={() => setSelectedWatchProviders([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>

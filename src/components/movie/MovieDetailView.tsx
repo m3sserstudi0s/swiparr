@@ -3,22 +3,21 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, Users, HeartOff, Plus, Minus, Info, Bookmark } from "lucide-react";
+import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MediaItem, Filters, WatchProvider } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { MediaItem, WatchProvider } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerTitle } from "../ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useSettings } from "@/lib/settings";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useSession } from "@/hooks/api";
-import { ticksToTime, getErrorMessage, cn } from "@/lib/utils";
+import { ticksToTime, cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
+import { useMovieActions } from "@/hooks/use-movie-actions";
 
 interface Props {
   movieId: string | null;
@@ -60,114 +59,20 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   });
 
   const isLoading = isMovieLoading || isSessionLoading;
-  const isGuest = sessionData?.isGuest || false;
 
-  const queryClient = useQueryClient();
-  const { settings } = useSettings();
-
-  const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
-    mutationFn: async () => {
-      // Find the specific like record for this user and movie
-      const userLike = movie?.likedBy?.find(l => l.userId === sessionData?.userId);
-      // Fallback to the current view's sessionCode if no record found (though it should be)
-      const targetSessionCode = userLike?.sessionCode !== undefined ? userLike.sessionCode : sessionCode;
-
-      const sessionParam = targetSessionCode !== undefined ? `&sessionCode=${targetSessionCode ?? ""}` : "";
-      await apiClient.delete(`/api/user/likes?itemId=${movieId}${sessionParam}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
-      queryClient.invalidateQueries({ queryKey: ["movie", movieId] });
-      onClose();
-    },
+  const {
+    isInList,
+    isLikedByMe,
+    isTogglingWatchlist,
+    isUnliking,
+    handleToggleWatchlist,
+    handleUnlike,
+    useWatchlist,
+    isGuest
+  } = useMovieActions(movie || null, {
+    onUnlikeSuccess: onClose,
+    sessionCode
   });
-
-  const { mutate: relike } = useMutation({
-    mutationFn: async () => {
-      if (!movie) return;
-      const userLike = movie.likedBy?.find(l => l.userId === sessionData?.userId);
-      const targetSessionCode = userLike?.sessionCode !== undefined ? userLike.sessionCode : sessionCode;
-
-      await apiClient.post("/api/swipe", {
-        itemId: movie.Id,
-        direction: "right",
-        item: movie,
-        sessionCode: targetSessionCode || null
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
-      queryClient.invalidateQueries({ queryKey: ["movie", movieId] });
-    }
-  });
-
-  const useWatchlist = settings.useWatchlist;
-  const isInList = (useWatchlist ? movie?.UserData?.Likes : movie?.UserData?.IsFavorite) ?? false;
-
-
-  const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
-    mutationFn: async () => {
-      if (isGuest) return;
-      await apiClient.post("/api/user/watchlist", {
-        itemId: movie?.Id,
-        action: isInList ? "remove" : "add",
-        useWatchlist
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["movie", movieId] });
-    },
-  });
-
-  const handleToggleWatchlist = () => {
-    if (isGuest) return;
-    const promise = toggleWatchlist();
-    toast.promise(promise, {
-      loading: "Updating...",
-      success: () => {
-        return isInList
-          ? `Removed from ${useWatchlist ? "watchlist" : "favorites"}`
-          : `Added to ${useWatchlist ? "watchlist" : "favorites"}`;
-      },
-      error: (err) => {
-        return { message: `Failed to update ${useWatchlist ? "watchlist" : "favorites"}`, description: getErrorMessage(err) }
-      },
-      position: 'top-right'
-    });
-  };
-
-  const handleUnlike = () => {
-    // Capture the state needed for undo BEFORE unliking
-    const userLike = movie?.likedBy?.find(l => l.userId === sessionData?.userId);
-    const targetSessionCode = userLike?.sessionCode !== undefined ? userLike.sessionCode : sessionCode;
-    const movieData = movie;
-
-    toast.promise(unlike(), {
-      loading: "Removing from likes...",
-      success: "Movie removed from likes",
-      error: (err) => getErrorMessage(err, "Failed to remove from likes"),
-      action: !isUnliking && {
-        label: 'Undo',
-        onClick: async () => {
-          if (!movieData) return;
-          try {
-            await apiClient.post("/api/swipe", {
-              itemId: movieData.Id,
-              direction: "right",
-              item: movieData,
-              sessionCode: targetSessionCode || null
-            });
-            queryClient.invalidateQueries({ queryKey: ["likes"] });
-            queryClient.invalidateQueries({ queryKey: ["movie", movieId] });
-          } catch (err) {
-            toast.error("Failed to restore like");
-          }
-        }
-      },
-      position: 'top-right'
-    });
-  };
-
 
   const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities } = useRuntimeConfig();
   const { data: sessionStatus } = useSession();
@@ -182,13 +87,13 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
           onScroll={handleScroll} // Update motion value here
           className={cn(
             "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-3 no-scrollbar relative",
-            "mask-[linear-gradient(to_bottom,transparent_0%,black_40px,black_calc(100%-80px),transparent_100%)]"
+            "mask-[linear-gradient(to_bottom,transparent_0%,black_10px,black_calc(100%-80px),transparent_100%)]"
           )}>
 
           {isLoading ? (
             <div className="h-64 w-full relative">
               <div className="absolute -bottom-12 left-4 flex items-end gap-3">
-                <Skeleton className="w-28 h-40 rounded-lg shadow-2xl shadow-black border border-foreground/10 object-cover z-10 shrink-0" />
+                <Skeleton className="w-28 h-40 rounded-lg shadow-2xl shadow-background border border-foreground/10 object-cover z-10 shrink-0" />
               </div>
               <Skeleton className="h-full w-full rounded-none relative mask-[linear-gradient(to_bottom,black_60%,transparent_100%)]" />
               <div className="space-y-4 px-6 mt-20">
@@ -209,9 +114,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     opacity: imgOpacity,
                     scale: imgScale
                   }}
-                  className="absolute inset-x-0 w-full h-full mask-[linear-gradient(to_bottom,black_40%,transparent_100%)]"
+                  className="absolute inset-x-0 w-full h-full"
                 >
-
                   <OptimizedImage
                     src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0
                       ? `/api/media/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
@@ -219,10 +123,15 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     }
                     externalId={movie.Id}
                     imageType="Backdrop"
+                    alt="Backdrop"
                     width={400}
                     height={225}
-                    className="w-full h-full object-cover"
-                    alt="Backdrop"
+                    className={cn(
+                      'w-full h-full object-cover',
+                      // fade out top and bottom
+                      'mask-[linear-gradient(to_bottom,transparent,black_25%,black_50%,transparent)]',
+                      'mask-no-repeat'
+                    )}
                   />
                 </motion.div>
 
@@ -250,29 +159,30 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     <h2 className="text-3xl font-bold leading-tight drop-shadow-lg text-foreground mb-1 line-clamp-2">
                       {movie.Name}
                     </h2>
-                    {movie.OriginalTitle && movie.OriginalTitle !== movie.Name && (
+                    {!!movie.OriginalTitle && movie.OriginalTitle !== movie.Name && (
                       <div className="text-sm text-foreground/60 mb-2 truncate italic">
                         {movie.OriginalTitle}
                       </div>
                     )}
                     <div className="flex flex-wrap gap-3 text-xs items-center">
-                      {movie.ProductionYear && (
+                      {!!movie.ProductionYear && (
                         <span className="font-semibold text-foreground/90">
                           {movie.ProductionYear}
                         </span>
                       )}
-                      {movie.OfficialRating && (
+                      {!!movie.OfficialRating && (
                         <Badge variant="outline" className="text-[10px] py-0 h-4 border-foreground/30 text-foreground/80">
-                          {movie.OfficialRating}
+                          <ShieldCheck className="w-3 h-3"/>
+                          <span className="mt-px">{movie.OfficialRating}</span>
                         </Badge>
                       )}
-                      {movie.CommunityRating && (
+                      {!!movie.CommunityRating && (
                         <span className="flex items-center gap-1 font-bold">
                           <Star className="w-3 h-3 fill-current" />
                           {movie.CommunityRating.toFixed(1)}
                         </span>
                       )}
-                      {movie.RunTimeTicks && (
+                      {!!movie.RunTimeTicks && (
                         <span className="flex items-center gap-1 text-foreground/70">
                           <Clock className="w-3 h-3" /> {ticksToTime(movie.RunTimeTicks)}
                         </span>
@@ -290,7 +200,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   </div>
                 )}
 
-                {(capabilities.requiresServerUrl || (!isGuest && capabilities.hasWatchlist) || (movie.likedBy?.some(l => l.userId === sessionData?.userId))) &&
+                {(capabilities.requiresServerUrl || (!isGuest && capabilities.hasWatchlist) || isLikedByMe) &&
                   <div className="flex gap-2 mb-8 flex-wrap">
                     {capabilities.requiresServerUrl &&
                       <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
@@ -314,7 +224,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         {useWatchlist ? "Watchlist" : "Favorite"}
                       </Button>
                     )}
-                    {movie.likedBy?.some(l => l.userId === sessionData?.userId) && <Button
+                    {isLikedByMe && <Button
                       variant="outline"
                       size="lg"
                       className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
