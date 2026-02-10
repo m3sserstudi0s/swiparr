@@ -30,12 +30,13 @@ export function SmoothAvatar({
     const { data: session } = useSession();
     
     const isCurrentUser = session?.userId === userId || session?.effectiveUserId === userId;
+    const hasAuth = !!session?.capabilities?.hasAuth;
     
     // Determine if we should attempt to load an image
-    // If hasImage is explicitly provided, respect it.
+    // If hasImage is explicitly provided, respect it, unless we have auth capabilities (provider images)
     // If it's the current user, we can trust session.hasCustomProfilePicture.
     // We use !! to handle potential 0/1 from database
-    const knownNoImage = (hasImage !== undefined && !hasImage) || (isCurrentUser && session?.hasCustomProfilePicture === false);
+    const knownNoImage = (hasImage !== undefined && !hasImage && !hasAuth) || (isCurrentUser && session?.hasCustomProfilePicture === false && !hasAuth);
 
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>(() => {
         if (!isActuallyUser || knownNoImage) return 'error';
