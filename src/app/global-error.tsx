@@ -1,14 +1,16 @@
 'use client';
 
 import ErrorDisplay from '@/components/error-display';
-import { Google_Sans_Flex, JetBrains_Mono } from 'next/font/google';
+import { Zalando_Sans, JetBrains_Mono } from 'next/font/google';
 import '@/app/globals.css';
 
-const sansFlex = Google_Sans_Flex({ 
+const sansFlex = Zalando_Sans({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-sans',
-});
+  adjustFontFallback: true,
+  fallback: ["Arial", "Times New Roman"],
+})
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],

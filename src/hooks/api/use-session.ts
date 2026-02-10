@@ -115,6 +115,8 @@ export function useLeaveSession() {
     onSuccess: () => {
       queryClient.setQueryData(QUERY_KEYS.session, (old: any) => ({ ...old, code: null, filters: null, settings: null }));
       queryClient.invalidateQueries({ queryKey: ["deck"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+      queryClient.invalidateQueries({ queryKey: ["movie"] });
     },
   });
 }

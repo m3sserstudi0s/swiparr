@@ -17,7 +17,7 @@ export const QUERY_KEYS = {
   user: {
     settings: ["user", "settings"] as const,
   },
-  movie: (id: string | null) => ["movie", id] as const,
+  movie: (id: string | null, sessionCode?: string | null) => ["movie", id, sessionCode] as const,
   admin: {
 
     status: ["admin", "status"] as const,

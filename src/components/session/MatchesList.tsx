@@ -8,7 +8,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "..
 interface MatchesListProps {
   activeCode?: string;
   matches?: MediaItem[];
-  openMovie: (id: string) => void;
+  openMovie: (id: string, options?: { showLikedBy?: boolean; sessionCode?: string | null }) => void;
 }
 
 export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps) {
@@ -59,9 +59,9 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
             <div className="pt-6 pb-22">
               {matches?.map((movie: MediaItem) => (
                 <MovieListItem
-                  key={movie.Id}
-                  movie={{ ...movie, isMatch: true } as any}
-                  onClick={() => openMovie(movie.Id)}
+                  key={`${movie.Id}-${activeCode}`}
+                  movie={{ ...movie, isMatch: true, sessionCode: activeCode } as any}
+                  onClick={() => openMovie(movie.Id, { sessionCode: activeCode })}
                   variant="condensed"
                 />
               ))}

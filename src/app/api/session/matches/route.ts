@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
-import { db, likes, sessionMembers } from "@/lib/db";
-import { eq, and, desc } from "drizzle-orm";
+import { db, likes, sessionMembers, userProfiles } from "@/lib/db";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
@@ -44,17 +44,30 @@ export async function GET(request: NextRequest) {
 
     const [allLikesInSession, members] = await Promise.all([
         db.select().from(likes).where(eq(likes.sessionCode, session.sessionCode as string)),
-        db.select().from(sessionMembers).where(eq(sessionMembers.sessionCode, session.sessionCode as string))
+        db.select({
+            externalUserId: sessionMembers.externalUserId,
+            externalUserName: sessionMembers.externalUserName,
+            hasCustomProfilePicture: sql<boolean>`CASE WHEN ${userProfiles.userId} IS NOT NULL THEN 1 ELSE 0 END`,
+            profileUpdatedAt: userProfiles.updatedAt,
+        })
+        .from(sessionMembers)
+        .leftJoin(userProfiles, eq(sessionMembers.externalUserId, userProfiles.userId))
+        .where(eq(sessionMembers.sessionCode, session.sessionCode as string))
     ]);
 
     const finalItems = items.map((item: any) => {
         const itemLikes = allLikesInSession.filter((l: any) => l.externalId === item.Id);
         return {
             ...item,
-            likedBy: itemLikes.map((lb: any) => ({
-                userId: lb.externalUserId,
-                userName: members.find((m: any) => m.externalUserId === lb.externalUserId)?.externalUserName || "Unknown"
-            }))
+            likedBy: itemLikes.map((lb: any) => {
+                const member = members.find((m: any) => m.externalUserId === lb.externalUserId);
+                return {
+                    userId: lb.externalUserId,
+                    userName: member?.externalUserName || "Unknown",
+                    hasCustomProfilePicture: !!member?.hasCustomProfilePicture,
+                    profileUpdatedAt: member?.profileUpdatedAt,
+                };
+            })
         };
     });
 

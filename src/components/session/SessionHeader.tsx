@@ -60,6 +60,8 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
                 users={members.map((m: any) => ({
                   userId: m.externalUserId,
                   userName: m.externalUserName,
+                  hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+                  profileUpdatedAt: m.profileUpdatedAt,
                 }))}
               />
             </div>

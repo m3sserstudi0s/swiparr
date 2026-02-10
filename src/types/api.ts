@@ -18,6 +18,8 @@ export interface SwipeResponse {
     userId: string;
     userName: string;
     sessionCode?: string | null;
+    hasCustomProfilePicture?: boolean;
+    profileUpdatedAt?: string;
   }[];
 }
 

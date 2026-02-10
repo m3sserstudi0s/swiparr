@@ -425,9 +425,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           .map(id => {
                             const m = members.find(m => m.externalUserId === id);
                             if (!m) return null;
-                            return { userId: m.externalUserId, userName: m.externalUserName };
+                            return { 
+                              userId: m.externalUserId, 
+                              userName: m.externalUserName,
+                              hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+                              profileUpdatedAt: m.profileUpdatedAt
+                            };
                           })
-                          .filter(Boolean) as { userId: string, userName: string }[];
+                          .filter(Boolean) as { userId: string, userName: string, hasCustomProfilePicture?: boolean, profileUpdatedAt?: string }[];
 
                         return (
                           <button
@@ -454,7 +459,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                               <span className="text-xs font-bold truncate">{p.Name}</span>
                               {providerMembers.length > 0 && (
                                 <UserAvatarList
-                                  users={providerMembers.map(m => ({ userId: m.userId, userName: m.userName }))}
+                                  users={providerMembers.map(m => ({ 
+                                    userId: m.userId, 
+                                    userName: m.userName,
+                                    hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+                                    profileUpdatedAt: m.profileUpdatedAt
+                                  }))}
                                   size="sm"
                                   className="mt-1"
                                 />

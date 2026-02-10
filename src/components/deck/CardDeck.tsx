@@ -249,7 +249,7 @@ export function CardDeck() {
 
   useHotkeys("left", () => handleSwipeAction("left"), { enabled: !isFilterOpen && activeDeck.length > 0 });
   useHotkeys("right", () => handleSwipeAction("right"), { enabled: !isFilterOpen && activeDeck.length > 0 });
-  useHotkeys("up", () => activeDeck[0] && openMovie(activeDeck[0].Id, {showLikedBy: false}), { enabled: !isFilterOpen && activeDeck.length > 0 });
+  useHotkeys("up", () => activeDeck[0] && openMovie(activeDeck[0].Id, { showLikedBy: true, sessionCode }), { enabled: !isFilterOpen && activeDeck.length > 0 });
 
   if (isLoadingSession || isTransitioning || (activeDeck.length === 0 && (isLoading || isFetchingNextPage))) {
     return <DeckLoading />;
@@ -267,7 +267,12 @@ export function CardDeck() {
       {sessionStatus?.code && members && members.length > 0 ? (
         <div className="h-8.75">
           <UserAvatarList
-            users={members.map((m) => ({ userId: m.externalUserId, userName: m.externalUserName }))}
+            users={members.map((m) => ({ 
+              userId: m.externalUserId, 
+              userName: m.externalUserName,
+              hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+              profileUpdatedAt: m.profileUpdatedAt
+            }))}
             size="md"
           />
         </div>
@@ -294,11 +299,11 @@ export function CardDeck() {
                   ref={getCardRef(item.Id)}
                   item={item}
                   index={zIndex}
-                  onSwipe={onSwipe}
-                  onCardLeftScreen={onCardLeftScreen}
-                  onClick={() => openMovie(item.Id, {showLikedBy: false} )}
-                  preventSwipe={prevent}
-                />
+                   onSwipe={onSwipe}
+                   onCardLeftScreen={onCardLeftScreen}
+                   onClick={() => openMovie(item.Id, { showLikedBy: true, sessionCode })}
+                   preventSwipe={prevent}
+                 />
               );
             })}
           </>
@@ -318,6 +323,7 @@ export function CardDeck() {
 
       <MatchOverlay
         item={matchedItem}
+        sessionCode={sessionCode}
         onClose={() => setMatchedItem(null)}
       />
 

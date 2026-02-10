@@ -34,7 +34,8 @@ export function SmoothAvatar({
     // Determine if we should attempt to load an image
     // If hasImage is explicitly provided, respect it.
     // If it's the current user, we can trust session.hasCustomProfilePicture.
-    const knownNoImage = hasImage === false || (isCurrentUser && session?.hasCustomProfilePicture === false);
+    // We use !! to handle potential 0/1 from database
+    const knownNoImage = (hasImage !== undefined && !hasImage) || (isCurrentUser && session?.hasCustomProfilePicture === false);
 
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>(() => {
         if (!isActuallyUser || knownNoImage) return 'error';
@@ -55,10 +56,10 @@ export function SmoothAvatar({
     useEffect(() => {
         if (knownNoImage) {
             setStatus('error');
-        } else if (imageUrl && status === 'error') {
+        } else if (imageUrl) {
             setStatus('loading');
         }
-    }, [knownNoImage, imageUrl, status]);
+    }, [knownNoImage, imageUrl]);
 
     return (
         <div className={cn("relative flex shrink-0 overflow-hidden rounded-full bg-muted", className)}>

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
-import { db, likes as likesTable, sessionMembers, type Like } from "@/lib/db";
-import { eq, and, isNotNull, isNull, desc, inArray } from "drizzle-orm";
+import { db, likes as likesTable, sessionMembers, userProfiles, type Like } from "@/lib/db";
+import { eq, and, isNotNull, isNull, desc, inArray, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData, type MediaItem, type MergedLike } from "@/types";
 import { events, EVENT_TYPES } from "@/lib/events";
@@ -57,7 +57,16 @@ export async function GET(request: NextRequest) {
             inArray(likesTable.sessionCode, sessionCodes as string[]),
             inArray(likesTable.externalId, Array.from(itemsMap.keys()))
         ));
-        members = await db.select().from(sessionMembers).where(
+        members = await db.select({
+            externalUserId: sessionMembers.externalUserId,
+            externalUserName: sessionMembers.externalUserName,
+            sessionCode: sessionMembers.sessionCode,
+            hasCustomProfilePicture: sql<boolean>`CASE WHEN ${userProfiles.userId} IS NOT NULL THEN 1 ELSE 0 END`,
+            profileUpdatedAt: userProfiles.updatedAt,
+        })
+        .from(sessionMembers)
+        .leftJoin(userProfiles, eq(sessionMembers.externalUserId, userProfiles.userId))
+        .where(
             inArray(sessionMembers.sessionCode, sessionCodes as string[])
         );
     }
@@ -73,10 +82,15 @@ export async function GET(request: NextRequest) {
             swipedAt: likeData.createdAt,
             sessionCode: likeData.sessionCode,
             isMatch: likeData.isMatch ?? false,
-            likedBy: likeData.sessionCode ? itemLikes.map((l: any) => ({
-                userId: l.externalUserId,
-                userName: members.find((m: any) => m.externalUserId === l.externalUserId && m.sessionCode === l.sessionCode)?.externalUserName || "Unknown"
-            })) : [{ userId: session.user.Id, userName: session.user.Name }]
+            likedBy: likeData.sessionCode ? itemLikes.map((l: any) => {
+                const member = members.find((m: any) => m.externalUserId === l.externalUserId && m.sessionCode === l.sessionCode);
+                return {
+                    userId: l.externalUserId,
+                    userName: member?.externalUserName || "Unknown",
+                    hasCustomProfilePicture: !!member?.hasCustomProfilePicture,
+                    profileUpdatedAt: member?.profileUpdatedAt,
+                };
+            }) : []
         };
     }).filter((l: MergedLike | null): l is MergedLike => l !== null);
 

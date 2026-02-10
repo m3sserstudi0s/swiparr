@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const searchParams = request.nextUrl.searchParams;
   const isUserType = searchParams.get("type") === "user";
   const imageType = searchParams.get("imageType") || "Primary";
-  const tag = searchParams.get("tag");
+  const tag = searchParams.get("tag") === "undefined" ? null : searchParams.get("tag");
 
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
@@ -45,6 +45,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const providerType = searchParams.get("provider") || auth?.provider;
   const provider = getMediaProvider(providerType);
 
+  // If no tag is provided, some providers (like TMDB) might use the ID if it looks like a path
+  const effectiveTag = tag || (providerType === 'tmdb' ? id : undefined);
+
+  if (!effectiveTag && !isUserType && providerType === 'tmdb') {
+    return new NextResponse("Missing image tag", { status: 400 });
+  }
+
   try {
     const options: Record<string, string> = {};
     searchParams.forEach((value, key) => {
@@ -53,7 +60,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
     });
 
-    const response = await provider.fetchImage(id, isUserType ? "user" : imageType, tag || undefined, auth, options);
+    const response = await provider.fetchImage(id, isUserType ? "user" : imageType, effectiveTag || undefined, auth, options);
 
     return new NextResponse(response.data as any, {
       status: 200,

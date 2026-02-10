@@ -67,7 +67,9 @@ export function useSwipe() {
               {
                 userId: session?.userId || '',
                 userName: session?.userName || 'Me',
-                sessionCode: payload.sessionCode || sessionCode
+                sessionCode: payload.sessionCode || sessionCode,
+                hasCustomProfilePicture: session?.hasCustomProfilePicture,
+                profileUpdatedAt: session?.profileUpdatedAt
               }
             ]
           };
@@ -123,7 +125,7 @@ export function useUndoSwipe() {
 
       queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
         if (!Array.isArray(old)) return old;
-        return old.filter((item: any) => item.Id !== itemId);
+        return old.filter((item: any) => !(item.Id === itemId && (item.sessionCode ?? null) === sessionCode));
       });
 
       return { previousLikesQueries };

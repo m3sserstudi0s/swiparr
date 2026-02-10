@@ -65,7 +65,10 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
         isCondensed ? "relative shrink-0 w-15 h-22" : "relative shrink-0 w-20 h-28",
       )}>
         <OptimizedImage
-          src={`/api/media/image/${currentMovie.Id}?tag=${currentMovie.ImageTags?.Primary}`}
+          src={currentMovie.ImageTags?.Primary 
+            ? `/api/media/image/${currentMovie.Id}?tag=${currentMovie.ImageTags?.Primary}`
+            : `/api/media/image/${currentMovie.Id}`
+          }
           alt={currentMovie.Name}
           externalId={currentMovie.Id}
           height={100}
@@ -106,7 +109,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
               </span>
             )}
             <div className="ml-auto">
-              {currentMovie.likedBy && currentMovie.likedBy.length > 0 && (
+              {currentMovie.sessionCode && currentMovie.likedBy && currentMovie.likedBy.length > 0 && (
                 <UserAvatarList
                   users={currentMovie.likedBy}
                   size="sm"

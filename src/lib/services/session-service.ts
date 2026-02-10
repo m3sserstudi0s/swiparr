@@ -259,7 +259,15 @@ export class SessionService {
 
       if (sessionCode) {
         const [members, existingLikes, totalMatchCount] = await Promise.all([
-          db.query.sessionMembers.findMany({ where: eq(sessionMembers.sessionCode, sessionCode) }),
+          db.select({
+            externalUserId: sessionMembers.externalUserId,
+            externalUserName: sessionMembers.externalUserName,
+            hasCustomProfilePicture: sql<boolean>`CASE WHEN ${userProfiles.userId} IS NOT NULL THEN 1 ELSE 0 END`,
+            profileUpdatedAt: userProfiles.updatedAt,
+          })
+          .from(sessionMembers)
+          .leftJoin(userProfiles, eq(sessionMembers.externalUserId, userProfiles.userId))
+          .where(eq(sessionMembers.sessionCode, sessionCode)),
           db.query.likes.findMany({
             where: and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId), ne(likes.externalUserId, user.Id))
           }),
@@ -287,12 +295,23 @@ export class SessionService {
           const allItemLikes = await db.query.likes.findMany({
             where: and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId))
           });
-          likedBy = allItemLikes.map((l: any) => ({
-            userId: l.externalUserId,
-            userName: members.find((m: any) => m.externalUserId === l.externalUserId)?.externalUserName || "Unknown"
-          }));
+          likedBy = allItemLikes.map((l: any) => {
+            const member = members.find((m: any) => m.externalUserId === l.externalUserId);
+            return {
+              userId: l.externalUserId,
+              userName: member?.externalUserName || "Unknown",
+              hasCustomProfilePicture: !!member?.hasCustomProfilePicture,
+              profileUpdatedAt: member?.profileUpdatedAt,
+            };
+          });
           // Add current user to likedBy since they are not in the DB yet
-          likedBy.push({ userId: user.Id, userName: user.Name });
+          const currentUserProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, user.Id) });
+          likedBy.push({ 
+            userId: user.Id, 
+            userName: user.Name,
+            hasCustomProfilePicture: !!currentUserProfile,
+            profileUpdatedAt: currentUserProfile?.updatedAt,
+          });
         }
       }
 

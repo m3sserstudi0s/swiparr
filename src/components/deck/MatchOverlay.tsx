@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface MatchOverlayProps {
   item: MediaItem | null;
+  sessionCode?: string | null;
   onClose: () => void;
 }
 
-export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
+export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) {
   const { openMovie } = useMovieDetail();
 
   return (
@@ -32,14 +33,14 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
               transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="relative flex flex-col items-center text-center max-w-sm w-full outline-none"
+              className="relative flex flex-col items-center text-center max-w-sm w-full outline-none mt-10"
             >
               {/* Animated Heart Background */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: [1.2, 1.4, 1.2] }}
                 transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute -top-20 opacity-40 pointer-events-none"
+                className="absolute -top-15 opacity-40 pointer-events-none"
               >
                 <Heart className="w-80 h-80 fill-neutral-900 text-neutral-900" />
               </motion.div>
@@ -47,7 +48,7 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
               <h1 className="text-5xl font-black italic text-white mb-2 drop-shadow-2xl tracking-tighter uppercase">
                 It's a match!
               </h1>
-              <p className="text-white/80 text-lg mb-8 px-4">
+              <p className="text-white/90 md:text-md text-lg mb-4 px-4">
                 You and {item.likedBy && item.likedBy.length > 2 ? `${item.likedBy.length - 1} others` : item.likedBy && item.likedBy.length === 2 ? (item.likedBy.find(u => u.userId !== item.likedBy?.[0].userId)?.userName || 'someone') : 'someone'} want to watch <span className="text-white font-bold">{item.Name}</span>
               </p>
 
@@ -59,11 +60,14 @@ export function MatchOverlay({ item, onClose }: MatchOverlayProps) {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="relative w-64 h-96 mb-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => { openMovie(item.Id); onClose(); }}
+                className="relative w-64 h-96 mb-7 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => { openMovie(item.Id, { sessionCode }); onClose(); }}
               >
                 <OptimizedImage
-                  src={`/api/media/image/${item.Id}?tag=${item.ImageTags?.Primary}`}
+                  src={item.ImageTags?.Primary 
+                    ? `/api/media/image/${item.Id}?tag=${item.ImageTags?.Primary}`
+                    : `/api/media/image/${item.Id}`
+                  }
                   alt={item.Name}
                   externalId={item.Id}
                   blurDataURL={item.BlurDataURL}

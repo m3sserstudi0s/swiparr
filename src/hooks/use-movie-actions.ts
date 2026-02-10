@@ -17,17 +17,30 @@ interface UseMovieActionsOptions {
 }
 
 export function useMovieActions<T extends MediaItem>(initialMovie: T | null, options: UseMovieActionsOptions = {}) {
-  const { onUnlikeSuccess, sessionCode, syncData = true } = options;
+  const { onUnlikeSuccess, sessionCode: optionsSessionCode, syncData = true } = options;
   const queryClient = useQueryClient();
   const { settings } = useSettings();
   const { data: sessionData } = useSession();
 
+  // Determine the effective session code for this movie action
+  // Preference: 
+  // 1. Explicitly passed sessionCode in options
+  // 2. sessionCode property from the movie object itself (crucial for LikesList)
+  // 3. Current active session code from sessionData (for deck/new swipes)
+  const movieSessionCode = optionsSessionCode !== undefined 
+    ? optionsSessionCode 
+    : (initialMovie && 'sessionCode' in initialMovie 
+        ? (initialMovie as any).sessionCode 
+        : (sessionData?.code ?? null));
+
   // Subscribe to the movie query to keep state in sync across components
   const { data: syncedMovie } = useQuery({
-    queryKey: QUERY_KEYS.movie(initialMovie?.Id || null),
+    queryKey: QUERY_KEYS.movie(initialMovie?.Id || null, movieSessionCode),
     queryFn: async () => {
       if (!initialMovie?.Id) return null;
-      const res = await apiClient.get<MediaItem>(`/api/media/item/${initialMovie.Id}`);
+      // Pass sessionCode to API to get the correct likedBy context
+      const codeParam = movieSessionCode === null ? "" : (movieSessionCode ?? "");
+      const res = await apiClient.get<MediaItem>(`/api/media/item/${initialMovie.Id}?sessionCode=${codeParam}`);
       return res.data;
     },
     enabled: !!initialMovie?.Id && syncData,
@@ -45,8 +58,10 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
 
   const isInList = (useWatchlist ? currentMovie?.UserData?.Likes : currentMovie?.UserData?.IsFavorite) ?? false;
   
-  // A movie is liked by me if it's in the likedBy list OR if it's a MergedLike and we're in the likes list
-  const isLikedByMe = options.isLiked || (currentMovie?.likedBy?.some(l => l.userId === sessionData?.userId) ?? false);
+  // A movie is liked by me if it's in the likedBy list for the CORRECT session context
+  const isLikedByMe = options.isLiked || (currentMovie?.likedBy?.some(l => 
+    l.userId === sessionData?.userId && (l.sessionCode ?? null) === movieSessionCode
+  ) ?? false);
 
   const { mutateAsync: toggleWatchlist, isPending: isTogglingWatchlist } = useMutation({
     mutationFn: async (actionOverride?: "add" | "remove") => {
@@ -63,14 +78,13 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         const action = actionOverride || (isInList ? "remove" : "add");
         const nextValue = action === "add";
         
-        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
-        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        await queryClient.cancelQueries({ queryKey: movieKey });
 
-        const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
-        const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
+        const previousMovie = queryClient.getQueryData(movieKey);
         
         if (currentMovie?.Id) {
-            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
+            queryClient.setQueryData(movieKey, (old: any) => {
                 if (!old) return old;
                 return {
                     ...old,
@@ -80,38 +94,18 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
                     }
                 };
             });
-
-            queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
-                if (!Array.isArray(old)) return old;
-                return old.map((item: any) => {
-                    if (item.Id === currentMovie.Id) {
-                        return {
-                            ...item,
-                            UserData: {
-                                ...item.UserData,
-                                [useWatchlist ? 'Likes' : 'IsFavorite']: nextValue
-                            }
-                        };
-                    }
-                    return item;
-                });
-            });
         }
         
-        return { previousMovie, previousLikesQueries };
+        return { previousMovie };
     },
     onError: (err, variables, context) => {
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
         if (currentMovie?.Id && context?.previousMovie) {
-            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), context.previousMovie);
-        }
-        if (context?.previousLikesQueries) {
-            context.previousLikesQueries.forEach(([queryKey, data]) => {
-                queryClient.setQueryData(queryKey, data);
-            });
+            queryClient.setQueryData(movieKey, context.previousMovie);
         }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode) });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
     },
   });
@@ -145,50 +139,23 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
   const { mutateAsync: relike } = useMutation({
     mutationFn: async () => {
       if (!currentMovie) return;
-      const userLike = currentMovie.likedBy?.find(l => l.userId === sessionData?.userId);
-      const movieSessionCode = (currentMovie as any).sessionCode;
-      const targetSessionCode = userLike?.sessionCode ?? movieSessionCode ?? sessionCode;
-
       await apiClient.post("/api/swipe", {
         itemId: currentMovie.Id,
         direction: "right",
         item: currentMovie,
-        sessionCode: targetSessionCode || null
+        sessionCode: movieSessionCode
       });
     },
     onMutate: async () => {
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        await queryClient.cancelQueries({ queryKey: movieKey });
         await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
-        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
 
-        const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
-        const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
+        const previousMovie = queryClient.getQueryData(movieKey);
+        const previousLikes = queryClient.getQueryData(QUERY_KEYS.likes);
 
         if (currentMovie) {
-            const userLike = currentMovie.likedBy?.find(l => l.userId === sessionData?.userId);
-            const movieSessionCode = (currentMovie as any).sessionCode;
-            const targetSessionCode = userLike?.sessionCode ?? movieSessionCode ?? sessionCode ?? null;
-
-            queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
-                if (!Array.isArray(old)) return old;
-                if (old.some((item: any) => item.Id === currentMovie.Id && (item.sessionCode ?? null) === targetSessionCode)) return old;
-
-                const newLike = {
-                    ...currentMovie,
-                    swipedAt: new Date().toISOString(),
-                    sessionCode: targetSessionCode,
-                    likedBy: [
-                        ...(currentMovie.likedBy || []).filter(l => l.userId !== sessionData?.userId),
-                        {
-                            userId: sessionData?.userId || '',
-                            userName: sessionData?.userName || 'Me',
-                            sessionCode: targetSessionCode
-                        }
-                    ]
-                };
-                return [newLike, ...old];
-            });
-
-            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
+            queryClient.setQueryData(movieKey, (old: any) => {
                 if (!old) return old;
                 return {
                     ...old,
@@ -197,27 +164,31 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
                         {
                             userId: sessionData?.userId || '',
                             userName: sessionData?.userName || 'Me',
-                            sessionCode: targetSessionCode
+                            sessionCode: movieSessionCode,
+                            hasCustomProfilePicture: sessionData?.hasCustomProfilePicture,
+                            profileUpdatedAt: sessionData?.profileUpdatedAt
                         }
                     ]
                 };
             });
+
+            // For relike, we don't optimistically add to the likes list because it's complex to reconstruct the MergedLike
+            // The invalidation will handle it
         }
 
-        return { previousLikesQueries, previousMovie };
+        return { previousMovie, previousLikes };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode) });
     },
     onError: (err, variables, context) => {
-      if (context?.previousLikesQueries) {
-          context.previousLikesQueries.forEach(([queryKey, data]) => {
-              queryClient.setQueryData(queryKey, data);
-          });
+      const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+      if (context?.previousLikes) {
+          queryClient.setQueryData(QUERY_KEYS.likes, context.previousLikes);
       }
       if (currentMovie?.Id && context?.previousMovie) {
-          queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), context.previousMovie);
+          queryClient.setQueryData(movieKey, context.previousMovie);
       }
       toast.error("Failed to re-like movie", {
         description: getErrorMessage(err)
@@ -228,55 +199,52 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
   const { mutateAsync: unlike, isPending: isUnliking } = useMutation({
     mutationFn: async () => {
       if (!currentMovie) return;
-      const userLike = currentMovie.likedBy?.find(l => l.userId === sessionData?.userId);
-      const movieSessionCode = (currentMovie as any).sessionCode;
-      const targetSessionCode = userLike?.sessionCode ?? movieSessionCode ?? sessionCode;
       
-      // Use empty string for solo likes if we have a null sessionCode
-      const codeParam = targetSessionCode === null ? "" : (targetSessionCode ?? "");
-      const sessionParam = (targetSessionCode !== undefined) ? `&sessionCode=${codeParam}` : "";
+      const codeParam = movieSessionCode === null ? "" : (movieSessionCode ?? "");
+      const sessionParam = (movieSessionCode !== undefined) ? `&sessionCode=${codeParam}` : "";
 
       await apiClient.delete(`/api/user/likes?itemId=${currentMovie.Id}${sessionParam}`);
     },
     onMutate: async () => {
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        await queryClient.cancelQueries({ queryKey: movieKey });
         await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
-        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
 
-        const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
-        const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
+        const previousMovie = queryClient.getQueryData(movieKey);
+        const previousLikes = queryClient.getQueryData(QUERY_KEYS.likes);
 
         if (currentMovie) {
-            const movieSessionCode = (currentMovie as any).sessionCode ?? null;
-            
-            queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
-                if (!Array.isArray(old)) return old;
-                return old.filter((item: any) => !(item.Id === currentMovie.Id && (item.sessionCode ?? null) === movieSessionCode));
-            });
-
-            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
+            // Update the individual movie state
+            queryClient.setQueryData(movieKey, (old: any) => {
                 if (!old) return old;
                 return {
                     ...old,
                     likedBy: (old.likedBy || []).filter((l: any) => !(l.userId === sessionData?.userId && (l.sessionCode ?? null) === movieSessionCode))
                 };
             });
+
+            // Optimistically remove from likes list
+            queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
+                if (!Array.isArray(old)) return old;
+                return old.filter((item: any) => !(item.Id === currentMovie.Id && (item.sessionCode ?? null) === movieSessionCode));
+            });
         }
 
-        return { previousLikesQueries, previousMovie };
+        return { previousMovie, previousLikes };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode) });
       onUnlikeSuccess?.();
     },
     onError: (err, variables, context) => {
-        if (context?.previousLikesQueries) {
-            context.previousLikesQueries.forEach(([queryKey, data]) => {
-                queryClient.setQueryData(queryKey, data);
-            });
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        if (context?.previousLikes) {
+            // Re-evaluating setQueriesData for error recovery is hard, just invalidate
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
         }
         if (currentMovie?.Id && context?.previousMovie) {
-            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), context.previousMovie);
+            queryClient.setQueryData(movieKey, context.previousMovie);
         }
     }
   });

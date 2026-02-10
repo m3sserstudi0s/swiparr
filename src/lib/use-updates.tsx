@@ -59,6 +59,9 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+                if (data.itemId) {
+                    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode) });
+                }
 
                 if (userId && data.swiperId !== userId) {
                     toast.success(<p>Match! <span className='font-semibold italic'>{data.itemName}</span></p>, {
@@ -78,6 +81,9 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+                if (data.itemId) {
+                    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode) });
+                }
             }
         };
 
@@ -162,6 +168,8 @@ export function useUpdates() {
             if (data.sessionCode === sessionCode) {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+                queryClient.invalidateQueries({ queryKey: ["movie"] });
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
                 queryClient.invalidateQueries({ queryKey: ["media", "watchProviders"] });
                 
@@ -177,6 +185,9 @@ export function useUpdates() {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+                if (data.itemId) {
+                    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode) });
+                }
             }
         };
 

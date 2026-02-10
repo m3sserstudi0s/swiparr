@@ -32,8 +32,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   const scrollY = useMotionValue(0);
 
   // 2. Define transforms based on that value (0 to 300px of scroll)
-  const imgY = useTransform(scrollY, [0, 300], [0, 100]);
-  const imgOpacity = useTransform(scrollY, [0, 200], [0.85, 0.2]);
+  const imgY = useTransform(scrollY, [0, 300], [0, 300]);
+  const imgOpacity = useTransform(scrollY, [0, 200], [0.75, 0.2]);
   const imgScale = useTransform(scrollY, [0, 300], [1, 1.1]);
 
   // Handle scroll event manually to update the motion value
@@ -42,10 +42,11 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   };
 
   const { data: movie, isLoading: isMovieLoading } = useQuery({
-    queryKey: QUERY_KEYS.movie(movieId),
+    queryKey: QUERY_KEYS.movie(movieId, sessionCode),
     queryFn: async () => {
       if (!movieId) return null;
-      const res = await apiClient.get<MediaItem>(`/api/media/item/${movieId}`);
+      const codeParam = sessionCode === null ? "" : (sessionCode ?? "");
+      const res = await apiClient.get<MediaItem>(`/api/media/item/${movieId}?sessionCode=${codeParam}`);
       return res.data;
     },
     enabled: !!movieId,
@@ -88,7 +89,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
           onScroll={handleScroll} // Update motion value here
           className={cn(
             "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-3 no-scrollbar relative",
-            "mask-[linear-gradient(to_bottom,transparent_0%,black_10px,black_calc(100%-80px),transparent_100%)]"
+            "mask-[linear-gradient(to_bottom,transparent_0%,black_80px,black_calc(100%-80px),transparent_100%)]"
           )}>
 
           {isLoading ? (
@@ -118,9 +119,9 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   className="absolute inset-x-0 w-full h-full"
                 >
                   <OptimizedImage
-                    src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0
+                    src={movie.BackdropImageTags && movie.BackdropImageTags.length > 0 && movie.BackdropImageTags[0]
                       ? `/api/media/image/${movie.Id}?imageType=Backdrop&tag=${movie.BackdropImageTags[0]}`
-                      : `/api/media/image/${movie.Id}`
+                      : `/api/media/image/${movie.Id}?imageType=Backdrop`
                     }
                     externalId={movie.Id}
                     imageType="Backdrop"
@@ -130,7 +131,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     className={cn(
                       'w-full h-full object-cover',
                       // fade out top and bottom
-                      'mask-[linear-gradient(to_bottom,transparent,black_25%,black_50%,transparent)]',
+                      'mask-[linear-gradient(to_bottom,transparent,black_10%,black_50%,transparent)]',
                       'mask-no-repeat'
                     )}
                   />
@@ -139,7 +140,10 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 {/* Header Content */}
                 <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
                   <OptimizedImage
-                    src={`/api/media/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`}
+                    src={movie.ImageTags?.Primary 
+                      ? `/api/media/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`
+                      : `/api/media/image/${movie.Id}?imageType=Primary`
+                    }
                     externalId={movie.Id}
                     imageType="Primary"
                     width={75}
@@ -241,7 +245,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 }
 
                 {/* LIKED BY */}
-                {showLikedBy && movie.likedBy && movie.likedBy.length > 0 && sessionData?.code && (
+                {showLikedBy && movie.likedBy && movie.likedBy.length > 0 && (movie as any).sessionCode && (
                   <div className="mb-8 bg-muted/20 p-4 rounded-xl border border-border/50">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3" >Liked By</h3>
                     <UserAvatarList users={movie.likedBy} size="lg" />

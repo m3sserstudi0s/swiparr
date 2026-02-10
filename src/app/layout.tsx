@@ -1,6 +1,6 @@
-import type { Metadata, Viewport } from 'next'
-import { Google_Sans_Flex, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import type { Metadata, Viewport } from 'next'
+import { JetBrains_Mono, Zalando_Sans } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
 import { TouchProvider } from '@/components/ui/hybrid-tooltip'
@@ -8,12 +8,12 @@ import { TouchProvider } from '@/components/ui/hybrid-tooltip'
 export const dynamic = 'force-dynamic';
 
 
-const sansFlex = Google_Sans_Flex({
+const sansFlex = Zalando_Sans({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-sans',
-  fallback: ['Arial', 'sans-serif'],
-  adjustFontFallback: false,
+  adjustFontFallback: true,
+  fallback: ["Arial", "Times New Roman"],
 })
 
 const jetbrainsMono = JetBrains_Mono({
