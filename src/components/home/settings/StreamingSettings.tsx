@@ -144,7 +144,7 @@ export function StreamingSettings() {
                         <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-44 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
                             <div className="flex items-center gap-2 truncate">
                                 {selectedRegion && (
-                                    <div className="w-4 h-3 overflow-hidden rounded-[1px] shrink-0 border border-border/50">
+                                    <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0 border border-border/50">
                                         <CountryFlag countryCode={selectedRegion.Id} />
                                     </div>
                                 )}
