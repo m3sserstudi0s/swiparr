@@ -37,6 +37,29 @@ export class EmbyProvider implements MediaProvider {
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     const hasLanguageFilter = filters.languages && filters.languages.length > 0;
     
+    // If multiple libraries are selected, we need to fetch from each one and merge
+    // Emby's ParentId only supports a single ID
+    if (filters.libraries && filters.libraries.length > 1) {
+      const allResults = await Promise.all(
+        filters.libraries.map(libId => 
+          this.getItems({ ...filters, libraries: [libId] }, auth)
+        )
+      );
+      
+      // Merge results
+      const merged = allResults.flat();
+      
+      // Deduplicate by ID just in case
+      const seen = new Set();
+      const unique = merged.filter(item => {
+        if (seen.has(item.Id)) return false;
+        seen.add(item.Id);
+        return true;
+      });
+
+      return unique.slice(0, filters.limit || 20);
+    }
+
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
@@ -48,7 +71,7 @@ export class EmbyProvider implements MediaProvider {
               filters.sortBy === "Top Rated" ? "CommunityRating" :
               (filters.sortBy || "SortName"),
       SortOrder: (filters.sortBy === "Random" || filters.sortBy === "Popular" || filters.sortBy === "Newest" || filters.sortBy === "Top Rated") ? "Descending" : "Ascending",
-      ParentId: filters.libraries?.join(",") || undefined,
+      ParentId: filters.libraries?.[0] || undefined,
       Genres: filters.genres?.join("|") || undefined, 
       Years: filters.years?.join(",") || undefined,
       OfficialRatings: filters.ratings?.join("|") || undefined,
