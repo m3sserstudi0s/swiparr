@@ -164,19 +164,24 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
 
         if (currentMovie) {
+            const userLike = currentMovie.likedBy?.find(l => l.userId === sessionData?.userId);
+            const movieSessionCode = (currentMovie as any).sessionCode;
+            const targetSessionCode = userLike?.sessionCode ?? movieSessionCode ?? sessionCode ?? null;
+
             queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
                 if (!Array.isArray(old)) return old;
-                if (old.some((item: any) => item.Id === currentMovie.Id)) return old;
+                if (old.some((item: any) => item.Id === currentMovie.Id && (item.sessionCode ?? null) === targetSessionCode)) return old;
 
                 const newLike = {
                     ...currentMovie,
                     swipedAt: new Date().toISOString(),
+                    sessionCode: targetSessionCode,
                     likedBy: [
-                        ...(currentMovie.likedBy || []),
+                        ...(currentMovie.likedBy || []).filter(l => l.userId !== sessionData?.userId),
                         {
                             userId: sessionData?.userId || '',
                             userName: sessionData?.userName || 'Me',
-                            sessionCode: sessionCode || null
+                            sessionCode: targetSessionCode
                         }
                     ]
                 };
@@ -188,11 +193,11 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
                 return {
                     ...old,
                     likedBy: [
-                        ...(old.likedBy || []),
+                        ...(old.likedBy || []).filter((l: any) => l.userId !== sessionData?.userId),
                         {
                             userId: sessionData?.userId || '',
                             userName: sessionData?.userName || 'Me',
-                            sessionCode: sessionCode || null
+                            sessionCode: targetSessionCode
                         }
                     ]
                 };
@@ -241,16 +246,18 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
 
         if (currentMovie) {
+            const movieSessionCode = (currentMovie as any).sessionCode ?? null;
+            
             queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
                 if (!Array.isArray(old)) return old;
-                return old.filter((item: any) => item.Id !== currentMovie.Id);
+                return old.filter((item: any) => !(item.Id === currentMovie.Id && (item.sessionCode ?? null) === movieSessionCode));
             });
 
             queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
                 if (!old) return old;
                 return {
                     ...old,
-                    likedBy: (old.likedBy || []).filter((l: any) => l.userId !== sessionData?.userId)
+                    likedBy: (old.likedBy || []).filter((l: any) => !(l.userId === sessionData?.userId && (l.sessionCode ?? null) === movieSessionCode))
                 };
             });
         }

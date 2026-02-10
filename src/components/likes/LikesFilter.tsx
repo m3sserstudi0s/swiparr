@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -24,6 +25,20 @@ interface FilterProps {
 }
 
 export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: FilterProps) {
+  const isSoloMode = filterMode === "solo";
+
+  useEffect(() => {
+    if (isSoloMode && sortBy === "likes") {
+      setSortBy("date");
+    }
+  }, [isSoloMode, sortBy, setSortBy]);
+
+  const handleSortChange = (v: string) => {
+    if (!v) return;
+    if (v === "likes" && isSoloMode) return;
+    setSortBy(v);
+  };
+
   return (
     <Drawer>
       <DrawerTrigger asChild>
@@ -45,7 +60,7 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
                 type="single" 
                 variant="outline"
                 value={sortBy} 
-                onValueChange={(v) => v && setSortBy(v)} 
+                onValueChange={handleSortChange} 
                 className="grid grid-cols-4 w-full"
               >
                 <ToggleGroupItem value="date" aria-label="Toggle date">
@@ -57,7 +72,7 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
                 <ToggleGroupItem value="rating" aria-label="Toggle rating">
                   Rating
                 </ToggleGroupItem>
-                <ToggleGroupItem value="likes" aria-label="Toggle likes">
+                <ToggleGroupItem value="likes" aria-label="Toggle likes" disabled={isSoloMode}>
                   Likes
                 </ToggleGroupItem>
               </ToggleGroup>

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { eq, and, ne, count, sql } from "drizzle-orm";
+import { eq, and, ne, count, sql, isNull } from "drizzle-orm";
 import { db, sessions, sessionMembers, likes, hiddens, userProfiles } from "@/lib/db";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { SessionSettings, Filters, SessionData } from "@/types";
@@ -324,15 +324,14 @@ export class SessionService {
     return { isMatch, likedBy, matchBlockedByLimit };
   }
 
-  static async removeSwipe(user: SessionData["user"], itemId: string) {
-    const sessionCode = (user as any).sessionCode; // We might need to pass this explicitly if not in user object
-    // Actually, it's better to pass sessionCode explicitly or get it from session
-    // For now, assume it might be in the user session context
-  }
-
-  // Refactored remove swipe to take sessionCode
   static async deleteSwipe(user: SessionData["user"], itemId: string, sessionCode?: string | null) {
-    await db.delete(likes).where(and(eq(likes.externalUserId, user.Id), eq(likes.externalId, itemId)));
+    await db.delete(likes).where(
+      and(
+        eq(likes.externalUserId, user.Id), 
+        eq(likes.externalId, itemId),
+        sessionCode ? eq(likes.sessionCode, sessionCode) : isNull(likes.sessionCode)
+      )
+    );
     
     if (sessionCode) {
       const [s, remainingLikes, members] = await Promise.all([

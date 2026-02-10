@@ -36,18 +36,17 @@ export async function GET(request: NextRequest) {
 
     if (likesResult.length === 0) return NextResponse.json([]);
 
-    const ids = likesResult.map((l: Like) => l.externalId);
+    const ids = [...new Set(likesResult.map((l: Like) => l.externalId))] as string[];
     
-    const itemsPromises = ids.map(async (id: any) => {
+    const itemsMap = new Map<string, MediaItem>();
+    await Promise.all(ids.map(async (id: string) => {
         try {
-            return await provider.getItemDetails(id, auth);
+            const item = await provider.getItemDetails(id, auth);
+            if (item) itemsMap.set(id, item);
         } catch (error) {
-            return null;
+            console.error(`Failed to fetch details for ${id}`, error);
         }
-    });
-
-    const itemsResults = await Promise.all(itemsPromises);
-    const items = itemsResults.filter((item): item is MediaItem => item !== null);
+    }));
 
     const sessionCodes = [...new Set(likesResult.map((l: any) => l.sessionCode).filter(Boolean))];
     let allRelatedLikes: any[] = [];
@@ -56,28 +55,30 @@ export async function GET(request: NextRequest) {
     if (sessionCodes.length > 0) {
         allRelatedLikes = await db.select().from(likesTable).where(and(
             inArray(likesTable.sessionCode, sessionCodes as string[]),
-            inArray(likesTable.externalId, items.map((i: any) => i.Id))
+            inArray(likesTable.externalId, Array.from(itemsMap.keys()))
         ));
         members = await db.select().from(sessionMembers).where(
             inArray(sessionMembers.sessionCode, sessionCodes as string[])
         );
     }
 
-    let merged: MergedLike[] = items.map((item: MediaItem) => {
-        const likeData = likesResult.find((l: Like) => l.externalId === item.Id);
-        const itemLikes = allRelatedLikes.filter((l: any) => l.externalId === item.Id && l.sessionCode === likeData?.sessionCode);
+    let merged: MergedLike[] = likesResult.map((likeData: Like) => {
+        const item = itemsMap.get(likeData.externalId);
+        if (!item) return null;
+
+        const itemLikes = allRelatedLikes.filter((l: any) => l.externalId === item.Id && l.sessionCode === likeData.sessionCode);
         
         return {
             ...item,
-            swipedAt: likeData?.createdAt,
-            sessionCode: likeData?.sessionCode,
-            isMatch: likeData?.isMatch ?? false,
-            likedBy: itemLikes.map((l: any) => ({
+            swipedAt: likeData.createdAt,
+            sessionCode: likeData.sessionCode,
+            isMatch: likeData.isMatch ?? false,
+            likedBy: likeData.sessionCode ? itemLikes.map((l: any) => ({
                 userId: l.externalUserId,
                 userName: members.find((m: any) => m.externalUserId === l.externalUserId && m.sessionCode === l.sessionCode)?.externalUserName || "Unknown"
-            }))
+            })) : [{ userId: session.user.Id, userName: session.user.Name }]
         };
-    });
+    }).filter((l: MergedLike | null): l is MergedLike => l !== null);
 
     if (sortBy === "year") {
         merged.sort((a, b) => (b.ProductionYear || 0) - (a.ProductionYear || 0));

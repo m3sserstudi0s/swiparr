@@ -62,7 +62,7 @@ export function LikesList() {
                 <div className="mt-7 mb-14">
                 {likes?.map((movie: MergedLike) => (
                     <MovieListItem
-                        key={movie.Id}
+                        key={`${movie.Id}-${movie.sessionCode ?? 'solo'}`}
                         movie={movie}
                         onClick={() => openMovie(movie.Id, { sessionCode: movie.sessionCode })}
                         isLiked={true}
