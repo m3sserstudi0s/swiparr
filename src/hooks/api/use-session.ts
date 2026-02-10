@@ -4,7 +4,7 @@ import { SessionStatus, Filters, SessionSettings } from "@/types";
 import { QUERY_KEYS } from "./query-keys";
 import { toast } from "sonner";
 
-export function useSession() {
+export function useSession(options: { enabled?: boolean } = {}) {
   return useQuery<SessionStatus | null>({
     queryKey: QUERY_KEYS.session,
     queryFn: async () => {
@@ -22,7 +22,8 @@ export function useSession() {
     refetchInterval: (query) => {
       // Poll more frequently if we are in a session to catch filter/settings updates from other users
       return query.state.data?.code ? 5000 : false;
-    }
+    },
+    ...options
   });
 }
 

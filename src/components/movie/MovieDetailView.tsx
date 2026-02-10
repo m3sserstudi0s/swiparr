@@ -68,7 +68,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   });
 
   const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities } = useRuntimeConfig();
-  const { data: sessionStatus } = useSession();
+  const { data: sessionStatus } = useSession({ enabled: !!movieId });
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
   const serverPublicUrl = sessionStatus?.serverUrl || runtimeServerUrl;
 

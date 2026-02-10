@@ -44,6 +44,8 @@ const envSchema = z.object({
   APP_VERSION: z.string().optional(),
   X_FRAME_OPTIONS: z.string().default('DENY'),
   CSP_FRAME_ANCESTORS: z.string().default('none'),
+
+  USE_ANALYTICS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 });
 
 const parsedEnv = envSchema.parse(process.env);
@@ -91,7 +93,6 @@ export const config = {
     basePath: BASE_PATH,
     appPublicUrl: parsedEnv.APP_PUBLIC_URL,
     provider: parsedEnv.PROVIDER,
-
     providerLock: parsedEnv.PROVIDER_LOCK,
     useWatchlist: parsedEnv.JELLYFIN_USE_WATCHLIST,
   },

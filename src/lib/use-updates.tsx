@@ -7,13 +7,15 @@ import React from 'react';
 import { useRuntimeConfig } from './runtime-config';
 import { apiClient } from './api-client';
 import { useSession, QUERY_KEYS, useLeaveSession } from '@/hooks/api';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export function useUpdates() {
     const queryClient = useQueryClient();
     const { openMovie } = useMovieDetail();
     const { basePath } = useRuntimeConfig();
-    const { data: session, isError, error } = useSession();
+    const pathname = usePathname();
+    const isLoginPage = pathname === '/login';
+    const { data: session, isError, error } = useSession({ enabled: !isLoginPage });
     const router = useRouter();
     
     useEffect(() => {

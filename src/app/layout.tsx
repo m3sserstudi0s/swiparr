@@ -5,6 +5,7 @@ import { Providers } from '@/components/providers'
 import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
 import { TouchProvider } from '@/components/ui/hybrid-tooltip'
 import { Analytics } from "@vercel/analytics/next"
+import { config as appConfig } from "@/lib/config";
 
 export const dynamic = 'force-dynamic';
 
@@ -83,7 +84,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const config = await getAsyncRuntimeConfig();
-  const useAnalytics = process.env.USE_ANALYTICS
+  const useAnalytics = appConfig.USE_ANALYTICS
 
   return (
     <html lang="en" suppressHydrationWarning>
