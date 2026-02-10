@@ -4,9 +4,9 @@ import { JetBrains_Mono, Zalando_Sans } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
 import { TouchProvider } from '@/components/ui/hybrid-tooltip'
+import { Analytics } from "@vercel/analytics/next"
 
 export const dynamic = 'force-dynamic';
-
 
 const sansFlex = Zalando_Sans({
   subsets: ['latin'],
@@ -83,6 +83,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const config = await getAsyncRuntimeConfig();
+  const useAnalytics = process.env.USE_ANALYTICS
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -96,6 +97,7 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${sansFlex.variable} ${jetbrainsMono.variable}`}>
+        {useAnalytics && <Analytics/>}
 
         <Providers
           attribute="class"
