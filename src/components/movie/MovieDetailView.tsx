@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck } from "lucide-react";
+import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, WatchProvider } from "@/types";
@@ -19,6 +19,7 @@ import { ticksToTime, cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 import { useMovieActions } from "@/hooks/use-movie-actions";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
+import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 
 interface Props {
   movieId: string | null;
@@ -41,7 +42,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     scrollY.set(e.currentTarget.scrollTop);
   };
 
-  const { data: movie, isLoading: isMovieLoading } = useQuery({
+  const { data: movie, isLoading } = useQuery({
     queryKey: QUERY_KEYS.movie(movieId, sessionCode),
     queryFn: async () => {
       if (!movieId) return null;
@@ -51,16 +52,6 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     },
     enabled: !!movieId,
   });
-
-  const { data: sessionData, isLoading: isSessionLoading } = useQuery({
-    queryKey: ["session"],
-    queryFn: async () => {
-      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
-      return res.data;
-    },
-  });
-
-  const isLoading = isMovieLoading || isSessionLoading;
 
   const {
     isInList,
@@ -205,44 +196,53 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   </div>
                 )}
 
-                {(capabilities.requiresServerUrl || (!isGuest && capabilities.hasWatchlist) || isLikedByMe) &&
-                  <div className="flex gap-2 mb-8 flex-wrap">
-                    {capabilities.requiresServerUrl &&
-                      <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
-                        <Button className="w-32" size="lg">
-                          <Play className="w-4 h-4 mr-2 fill-current" /> Play
-                        </Button>
-                      </Link>
-                    }
-                    {!isGuest && capabilities.hasWatchlist && (
-                      <Button
-                        className="w-32"
-                        size="lg"
-                        variant={isInList ? "outline" : "secondary"}
-                        onClick={() => handleToggleWatchlist()}
-                        disabled={isTogglingWatchlist}
-                      >
-                        {useWatchlist ?
-                          <Bookmark className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
-                          : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
-                        }
-                        {useWatchlist ? "Watchlist" : "Favorite"}
+                <div className="flex gap-2 mb-8 flex-wrap">
+                  {capabilities.requiresServerUrl ? (
+                    <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
+                      <Button className="w-32" size="lg">
+                        <Play className="w-4 h-4 mr-2 fill-current" /> Play
                       </Button>
-                    )}
-                    {isLikedByMe && <Button
-                      variant="outline"
-                      size="lg"
-                      className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnlike();
-                      }}
-                      disabled={isUnliking}
+                    </Link>
+                  ) : (
+                    <Link 
+                      href={`${TMDB_MOVIE_BASE_URL}/${movie.Id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="w-32"
                     >
-                      <HeartOff className="w-5 h-5" />
-                    </Button>}
-                  </div>
-                }
+                      <Button className="w-32" size="lg">
+                        <ExternalLink className="w-4 h-4 mr-2" /> See more
+                      </Button>
+                    </Link>
+                  )}
+                  {!isGuest && capabilities.hasWatchlist && (
+                    <Button
+                      className="w-32"
+                      size="lg"
+                      variant={isInList ? "outline" : "secondary"}
+                      onClick={() => handleToggleWatchlist()}
+                      disabled={isTogglingWatchlist}
+                    >
+                      {useWatchlist ?
+                        <Bookmark className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
+                        : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
+                      }
+                      {useWatchlist ? "Watchlist" : "Favorite"}
+                    </Button>
+                  )}
+                  {isLikedByMe && <Button
+                    variant="outline"
+                    size="lg"
+                    className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnlike();
+                    }}
+                    disabled={isUnliking}
+                  >
+                    <HeartOff className="w-5 h-5" />
+                  </Button>}
+                </div>
 
                 {/* LIKED BY */}
                 {showLikedBy && movie.likedBy && movie.likedBy.length > 0 && (movie as any).sessionCode && (

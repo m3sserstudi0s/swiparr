@@ -53,4 +53,7 @@ export const LANGUAGES = [
     { code: "da", name: "Danish" },
 ];
 
+export const TMDB_MOVIE_BASE_URL = "https://www.themoviedb.org/movie";
+
+
 export const DEFAULT_LANGUAGES = ["en"]; // English is default selected
