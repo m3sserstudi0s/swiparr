@@ -63,7 +63,11 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         const action = actionOverride || (isInList ? "remove" : "add");
         const nextValue = action === "add";
         
+        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
+        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
+
         const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
+        const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
         
         if (currentMovie?.Id) {
             queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
@@ -76,13 +80,34 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
                     }
                 };
             });
+
+            queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
+                if (!Array.isArray(old)) return old;
+                return old.map((item: any) => {
+                    if (item.Id === currentMovie.Id) {
+                        return {
+                            ...item,
+                            UserData: {
+                                ...item.UserData,
+                                [useWatchlist ? 'Likes' : 'IsFavorite']: nextValue
+                            }
+                        };
+                    }
+                    return item;
+                });
+            });
         }
         
-        return { previousMovie };
+        return { previousMovie, previousLikesQueries };
     },
     onError: (err, variables, context) => {
         if (currentMovie?.Id && context?.previousMovie) {
             queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), context.previousMovie);
+        }
+        if (context?.previousLikesQueries) {
+            context.previousLikesQueries.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
         }
     },
     onSuccess: () => {
@@ -131,11 +156,64 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         sessionCode: targetSessionCode || null
       });
     },
+    onMutate: async () => {
+        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
+        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
+
+        const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
+        const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
+
+        if (currentMovie) {
+            queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
+                if (!Array.isArray(old)) return old;
+                if (old.some((item: any) => item.Id === currentMovie.Id)) return old;
+
+                const newLike = {
+                    ...currentMovie,
+                    swipedAt: new Date().toISOString(),
+                    likedBy: [
+                        ...(currentMovie.likedBy || []),
+                        {
+                            userId: sessionData?.userId || '',
+                            userName: sessionData?.userName || 'Me',
+                            sessionCode: sessionCode || null
+                        }
+                    ]
+                };
+                return [newLike, ...old];
+            });
+
+            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    likedBy: [
+                        ...(old.likedBy || []),
+                        {
+                            userId: sessionData?.userId || '',
+                            userName: sessionData?.userName || 'Me',
+                            sessionCode: sessionCode || null
+                        }
+                    ]
+                };
+            });
+        }
+
+        return { previousLikesQueries, previousMovie };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
     },
-    onError: (err) => {
+    onError: (err, variables, context) => {
+      if (context?.previousLikesQueries) {
+          context.previousLikesQueries.forEach(([queryKey, data]) => {
+              queryClient.setQueryData(queryKey, data);
+          });
+      }
+      if (currentMovie?.Id && context?.previousMovie) {
+          queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), context.previousMovie);
+      }
       toast.error("Failed to re-like movie", {
         description: getErrorMessage(err)
       });
@@ -155,11 +233,45 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
 
       await apiClient.delete(`/api/user/likes?itemId=${currentMovie.Id}${sessionParam}`);
     },
+    onMutate: async () => {
+        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
+        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
+
+        const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
+        const previousMovie = queryClient.getQueryData(QUERY_KEYS.movie(currentMovie?.Id || null));
+
+        if (currentMovie) {
+            queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
+                if (!Array.isArray(old)) return old;
+                return old.filter((item: any) => item.Id !== currentMovie.Id);
+            });
+
+            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), (old: any) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    likedBy: (old.likedBy || []).filter((l: any) => l.userId !== sessionData?.userId)
+                };
+            });
+        }
+
+        return { previousLikesQueries, previousMovie };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null) });
       onUnlikeSuccess?.();
     },
+    onError: (err, variables, context) => {
+        if (context?.previousLikesQueries) {
+            context.previousLikesQueries.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+        }
+        if (currentMovie?.Id && context?.previousMovie) {
+            queryClient.setQueryData(QUERY_KEYS.movie(currentMovie.Id), context.previousMovie);
+        }
+    }
   });
 
   const handleUnlike = (e?: React.MouseEvent) => {

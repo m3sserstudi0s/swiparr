@@ -18,10 +18,12 @@ export function useSwipe() {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.stats(sessionCode!) });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
 
       // Snapshot the previous value
       const previousDeck = queryClient.getQueryData<InfiniteData<{ items: MediaItem[]; hasMore: boolean }>>(QUERY_KEYS.deck(sessionCode));
       const previousStats = queryClient.getQueryData<SessionStats>(QUERY_KEYS.stats(sessionCode!));
+      const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
 
       // Optimistically update to the new value
       if (previousDeck) {
@@ -50,8 +52,31 @@ export function useSwipe() {
         });
       }
 
+      if (payload.direction === "right" && payload.item) {
+        const swipedItem = payload.item;
+        queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
+          if (!Array.isArray(old)) return old;
+          if (old.some((item: any) => item.Id === payload.itemId)) return old;
+          
+          const newLike = {
+            ...swipedItem,
+            swipedAt: new Date().toISOString(),
+            sessionCode: payload.sessionCode || sessionCode,
+            likedBy: [
+              ...(swipedItem.likedBy || []),
+              {
+                userId: session?.userId || '',
+                userName: session?.userName || 'Me',
+                sessionCode: payload.sessionCode || sessionCode
+              }
+            ]
+          };
+          return [newLike, ...old];
+        });
+      }
+
       // Return a context object with the snapshotted value
-      return { previousDeck, previousStats };
+      return { previousDeck, previousStats, previousLikesQueries };
     },
     // If the mutation fails, use the context returned from onMutate to roll back
     onError: (err, newSwipe, context) => {
@@ -61,7 +86,13 @@ export function useSwipe() {
       if (context?.previousStats) {
         queryClient.setQueryData(QUERY_KEYS.stats(sessionCode!), context.previousStats);
       }
+      if (context?.previousLikesQueries) {
+        context.previousLikesQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
     },
+
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.stats(sessionCode!) });
@@ -86,7 +117,26 @@ export function useUndoSwipe() {
     mutationFn: async (itemId: string) => {
       await apiClient.delete("/api/swipe", { data: { itemId } });
     },
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
+      const previousLikesQueries = queryClient.getQueriesData({ queryKey: QUERY_KEYS.likes });
+
+      queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((item: any) => item.Id !== itemId);
+      });
+
+      return { previousLikesQueries };
+    },
+    onError: (err, itemId, context) => {
+      if (context?.previousLikesQueries) {
+        context.previousLikesQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: () => {
+
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.stats(sessionCode!) });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode!) });
