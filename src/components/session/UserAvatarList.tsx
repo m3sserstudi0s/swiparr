@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 interface Member {
     userId: string;
     userName: string;
+    hasCustomProfilePicture?: boolean;
+    profileUpdatedAt?: string;
 }
 
 interface UserAvatarListProps {
@@ -51,6 +53,8 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                             <SmoothAvatar 
                                 userId={user.userId} 
                                 userName={user.userName} 
+                                hasImage={user.hasCustomProfilePicture}
+                                updatedAt={user.profileUpdatedAt}
                                 className="size-full"
                                 fallbackClassName={cn(
                                     "font-semibold",

@@ -140,7 +140,8 @@ export async function GET() {
     capabilities: getMediaProvider(activeProvider).capabilities,
     serverUrl: activeServerUrl,
     settingsHash,
-    hasCustomProfilePicture: !!profile
+    hasCustomProfilePicture: !!profile,
+    profileUpdatedAt: profile?.updatedAt
   });
 }
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Camera, X, Plus, Loader } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,26 +30,33 @@ export function ProfilePicturePicker({
     onDelete
 }: ProfilePicturePickerProps) {
     const [preview, setPreview] = useState<string | null>(null);
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>(currentImage ? 'loading' : 'error');
     const [removed, setRemoved] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Reset state when props change
+    const hasImage = (!!preview || (!!currentImage && !removed));
+    const shouldTryLoading = !!currentImage && hasCustomImage !== false && !removed && !preview;
+
+    const [status, setStatus] = useState<'loading' | 'success' | 'error'>(() => {
+        if (preview) return 'success';
+        if (shouldTryLoading) return 'loading';
+        return 'error';
+    });
+
+    // Sync status with props changes
     useEffect(() => {
-        setRemoved(false);
         if (preview) {
-             setStatus('success');
-        } else if (currentImage && !removed) {
+            setStatus('success');
+        } else if (removed) {
+            setStatus('error');
+        } else if (shouldTryLoading) {
             setStatus('loading');
         } else {
             setStatus('error');
         }
-    }, [currentImage, hasCustomImage, preview, removed]);
+    }, [currentImage, hasCustomImage, preview, removed, shouldTryLoading]);
 
-    const hasImage = (!!preview || (!!currentImage && !removed));
     const isSuccess = status === 'success' && hasImage;
-
     const showRemoveButton = (isSuccess && hasCustomImage) && !removed;
     const showDashedBorder = !isSuccess && status !== 'loading';
 
@@ -145,17 +153,20 @@ export function ProfilePicturePicker({
             >
                 <div className="relative size-full overflow-hidden rounded-full bg-muted">
                     {/* Skeleton Layer */}
-                    {status === 'loading' && hasImage && (
+                    {status === 'loading' && (
                         <Skeleton className="absolute inset-0 z-10 size-full rounded-full" />
                     )}
 
                     {/* Image Layer */}
                     {hasImage && (
-                        <img 
-                            src={preview || currentImage || undefined} 
+                        <Image 
+                            src={preview || currentImage || ""} 
                             alt="Profile"
+                            fill
+                            unoptimized
+                            priority
                             className={cn(
-                                "aspect-square h-full w-full object-cover transition-opacity duration-500", 
+                                "object-cover transition-opacity duration-300", 
                                 isSuccess ? "opacity-100" : "opacity-0"
                             )}
                             onLoad={() => setStatus('success')}

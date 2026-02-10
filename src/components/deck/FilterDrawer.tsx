@@ -23,6 +23,7 @@ import { UserAvatarList } from "../session/UserAvatarList";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { cn } from "@/lib/utils";
 import { LANGUAGES, DEFAULT_LANGUAGES, SORT_OPTIONS } from "@/lib/constants";
+import { CountryFlag } from "../ui/country-flag";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -30,6 +31,7 @@ interface FilterDrawerProps {
   currentFilters: Filters;
   onSave: (filters: Filters) => void;
 }
+
 
 export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: FilterDrawerProps) {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
@@ -351,9 +353,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                           Maturity
                         </Label>
-                        {watchRegion && <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-bold opacity-70">
-                          {watchRegion}
-                        </Badge>}
+                        {watchRegion && (
+                          <Badge variant="outline" className="gap-1.5 py-0.5 px-2 h-5 font-bold opacity-80 bg-muted/30">
+                            <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0">
+                              <CountryFlag countryCode={watchRegion} />
+                            </div>
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -399,9 +405,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                           Streaming Services
                         </Label>
-                        {watchRegion && <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-bold opacity-70">
-                          {watchRegion}
-                        </Badge>}
+                        {watchRegion && (
+                          <Badge variant="outline" className="gap-1.5 py-0.5 px-2 h-5 font-bold opacity-80 bg-muted/30">
+                            <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0">
+                              <CountryFlag countryCode={watchRegion} />
+                            </div>
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex gap-3">
                         <button onClick={() => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id))} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>

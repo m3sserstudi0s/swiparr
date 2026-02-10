@@ -139,7 +139,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
             </Link>
             }
             {capabilities.hasStreamingSettings && <div className="flex flex-1 flex-row gap-2 items-center">
-              {movie.WatchProviders?.map((provider) => (
+              {movie.WatchProviders?.slice(0, 10).map((provider) => (
                 <OptimizedImage
                   key={provider.Id}
                   src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
@@ -150,6 +150,11 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                   height={20}
                 />
               ))}
+              {movie.WatchProviders && movie.WatchProviders.length > 10 && (
+                <span className="text-[10px] text-muted-foreground font-medium">
+                  +{movie.WatchProviders.length - 10}
+                </span>
+              )}
             </div>}
             {!sessionData?.isGuest && capabilities.hasWatchlist && (
               <Button

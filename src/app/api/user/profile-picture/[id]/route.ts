@@ -25,10 +25,15 @@ export async function GET(
             return NextResponse.redirect(url);
         }
 
+        const url = new URL(request.url);
+        const hasVersion = url.searchParams.has("v");
+
         return new NextResponse(profile.image as any, {
             headers: {
                 "Content-Type": profile.contentType || "image/webp",
-                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Cache-Control": hasVersion 
+                    ? "public, max-age=31536000, immutable" 
+                    : "no-cache, no-store, must-revalidate",
             },
         });
     } catch (error) {

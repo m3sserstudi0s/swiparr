@@ -19,9 +19,11 @@ import {
     useRegions
 } from "@/hooks/api";
 import { WatchProvider, MediaRegion } from "@/types/media";
+import { CountryFlag } from "@/components/ui/country-flag";
 import {
     Combobox,
     ComboboxInput,
+
     ComboboxContent,
     ComboboxEmpty,
     ComboboxList,
@@ -139,20 +141,31 @@ export function StreamingSettings() {
                         items={regions}
                         itemToStringValue={(r: MediaRegion) => r?.Name || ""}
                     >
-                        <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-40 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
-                            <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
+                        <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-44 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
+                            <div className="flex items-center gap-2 truncate">
+                                {selectedRegion && (
+                                    <div className="w-4 h-3 overflow-hidden rounded-[1px] shrink-0 border border-border/50">
+                                        <CountryFlag countryCode={selectedRegion.Id} />
+                                    </div>
+                                )}
+                                <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
+                            </div>
                         </ComboboxTrigger>
-                        <ComboboxContent container={container} className="min-w-40 z-1000">
+                        <ComboboxContent container={container} className="min-w-44 z-1000">
                                 <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
                             <ComboboxEmpty>No regions found</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
-                                    <ComboboxItem key={r.Id} value={r} className="cursor-pointer">
+                                    <ComboboxItem key={r.Id} value={r} className="cursor-pointer gap-2">
+                                        <div className="w-4 h-3 overflow-hidden rounded-[1px] shrink-0 border border-border/50">
+                                            <CountryFlag countryCode={r.Id} />
+                                        </div>
                                         {r.Name}
                                     </ComboboxItem>
                                 )}
                             </ComboboxList>
                         </ComboboxContent>
+
                     </Combobox>
 
                 </div>

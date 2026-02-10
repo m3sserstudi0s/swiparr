@@ -34,9 +34,11 @@ export interface SessionStatus {
   provider: string;
   capabilities: ProviderCapabilities;
   serverUrl?: string;
-  settingsHash?: string;
-  hasCustomProfilePicture?: boolean;
+    settingsHash?: string;
+    hasCustomProfilePicture?: boolean;
+    profileUpdatedAt?: string;
 }
+
 
 
 export interface MergedLike extends MediaItem {

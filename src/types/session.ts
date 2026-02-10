@@ -31,4 +31,7 @@ export interface SessionMember {
   externalUserId: string;
   externalUserName: string;
   isAdmin?: boolean;
+  hasCustomProfilePicture?: boolean;
+  profileUpdatedAt?: string;
 }
+
