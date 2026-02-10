@@ -16,6 +16,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
+import { useSession } from "@/hooks/api";
 
 interface FilterProps {
   sortBy: string;
@@ -25,7 +26,10 @@ interface FilterProps {
 }
 
 export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: FilterProps) {
-  const isSoloMode = filterMode === "solo";
+  
+  const { data: sessionStatus} = useSession();
+    
+  const isSoloMode = !sessionStatus?.code
 
   useEffect(() => {
     if (isSoloMode && sortBy === "likes") {
