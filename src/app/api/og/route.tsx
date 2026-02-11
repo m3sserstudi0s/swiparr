@@ -6,30 +6,12 @@ export const runtime = 'nodejs'
 
 async function loadGoogleFont(font: string, text: string) {
   const url = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`
-  const css = await (await fetch(url, {
-    headers: {
-      // Force TTF format by using an old browser User-Agent
-      'User-Agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1',
-    },
-  })).text()
+  const css = await (await fetch(url)).text()
 
   const resource = css.match(/src: url\((.+)\) format\(['"](.+)['"]\)/)
 
   if (resource && (resource[2] === 'truetype' || resource[2] === 'opentype')) {
     const response = await fetch(resource[1])
-    if (response.ok) {
-      return await response.arrayBuffer()
-    }
-  }
-
-  // Fallback to a direct TTF link if Google Fonts API is being difficult
-  const fallbacks: Record<string, string> = {
-    'Zalando+Sans': 'https://github.com/google/fonts/raw/main/ofl/inter/static/Inter-Bold.ttf', // Fallback for proprietary font
-    'JetBrains+Mono': 'https://github.com/JetBrains/JetBrainsMono/raw/v2.304/fonts/ttf/JetBrainsMono-Bold.ttf'
-  }
-
-  if (fallbacks[font]) {
-    const response = await fetch(fallbacks[font])
     if (response.ok) {
       return await response.arrayBuffer()
     }
@@ -79,12 +61,12 @@ export async function GET(req: NextRequest) {
           {join ? (
             <div tw="flex flex-col items-center">
               <div tw="text-5xl font-bold text-white mb-4">
-                You're Invited!
+                You're invited
               </div>
               <div tw="text-3xl text-[#a0a0a0] mb-10 max-w-3xl text-center leading-normal">
                 Join a session and start swiping on what to watch next together.
               </div>
-              <div tw="text-6xl font-bold text-[#ff416c] px-12 py-5 rounded-3xl border-4 border-[#ff416c66] bg-[#ff416c0d]" style={{ fontFamily: 'JetBrains Mono' }}>
+              <div tw="text-6xl font-bold text-[#a0a0a0] px-12 py-5 rounded-3xl border-4 border-[#a0a0a0]" style={{ fontFamily: 'JetBrains Mono' }}>
                 {join}
               </div>
             </div>
@@ -98,7 +80,7 @@ export async function GET(req: NextRequest) {
       {
         width: 1200,
         height: 630,
-        emoji: 'twemoji',
+        emoji: 'fluent',
         fonts: [
           {
             name: 'Zalando Sans',

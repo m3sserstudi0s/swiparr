@@ -54,7 +54,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: `${basePath}/apple-icon.png`,
     },
     openGraph: {
-      title: "Swiparr - Discoverr what to watch next",
+      title: "Swiparr - Discover what to watch next",
       description: tagline,
       url: url,
       siteName: "Swiparr",
@@ -63,7 +63,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "Swiparr - Discoverr what to watch next",
+      title: "Swiparr - Discover what to watch next",
       description: tagline,
     },
   };
