@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch fonts
     const [sansFont, monoFont] = await Promise.all([
-      loadGoogleFont('Zalando+Sans', 'Swiparr' + (join ? "You're Invited! Join a session" : "Swipe on what to watch next")),
+      loadGoogleFont('Zalando+Sans', 'Swiparr' + (join ? "You're invited to join a session Join a session and start swiping on what to watch next together." : "Swipe on what to watch next, by yourself or together.")),
       loadGoogleFont('JetBrains+Mono', join || 'CODE')
     ])
 
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
           {join ? (
             <div tw="flex flex-col items-center">
               <div tw="text-5xl font-bold text-white mb-4">
-                You're invited
+                You're invited to join session
               </div>
               <div tw="text-3xl text-[#a0a0a0] mb-10 max-w-3xl text-center leading-normal">
                 Join a session and start swiping on what to watch next together.
