@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
+import { getRuntimeConfig } from '@/lib/runtime-config'
 
 export const runtime = 'nodejs'
 
@@ -28,7 +28,7 @@ async function loadGoogleFont(font: string, text: string) {
 
 export default async function Image() {
   try {
-    const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
+    const { basePath, appPublicUrl } = getRuntimeConfig();
     const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
     const logoUrl = `${origin}${basePath}/icon1.png`;
 
