@@ -35,7 +35,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   // 2. Define transforms based on that value (0 to 300px of scroll)
   const imgY = useTransform(scrollY, [0, 300], [0, 300]);
   const imgOpacity = useTransform(scrollY, [0, 200], [0.75, 0.2]);
-  const imgScale = useTransform(scrollY, [0, 300], [1, 1.1]);
+  const imgScale = useTransform(scrollY, [0, 200], [1, 1.15]);
 
   // Handle scroll event manually to update the motion value
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -79,8 +79,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
         <div
           onScroll={handleScroll} // Update motion value here
           className={cn(
-            "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-3 no-scrollbar relative",
-            "mask-[linear-gradient(to_bottom,transparent_0%,black_80px,black_calc(100%-80px),transparent_100%)]"
+            "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-1 no-scrollbar relative",
+            "mask-[linear-gradient(to_bottom,transparent_0%,black_30px,black_calc(100%-80px),transparent_100%)]"
           )}>
 
           {isLoading ? (
@@ -122,7 +122,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     className={cn(
                       'w-full h-full object-cover',
                       // fade out top and bottom
-                      'mask-[linear-gradient(to_bottom,transparent,black_10%,black_50%,transparent)]',
+                      'mask-[linear-gradient(to_bottom,transparent,black_12%,black_50%,transparent)]',
                       'mask-no-repeat'
                     )}
                   />

@@ -351,7 +351,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                          Maturity
+                          Maturity rating
                         </Label>
                         {watchRegion && (
                           <Badge variant="outline" className="gap-1.5 py-0.5 px-2 h-5 font-bold opacity-80 bg-muted/30">

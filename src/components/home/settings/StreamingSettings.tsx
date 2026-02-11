@@ -133,7 +133,7 @@ export function StreamingSettings() {
                             <div className="text-sm font-medium">Region</div>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                            Provider availability depends on region
+                            Service availability depends on region
                         </div>
                     </div>
 
