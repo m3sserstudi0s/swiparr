@@ -8,6 +8,7 @@ import { eq, and } from "drizzle-orm";
 import { userSettingsSchema } from "@/lib/validations";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { ConfigService } from "@/lib/services/config-service";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -75,7 +76,6 @@ export async function PATCH(request: NextRequest) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Failed to update user settings:", error);
-        return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+        return handleApiError(error, "Failed to update user settings");
     }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function GET() {
   try {
@@ -13,11 +14,6 @@ export async function GET() {
       timestamp: new Date().toISOString() 
     }, { status: 200 });
   } catch (error) {
-    console.error('Health check failed:', error);
-    return NextResponse.json({ 
-      status: 'unhealthy',
-      database: 'disconnected',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return handleApiError(error, "Health check failed");
   }
 }

@@ -8,6 +8,8 @@ import { SessionData, type MediaItem, type MergedLike } from "@/types";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { handleApiError } from "@/lib/api-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
             const item = await provider.getItemDetails(id, auth);
             if (item) itemsMap.set(id, item);
         } catch (error) {
-            console.error(`Failed to fetch details for ${id}`, error);
+            logger.error(`Failed to fetch details for ${id}`, error);
         }
     }));
 
@@ -113,8 +115,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(merged);
   } catch (error) {
-    console.error("Fetch User Likes Error", error);
-    return NextResponse.json([], { status: 500 });
+    return handleApiError(error, "Failed to fetch likes");
   }
 }
 
@@ -168,7 +169,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete Like Error", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return handleApiError(error, "Failed to delete like");
   }
 }

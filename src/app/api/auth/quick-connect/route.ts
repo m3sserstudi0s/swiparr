@@ -7,6 +7,8 @@ import { SessionData } from "@/types";
 import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { quickConnectSchema } from "@/lib/validations";
+import { logger } from "@/lib/logger";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,8 +27,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error("[QuickConnect] Error initiating:", error.message);
-    return NextResponse.json({ message: "Quick connect not available" }, { status: 500 });
+    return handleApiError(error, "Quick connect not available");
   }
 }
 
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     if (!existingAdmin) {
         await ConfigService.setAdminUserId(authData.User.Id, "jellyfin" as any);
         wasMadeAdmin = true;
-        console.log(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
+        logger.info(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
     }
 
     session.user = {
@@ -76,7 +77,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, wasMadeAdmin });
   } catch (error) {
-    console.error("[QuickConnect] Auth error:", error);
-    return NextResponse.json({ success: false }, { status: 400 });
+    return handleApiError(error, "Quick connect auth failed");
   }
 }

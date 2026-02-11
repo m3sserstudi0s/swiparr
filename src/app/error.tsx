@@ -2,17 +2,18 @@
 
 import { useEffect } from 'react';
 import ErrorDisplay from '@/components/error-display';
+import { logger } from '@/lib/logger';
 
 export default function Error({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
+  error: Error & { digest?: string; errorId?: string };
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error);
+    // Log the error
+    logger.error("Client-side Application Error", error);
   }, [error]);
 
   return (

@@ -7,9 +7,11 @@ import { getMediaProvider } from "@/lib/providers/factory";
 import { ProviderType } from "@/lib/providers/types";
 import { AuthService } from "./auth-service";
 import { ConfigService } from "./config-service";
+import { logger } from "@/lib/logger";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
+    logger.debug(`getMediaItems: page=${page}, limit=${limit}, searchTerm=${searchTerm}`, { overrideFilters });
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     const activeProviderName = auth.provider || session.user.provider || ProviderType.JELLYFIN;

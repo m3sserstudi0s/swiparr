@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { saveProfilePicture, deleteProfilePicture } from "@/lib/server/profile-picture";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -26,8 +27,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error("Error uploading profile picture:", error);
-        return NextResponse.json({ message: "Upload failed", error: error.message }, { status: 500 });
+        return handleApiError(error, "Upload failed");
     }
 }
 
@@ -43,7 +43,6 @@ export async function DELETE(request: NextRequest) {
         await deleteProfilePicture(session.user.Id);
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error("Error deleting profile picture:", error);
-        return NextResponse.json({ message: "Delete failed", error: error.message }, { status: 500 });
+        return handleApiError(error, "Delete failed");
     }
 }

@@ -17,6 +17,7 @@ export interface RuntimeConfig {
   version: string;
   basePath: string;
   appPublicUrl: string;
+  enableDebug: boolean;
 }
 
 
@@ -45,6 +46,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     version: config.app.version,
     basePath: config.app.basePath,
     appPublicUrl: config.app.appPublicUrl,
+    enableDebug: config.ENABLE_DEBUG,
     ...overrides
   };
 }

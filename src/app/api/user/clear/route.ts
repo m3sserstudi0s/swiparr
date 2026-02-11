@@ -5,6 +5,7 @@ import { db, likes as likesTable, hiddens as hiddensTable, sessions as sessionsT
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -39,7 +40,6 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Clear data error:", error);
-    return NextResponse.json({ error: "Failed to clear data" }, { status: 500 });
+    return handleApiError(error, "Failed to clear data");
   }
 }

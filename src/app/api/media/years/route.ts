@@ -4,6 +4,7 @@ import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { MediaService } from "@/lib/services/media-service";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -14,7 +15,6 @@ export async function GET(request: NextRequest) {
         const years = await MediaService.getYears(session);
         return NextResponse.json(years);
     } catch (error) {
-        console.error("Fetch Years Error", error);
-        return NextResponse.json({ error: "Failed to fetch years" }, { status: 500 });
+        return handleApiError(error, "Failed to fetch years");
     }
 }

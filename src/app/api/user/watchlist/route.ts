@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -33,7 +34,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Watchlist/Favorite Toggle Error", error);
-    return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+    return handleApiError(error, "Failed to update watchlist/favorites");
   }
 }

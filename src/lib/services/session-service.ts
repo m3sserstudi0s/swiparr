@@ -5,6 +5,7 @@ import { events, EVENT_TYPES } from "@/lib/events";
 import { SessionSettings, Filters, SessionData } from "@/types";
 import { ProviderType } from "@/lib/providers/types";
 import { ConfigService } from "./config-service";
+import { logger } from "@/lib/logger";
 
 export class SessionService {
   private static generateCode(): string {
@@ -18,6 +19,7 @@ export class SessionService {
 
   static async createSession(user: SessionData["user"], allowGuestLending: boolean) {
     const code = this.generateCode();
+    logger.info(`Creating session ${code} for user ${user.Name} (${user.Id})`);
     
     await db.insert(sessions).values({
       id: uuidv4(),
@@ -44,6 +46,7 @@ export class SessionService {
 
   static async joinSession(user: SessionData["user"], code: string) {
     const upperCode = code.trim().toUpperCase();
+    logger.debug(`User ${user.Name} joining session ${upperCode}`);
     const existingSession = await db.select().from(sessions).where(eq(sessions.code, upperCode)).then((rows: any[]) => rows[0]);
 
     if (!existingSession) {
@@ -161,7 +164,7 @@ export class SessionService {
       try {
         await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
       } catch (e) {
-        console.error("Failed to cleanup profile picture", e);
+        logger.error("Failed to cleanup profile picture", e);
       }
     }
 

@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -74,7 +75,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(finalItems);
 
   } catch (error) {
-    console.error("Error fetching matches", error);
-    return NextResponse.json([], { status: 500 });
+    return handleApiError(error, "Failed to fetch matches");
   }
 }

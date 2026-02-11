@@ -8,6 +8,7 @@ import { useRuntimeConfig } from './runtime-config';
 import { apiClient } from './api-client';
 import { useSession, QUERY_KEYS, useLeaveSession } from '@/hooks/api';
 import { usePathname, useRouter } from 'next/navigation';
+import { logger } from './logger';
 
 export function useUpdates() {
     const queryClient = useQueryClient();
@@ -91,7 +92,7 @@ export function useUpdates() {
 
         const handleFiltersUpdated = async (event: MessageEvent) => {
             const data = JSON.parse(event.data);
-            console.log("[useUpdates] Filters updated event:", { 
+            logger.debug("[useUpdates] Filters updated event:", { 
                 sessionCode: data.sessionCode, 
                 currentSessionCode: sessionCode,
                 updaterUserId: data.userId, 
@@ -109,7 +110,7 @@ export function useUpdates() {
                 // Show toast to everyone EXCEPT the user who made the change
                 // Use String comparison to handle type differences
                 const isDifferentUser = String(data.userId) !== String(userId);
-                console.log("[useUpdates] Should show toast?", { isDifferentUser, userId, updaterId: data.userId });
+                logger.debug("[useUpdates] Should show toast?", { isDifferentUser, userId, updaterId: data.userId });
                 
                 if (userId && isDifferentUser) {
                     toast.info(`${data.userName} changed the filters`, {
@@ -246,7 +247,7 @@ export function useQuickConnectUpdates(qcSecret?: string | null, onAuthorized?: 
                     return true;
                 }
             } catch (err) {
-                console.error("Quick connect polling error:", err);
+                logger.error("Quick connect polling error:", err);
             }
             return false;
         };

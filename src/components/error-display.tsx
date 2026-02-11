@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRuntimeConfig } from '@/lib/runtime-config';
 
 interface ErrorDisplayProps {
-  error?: Error & { digest?: string };
+  error?: Error & { digest?: string; errorId?: string };
   reset?: () => void;
   type?: '404' | '500' | 'offline' | 'generic';
 }
@@ -83,12 +83,24 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
         {config.description}
       </p>
 
-      {error?.digest && (
-        <div className="mb-8">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-semibold opacity-50">Error Reference</p>
-          <code className="bg-muted px-3 py-1.5 rounded-md text-xs font-mono border border-border">
-            {error.digest}
-          </code>
+      {(error?.digest || error?.errorId) && (
+        <div className="mb-8 flex flex-col gap-4 items-center">
+          {error?.errorId && (
+            <div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-semibold opacity-50">Error ID</p>
+              <code className="bg-primary/10 text-primary px-3 py-1.5 rounded-md text-sm font-mono border border-primary/20 font-bold">
+                {error.errorId}
+              </code>
+            </div>
+          )}
+          {error?.digest && (
+            <div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1 font-semibold opacity-50">Error Reference</p>
+              <code className="bg-muted px-3 py-1.5 rounded-md text-xs font-mono border border-border">
+                {error.digest}
+              </code>
+            </div>
+          )}
         </div>
       )}
 

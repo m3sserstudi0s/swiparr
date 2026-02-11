@@ -18,6 +18,7 @@ import {
   MediaRegion
 } from "@/types/media";
 import { TmdbSearchResponseSchema, TmdbMovieSchema } from "../schemas";
+import { logger } from "@/lib/logger";
 
 /**
  * TMDB Provider
@@ -154,7 +155,7 @@ export class TmdbProvider implements MediaProvider {
         const certCountry = regionMapping[region] || 'US';
         discoverParams.certification_country = certCountry;
         discoverParams.certification = filters.ratings.join('|');
-        console.log("[TMDBProvider.getItems] Applying certification filter:", { certCountry, ratings: filters.ratings });
+        logger.debug("[TMDBProvider.getItems] Applying certification filter:", { certCountry, ratings: filters.ratings });
     }
 
     if (filters.languages && filters.languages.length > 0) {
@@ -162,7 +163,7 @@ export class TmdbProvider implements MediaProvider {
         // If only one language selected, use it directly
         // If multiple, use pipe separator for OR logic
         discoverParams.with_original_language = filters.languages.join('|');
-        console.log("[TMDBProvider.getItems] Applying language filter:", { languages: filters.languages });
+        logger.debug("[TMDBProvider.getItems] Applying language filter:", { languages: filters.languages });
     }
 
     if (filters.sortBy === "Random") {

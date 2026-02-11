@@ -1,9 +1,15 @@
 import { EventEmitter } from 'events';
+import { logger } from './logger';
 
 class AppEventEmitter extends EventEmitter {
     constructor() {
         super();
         this.setMaxListeners(0); // Unlimited listeners
+    }
+
+    emit(event: string | symbol, ...args: any[]): boolean {
+        logger.debug(`[Event] ${String(event)}`, ...args);
+        return super.emit(event, ...args);
     }
 }
 

@@ -7,6 +7,7 @@ import { getMediaProvider } from "@/lib/providers/factory";
 import { AuthService } from "@/lib/services/auth-service";
 import { db, userProfiles } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (error.response?.status === 404) {
       return new NextResponse("Image not found", { status: 404 });
     }
-    console.error("Error proxying image:", error.message);
+    logger.error("Error proxying image:", error.message);
     if (isUserType) return new NextResponse("User image not found", { status: 404 });
     return new NextResponse("Error fetching image", { status: 500 });
   }

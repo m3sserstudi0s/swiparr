@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { MediaService } from "@/lib/services/media-service";
+import { handleApiError } from "@/lib/api-utils";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
         try {
             overrideFilters = JSON.parse(filtersParam);
         } catch (e) {
-            console.error("Failed to parse filters param", e);
+            logger.error("Failed to parse filters param", e);
         }
     }
 
@@ -28,7 +30,6 @@ export async function GET(request: NextRequest) {
         const result = await MediaService.getMediaItems(session, page, limit, searchTerm, overrideFilters);
         return NextResponse.json(result);
     } catch (error) {
-        console.error("Fetch Items Error", error);
-        return NextResponse.json({ error: "Failed to fetch deck" }, { status: 500 });
+        return handleApiError(error, "Failed to fetch deck");
     }
 }

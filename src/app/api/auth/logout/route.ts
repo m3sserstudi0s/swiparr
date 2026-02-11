@@ -4,6 +4,7 @@ import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { SessionService } from "@/lib/services/session-service";
+import { logger } from "@/lib/logger";
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -13,7 +14,7 @@ export async function POST() {
     try {
         await SessionService.leaveSession(session.user, session.sessionCode);
     } catch (e) {
-        console.error("Failed to leave session during logout", e);
+        logger.error("Failed to leave session during logout", e);
     }
   }
 

@@ -5,6 +5,7 @@ import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,7 +29,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ blurDataURL });
   } catch (error) {
-    console.error("Blur API Error", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return handleApiError(error, "Failed to fetch blur data");
   }
 }

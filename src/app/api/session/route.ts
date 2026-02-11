@@ -11,6 +11,8 @@ import { AuthService, GuestKickedError } from "@/lib/services/auth-service";
 import { ConfigService } from "@/lib/services/config-service";
 import { db, sessions, userProfiles, sessionMembers } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, code });
     }
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    return handleApiError(e, "Failed to perform session action");
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -60,7 +62,7 @@ export async function PATCH(request: NextRequest) {
     try {
       await SessionService.updateSession(session.sessionCode, session.user, { filters, settings, allowGuestLending });
     } catch (e: any) {
-      return NextResponse.json({ error: e.message }, { status: 403 });
+      return handleApiError(e, "Failed to update session");
     }
   } else {
     if (filters !== undefined) session.soloFilters = filters;
@@ -90,7 +92,7 @@ export async function GET() {
       session.destroy();
       return NextResponse.json({ error: "guest_kicked" }, { status: 403 });
     }
-    console.error("Failed to get effective credentials:", err);
+    logger.error("Failed to get effective credentials:", err);
   }
 
   let filters = session.soloFilters || null;

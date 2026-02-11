@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProfilePicture } from "@/lib/server/profile-picture";
+import { logger } from "@/lib/logger";
 
 export async function GET(
     request: NextRequest,
@@ -37,7 +38,7 @@ export async function GET(
             },
         });
     } catch (error) {
-        console.error("Error serving profile picture:", error);
+        logger.error("Error serving profile picture:", error);
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }

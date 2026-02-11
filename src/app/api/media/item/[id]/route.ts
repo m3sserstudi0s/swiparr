@@ -7,6 +7,7 @@ import { db, likes, sessionMembers } from "@/lib/db";
 import { eq, and, isNull, or } from "drizzle-orm";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const cookieStore = await cookies();
@@ -69,7 +70,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(item);
   } catch (error) {
-    console.error("Fetch Details Error", error);
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return handleApiError(error, "Failed to fetch item details");
   }
 }

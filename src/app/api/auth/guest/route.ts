@@ -6,6 +6,8 @@ import { SessionData } from "@/types";
 import { guestLoginSchema } from "@/lib/validations";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 import { SessionService } from "@/lib/services/session-service";
+import { logger } from "@/lib/logger";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
     const { capabilities } = getRuntimeConfig();
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
                 const buffer = Buffer.from(base64Data, 'base64');
                 await saveProfilePicture(user.Id, buffer, "image/webp");
             } catch (e) {
-                console.error("[Guest Auth] Failed to save profile picture:", e);
+                logger.error("[Guest Auth] Failed to save profile picture:", e);
             }
         }
 
@@ -44,10 +46,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, user: session.user });
 
   } catch (error: any) {
-    console.error("[Guest Auth] Failed:", error);
     const status = error.message === "Session not found" ? 404 : 
                    error.message === "This session does not allow guest lending" ? 403 : 500;
     
+    if (status === 500) {
+        return handleApiError(error, "Failed to join as guest");
+    }
+
     return NextResponse.json(
       { message: error.message || "Failed to join as guest" },
       { status }

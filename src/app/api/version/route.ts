@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GITHUB_REPO } from "@/lib/constants";
 import { getRuntimeConfig } from "@/lib/runtime-config";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
     const { version: currentVersion } = getRuntimeConfig();
@@ -14,7 +15,7 @@ export async function GET() {
         });
 
         if (!response.ok) {
-            console.warn(`GitHub version fetch failed: ${response.status} ${response.statusText}`);
+            logger.warn(`GitHub version fetch failed: ${response.status} ${response.statusText}`);
             return NextResponse.json({
                 version: currentVersion,
                 url: `https://github.com/${GITHUB_REPO}`
@@ -29,7 +30,7 @@ export async function GET() {
             url: `https://github.com/${GITHUB_REPO}`
         });
     } catch (error) {
-        console.error("Version fetch error:", error);
+        logger.error("Version fetch error:", error);
         return NextResponse.json({
             version: currentVersion,
             url: `https://github.com/${GITHUB_REPO}`

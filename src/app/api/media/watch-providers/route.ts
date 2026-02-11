@@ -4,6 +4,7 @@ import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { MediaService } from "@/lib/services/media-service";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -22,7 +23,6 @@ export async function GET(request: NextRequest) {
         const result = await MediaService.getWatchProviders(session, region, sessionCode, wantAll);
         return NextResponse.json(result);
     } catch (error) {
-        console.error("Fetch Watch Providers Error", error);
-        return NextResponse.json({ error: "Failed to fetch watch providers" }, { status: 500 });
+        return handleApiError(error, "Failed to fetch watch providers");
     }
 }

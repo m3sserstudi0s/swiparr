@@ -5,6 +5,7 @@ import { getRuntimeConfig } from "@/lib/runtime-config";
 import { ConfigService } from "./config-service";
 import { ProviderType, PROVIDER_CAPABILITIES } from "../providers/types";
 import { config as appConfig } from "@/lib/config";
+import { logger } from "@/lib/logger";
 
 export class GuestKickedError extends Error {
   constructor() {
@@ -15,6 +16,7 @@ export class GuestKickedError extends Error {
 
 export class AuthService {
   static async getEffectiveCredentials(session: SessionData) {
+    logger.debug(`[AuthService.getEffectiveCredentials] for user ${session.user?.Name} (${session.user?.Id})`);
     const { capabilities } = getRuntimeConfig();
     const settings = await ConfigService.getUserSettings(session.user?.Id);
     const watchRegion = settings?.watchRegion || "SE";
@@ -71,7 +73,6 @@ export class AuthService {
         if (p === ProviderType.JELLYFIN) targetAdmin = appConfig.JELLYFIN_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
         else if (p === ProviderType.EMBY) targetAdmin = appConfig.EMBY_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
         else if (p === ProviderType.PLEX) targetAdmin = appConfig.PLEX_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
-        else if (p === ProviderType.TMDB) targetAdmin = appConfig.TMDB_ADMIN_USERNAME || appConfig.ADMIN_USERNAME;
       }
       if (targetAdmin && username.toLowerCase() === targetAdmin.toLowerCase()) return true;
     }

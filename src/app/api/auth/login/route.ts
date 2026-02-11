@@ -8,6 +8,8 @@ import { loginSchema } from "@/lib/validations";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
+import { logger } from "@/lib/logger";
+import { handleApiError } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
     let usernameForLog = "unknown";
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
         const baseDeviceId = crypto.randomUUID();
         const deviceId = `${baseDeviceId}-${username}`;
 
-        console.log(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
+        logger.info(`[Auth] Attempting login for user: ${username} with deviceId: ${deviceId}`);
 
         const provider = getMediaProvider(bodyProvider);
         const activeProviderName = bodyProvider || provider.name;
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
         const userName = authResult.User?.Name || authResult.name;
         const accessToken = authResult.AccessToken || authResult.accessToken;
 
-        console.log("[Auth] Provider accepted credentials. User ID:", userId);
+        logger.info("[Auth] Provider accepted credentials. User ID:", userId);
 
         // Set as admin if no admin exists for this provider and provider supports auth
         const existingAdmin = await ConfigService.getAdminUserId(activeProviderName);
@@ -48,7 +50,7 @@ export async function POST(request: NextRequest) {
         if (!existingAdmin && provider.capabilities.hasAuth) {
             await ConfigService.setAdminUserId(userId, activeProviderName as any);
             wasMadeAdmin = true;
-            console.log(`[Auth] User ${userName} (${userId}) set as initial admin for ${activeProviderName}.`);
+            logger.info(`[Auth] User ${userName} (${userId}) set as initial admin for ${activeProviderName}.`);
         }
 
         const cookieStore = await cookies();
@@ -73,19 +75,19 @@ export async function POST(request: NextRequest) {
                 const buffer = Buffer.from(base64Data, 'base64');
                 await saveProfilePicture(userId, buffer, "image/webp");
             } catch (e) {
-                console.error("[Auth] Failed to save profile picture:", e);
+                logger.error("[Auth] Failed to save profile picture:", e);
             }
         }
     
     await session.save();
 
-    console.log("[Auth] Session cookie saved.");
+    logger.info("[Auth] Session cookie saved.");
 
     return NextResponse.json({ success: true, user: session.user, wasMadeAdmin });
 
     } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[Auth] Login Failed for user ${usernameForLog}:`, errorMessage);
+    logger.warn(`[Auth] Login Failed for user ${usernameForLog}:`, errorMessage);
 
     if (axios.isAxiosError(error)) {
        if (error.response) {
@@ -95,9 +97,6 @@ export async function POST(request: NextRequest) {
        }
     }
 
-    return NextResponse.json(
-      { message: "Server connection failed or invalid credentials. Check Swiparr logs for details." },
-      { status: 500 }
-    );
+    return handleApiError(error, "Server connection failed or invalid credentials. Check Swiparr logs for details.");
   }
 }

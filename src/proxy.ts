@@ -32,6 +32,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.includes("favicon.ico") ||
     pathname.includes("manifest.json") ||
+    pathname.includes("manifest.webmanifest") ||
     pathname.endsWith("/sw.js") ||
     [".png", ".svg", ".ico"].some(ext => pathname.endsWith(ext));
 

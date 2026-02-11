@@ -15,6 +15,7 @@ import {
 } from "@/types/media";
 import { apiClient, getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
+import { logger } from "@/lib/logger";
 
 /**
  * Jellyfin Provider
@@ -168,13 +169,13 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getThemes(auth?: AuthContext): Promise<string[]> {
-    console.log("[JellyfinProvider.getThemes] Starting with auth:", { userId: auth?.userId, serverUrl: auth?.serverUrl });
+    logger.debug("[JellyfinProvider.getThemes] Starting with auth:", { userId: auth?.userId, serverUrl: auth?.serverUrl });
     
     try {
       // Use /Items/Filters2 to get all available tags for movies
       // This is the correct Jellyfin API endpoint for getting filter values
       const url = getJellyfinUrl("/Items/Filters2", auth?.serverUrl);
-      console.log("[JellyfinProvider.getThemes] Fetching from URL:", url);
+      logger.debug("[JellyfinProvider.getThemes] Fetching from URL:", url);
       
       const res = await apiClient.get(url, {
         params: {
@@ -185,22 +186,22 @@ export class JellyfinProvider implements MediaProvider {
         headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
       });
 
-      console.log("[JellyfinProvider.getThemes] Response data:", res.data);
-      console.log("[JellyfinProvider.getThemes] Tags from response:", res.data?.Tags);
+      logger.debug("[JellyfinProvider.getThemes] Response data:", res.data);
+      logger.debug("[JellyfinProvider.getThemes] Tags from response:", res.data?.Tags);
       
       const tags = res.data.Tags || [];
       
       // If no tags exist in the library, fall back to static themes
       if (tags.length === 0) {
-        console.log("[JellyfinProvider.getThemes] No tags found in library, using fallback themes");
+        logger.debug("[JellyfinProvider.getThemes] No tags found in library, using fallback themes");
         return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
       }
       
       const result = tags.slice(0, 15);
-      console.log("[JellyfinProvider.getThemes] Returning tags:", result);
+      logger.debug("[JellyfinProvider.getThemes] Returning tags:", result);
       return result;
     } catch (error) {
-      console.error("[JellyfinProvider.getThemes] Error fetching themes:", error);
+      logger.error("[JellyfinProvider.getThemes] Error fetching themes:", error);
       // Return fallback themes on error
       return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
     }
@@ -236,7 +237,7 @@ export class JellyfinProvider implements MediaProvider {
       }
       return ratings.map((r: any) => ({ Name: r.Name, Value: r.Name }));
     } catch (error) {
-        console.error("[JellyfinProvider.getRatings] Error:", error);
+        logger.error("[JellyfinProvider.getRatings] Error:", error);
         return [
             { Name: "G", Value: "G" },
             { Name: "PG", Value: "PG" },

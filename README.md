@@ -150,6 +150,7 @@ EMBY_PUBLIC_URL=https://emby.example.com  # Public URL (optional)
 ```env
 PROVIDER=plex
 PLEX_URL=http://your-plex:32400       # Internal URL (required)
+PLEX_PUBLIC_URL=https://plex.example.com # Public URL (optional)
 PLEX_TOKEN=your-admin-token          # Admin token (optional)
 ```
 </details>
@@ -160,7 +161,6 @@ PLEX_TOKEN=your-admin-token          # Admin token (optional)
 ```env
 PROVIDER=tmdb
 TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
-TMDB_REGION=SE                        # Content region (optional, default: SE)
 ```
 </details>
 
@@ -174,7 +174,8 @@ USE_SECURE_COOKIES=true                    # Required for HTTPS
 # Application
 PORT=4321                                  # Default port
 HOSTNAME=0.0.0.0                          # Bind address
-DATABASE_URL=file:/app/data/swiparr.db    # SQLite path
+DATABASE_URL=file:/app/data/swiparr.db    # SQLite path or Turso URL
+DATABASE_AUTH_TOKEN=your-token            # Required for Turso/Remote DB
 
 # Admin
 ADMIN_USERNAME=your-username                      # Global auto-grant admin privileges
@@ -188,27 +189,42 @@ CSP_FRAME_ANCESTORS=none                   # Embedding policy
 
 # BYOP Mode - Bring Your Own Provider
 PROVIDER_LOCK=false                          # Let users choose and configure their own provider
+
+# Misc
+USE_ANALYTICS=false                          # Enable anonymous usage analytics (Vercel deployments)
+ENABLE_DEBUG=false                           # Enable verbose debug logging and client-server error mapping
 ```
 
 ### Environment Variable Matrix
 
-| Variable | Required? | When? | Default |
-|----------|-----------|-------|---------|
-| `PROVIDER` | ✳️ | If PROVIDER_LOCK=false | `jellyfin` |
-| `JELLYFIN_URL` | ✳️ | If PROVIDER=jellyfin | - |
-| `EMBY_URL` | ✳️ | If PROVIDER=emby | - |
-| `PLEX_URL` | ✳️ | If PROVIDER=plex | - |
-| `TMDB_ACCESS_TOKEN` | ✳️ | If PROVIDER=tmdb | - |
-| `PROVIDER_LOCK` | ❌ | Optional | `true` |
-| `USE_SECURE_COOKIES` | ❌ | HTTPS deployments | `false` |
-| `AUTH_SECRET` | ❌ | Optional | Auto-generated |
-| `DATABASE_URL` | ❌ | Optional[^1] | `file:/app/data/swiparr.db` |
-| `APP_PUBLIC_URL` | ❌ | Optional | `swiparr.com` |
-| `URL_BASE_PATH` | ❌ | Optional | - |
-| `ADMIN_USERNAME` | ❌ | Optional[^2] | - |
-| `JELLYFIN_ADMIN_USERNAME` | ❌ | Optional[^2] | - |
-| `PLEX_ADMIN_USERNAME` | ❌ | Optional[^2] | - |
-| `EMBY_ADMIN_USERNAME` | ❌ | Optional[^2] | - |
+| Variable | Required? | Default | Description |
+|----------|-----------|---------|-------------|
+| `PROVIDER` | ✳️ | `jellyfin` | Primary media provider (`jellyfin`, `tmdb`, `plex`, `emby`) |
+| `PROVIDER_LOCK` | ❌ | `true` | If `true`, users cannot change the provider at runtime |
+| `JELLYFIN_URL` | ✳️ | - | Internal URL of your Jellyfin server |
+| `JELLYFIN_PUBLIC_URL` | ❌ | - | Public URL of your Jellyfin server (for client-side access) |
+| `JELLYFIN_USE_WATCHLIST` | ❌ | `false` | Use Jellyfin Watchlist instead of Favorites |
+| `EMBY_URL` | ✳️ | - | Internal URL of your Emby server |
+| `EMBY_PUBLIC_URL` | ❌ | - | Public URL of your Emby server (for client-side access) |
+| `PLEX_URL` | ✳️ | - | Internal URL of your Plex server |
+| `PLEX_PUBLIC_URL` | ❌ | - | Public URL of your Plex server (for client-side access) |
+| `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
+| `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
+| `AUTH_SECRET` | ❌ | Auto-generated | Secret used for session encryption (min 32 chars) |
+| `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
+| `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
+| `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
+| `APP_PUBLIC_URL` | ❌ | `swiparr.com` | The public domain where the app is hosted |
+| `URL_BASE_PATH` | ❌ | - | Base path if running behind a subpath (e.g. `/swiparr`) |
+| `ADMIN_USERNAME` | ❌ | - | Global admin username (overrides provider-specific) [^2] |
+| `JELLYFIN_ADMIN_USERNAME` | ❌ | - | Jellyfin-specific admin username [^2] |
+| `EMBY_ADMIN_USERNAME` | ❌ | - | Emby-specific admin username [^2] |
+| `PLEX_ADMIN_USERNAME` | ❌ | - | Plex-specific admin username [^2] |
+| `X_FRAME_OPTIONS` | ❌ | `DENY` | Security header: X-Frame-Options |
+| `CSP_FRAME_ANCESTORS`| ❌ | `none` | Security header: Content-Security-Policy frame-ancestors |
+| `USE_ANALYTICS` | ❌ | `false` | Enable anonymous usage analytics (Vercel deployments) |
+| `ENABLE_DEBUG` | ❌ | `false` | Enable verbose debug logging and client-server error mapping |
+
 
 [^1]: Can be set to a local file (internal to container) OR external URL. Mostly relevant for Vercel deployments, which uses the Turso integration in the set-up workflow by default where these values are auto-generated and -injected. Can of course be swapped out with a database service provider of choice.
 

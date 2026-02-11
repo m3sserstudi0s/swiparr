@@ -30,7 +30,6 @@ const envSchema = z.object({
   JELLYFIN_ADMIN_USERNAME: z.string().optional(),
   EMBY_ADMIN_USERNAME: z.string().optional(),
   PLEX_ADMIN_USERNAME: z.string().optional(),
-  TMDB_ADMIN_USERNAME: z.string().optional(),
 
   // Provider Specific
   TMDB_ACCESS_TOKEN: z.string().optional(),
@@ -46,6 +45,7 @@ const envSchema = z.object({
   CSP_FRAME_ANCESTORS: z.string().default('none'),
 
   USE_ANALYTICS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  ENABLE_DEBUG: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
 });
 
 const parsedEnv = envSchema.parse(process.env);
@@ -74,8 +74,7 @@ const BASE_PATH = RAW_BASE_PATH && !RAW_BASE_PATH.startsWith('/') ? `/${RAW_BASE
 const ADMIN_USERNAME = parsedEnv.ADMIN_USERNAME || 
   (parsedEnv.PROVIDER === 'jellyfin' ? parsedEnv.JELLYFIN_ADMIN_USERNAME :
    parsedEnv.PROVIDER === 'emby' ? parsedEnv.EMBY_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === 'plex' ? parsedEnv.PLEX_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === 'tmdb' ? parsedEnv.TMDB_ADMIN_USERNAME : undefined);
+   parsedEnv.PROVIDER === 'plex' ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
 
 export const config = {
   ...parsedEnv,
