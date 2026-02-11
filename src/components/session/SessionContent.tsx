@@ -6,7 +6,7 @@ import { Users } from "lucide-react";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
 import { toast } from "sonner";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { SessionHeader } from "./SessionHeader";
 import { SessionCodeSection } from "./SessionCodeSection";
 import { MatchesList } from "./MatchesList";
@@ -37,6 +37,8 @@ export default function SessionContent() {
     const { openMovie } = useMovieDetail();
     const searchParams = useSearchParams();
     const router = useRouter();
+
+    const pathname = usePathname();
 
     const { data: sessionStatus, isLoading: isSessionLoading } = useSession();
     const activeCode = sessionStatus?.code || undefined;
@@ -94,11 +96,21 @@ export default function SessionContent() {
 
     useEffect(() => {
         const joinParam = searchParams.get("join");
-        if (joinParam && isSuccess && !activeCode) {
-            setIsOpen(true);
-            handleJoinSession(joinParam);
+        if (joinParam && isSuccess) {
+            if (!activeCode) {
+                setIsOpen(true);
+                handleJoinSession(joinParam);
+            } else {
+                // If we are already in a session, or just successfully joined, 
+                // remove the join param from URL to keep it clean
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("join");
+                const query = params.toString();
+                const newUrl = query ? `${pathname}?${query}` : pathname;
+                router.replace(newUrl, { scroll: false });
+            }
         }
-    }, [searchParams, isSuccess, activeCode]);
+    }, [searchParams, isSuccess, activeCode, router, pathname]);
 
     const handleShare = async () => {
         if (!activeCode) return;
