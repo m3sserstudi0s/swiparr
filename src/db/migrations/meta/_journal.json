@@ -64,6 +64,13 @@
       "when": 1770386782020,
       "tag": "0008_warm_ultimatum",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1770792582212,
+      "tag": "0009_perpetual_sunfire",
+      "breakpoints": true
     }
   ]
 }

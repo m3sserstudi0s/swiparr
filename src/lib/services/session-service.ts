@@ -242,6 +242,25 @@ export class SessionService {
   }
 
   static async addSwipe(user: SessionData["user"], sessionCode: string | null | undefined, itemId: string, direction: "left" | "right", item?: any) {
+    // Check for existing swipes to handle conversions and re-likes
+    // Should be impossible by not showing the same card twice
+    const [existingLike, existingHidden] = await Promise.all([
+      db.query.likes.findFirst({
+        where: and(
+          eq(likes.externalUserId, user.Id),
+          eq(likes.externalId, itemId),
+          sessionCode ? eq(likes.sessionCode, sessionCode) : isNull(likes.sessionCode)
+        )
+      }),
+      db.query.hiddens.findFirst({
+        where: and(
+          eq(hiddens.externalUserId, user.Id),
+          eq(hiddens.externalId, itemId),
+          sessionCode ? eq(hiddens.sessionCode, sessionCode) : isNull(hiddens.sessionCode)
+        )
+      })
+    ]);
+
     let isMatch = false;
     let matchBlockedByLimit = false;
     let likedBy: any[] = [];
@@ -250,7 +269,12 @@ export class SessionService {
     const settings: SessionSettings | null = sessionData?.settings ? JSON.parse(sessionData.settings) : null;
 
     if (direction === "right") {
-      if (sessionCode && settings?.maxRightSwipes) {
+      // If we are liking something that was previously hidden, remove it from hiddens
+      if (existingHidden) {
+        await db.delete(hiddens).where(eq(hiddens.id, existingHidden.id));
+      }
+
+      if (sessionCode && settings?.maxRightSwipes && !existingLike) {
         const rightSwipeCount = await db.select({ value: count() }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, user.Id)));
         if (rightSwipeCount[0].value >= settings.maxRightSwipes) {
           throw new Error("Right swipe limit reached");
@@ -258,7 +282,7 @@ export class SessionService {
       }
 
       if (sessionCode) {
-        const [members, existingLikes, totalMatchCount] = await Promise.all([
+        const [members, otherLikes, totalMatchCount] = await Promise.all([
           db.select({
             externalUserId: sessionMembers.externalUserId,
             externalUserName: sessionMembers.externalUserName,
@@ -278,9 +302,9 @@ export class SessionService {
         const matchStrategy = settings?.matchStrategy || "atLeastTwo";
 
         if (matchStrategy === "atLeastTwo") {
-          if (existingLikes.length > 0) isMatch = true;
+          if (otherLikes.length > 0) isMatch = true;
         } else if (matchStrategy === "allMembers") {
-          if (existingLikes.length >= numMembers - 1 && numMembers > 1) isMatch = true;
+          if (otherLikes.length >= numMembers - 1 && numMembers > 1) isMatch = true;
         }
 
         if (isMatch && settings?.maxMatches && (totalMatchCount[0] as any).value >= settings.maxMatches) {
@@ -304,40 +328,86 @@ export class SessionService {
               profileUpdatedAt: member?.profileUpdatedAt,
             };
           });
-          // Add current user to likedBy since they are not in the DB yet
-          const currentUserProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, user.Id) });
-          likedBy.push({ 
-            userId: user.Id, 
-            userName: user.Name,
-            hasCustomProfilePicture: !!currentUserProfile,
-            profileUpdatedAt: currentUserProfile?.updatedAt,
-          });
+          // Add current user to likedBy since they are not in the DB yet (or might be an existing one we're updating)
+          if (!likedBy.some(l => l.userId === user.Id)) {
+            const currentUserProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, user.Id) });
+            likedBy.push({ 
+              userId: user.Id, 
+              userName: user.Name,
+              hasCustomProfilePicture: !!currentUserProfile,
+              profileUpdatedAt: currentUserProfile?.updatedAt,
+            });
+          }
         }
       }
 
-      await db.insert(likes).values({
-        externalUserId: user.Id,
-        externalId: itemId,
-        sessionCode: sessionCode || null,
-        isMatch: isMatch,
-      });
+      if (existingLike) {
+        // Update existing like to move it to the top (fresh like)
+        await db.update(likes).set({ 
+          createdAt: sql`CURRENT_TIMESTAMP`,
+          isMatch: isMatch
+        }).where(eq(likes.id, existingLike.id));
+      } else {
+        try {
+          await db.insert(likes).values({
+            externalUserId: user.Id,
+            externalId: itemId,
+            sessionCode: sessionCode || null,
+            isMatch: isMatch,
+          });
+        } catch (e: any) {
+          // If it still fails with a unique constraint, someone else (or a concurrent request) already swiped
+          if (e.message?.includes("UNIQUE") || e.code === "SQLITE_CONSTRAINT") {
+            return { isMatch, likedBy, matchBlockedByLimit };
+          }
+          throw e;
+        }
+      }
 
       if (sessionCode && !isMatch) {
         events.emit(EVENT_TYPES.LIKE_UPDATED, { sessionCode, itemId, userId: user.Id });
       }
     } else {
-      if (sessionCode && settings?.maxLeftSwipes) {
+      // If we are hiding something that was previously liked, remove it from likes
+      if (existingLike) {
+        await db.delete(likes).where(eq(likes.id, existingLike.id));
+        
+        // If it was a match, we need to re-evaluate it for others
+        if (sessionCode && existingLike.isMatch) {
+          const [s, remainingLikes, members] = await Promise.all([
+            db.query.sessions.findFirst({ where: eq(sessions.code, sessionCode) }),
+            db.query.likes.findMany({ where: and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId)) }),
+            db.query.sessionMembers.findMany({ where: eq(sessionMembers.sessionCode, sessionCode) })
+          ]);
+          const sessionSettings: SessionSettings | null = s?.settings ? JSON.parse(s.settings) : null;
+          await this.reEvaluateMatch(sessionCode, itemId, sessionSettings, members, remainingLikes);
+          events.emit(EVENT_TYPES.MATCH_REMOVED, { sessionCode, itemId, userId: user.Id });
+        }
+      }
+
+      if (sessionCode && settings?.maxLeftSwipes && !existingHidden) {
         const leftSwipeCount = await db.select({ value: count() }).from(hiddens).where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, user.Id)));
         if (leftSwipeCount[0].value >= settings.maxLeftSwipes) {
           throw new Error("Left swipe limit reached");
         }
       }
 
-      await db.insert(hiddens).values({
-        externalUserId: user.Id,
-        externalId: itemId,
-        sessionCode: sessionCode || null,
-      });
+      if (existingHidden) {
+         // Just a no-op 
+      } else {
+        try {
+          await db.insert(hiddens).values({
+            externalUserId: user.Id,
+            externalId: itemId,
+            sessionCode: sessionCode || null,
+          });
+        } catch (e: any) {
+          if (e.message?.includes("UNIQUE") || e.code === "SQLITE_CONSTRAINT") {
+            return { isMatch, likedBy, matchBlockedByLimit };
+          }
+          throw e;
+        }
+      }
     }
 
     return { isMatch, likedBy, matchBlockedByLimit };

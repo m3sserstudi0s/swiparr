@@ -56,12 +56,13 @@ export function useSwipe() {
         const swipedItem = payload.item;
         queryClient.setQueriesData({ queryKey: QUERY_KEYS.likes }, (old: any) => {
           if (!Array.isArray(old)) return old;
-          if (old.some((item: any) => item.Id === payload.itemId)) return old;
+          const targetSessionCode = payload.sessionCode ?? sessionCode;
+          if (old.some((item: any) => item.Id === payload.itemId && (item.sessionCode ?? null) === targetSessionCode)) return old;
           
           const newLike = {
             ...swipedItem,
             swipedAt: new Date().toISOString(),
-            sessionCode: payload.sessionCode || sessionCode,
+            sessionCode: targetSessionCode,
             likedBy: [
               ...(swipedItem.likedBy || []),
               {

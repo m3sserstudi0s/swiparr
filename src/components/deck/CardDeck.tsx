@@ -67,28 +67,60 @@ export function CardDeck() {
 
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Clear local state when session, filters, or global settings change to get a fresh start
+  // Track session/filters to detect mode changes
   const filtersJson = JSON.stringify(sessionStatus?.filters);
   const settingsHash = sessionStatus?.settingsHash;
+  const currentModeRef = useRef<{ sessionCode: string | null; filtersJson: string }>({ 
+    sessionCode, 
+    filtersJson 
+  });
+
   useEffect(() => {
-    setIsTransitioning(true);
-    // Note: We don't clear displayDeck or other state here anymore. 
-    // We wait until the new data actually arrives to provide a smoother transition.
-  }, [sessionCode, filtersJson, settingsHash]);
+    // If the session code or filters changed, we are transitioning to a new "mode"
+    if (currentModeRef.current.sessionCode !== sessionCode || currentModeRef.current.filtersJson !== filtersJson) {
+      setIsTransitioning(true);
+      currentModeRef.current = { sessionCode, filtersJson };
+      
+      // If we already have the deck data (it's cached in React Query),
+      // we can apply it immediately instead of waiting for the next effect run
+      if (deck && Array.isArray(deck) && !isLoading) {
+        setDisplayDeck(deck);
+        setRemovedIds([]);
+        swipedIdsRef.current.clear();
+        setLastSwipe(null);
+        setIsTransitioning(false);
+      }
+    }
+  }, [sessionCode, filtersJson, settingsHash, deck, isLoading]);
 
    // Update displayDeck when new items are fetched or filters change
   useEffect(() => {
     if (deck && Array.isArray(deck) && !isLoading) {
       if (isTransitioning) {
-        // First batch of data for new filters has arrived
+        // First batch of data for new filters/mode has arrived
         setDisplayDeck(deck);
         setRemovedIds([]);
         swipedIdsRef.current.clear();
         setLastSwipe(null);
         setIsTransitioning(false);
       } else {
-        // Pagination: append new items
+        // Normal pagination or data update within the same mode
+        // If we are in the middle of a transition but deck changed, it's likely the new data
         setDisplayDeck((prev) => {
+          // If the deck is completely different (e.g. session change), reset instead of append
+          // We detect this by checking if there's any overlap in the first few items
+          const currentFirstId = prev[0]?.Id;
+          const newFirstId = deck[0]?.Id;
+          
+          if (prev.length > 0 && newFirstId && !deck.some(item => item.Id === currentFirstId) && !prev.some(item => item.Id === newFirstId)) {
+            // Deck seems entirely new, reset state
+            // Use setTimeout to avoid state updates during render if needed, but here it's inside an effect
+            setRemovedIds([]);
+            swipedIdsRef.current.clear();
+            setLastSwipe(null);
+            return deck;
+          }
+
           const existingIds = new Set(prev.map((i) => i.Id));
           const newItems = deck.filter((item) => !existingIds.has(item.Id));
           if (newItems.length === 0) return prev;

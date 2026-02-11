@@ -30,7 +30,8 @@ export const likes = sqliteTable("Like", {
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
-    uniqueIndex("Like_externalId_externalUserId_sessionCode_key").on(table.externalId, table.externalUserId, table.sessionCode),
+    uniqueIndex("Like_session_key").on(table.externalId, table.externalUserId, table.sessionCode).where(sql`sessionCode IS NOT NULL`),
+    uniqueIndex("Like_solo_key").on(table.externalId, table.externalUserId).where(sql`sessionCode IS NULL`),
   ];
 });
 
@@ -44,7 +45,8 @@ export const hiddens = sqliteTable("Hidden", {
   sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
 }, (table) => {
   return [
-    uniqueIndex("Hidden_externalId_externalUserId_sessionCode_key").on(table.externalId, table.externalUserId, table.sessionCode),
+    uniqueIndex("Hidden_session_key").on(table.externalId, table.externalUserId, table.sessionCode).where(sql`sessionCode IS NOT NULL`),
+    uniqueIndex("Hidden_solo_key").on(table.externalId, table.externalUserId).where(sql`sessionCode IS NULL`),
   ];
 });
 

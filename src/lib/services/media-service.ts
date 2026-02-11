@@ -38,6 +38,11 @@ export class MediaService {
       ...hidden.map((h: any) => h.externalId)
     ]);
 
+    // Calculate effective offset to handle item shifting due to swipes
+    // Total swiped items (liked + hidden) for the current mode
+    const totalSwipedCount = excludeIds.size;
+    const effectiveOffset = (page * limit) + totalSwipedCount;
+
     // 2. Get Filters
     let sessionFilters: Filters | null = overrideFilters || null;
 
@@ -67,9 +72,9 @@ export class MediaService {
 
     // 4. Handle Session vs Solo Mode
     if (session.sessionCode) {
-      return this.getSessionItems(session.sessionCode, sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit);
+      return this.getSessionItems(session.sessionCode, sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset);
     } else {
-      return this.getSoloItems(sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit);
+      return this.getSoloItems(sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset);
     }
   }
 
@@ -116,7 +121,7 @@ export class MediaService {
     return { watchProviders, watchRegion };
   }
 
-  private static async getSessionItems(sessionCode: string, sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number) {
+  private static async getSessionItems(sessionCode: string, sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
     const fetchedItems = await provider.getItems({
       libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
       genres: sessionFilters?.genres,
@@ -131,7 +136,7 @@ export class MediaService {
       languages: sessionFilters?.languages,
       unplayedOnly: sessionFilters?.unplayedOnly,
       limit: limit * 2, // Fetch a bit more to account for exclusions
-      offset: page * limit,
+      offset: effectiveOffset,
     }, auth);
 
     let items = this.applyClientFilters(fetchedItems, sessionFilters);
@@ -149,7 +154,7 @@ export class MediaService {
     };
   }
 
-  private static async getSoloItems(sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number) {
+  private static async getSoloItems(sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
     const soloYears = sessionFilters?.yearRange ? Array.from({ length: (sessionFilters.yearRange[1] ?? 2025) - (sessionFilters.yearRange[0] ?? 1900) + 1 }, (_, i) => (sessionFilters.yearRange?.[0] ?? 1900) + i) : undefined;
     
     // If we have filters but the provider might not support them all (like Plex), 
@@ -176,7 +181,7 @@ export class MediaService {
       languages: sessionFilters?.languages,
       unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
       limit: fetchLimit,
-      offset: page * limit
+      offset: effectiveOffset
     }, auth);
     
     let items = this.applyClientFilters(fetchedItems, sessionFilters);
