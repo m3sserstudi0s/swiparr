@@ -31,6 +31,8 @@ import {
     ComboboxTrigger,
 } from "@/components/ui/combobox"
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function StreamingSettings() {
     const { data: settings, isLoading: isLoadingSettings } = useUserSettings();
@@ -57,7 +59,7 @@ export function StreamingSettings() {
             const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === "SE") || regions[0];
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedRegion(region);
-            
+
             if (settings.isNew) {
                 setSelectedProviders(availableProviders.map((p: WatchProvider) => p.Id));
             } else {
@@ -143,16 +145,20 @@ export function StreamingSettings() {
                     >
                         <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-44 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
                             <div className="flex items-center gap-2 truncate">
-                                {selectedRegion && (
-                                    <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0 border border-border/50">
-                                        <CountryFlag countryCode={selectedRegion.Id} />
-                                    </div>
-                                )}
-                                <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
+                                {selectedRegion ? (
+                                    <>
+                                        <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0 border border-border/50">
+                                            <CountryFlag countryCode={selectedRegion.Id} />
+                                        </div>
+                                        <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
+                                    </>
+                                ) :
+                                    <Skeleton className="w-30 h-7" />
+                                }
                             </div>
                         </ComboboxTrigger>
                         <ComboboxContent container={container} className="min-w-44 z-1000">
-                                <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
+                            <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
                             <ComboboxEmpty>No regions found</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
@@ -215,42 +221,44 @@ export function StreamingSettings() {
                                 <Loader2 className="size-6 animate-spin text-muted-foreground" />
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 gap-2 max-h-75 overflow-y-auto pr-2">
-                                {availableProviders.length === 0 ? (
-                                    <div className="col-span-2 text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                                        No providers found for this region
-                                    </div>
-                                ) : (
-                                    availableProviders.map((p: WatchProvider) => {
-                                        const isSelected = selectedProviders.includes(p.Id);
-                                        return (
-                                            <button
-                                                key={p.Id}
-                                                onClick={() => toggleProvider(p.Id)}
-                                                className={cn(
-                                                    "flex items-center gap-2 p-2 rounded-md border text-sm transition-all",
-                                                    isSelected
-                                                        ? "bg-primary/5 border-primary text-primary font-medium"
-                                                        : "bg-background hover:bg-muted/50 border-input text-muted-foreground"
-                                                )}
-                                            >
-                                                <div className="relative size-6 shrink-0 rounded overflow-hidden shadow-xs">
-                                                    <OptimizedImage
-                                                        src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
-                                                        alt={p.Name}
-                                                        className="object-cover"
-                                                        unoptimized
-                                                        width={24}
-                                                        height={24}
-                                                    />
-                                                </div>
-                                                <span className="truncate text-[11px]">{p.Name}</span>
-                                                {isSelected && <Check className="ml-auto size-3 shrink-0" />}
-                                            </button>
-                                        );
-                                    })
-                                )}
-                            </div>
+                            <ScrollArea className="flex-1 overflow-y-auto h-75">
+                                <div className="grid grid-cols-2 gap-2 pr-4 my-3">
+                                    {availableProviders.length === 0 ? (
+                                        <div className="col-span-2 text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
+                                            No providers found for this region
+                                        </div>
+                                    ) : (
+                                        availableProviders.map((p: WatchProvider) => {
+                                            const isSelected = selectedProviders.includes(p.Id);
+                                            return (
+                                                <button
+                                                    key={p.Id}
+                                                    onClick={() => toggleProvider(p.Id)}
+                                                    className={cn(
+                                                        "flex items-center gap-2 p-2 rounded-md border text-sm transition-all",
+                                                        isSelected
+                                                            ? "bg-primary/5 border-primary text-primary font-medium"
+                                                            : "bg-background hover:bg-muted/50 border-input text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <div className="relative size-6 shrink-0 rounded overflow-hidden shadow-xs">
+                                                        <OptimizedImage
+                                                            src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
+                                                            alt={p.Name}
+                                                            className="object-cover"
+                                                            unoptimized
+                                                            width={24}
+                                                            height={24}
+                                                        />
+                                                    </div>
+                                                    <span className="truncate text-[11px]">{p.Name}</span>
+                                                    {isSelected && <Check className="ml-auto size-3 shrink-0" />}
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </ScrollArea>
                         )}
 
                         <Button

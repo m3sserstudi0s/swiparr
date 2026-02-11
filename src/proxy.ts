@@ -54,10 +54,14 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL(`${basePath}/login`, request.url);
 
     // searchParams.set automatically handles URL encoding
-    // Always use the version with basePath for the callback URL so the browser can return correctly
     const callbackPath = `${basePath}${pathname}`;
-
     loginUrl.searchParams.set("callbackUrl", callbackPath + search);
+
+    // Pass join param to login page so Join OG can be served
+    const join = request.nextUrl.searchParams.get("join");
+    if (join) {
+      loginUrl.searchParams.set("join", join);
+    }
 
     return NextResponse.redirect(loginUrl);
   }

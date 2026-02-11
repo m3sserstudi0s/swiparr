@@ -98,14 +98,14 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
             {!!currentMovie.CommunityRating && '•'}
             {!!currentMovie.CommunityRating && (
               <span className="flex items-center">
-                <Star className="size-2.5 mr-0.5 mb-0.5" />
+                <Star className="size-2.5 mr-0.5 mb-px" />
                 {currentMovie.CommunityRating.toFixed(1)}
               </span>
             )}
             •
             {!!currentMovie.RunTimeTicks && (
               <span className="flex items-center">
-                <Clock className="size-2.5 mr-0.5 mb-0.5" /> {ticksToTime(currentMovie.RunTimeTicks)}
+                <Clock className="size-2.5 mr-0.5 mb-px" /> {ticksToTime(currentMovie.RunTimeTicks)}
               </span>
             )}
             <div className="ml-auto">

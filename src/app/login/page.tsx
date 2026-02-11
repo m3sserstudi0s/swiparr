@@ -16,12 +16,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
   const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
   
-  const ogUrl = new URL(`${basePath}/api/og`, origin);
   if (join && typeof join === 'string') {
+    const ogUrl = new URL(`${basePath}/api/og`, origin);
     ogUrl.searchParams.set('join', join);
-  }
-
-  if (join) {
     const title = "Join Session";
     const description = `You've been invited to join a session on Swiparr with code: ${join}.`;
     return {
@@ -47,28 +44,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     };
   }
 
-  const title = "Login";
-  const description = "Login to Swiparr to start swiping on what to watch next, by yourself or together. A Tinder-like experience for your movie and TV show library.";
   return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: [
-        {
-          url: ogUrl.toString(),
-          width: 1200,
-          height: 630,
-        }
-      ]
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [ogUrl.toString()],
-    }
+    title: "Login",
+    description: "Login to Swiparr to start swiping on what to watch next, by yourself or together.",
   };
 }
 
