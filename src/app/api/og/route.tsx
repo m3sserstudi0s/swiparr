@@ -61,9 +61,9 @@ export async function GET(req: NextRequest) {
           {join ? (
             <div tw="flex flex-col items-center">
               <div tw="text-5xl font-bold text-white mb-4">
-                You're invited to join session
+                You're invited to join a session
               </div>
-              <div tw="text-3xl text-[#a0a0a0] mb-10 max-w-3xl text-center leading-normal">
+              <div tw="text-3xl text-[#a0a0a0] mb-5 max-w-3xl text-center leading-normal">
                 Join a session and start swiping on what to watch next together.
               </div>
               <div tw="text-6xl font-bold text-[#a0a0a0] px-12 py-5 rounded-3xl border-4 border-[#a0a0a0]" style={{ fontFamily: 'JetBrains Mono' }}>
