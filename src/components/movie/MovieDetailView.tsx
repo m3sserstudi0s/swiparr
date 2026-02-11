@@ -34,8 +34,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
   // 2. Define transforms based on that value (0 to 300px of scroll)
   const imgY = useTransform(scrollY, [0, 300], [0, 300]);
-  const imgOpacity = useTransform(scrollY, [0, 200], [0.75, 0.2]);
-  const imgScale = useTransform(scrollY, [0, 200], [1, 1.15]);
+  const imgOpacity = useTransform(scrollY, [0, 300], [0.75, 0.2]);
+  const imgScale = useTransform(scrollY, [0, 300], [1, 1.15]);
 
   // Handle scroll event manually to update the motion value
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
