@@ -22,16 +22,13 @@ export async function proxy(request: NextRequest) {
     ? NextResponse.rewrite(new URL(pathname + search, request.url))
     : NextResponse.next();
 
-  const session = await getIronSession<SessionData>(request, response, await getSessionOptions());
-
-  // 1. Define public paths. 
+  // Define public paths
   const isPublicPath =
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/og") ||
     pathname.startsWith("/opengraph-image") ||
     pathname.startsWith("/api/health") ||
-
     pathname.startsWith("/_next") ||
     pathname.includes("favicon.ico") ||
     pathname.includes("manifest.json") ||
@@ -41,6 +38,9 @@ export async function proxy(request: NextRequest) {
   if (isPublicPath) {
     return response;
   }
+
+  const session = await getIronSession<SessionData>(request, response, await getSessionOptions());
+
 
   if (!session.isLoggedIn) {
     if (pathname.includes("/api/")) {

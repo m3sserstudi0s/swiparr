@@ -54,25 +54,17 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: `${basePath}/apple-icon.png`,
     },
     openGraph: {
-      title: "Swiparr - Disover what to watch next",
+      title: "Swiparr - Discoverr what to watch next",
       description: tagline,
       url: url,
       siteName: "Swiparr",
-      images: [
-        {
-          url: `${basePath}/icon1.png`,
-          width: 512,
-          height: 512,
-        },
-      ],
       locale: "en_US",
       type: "website",
     },
     twitter: {
-      card: "summary",
-      title: "Swiparr - Disover what to watch next",
+      card: "summary_large_image",
+      title: "Swiparr - Discoverr what to watch next",
       description: tagline,
-      images: [`${basePath}/icon1.png`],
     },
   };
 }

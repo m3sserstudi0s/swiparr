@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 export const alt = 'Swiparr - Swipe on what to watch next'
 export const size = {
@@ -12,17 +12,36 @@ export const contentType = 'image/png'
 
 async function loadGoogleFont(font: string, text: string) {
   const url = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`
-  const css = await (await fetch(url)).text()
-  const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/)
+  const css = await (await fetch(url, {
+    headers: {
+      // Force TTF format by using an old browser User-Agent
+      'User-Agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1',
+    },
+  })).text()
 
-  if (resource) {
+  const resource = css.match(/src: url\((.+)\) format\(['"](.+)['"]\)/)
+
+  if (resource && (resource[2] === 'truetype' || resource[2] === 'opentype')) {
     const response = await fetch(resource[1])
-    if (response.status === 200) {
+    if (response.ok) {
       return await response.arrayBuffer()
     }
   }
 
-  throw new Error('failed to load font data')
+  // Fallback to a direct TTF link
+  const fallbacks: Record<string, string> = {
+    'Zalando+Sans': 'https://github.com/google/fonts/raw/main/ofl/inter/static/Inter-Bold.ttf',
+    'JetBrains+Mono': 'https://github.com/JetBrains/JetBrainsMono/raw/v2.304/fonts/ttf/JetBrainsMono-Bold.ttf'
+  }
+
+  if (fallbacks[font]) {
+    const response = await fetch(fallbacks[font])
+    if (response.ok) {
+      return await response.arrayBuffer()
+    }
+  }
+
+  throw new Error(`Failed to load font: ${font}`)
 }
 
 export default async function Image() {
@@ -32,65 +51,29 @@ export default async function Image() {
     const logoUrl = `${origin}${basePath}/icon1.png`;
 
     const text = "Swiparr Swipe on what to watch next, by yourself or together."
-    const sansFont = await loadGoogleFont('Zalando+Sans:700', text)
+    const sansFont = await loadGoogleFont('Zalando+Sans', text)
 
     return new ImageResponse(
       (
-        <div
-          style={{
-            background: 'linear-gradient(to bottom right, #141414, #2a2a2a)',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'Zalando Sans, sans-serif',
-          }}
-        >
-          {/* Logo and Emoji Header */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '10px',
-            }}
-          >
+        <div tw="flex flex-col items-center justify-center w-full h-full bg-[#141414]" style={{
+          background: 'linear-gradient(to bottom right, #141414, #2a2a2a)',
+        }}>
+          {/* Header with Logo and Emoji */}
+          <div tw="flex items-center mb-4">
             <img 
               src={logoUrl} 
               alt="Swiparr Logo" 
-              style={{ 
-                width: '120px', 
-                height: '120px',
-                borderRadius: '30px',
-              }} 
+              tw="w-32 h-32 rounded-[30px]"
             />
-            <span style={{ fontSize: '80px', marginLeft: '20px' }}>🎬</span>
+            <span tw="text-8xl ml-8 flex">🍿</span>
           </div>
 
-          {/* App Name */}
-          <div
-            style={{
-              fontSize: '60px',
-              fontWeight: 'bold',
-              color: 'white',
-              marginBottom: '30px',
-              fontFamily: 'Zalando Sans',
-            }}
-          >
+          {/* App Name UNDER logo/emoji */}
+          <div tw="text-8xl font-black text-white mb-8" style={{ fontFamily: 'Zalando Sans' }}>
             Swiparr
           </div>
 
-          <div
-            style={{
-              fontSize: '32px',
-              color: '#a0a0a0',
-              maxWidth: '800px',
-              textAlign: 'center',
-              lineHeight: '1.5',
-            }}
-          >
+          <div tw="text-4xl text-[#a0a0a0] text-center max-w-4xl leading-relaxed">
             Swipe on what to watch next, by yourself or together.
           </div>
         </div>
@@ -110,6 +93,6 @@ export default async function Image() {
     )
   } catch (e: any) {
     console.error(`OG Image Error: ${e.message}`)
-    return new Response(`Failed to generate image`, { status: 500 })
+    return new Response(`Failed to generate image: ${e.message}`, { status: 500 })
   }
 }

@@ -2,21 +2,40 @@ import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
 import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 async function loadGoogleFont(font: string, text: string) {
   const url = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`
-  const css = await (await fetch(url)).text()
-  const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/)
+  const css = await (await fetch(url, {
+    headers: {
+      // Force TTF format by using an old browser User-Agent
+      'User-Agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1',
+    },
+  })).text()
 
-  if (resource) {
+  const resource = css.match(/src: url\((.+)\) format\(['"](.+)['"]\)/)
+
+  if (resource && (resource[2] === 'truetype' || resource[2] === 'opentype')) {
     const response = await fetch(resource[1])
-    if (response.status === 200) {
+    if (response.ok) {
       return await response.arrayBuffer()
     }
   }
 
-  throw new Error('failed to load font data')
+  // Fallback to a direct TTF link if Google Fonts API is being difficult
+  const fallbacks: Record<string, string> = {
+    'Zalando+Sans': 'https://github.com/google/fonts/raw/main/ofl/inter/static/Inter-Bold.ttf', // Fallback for proprietary font
+    'JetBrains+Mono': 'https://github.com/JetBrains/JetBrainsMono/raw/v2.304/fonts/ttf/JetBrainsMono-Bold.ttf'
+  }
+
+  if (fallbacks[font]) {
+    const response = await fetch(fallbacks[font])
+    if (response.ok) {
+      return await response.arrayBuffer()
+    }
+  }
+
+  throw new Error(`Failed to load font: ${font}`)
 }
 
 export async function GET(req: NextRequest) {
@@ -27,120 +46,51 @@ export async function GET(req: NextRequest) {
     const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
     const logoUrl = `${origin}${basePath}/icon1.png`;
 
-    // Load fonts based on the text they will display
-    const titleText = "Swiparr"
-    const taglineText = join 
-      ? `You're Invited! Join a session and start swiping on what to watch next together. Code: ${join}`
-      : "Swipe on what to watch next, by yourself or together."
-    
+    // Fetch fonts
     const [sansFont, monoFont] = await Promise.all([
-      loadGoogleFont('Zalando+Sans:700', titleText + taglineText),
-      loadGoogleFont('JetBrains+Mono:700', join || '')
+      loadGoogleFont('Zalando+Sans', 'Swiparr' + (join ? "You're Invited! Join a session" : "Swipe on what to watch next")),
+      loadGoogleFont('JetBrains+Mono', join || 'CODE')
     ])
+
+    const emoji = join ? '🤝' : '🍿';
 
     return new ImageResponse(
       (
-        <div
-          style={{
-            background: 'linear-gradient(to bottom right, #141414, #2a2a2a)',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'Zalando Sans, sans-serif',
-          }}
-        >
-          {/* Logo and Emoji Header */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '10px',
-            }}
-          >
-            <img 
-              src={logoUrl} 
-              alt="Swiparr Logo" 
-              style={{ 
-                width: '120px', 
-                height: '120px',
-                borderRadius: '30px',
-              }} 
+        <div tw="flex flex-col items-center justify-center w-full h-full bg-[#141414]" style={{
+          background: 'linear-gradient(to bottom right, #141414, #2a2a2a)',
+        }}>
+          {/* Header with Logo and Emoji */}
+          <div tw="flex items-center mb-4">
+            <img
+              src={logoUrl}
+              alt="Logo"
+              tw="w-32 h-32 rounded-[30px]"
             />
-            <span style={{ fontSize: '80px', marginLeft: '20px' }}>
-              {join ? '🤝' : '🍿'}
-            </span>
+            <div tw="text-8xl ml-8 flex">
+              {emoji}
+            </div>
           </div>
 
-          {/* App Name */}
-          <div
-            style={{
-              fontSize: '60px',
-              fontWeight: 'bold',
-              color: 'white',
-              marginBottom: '30px',
-              fontFamily: 'Zalando Sans',
-            }}
-          >
+          {/* Bold App Name UNDER the logo/emoji */}
+          <div tw="text-8xl font-black text-white mb-8" style={{ fontFamily: 'Zalando Sans' }}>
             Swiparr
           </div>
-          
+
           {join ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div
-                style={{
-                  fontSize: '54px',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  marginBottom: '15px',
-                }}
-              >
+            <div tw="flex flex-col items-center">
+              <div tw="text-5xl font-bold text-white mb-4">
                 You're Invited!
               </div>
-              <div
-                style={{
-                  fontSize: '28px',
-                  color: '#a0a0a0',
-                  marginBottom: '35px',
-                  maxWidth: '850px',
-                  textAlign: 'center',
-                  lineHeight: '1.4',
-                }}
-              >
+              <div tw="text-3xl text-[#a0a0a0] mb-10 max-w-3xl text-center leading-normal">
                 Join a session and start swiping on what to watch next together.
               </div>
-              <div
-                style={{
-                  fontSize: '64px',
-                  fontWeight: 'bold',
-                  color: '#ff416c',
-                  background: 'rgba(255, 65, 108, 0.1)',
-                  padding: '15px 50px',
-                  borderRadius: '25px',
-                  border: '3px solid rgba(255, 65, 108, 0.4)',
-                  fontFamily: 'JetBrains Mono',
-                  letterSpacing: '0.05em',
-                }}
-              >
+              <div tw="text-6xl font-bold text-[#ff416c] px-12 py-5 rounded-3xl border-4 border-[#ff416c66] bg-[#ff416c0d]" style={{ fontFamily: 'JetBrains Mono' }}>
                 {join}
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div
-                style={{
-                  fontSize: '32px',
-                  color: '#a0a0a0',
-                  textAlign: 'center',
-                  maxWidth: '800px',
-                  lineHeight: '1.5',
-                }}
-              >
-                Swipe on what to watch next, by yourself or together.
-              </div>
+            <div tw="text-4xl text-[#a0a0a0] text-center max-w-4xl leading-relaxed">
+              Swipe on what to watch next, by yourself or together.
             </div>
           )}
         </div>
@@ -167,6 +117,6 @@ export async function GET(req: NextRequest) {
     )
   } catch (e: any) {
     console.error(`OG Generation Error: ${e.message}`)
-    return new Response(`Failed to generate OG image`, { status: 500 })
+    return new Response(`Failed to generate image: ${e.message}`, { status: 500 })
   }
 }

@@ -25,38 +25,9 @@ const client = createClient({
 
 const db = drizzle(client);
 
-async function cleanupDuplicates(client) {
-  console.log('Cleaning up duplicate interactions before migration...');
-  try {
-    // Cleanup Like table duplicates
-    await client.execute(`
-      DELETE FROM "Like" 
-      WHERE id NOT IN (
-        SELECT MIN(id) 
-        FROM "Like" 
-        GROUP BY externalId, externalUserId, COALESCE(sessionCode, 'solo_mode')
-      )
-    `);
-
-    // Cleanup Hidden table duplicates
-    await client.execute(`
-      DELETE FROM "Hidden" 
-      WHERE id NOT IN (
-        SELECT MIN(id) 
-        FROM "Hidden" 
-        GROUP BY externalId, externalUserId, COALESCE(sessionCode, 'solo_mode')
-      )
-    `);
-    console.log('Cleanup successful.');
-  } catch (error) {
-    console.warn('Cleanup warning (might be first-time migration):', error.message);
-  }
-}
-
 async function main() {
   console.log('Running migrations...');
   try {
-    await cleanupDuplicates(client);
     const migrationsFolder = path.join(process.cwd(), 'src', 'db', 'migrations');
     console.log('Migrations folder:', migrationsFolder);
     await migrate(db, { migrationsFolder });
