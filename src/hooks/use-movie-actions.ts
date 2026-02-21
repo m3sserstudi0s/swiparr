@@ -8,6 +8,7 @@ import { useSession } from "@/hooks/api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
+import { logger } from "@/lib/logger";
 
 interface UseMovieActionsOptions {
   isLiked?: boolean;
@@ -190,8 +191,13 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
       if (currentMovie?.Id && context?.previousMovie) {
           queryClient.setQueryData(movieKey, context.previousMovie);
       }
+      logger.error("Relike failed:", err);
       toast.error("Failed to re-like movie", {
-        description: getErrorMessage(err)
+        description: getErrorMessage(err),
+        action: {
+          label: 'Retry',
+          onClick: () => relike()
+        }
       });
     }
   });
@@ -240,12 +246,19 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     onError: (err, variables, context) => {
         const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
         if (context?.previousLikes) {
-            // Re-evaluating setQueriesData for error recovery is hard, just invalidate
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+            queryClient.setQueryData(QUERY_KEYS.likes, context.previousLikes);
         }
         if (currentMovie?.Id && context?.previousMovie) {
             queryClient.setQueryData(movieKey, context.previousMovie);
         }
+        logger.error("Unlike failed:", err);
+        toast.error("Failed to remove from likes", {
+          description: getErrorMessage(err),
+          action: {
+            label: 'Retry',
+            onClick: () => unlike()
+          }
+        });
     }
   });
 

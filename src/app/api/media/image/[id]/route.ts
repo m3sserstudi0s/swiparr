@@ -61,20 +61,64 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
     });
 
-    const response = await provider.fetchImage(id, isUserType ? "user" : imageType, effectiveTag || undefined, auth, options);
+    const maxRetries = 3;
+    const baseDelay = 200;
+    let lastError: any;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await provider.fetchImage(id, isUserType ? "user" : imageType, effectiveTag || undefined, auth, options);
 
-    return new NextResponse(response.data as any, {
-      status: 200,
-      headers: {
-        "Content-Type": response.contentType,
-        "Cache-Control": isUserType ? "no-cache, no-store, must-revalidate" : "public, max-age=31536000, immutable",
-      },
-    });
+        return new NextResponse(response.data as any, {
+          status: 200,
+          headers: {
+            "Content-Type": response.contentType,
+            "Cache-Control": isUserType ? "no-cache, no-store, must-revalidate" : "public, max-age=31536000, immutable",
+          },
+        });
+      } catch (error: any) {
+        lastError = error;
+        const is404 = error.response?.status === 404;
+        
+        if (is404) {
+          throw error;
+        }
+        
+        if (attempt < maxRetries - 1) {
+          const delay = baseDelay * Math.pow(2, attempt);
+          logger.info(`Image fetch attempt ${attempt + 1} failed for ${id}, retrying in ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError;
 
   } catch (error: any) {
-    if (error.response?.status === 404) {
+    const is404 = error.response?.status === 404;
+    
+    if (is404) {
+      logger.info(`Image not found for ${id}, attempting blur fallback`);
+      
+      try {
+        const blurDataURL = await provider.getBlurDataUrl(id, imageType, auth);
+        if (blurDataURL) {
+          return new NextResponse(blurDataURL, {
+            status: 200,
+            headers: {
+              "Content-Type": "image/webp",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              "X-Fallback": "blur",
+            },
+          });
+        }
+      } catch (blurError: any) {
+        logger.error("Blur fallback failed:", blurError.message);
+      }
+      
       return new NextResponse("Image not found", { status: 404 });
     }
+    
     logger.error("Error proxying image:", error.message);
     if (isUserType) return new NextResponse("User image not found", { status: 404 });
     return new NextResponse("Error fetching image", { status: 500 });
