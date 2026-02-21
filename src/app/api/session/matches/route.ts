@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
                 return {
                     userId: lb.externalUserId,
                     userName: member?.externalUserName || "Unknown",
+                    sessionCode: lb.sessionCode,
                     hasCustomProfilePicture: !!member?.hasCustomProfilePicture,
                     profileUpdatedAt: member?.profileUpdatedAt,
                 };
