@@ -170,10 +170,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setMinRating(0);
   };
 
-  const isSession = !!session?.code;
-  const filteredSortOptions = isSession
-    ? sortOptions.filter(opt => opt !== "Random")
-    : sortOptions;
+  const filteredSortOptions = sortOptions;
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>

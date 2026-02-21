@@ -11,6 +11,7 @@ export const sessions = sqliteTable("Session", {
   providerConfig: text("providerConfig"),
   filters: text("filters"),
   settings: text("settings"),
+  randomSeed: text("randomSeed"),
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
