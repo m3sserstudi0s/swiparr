@@ -8,7 +8,7 @@ export interface Filters {
   watchRegion?: string;
   sortBy?: string;
   themes?: string[];
-  languages?: string[];
+  tmdbLanguages?: string[];
   unplayedOnly?: boolean;
 }
 
@@ -34,4 +34,3 @@ export interface SessionMember {
   hasCustomProfilePicture?: boolean;
   profileUpdatedAt?: string;
 }
-

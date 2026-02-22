@@ -154,9 +154,9 @@ export function CardDeck() {
 
   const hasAppliedFilters = useMemo(() => {
     if (!sessionStatus?.filters) return false;
-    const { genres, yearRange, minCommunityRating, officialRatings, runtimeRange, themes, sortBy, languages } = sessionStatus.filters;
-    const hasNonDefaultLanguages = !!(languages && 
-      (languages.length > 1 || (languages.length === 1 && languages[0] !== "en")));
+    const { genres, yearRange, minCommunityRating, officialRatings, runtimeRange, themes, sortBy, tmdbLanguages } = sessionStatus.filters;
+    const hasNonDefaultLanguages = !!(tmdbLanguages && 
+      (tmdbLanguages.length > 1 || (tmdbLanguages.length === 1 && tmdbLanguages[0] !== "en")));
     const defaultSort = sessionStatus?.provider === 'tmdb' ? "Popular" : "Trending";
     return (genres && genres.length > 0) || 
            (minCommunityRating !== undefined && minCommunityRating > 0) || 

@@ -158,12 +158,12 @@ export class TmdbProvider implements MediaProvider {
         logger.debug("[TMDBProvider.getItems] Applying certification filter:", { certCountry, ratings: filters.ratings });
     }
 
-    if (filters.languages && filters.languages.length > 0) {
+    if (filters.tmdbLanguages && filters.tmdbLanguages.length > 0) {
         // TMDB uses ISO 639-1 codes for with_original_language
         // If only one language selected, use it directly
         // If multiple, use pipe separator for OR logic
-        discoverParams.with_original_language = filters.languages.join('|');
-        logger.debug("[TMDBProvider.getItems] Applying language filter:", { languages: filters.languages });
+        discoverParams.with_original_language = filters.tmdbLanguages.join('|');
+        logger.debug("[TMDBProvider.getItems] Applying language filter:", { languages: filters.tmdbLanguages });
     }
 
     if (filters.sortBy === "Random") {
@@ -309,6 +309,7 @@ export class TmdbProvider implements MediaProvider {
       Id: movie.id.toString(),
       Name: movie.title,
       Overview: movie.overview,
+      Language: movie.original_language,
       ProductionYear: movie.release_date ? new Date(movie.release_date).getFullYear() : undefined,
       CommunityRating: movie.vote_average,
       ImageTags: {
@@ -351,6 +352,7 @@ export class TmdbProvider implements MediaProvider {
       Name: movie.title,
       OriginalTitle: movie.original_title,
       Overview: movie.overview,
+      Language: movie.original_language,
       ProductionYear: movie.release_date ? new Date(movie.release_date).getFullYear() : undefined,
       CommunityRating: movie.vote_average,
       RunTimeTicks: movie.runtime ? movie.runtime * 60 * 10000000 : undefined,

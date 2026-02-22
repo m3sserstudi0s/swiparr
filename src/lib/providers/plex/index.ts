@@ -51,7 +51,7 @@ export class PlexProvider implements MediaProvider {
     if (targetSections.length === 0) return [];
 
     // Distribute limit across sections
-    const hasFilters = !!(filters.genres?.length || filters.years?.length || filters.ratings?.length || filters.minCommunityRating || filters.runtimeRange || filters.themes?.length || filters.languages?.length || filters.unplayedOnly);
+    const hasFilters = !!(filters.genres?.length || filters.years?.length || filters.ratings?.length || filters.minCommunityRating || filters.runtimeRange || filters.themes?.length || filters.unplayedOnly);
     const limitPerSection = Math.max(Math.ceil((filters.limit || 20) * (hasFilters ? 4 : 1.5) / targetSections.length), 20);
 
     for (const section of targetSections) {
@@ -59,27 +59,6 @@ export class PlexProvider implements MediaProvider {
         if (filters.genres && filters.genres.length > 0) {
             resolvedGenres = await this.resolveGenreIds(filters.genres, auth);
         }
-
-        let languageFilter = filters.languages && filters.languages.length > 0 ? filters.languages[0].toLowerCase() : undefined;
-        if (languageFilter === "zh") languageFilter = "chi";
-        if (languageFilter === "ja") languageFilter = "jpn";
-        if (languageFilter === "ko") languageFilter = "kor";
-        if (languageFilter === "sv") languageFilter = "swe";
-        if (languageFilter === "da") languageFilter = "dan";
-        if (languageFilter === "no") languageFilter = "nor";
-        if (languageFilter === "pt") languageFilter = "por";
-        if (languageFilter === "es") languageFilter = "spa";
-        if (languageFilter === "fr") languageFilter = "fre";
-        if (languageFilter === "de") languageFilter = "ger";
-        if (languageFilter === "it") languageFilter = "ita";
-        if (languageFilter === "en") languageFilter = "eng";
-        if (languageFilter === "ru") languageFilter = "rus";
-        if (languageFilter === "pl") languageFilter = "pol";
-        if (languageFilter === "nl") languageFilter = "dut";
-        if (languageFilter === "fi") languageFilter = "fin";
-        if (languageFilter === "tr") languageFilter = "tur";
-        if (languageFilter === "hi") languageFilter = "hin";
-        if (languageFilter === "ar") languageFilter = "ara";
 
         // Build query for Plex Advanced Filtering
         const params: Record<string, any> = {
@@ -94,8 +73,10 @@ export class PlexProvider implements MediaProvider {
 
         if (filters.sortBy === "Random") {
             params.sort = "random";
-        } else if (filters.sortBy === "Trending" || filters.sortBy === "Popular") {
+        } else if (filters.sortBy === "Trending") {
             params.sort = "rating:desc";
+        } else if (filters.sortBy === "Popular") {
+            params.sort = "rating:desc,audienceRating:desc";
         } else if (filters.sortBy === "ProductionYear" || filters.sortBy === "Newest") {
             params.sort = "year:desc";
         } else if (filters.sortBy === "Top Rated") {
@@ -141,18 +122,10 @@ export class PlexProvider implements MediaProvider {
             if (max && max < 240) params['duration<='] = max * 60 * 1000;
         }
 
-        if (filters.languages && filters.languages.length > 0) {
-            if (languageFilter) params.audioLanguage = languageFilter;
-        }
-
         const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
         const res = await plexClient.get(url, { headers, params });
         const data = PlexContainerSchema.parse(res.data);
         let items = data.MediaContainer.Metadata || [];
-        if (filters.languages && filters.languages.length > 0) {
-            const selectedLangs = filters.languages.map(l => l.toLowerCase());
-            items = items.filter((item: any) => this.itemMatchesLanguage(item, selectedLangs, languageFilter));
-        }
         allItems = [...allItems, ...items];
     }
 
@@ -303,6 +276,26 @@ export class PlexProvider implements MediaProvider {
   }
 
   private mapToMediaItem(item: any): MediaItem {
+    const languageTags: string[] = [];
+
+    if (item.Language) {
+      languageTags.push(...item.Language.map((l: any) => l.tag).filter(Boolean));
+    }
+
+    if (item.Media) {
+      for (const media of item.Media) {
+        for (const part of media.Part || []) {
+          for (const stream of part.Stream || []) {
+            if (stream.languageCode) languageTags.push(stream.languageCode);
+            if (stream.language) languageTags.push(stream.language);
+            if (stream.title) languageTags.push(stream.title);
+          }
+        }
+      }
+    }
+
+    const language = languageTags.length > 0 ? languageTags[0] : undefined;
+
     const directorPeople = item.Director?.map((d: any, idx: number) => ({
       Id: `director-${item.ratingKey}-${idx}`,
       Name: d.tag,
@@ -322,6 +315,7 @@ export class PlexProvider implements MediaProvider {
       Id: item.ratingKey,
       Name: item.title,
       OriginalTitle: item.originalTitle,
+      Language: language,
       RunTimeTicks: item.duration ? item.duration * 10000 : undefined, 
       ProductionYear: item.year,
       CommunityRating: item.audienceRating ?? item.rating,
@@ -350,30 +344,5 @@ export class PlexProvider implements MediaProvider {
     } catch (e) {
       return genres;
     }
-  }
-
-  private itemMatchesLanguage(item: any, selectedLangs: string[], normalizedLanguage?: string): boolean {
-    const languageTags: string[] = [];
-
-    if (item.Language) {
-      languageTags.push(...item.Language.map((l: any) => l.tag?.toLowerCase()).filter(Boolean));
-    }
-
-    if (item.Media) {
-      for (const media of item.Media) {
-        for (const part of media.Part || []) {
-          for (const stream of part.Stream || []) {
-            if (stream.languageCode) languageTags.push(stream.languageCode.toLowerCase());
-            if (stream.language) languageTags.push(stream.language.toLowerCase());
-            if (stream.title) languageTags.push(stream.title.toLowerCase());
-          }
-        }
-      }
-    }
-
-    if (languageTags.length === 0) return false;
-
-    if (normalizedLanguage && languageTags.some(tag => tag.includes(normalizedLanguage))) return true;
-    return selectedLangs.some(lang => languageTags.some(tag => tag.includes(lang)));
   }
 }

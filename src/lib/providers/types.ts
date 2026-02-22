@@ -88,7 +88,7 @@ export interface SearchFilters {
   sortBy?: string;
   unplayedOnly?: boolean;
   themes?: string[];
-  languages?: string[];
+  tmdbLanguages?: string[];
   limit?: number;
   offset?: number;
 }

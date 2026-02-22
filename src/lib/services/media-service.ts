@@ -154,7 +154,7 @@ export class MediaService {
       watchRegion,
       sortBy,
       themes: sessionFilters?.themes,
-      languages: sessionFilters?.languages,
+      tmdbLanguages: sessionFilters?.tmdbLanguages,
       unplayedOnly: sessionFilters?.unplayedOnly,
       limit: limit * 2, // Fetch a bit more to account for exclusions
       offset: effectiveOffset,
@@ -210,7 +210,7 @@ export class MediaService {
       watchProviders,
       watchRegion,
       themes: sessionFilters?.themes,
-      languages: sessionFilters?.languages,
+      tmdbLanguages: sessionFilters?.tmdbLanguages,
       unplayedOnly: sessionFilters?.unplayedOnly,
     };
 
@@ -365,7 +365,7 @@ export class MediaService {
             watchProviders,
             watchRegion,
             themes: sessionFilters?.themes,
-            languages: sessionFilters?.languages,
+            tmdbLanguages: sessionFilters?.tmdbLanguages,
             unplayedOnly: sessionFilters?.unplayedOnly,
             sortBy: "SortName", // Use consistent sort for fetching
             limit: batchSize,
@@ -426,7 +426,7 @@ export class MediaService {
           minCommunityRating: sessionFilters?.minCommunityRating,
           runtimeRange: sessionFilters?.runtimeRange,
           themes: sessionFilters?.themes,
-          languages: sessionFilters?.languages,
+          tmdbLanguages: sessionFilters?.tmdbLanguages,
           unplayedOnly: sessionFilters?.unplayedOnly,
           limit: 1000, // Fetch large batch
           offset: 0,
@@ -472,7 +472,7 @@ export class MediaService {
           watchProviders,
           watchRegion,
           themes: sessionFilters?.themes,
-          languages: sessionFilters?.languages,
+          tmdbLanguages: sessionFilters?.tmdbLanguages,
           sortBy: "Popular", // Use consistent sort
           limit: 20,
           offset: (page - 1) * 20,
@@ -526,7 +526,7 @@ export class MediaService {
       watchRegion,
       sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
       themes: sessionFilters?.themes,
-      languages: sessionFilters?.languages,
+      tmdbLanguages: sessionFilters?.tmdbLanguages,
       unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
       limit: fetchLimit,
       offset: effectiveOffset

@@ -47,6 +47,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
   const { data: session } = useSession();
   const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending"; // Popular works better with TMDB
+  const isTmdb = session?.provider === 'tmdb';
   const { capabilities } = useRuntimeConfig();
   const { data: userSettings } = useUserSettings();
   const watchRegion = session?.provider === 'tmdb' ? (userSettings?.watchRegion || "SE") : undefined;
@@ -88,7 +89,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setSelectedRatings(currentFilters?.officialRatings || []);
       setSelectedWatchProviders(currentFilters?.watchProviders || availableWatchProviders.map(p => p.Id));
       setSelectedThemes(currentFilters?.themes || []);
-      setSelectedLanguages(currentFilters?.languages || DEFAULT_LANGUAGES);
+      setSelectedLanguages(currentFilters?.tmdbLanguages || DEFAULT_LANGUAGES);
       setSortBy(currentFilters?.sortBy || defaultSort);
       setUnplayedOnly(currentFilters?.unplayedOnly ?? true);
       setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
@@ -100,8 +101,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const normalizeFilters = (f: Filters): Filters => {
     const isYearDefault = !f.yearRange || (f.yearRange[0] === minYearLimit && f.yearRange[1] === maxYearLimit);
     const isRuntimeDefault = !f.runtimeRange || (f.runtimeRange[0] === 0 && f.runtimeRange[1] === 240);
-    const isLanguageDefault = !f.languages || (f.languages.length === DEFAULT_LANGUAGES.length &&
-      f.languages.every(l => DEFAULT_LANGUAGES.includes(l)));
+    const isLanguageDefault = !f.tmdbLanguages || (f.tmdbLanguages.length === DEFAULT_LANGUAGES.length &&
+      f.tmdbLanguages.every(l => DEFAULT_LANGUAGES.includes(l)));
 
     // Logic: 
     // - If all providers are selected OR none are selected, we treat it as "no filter" (undefined)
@@ -115,7 +116,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       officialRatings: f.officialRatings?.length ? f.officialRatings : undefined,
       watchProviders: isWatchProvidersDefault ? undefined : f.watchProviders,
       themes: f.themes?.length ? f.themes : undefined,
-      languages: isLanguageDefault ? undefined : f.languages,
+      tmdbLanguages: isLanguageDefault ? undefined : f.tmdbLanguages,
       sortBy: (f.sortBy === defaultSort || !f.sortBy) ? undefined : f.sortBy,
       unplayedOnly: f.unplayedOnly ?? true,
       yearRange: isYearDefault ? undefined : f.yearRange,
@@ -130,7 +131,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       officialRatings: selectedRatings,
       watchProviders: selectedWatchProviders,
       themes: selectedThemes,
-      languages: selectedLanguages,
+      tmdbLanguages: selectedLanguages,
       sortBy: sortBy,
       unplayedOnly: unplayedOnly,
       yearRange: yearRange,
@@ -375,24 +376,26 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 )}
 
                 {/* Language Section */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Language</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {LANGUAGES.map((lang) => (
-                      <Badge
-                        key={lang.code}
-                        variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
-                        className={cn(
-                          "cursor-pointer text-sm py-1.5 px-4 rounded-full",
-                          selectedLanguages.includes(lang.code) && "bg-primary/20 text-primary border-primary/30"
-                        )}
-                        onClick={() => setSelectedLanguages([lang.code])}
-                      >
-                        {lang.name}
-                      </Badge>
-                    ))}
+                {isTmdb && (
+                  <div className="space-y-4">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Language</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {LANGUAGES.map((lang) => (
+                        <Badge
+                          key={lang.code}
+                          variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
+                          className={cn(
+                            "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                            selectedLanguages.includes(lang.code) && "bg-primary/20 text-primary border-primary/30"
+                          )}
+                          onClick={() => setSelectedLanguages([lang.code])}
+                        >
+                          {lang.name}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Watch Providers Section */}
                 {capabilities.hasStreamingSettings && availableWatchProviders.length > 0 && (

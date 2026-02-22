@@ -19,7 +19,7 @@ import { ticksToTime, cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 import { useMovieActions } from "@/hooks/use-movie-actions";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
-import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
+import { LANGUAGES, TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 
 interface Props {
   movieId: string | null;
@@ -71,6 +71,9 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   const { data: sessionStatus } = useSession({ enabled: !!movieId });
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
   const serverPublicUrl = sessionStatus?.serverUrl || runtimeServerUrl;
+  const languageLabel = movie?.Language
+    ? (LANGUAGES.find((lang) => lang.code === movie.Language?.toLowerCase())?.name || movie.Language)
+    : null;
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -280,22 +283,30 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
 
                 {/* DETAILS ROW */}
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Director</h3>
-                    <div className="text-foreground font-medium">
-                      {movie.People?.find(p => p.Type === "Director")?.Name || "Unknown"}
-                    </div>
-                  </div>
-                  {movie.Studios && movie.Studios.length > 0 && (
+                  <div className="grid grid-cols-2 gap-8 mb-8">
                     <div>
-                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Studio</h3>
-                      <div className="text-foreground font-medium truncate">
-                        {movie.Studios[0].Name}
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Director</h3>
+                      <div className="text-foreground font-medium">
+                        {movie.People?.find(p => p.Type === "Director")?.Name || "Unknown"}
                       </div>
                     </div>
-                  )}
-                </div>
+                    {!!languageLabel && (
+                      <div>
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Language</h3>
+                        <div className="text-foreground font-medium truncate">
+                          {languageLabel}
+                        </div>
+                      </div>
+                    )}
+                    {movie.Studios && movie.Studios.length > 0 && (
+                      <div>
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Studio</h3>
+                        <div className="text-foreground font-medium truncate">
+                          {movie.Studios[0].Name}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                 {/* SYNOPSIS */}
                 <div className="mb-8">
