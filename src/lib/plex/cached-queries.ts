@@ -44,7 +44,19 @@ export const getCachedGenres = unstable_cache(
             const res = await plexClient.get(url, { headers });
             const genres = res.data.MediaContainer?.Directory || [];
             genres.forEach((g: any) => {
-                allGenres.set(g.title, { Id: g.fastKey || g.key, Name: g.title });
+                const rawKey = g.fastKey || g.key;
+                let normalizedKey = rawKey;
+                if (typeof normalizedKey === 'string') {
+                    const stripped = normalizedKey.replace(/^\//, '');
+                    if (stripped.includes('genre=')) {
+                        normalizedKey = stripped.split('genre=')[1];
+                    } else if (stripped.includes('/genre/')) {
+                        normalizedKey = stripped.split('/genre/').pop();
+                    } else {
+                        normalizedKey = stripped;
+                    }
+                }
+                allGenres.set(g.title, { Id: normalizedKey, Name: g.title });
             });
         }
         

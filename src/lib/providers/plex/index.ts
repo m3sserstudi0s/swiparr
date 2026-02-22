@@ -17,6 +17,7 @@ import {
 import { plexClient, getPlexUrl, getPlexHeaders, getBestServerUrl } from "@/lib/plex/api";
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
 import { PlexContainerSchema } from "../schemas";
+import { logger } from "@/lib/logger";
 
 /**
  * Plex Provider
@@ -69,6 +70,7 @@ export class PlexProvider implements MediaProvider {
             includeCollections: 1,
             includeAdvanced: 1,
             includeMeta: 1,
+            includeUserState: 1,
         };
 
         if (filters.sortBy === "Random") {
@@ -96,7 +98,7 @@ export class PlexProvider implements MediaProvider {
         // Plex filtering usually requires internal IDs for genres/ratings
         // The cached-queries.ts should have resolved these already if they are in the filters
         if (resolvedGenres && resolvedGenres.length > 0) {
-            params.genre = resolvedGenres.join(',');
+            params.genre = resolvedGenres.map((g) => g.replace(/^\//, '')).join(',');
         }
         if (filters.ratings && filters.ratings.length > 0) {
             params.contentRating = filters.ratings.join(',');
@@ -135,6 +137,7 @@ export class PlexProvider implements MediaProvider {
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
+    if (!token) throw new Error("Plex Token is required");
     const path = id.includes("/") ? id : `/library/metadata/${id}`;
     const url = getPlexUrl(path, auth?.serverUrl);
     const res = await plexClient.get(url, {
@@ -143,11 +146,13 @@ export class PlexProvider implements MediaProvider {
         includeGuids: 1,
         includeCollections: 1,
         includeMeta: 1,
+        includeUserState: 1,
       },
     });
     const data = PlexContainerSchema.parse(res.data);
     const item = data.MediaContainer.Metadata?.[0];
     if (!item) throw new Error("Item not found");
+    await this.attachWatchlistState(item, token);
     return this.mapToMediaItem(item);
   }
 
@@ -217,8 +222,14 @@ export class PlexProvider implements MediaProvider {
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const path = tag || itemId;
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
+    }
     if (path.startsWith('/')) {
         return getPlexUrl(`${path}?X-Plex-Token=${token}`, auth?.serverUrl);
+    }
+    if (itemId && !tag) {
+        return getPlexUrl(`/library/metadata/${itemId}/thumb?X-Plex-Token=${token}`, auth?.serverUrl);
     }
     return "";
   }
@@ -240,8 +251,11 @@ export class PlexProvider implements MediaProvider {
 
   async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
     const url = this.getImageUrl(itemId, type as any, tag, auth);
+    if (!url) {
+        throw new Error("Invalid URL");
+    }
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
-    const headers = getPlexHeaders(token);
+    const headers = url.startsWith('http') ? {} : getPlexHeaders(token);
     const res = await plexClient.get(url, {
       responseType: "arraybuffer",
       headers,
@@ -311,14 +325,19 @@ export class PlexProvider implements MediaProvider {
       PrimaryImageTag: r.thumb,
     })) || [];
 
+    const watchlistGuid = item.guid || (item.Guid?.[0]?.id ?? undefined);
+    const isWatchlisted = (item.userState?.watchlistedAt ?? 0) > 0;
+
     return {
       Id: item.ratingKey,
+      Guid: watchlistGuid,
       Name: item.title,
       OriginalTitle: item.originalTitle,
       Language: language,
       RunTimeTicks: item.duration ? item.duration * 10000 : undefined, 
       ProductionYear: item.year,
       CommunityRating: item.audienceRating ?? item.rating,
+      CommunityRatingSource: item.audienceRatingImage || item.ratingImage,
       Overview: item.summary,
       Taglines: item.tagline ? [item.tagline] : [],
       OfficialRating: item.contentRating,
@@ -329,9 +348,12 @@ export class PlexProvider implements MediaProvider {
         Backdrop: item.art,
       },
       BackdropImageTags: item.art ? [item.art] : [],
-      UserData: {
-        IsFavorite: false,
-      },
+      UserData: item.userRating !== undefined || isWatchlisted
+        ? {
+            IsFavorite: item.userRating > 0,
+            Likes: isWatchlisted,
+          }
+        : undefined,
     };
   }
 
@@ -340,9 +362,99 @@ export class PlexProvider implements MediaProvider {
     try {
       const cached = await getCachedGenres(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
       const byName = new Map(cached.map((g: any) => [g.Name.toLowerCase(), g.Id]));
-      return genres.map((g) => byName.get(g.toLowerCase()) || g);
+      const byId = new Set(cached.map((g: any) => g.Id));
+      return genres.map((g) => {
+          const normalized = g.toLowerCase();
+          const resolved = byName.get(normalized) || g;
+          return byId.has(resolved) ? resolved : g;
+      });
     } catch (e) {
       return genres;
+    }
+  }
+
+  async toggleWatchlist(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
+    if (!token) throw new Error("Plex Token is required");
+
+    let ratingKey = itemId;
+
+    try {
+      const details = await this.getItemDetails(itemId, auth);
+      if (details.Guid) {
+        const guidParts = details.Guid.split("/");
+        ratingKey = guidParts[guidParts.length - 1] || itemId;
+      }
+    } catch (error) {
+      logger.warn("[PlexProvider.toggleWatchlist] Failed to resolve watchlist ratingKey", error);
+    }
+
+    const endpoint = action === "add" ? "/actions/addToWatchlist" : "/actions/removeFromWatchlist";
+    const watchlistBases = [
+      "https://discover.provider.plex.tv",
+      "https://metadata.provider.plex.tv",
+    ];
+
+    let lastError: unknown;
+
+    for (const base of watchlistBases) {
+      try {
+        await plexClient.put(`${base}${endpoint}`, null, {
+          headers: {
+            ...getPlexHeaders(token),
+          },
+          params: {
+            ratingKey,
+            "X-Plex-Token": token,
+          },
+        });
+        return;
+      } catch (error: any) {
+        lastError = error;
+        const status = error?.response?.status;
+        if (status === 404) continue;
+        logger.error("[PlexProvider.toggleWatchlist] Failed to update watchlist", error);
+        throw error;
+      }
+    }
+
+    logger.error("[PlexProvider.toggleWatchlist] Failed to update watchlist", lastError);
+    throw lastError;
+  }
+
+  private async attachWatchlistState(item: any, token: string): Promise<void> {
+    const watchlistGuid = item.guid || (item.Guid?.[0]?.id ?? undefined);
+    if (!watchlistGuid) return;
+
+    const guidParts = watchlistGuid.split("/");
+    const ratingKey = guidParts[guidParts.length - 1];
+    if (!ratingKey) return;
+
+    const userStateBases = [
+      "https://discover.provider.plex.tv",
+      "https://metadata.provider.plex.tv",
+    ];
+
+    for (const base of userStateBases) {
+      try {
+        const res = await plexClient.get(`${base}/library/metadata/${ratingKey}/userState`, {
+          headers: getPlexHeaders(token),
+          params: {
+            "X-Plex-Token": token,
+          },
+        });
+
+        const userState = res.data?.MediaContainer?.UserState?.[0];
+        if (userState) {
+          item.userState = userState;
+        }
+        return;
+      } catch (error: any) {
+        const status = error?.response?.status;
+        if (status === 404) continue;
+        logger.warn("[PlexProvider.attachWatchlistState] Failed to fetch watchlist state", error);
+        return;
+      }
     }
   }
 }

@@ -66,7 +66,7 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     hasQuickConnect: false,
     hasWatchlist: false,
     hasLibraries: false,
-    hasSettings: false,
+    hasSettings: true,
     requiresServerUrl: false,
     isExperimental: false,
     hasStreamingSettings: true,

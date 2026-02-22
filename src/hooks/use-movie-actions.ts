@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { MediaItem } from "@/types";
 import { apiClient } from "@/lib/api-client";
 import { useSettings } from "@/lib/settings";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useSession } from "@/hooks/api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
   const queryClient = useQueryClient();
   const { settings } = useSettings();
   const { data: sessionData } = useSession();
+  const { provider: runtimeProvider } = useRuntimeConfig();
 
   // Determine the effective session code for this movie action
   // Preference: 
@@ -55,7 +57,12 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     : (syncedMovie || initialMovie)) as T | null;
 
   const isGuest = sessionData?.isGuest || false;
-  const useWatchlist = settings.useWatchlist;
+  const activeProvider = sessionData?.provider || runtimeProvider;
+  const useWatchlist = activeProvider === "plex"
+    ? true
+    : activeProvider === "jellyfin"
+      ? settings.useWatchlist
+      : false;
 
   const isInList = (useWatchlist ? currentMovie?.UserData?.Likes : currentMovie?.UserData?.IsFavorite) ?? false;
   
@@ -68,11 +75,11 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     mutationFn: async (actionOverride?: "add" | "remove") => {
       if (isGuest || !currentMovie) return;
       const action = actionOverride || (isInList ? "remove" : "add");
-      await apiClient.post("/api/user/watchlist", {
-        itemId: currentMovie.Id,
-        action,
-        useWatchlist
-      });
+        await apiClient.post("/api/user/watchlist", {
+          itemId: currentMovie.Id,
+          action,
+          useWatchlist
+        });
     },
     onMutate: async (actionOverride) => {
         // Optimistic update
