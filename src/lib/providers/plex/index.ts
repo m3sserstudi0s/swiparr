@@ -16,7 +16,7 @@ import {
 } from "@/types/media";
 import { plexClient, getPlexUrl, getPlexHeaders, getBestServerUrl } from "@/lib/plex/api";
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
-import { PlexContainerSchema, PlexMetadataSchema } from "../schemas";
+import { PlexContainerSchema } from "../schemas";
 
 /**
  * Plex Provider
@@ -48,15 +48,48 @@ export class PlexProvider implements MediaProvider {
       ? sections.filter(s => filters.libraries?.includes(s.Id))
       : sections.filter(s => s.CollectionType === "movies");
 
+    if (targetSections.length === 0) return [];
+
     // Distribute limit across sections
-    const limitPerSection = Math.max(Math.ceil((filters.limit || 20) * 1.5 / targetSections.length), 20);
+    const hasFilters = !!(filters.genres?.length || filters.years?.length || filters.ratings?.length || filters.minCommunityRating || filters.runtimeRange || filters.themes?.length || filters.languages?.length || filters.unplayedOnly);
+    const limitPerSection = Math.max(Math.ceil((filters.limit || 20) * (hasFilters ? 4 : 1.5) / targetSections.length), 20);
 
     for (const section of targetSections) {
+        let resolvedGenres: string[] | undefined = undefined;
+        if (filters.genres && filters.genres.length > 0) {
+            resolvedGenres = await this.resolveGenreIds(filters.genres, auth);
+        }
+
+        let languageFilter = filters.languages && filters.languages.length > 0 ? filters.languages[0].toLowerCase() : undefined;
+        if (languageFilter === "zh") languageFilter = "chi";
+        if (languageFilter === "ja") languageFilter = "jpn";
+        if (languageFilter === "ko") languageFilter = "kor";
+        if (languageFilter === "sv") languageFilter = "swe";
+        if (languageFilter === "da") languageFilter = "dan";
+        if (languageFilter === "no") languageFilter = "nor";
+        if (languageFilter === "pt") languageFilter = "por";
+        if (languageFilter === "es") languageFilter = "spa";
+        if (languageFilter === "fr") languageFilter = "fre";
+        if (languageFilter === "de") languageFilter = "ger";
+        if (languageFilter === "it") languageFilter = "ita";
+        if (languageFilter === "en") languageFilter = "eng";
+        if (languageFilter === "ru") languageFilter = "rus";
+        if (languageFilter === "pl") languageFilter = "pol";
+        if (languageFilter === "nl") languageFilter = "dut";
+        if (languageFilter === "fi") languageFilter = "fin";
+        if (languageFilter === "tr") languageFilter = "tur";
+        if (languageFilter === "hi") languageFilter = "hin";
+        if (languageFilter === "ar") languageFilter = "ara";
+
         // Build query for Plex Advanced Filtering
         const params: Record<string, any> = {
             type: 1, // Movies
             'X-Plex-Container-Start': filters.offset || 0,
             'X-Plex-Container-Size': limitPerSection,
+            includeGuids: 1,
+            includeCollections: 1,
+            includeAdvanced: 1,
+            includeMeta: 1,
         };
 
         if (filters.sortBy === "Random") {
@@ -81,24 +114,45 @@ export class PlexProvider implements MediaProvider {
 
         // Plex filtering usually requires internal IDs for genres/ratings
         // The cached-queries.ts should have resolved these already if they are in the filters
-        if (filters.genres && filters.genres.length > 0) {
-            params.genre = filters.genres.join(',');
+        if (resolvedGenres && resolvedGenres.length > 0) {
+            params.genre = resolvedGenres.join(',');
         }
         if (filters.ratings && filters.ratings.length > 0) {
             params.contentRating = filters.ratings.join(',');
         }
         if (filters.years && filters.years.length > 0) {
-            params.year = filters.years.join(',');
+            const minYear = Math.min(...filters.years);
+            const maxYear = Math.max(...filters.years);
+            params['year>='] = minYear;
+            params['year<='] = maxYear;
         }
 
         if (filters.unplayedOnly) {
             params.unwatched = 1;
         }
 
+        if (filters.minCommunityRating !== undefined && filters.minCommunityRating !== null) {
+            params['audienceRating>='] = filters.minCommunityRating;
+        }
+
+        if (filters.runtimeRange) {
+            const [min, max] = filters.runtimeRange;
+            if (min) params['duration>='] = min * 60 * 1000;
+            if (max && max < 240) params['duration<='] = max * 60 * 1000;
+        }
+
+        if (filters.languages && filters.languages.length > 0) {
+            if (languageFilter) params.audioLanguage = languageFilter;
+        }
+
         const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
         const res = await plexClient.get(url, { headers, params });
         const data = PlexContainerSchema.parse(res.data);
-        const items = data.MediaContainer.Metadata || [];
+        let items = data.MediaContainer.Metadata || [];
+        if (filters.languages && filters.languages.length > 0) {
+            const selectedLangs = filters.languages.map(l => l.toLowerCase());
+            items = items.filter((item: any) => this.itemMatchesLanguage(item, selectedLangs, languageFilter));
+        }
         allItems = [...allItems, ...items];
     }
 
@@ -108,8 +162,16 @@ export class PlexProvider implements MediaProvider {
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
-    const url = getPlexUrl(`/library/metadata/${id}`, auth?.serverUrl);
-    const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
+    const path = id.includes("/") ? id : `/library/metadata/${id}`;
+    const url = getPlexUrl(path, auth?.serverUrl);
+    const res = await plexClient.get(url, {
+      headers: getPlexHeaders(token),
+      params: {
+        includeGuids: 1,
+        includeCollections: 1,
+        includeMeta: 1,
+      },
+    });
     const data = PlexContainerSchema.parse(res.data);
     const item = data.MediaContainer.Metadata?.[0];
     if (!item) throw new Error("Item not found");
@@ -241,18 +303,33 @@ export class PlexProvider implements MediaProvider {
   }
 
   private mapToMediaItem(item: any): MediaItem {
+    const directorPeople = item.Director?.map((d: any, idx: number) => ({
+      Id: `director-${item.ratingKey}-${idx}`,
+      Name: d.tag,
+      Role: "Director",
+      Type: "Director",
+    })) || [];
+
+    const castPeople = item.Role?.map((r: any, idx: number) => ({
+      Id: (r.id ? r.id.toString() : `cast-${item.ratingKey}-${idx}`),
+      Name: r.tag,
+      Role: r.role || "Actor",
+      Type: "Actor",
+      PrimaryImageTag: r.thumb,
+    })) || [];
+
     return {
       Id: item.ratingKey,
       Name: item.title,
       OriginalTitle: item.originalTitle,
       RunTimeTicks: item.duration ? item.duration * 10000 : undefined, 
       ProductionYear: item.year,
-      CommunityRating: item.rating,
+      CommunityRating: item.audienceRating ?? item.rating,
       Overview: item.summary,
       Taglines: item.tagline ? [item.tagline] : [],
       OfficialRating: item.contentRating,
       Genres: item.Genre?.map((g: any) => g.tag) || [],
-      People: [], // Remove people from list view for performance
+      People: [...castPeople, ...directorPeople],
       ImageTags: {
         Primary: item.thumb,
         Backdrop: item.art,
@@ -262,5 +339,41 @@ export class PlexProvider implements MediaProvider {
         IsFavorite: false,
       },
     };
+  }
+
+  private async resolveGenreIds(genres: string[], auth?: AuthContext): Promise<string[]> {
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) return genres;
+    try {
+      const cached = await getCachedGenres(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+      const byName = new Map(cached.map((g: any) => [g.Name.toLowerCase(), g.Id]));
+      return genres.map((g) => byName.get(g.toLowerCase()) || g);
+    } catch (e) {
+      return genres;
+    }
+  }
+
+  private itemMatchesLanguage(item: any, selectedLangs: string[], normalizedLanguage?: string): boolean {
+    const languageTags: string[] = [];
+
+    if (item.Language) {
+      languageTags.push(...item.Language.map((l: any) => l.tag?.toLowerCase()).filter(Boolean));
+    }
+
+    if (item.Media) {
+      for (const media of item.Media) {
+        for (const part of media.Part || []) {
+          for (const stream of part.Stream || []) {
+            if (stream.languageCode) languageTags.push(stream.languageCode.toLowerCase());
+            if (stream.language) languageTags.push(stream.language.toLowerCase());
+            if (stream.title) languageTags.push(stream.title.toLowerCase());
+          }
+        }
+      }
+    }
+
+    if (languageTags.length === 0) return false;
+
+    if (normalizedLanguage && languageTags.some(tag => tag.includes(normalizedLanguage))) return true;
+    return selectedLangs.some(lang => languageTags.some(tag => tag.includes(lang)));
   }
 }

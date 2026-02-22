@@ -80,6 +80,8 @@ export const PlexMetadataSchema = z.object({
   summary: z.string().optional(),
   year: z.number().optional(),
   rating: z.number().optional(),
+  audienceRating: z.number().optional(),
+  audienceRatingImage: z.string().optional(),
   contentRating: z.string().optional(),
   duration: z.number().optional(),
   thumb: z.string().optional(),
@@ -87,7 +89,19 @@ export const PlexMetadataSchema = z.object({
   tagline: z.string().optional(),
   Genre: z.array(z.object({ tag: z.string() })).optional(),
   Director: z.array(z.object({ tag: z.string() })).optional(),
-  Role: z.array(z.object({ tag: z.string(), id: z.number().optional(), thumb: z.string().optional() })).optional(),
+  Role: z.array(z.object({ tag: z.string(), role: z.string().optional(), id: z.number().optional(), thumb: z.string().optional() })).optional(),
+  Language: z.array(z.object({ tag: z.string() })).optional(),
+  Country: z.array(z.object({ tag: z.string() })).optional(),
+  Media: z.array(z.object({
+    Part: z.array(z.object({
+      Stream: z.array(z.object({
+        language: z.string().optional(),
+        languageCode: z.string().optional(),
+        title: z.string().optional(),
+        streamType: z.number().optional(),
+      })).optional(),
+    })).optional(),
+  })).optional(),
 });
 
 export const PlexContainerSchema = z.object({

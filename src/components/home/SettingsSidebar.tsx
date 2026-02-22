@@ -48,7 +48,6 @@ export function SettingsSidebar() {
 
     const { basePath, provider: runtimeProvider, capabilities } = useRuntimeConfig();
     const { data: sessionStatus } = useSession();
-    const activeProvider = sessionStatus?.provider || runtimeProvider;
 
     const handleLogout = async () => {
         try {

@@ -7,12 +7,12 @@ export const getCachedYears = unstable_cache(
         const headers = getPlexHeaders(token);
         
         const sections = await getCachedLibraries(accessToken, deviceId, userId, serverUrl);
-        const movieSections = sections.filter((l: any) => l.CollectionType === "movies");
+        const movieSections = sections.filter((l: any) => l.type === "movie");
         
         let allYears = new Map<number, any>();
         
         for (const section of movieSections) {
-            const url = getPlexUrl(`/library/sections/${section.Id}/year`, serverUrl);
+            const url = getPlexUrl(`/library/sections/${section.key}/year`, serverUrl);
             const res = await plexClient.get(url, { headers });
             const years = res.data.MediaContainer?.Directory || [];
             years.forEach((y: any) => {
@@ -35,12 +35,12 @@ export const getCachedGenres = unstable_cache(
         const headers = getPlexHeaders(token);
         
         const sections = await getCachedLibraries(accessToken, deviceId, userId, serverUrl);
-        const movieSections = sections.filter((l: any) => l.CollectionType === "movies");
+        const movieSections = sections.filter((l: any) => l.type === "movie");
         
         let allGenres = new Map<string, any>();
         
         for (const section of movieSections) {
-            const url = getPlexUrl(`/library/sections/${section.Id}/genre`, serverUrl);
+            const url = getPlexUrl(`/library/sections/${section.key}/genre`, serverUrl);
             const res = await plexClient.get(url, { headers });
             const genres = res.data.MediaContainer?.Directory || [];
             genres.forEach((g: any) => {
