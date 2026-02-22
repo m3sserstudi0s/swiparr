@@ -21,6 +21,7 @@ export interface SessionData {
   isLoggedIn: boolean;
   soloFilters?: Filters;
   tempDeviceId?: string;
+  tempPinId?: number;
   providerConfig?: {
     serverUrl?: string;
     tmdbToken?: string;

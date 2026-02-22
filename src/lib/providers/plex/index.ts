@@ -14,7 +14,7 @@ import {
   MediaYear, 
   MediaRating 
 } from "@/types/media";
-import { plexClient, getPlexUrl, getPlexHeaders } from "@/lib/plex/api";
+import { plexClient, getPlexUrl, getPlexHeaders, getBestServerUrl } from "@/lib/plex/api";
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
 import { PlexContainerSchema, PlexMetadataSchema } from "../schemas";
 
@@ -221,8 +221,14 @@ export class PlexProvider implements MediaProvider {
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const token = password || appConfig.PLEX_TOKEN;
     if (!token) throw new Error("Plex Token is required");
+    
+    // Try to discover the best server URL to avoid TLS certificate issues
+    // This will prefer .plex.direct URLs over IP addresses for local HTTPS
+    const discovered = await getBestServerUrl(token, serverUrl);
+    const effectiveServerUrl = discovered?.serverUrl || serverUrl;
+    
     const headers = getPlexHeaders(token);
-    const url = getPlexUrl("/myplex/account", serverUrl);
+    const url = getPlexUrl("/myplex/account", effectiveServerUrl);
     const res = await plexClient.get(url, { headers });
     const user = res.data.MyPlex;
     return {
@@ -230,7 +236,7 @@ export class PlexProvider implements MediaProvider {
         Id: user.id?.toString() || username,
         Name: user.username || username,
       },
-      AccessToken: token,
+      AccessToken: discovered?.accessToken || token,
     };
   }
 

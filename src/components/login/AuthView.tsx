@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -11,6 +11,76 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangleIcon } from "lucide-react"
 import { ProviderType } from "@/lib/providers/types";
 import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
+import { ExternalLink, Copy, Check } from "lucide-react";
+
+interface PlexPinViewProps {
+  pinCode: string;
+  authUrl: string;
+  copied: boolean;
+  onCopy: () => void;
+  onCancel: () => void;
+}
+
+function PlexPinView({ pinCode, authUrl, copied, onCopy, onCancel }: PlexPinViewProps) {
+  return (
+    <div className="flex flex-col items-center space-y-6 py-4">
+      <div className="flex flex-col items-center space-y-3">
+        <div className="text-sm font-semibold tracking-[0.2em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
+          {pinCode}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCopy}
+            className="gap-2"
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                Copy Code
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(authUrl, '_blank')}
+            className="gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open Plex
+          </Button>
+        </div>
+      </div>
+      <div className="text-xs text-center text-muted-foreground max-w-[280px]">
+        Enter this code in the{' '}
+        <a 
+          href={authUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-foreground font-semibold hover:underline"
+        >
+          Plex app
+        </a>
+        {' '}or click the button to open Plex directly.
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onCancel}
+        className="text-muted-foreground hover:text-foreground"
+      >
+        Cancel
+      </Button>
+    </div>
+  );
+}
 
 interface AuthViewProps {
   provider: string;
@@ -39,6 +109,10 @@ interface AuthViewProps {
   onProfilePictureChange?: (base64: string | null) => void;
   activeTab: string,
   setActiveTab: (activeTab: string) => void;
+  startPlexPinAuth?: () => void;
+  plexPinCode?: string | null;
+  setPlexPinCode?: (val: string | null) => void;
+  plexAuthUrl?: string | null;
 }
 
 
@@ -68,10 +142,24 @@ export function AuthView({
   isExperimental,
   onProfilePictureChange,
   activeTab,
-  setActiveTab
+  setActiveTab,
+  startPlexPinAuth,
+  plexPinCode,
+  setPlexPinCode,
+  plexAuthUrl,
 }: AuthViewProps) {
 
-  const providerName = provider[0].toUpperCase() + provider.substring(1)
+  const providerName = provider[0].toUpperCase() + provider.substring(1);
+  const isPlex = provider === ProviderType.PLEX;
+  const [pinCopied, setPinCopied] = useState(false);
+
+  const handlePinCopy = () => {
+    if (plexPinCode) {
+      navigator.clipboard.writeText(plexPinCode);
+      setPinCopied(true);
+      setTimeout(() => setPinCopied(false), 2000);
+    }
+  };
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -87,10 +175,21 @@ export function AuthView({
             onCopy={copyToClipboard}
             onCancel={() => setQcCode(null)}
           />
+        ) : plexPinCode && plexAuthUrl && isPlex ? (
+          <PlexPinView
+            pinCode={plexPinCode}
+            authUrl={plexAuthUrl}
+            copied={pinCopied}
+            onCopy={handlePinCopy}
+            onCancel={() => setPlexPinCode?.(null)}
+          />
         ) : (
           <form onSubmit={handleLogin} className="space-y-3">
             <CardDescription>
-              Enter your {providerName} credentials
+              {isPlex 
+                ? 'Sign in to link Swiparr with your Plex account.'
+                : `Enter your ${providerName} credentials`
+              }
             </CardDescription>
 
             {!providerLock && (
@@ -100,7 +199,7 @@ export function AuthView({
                     ? "Jellyfin Server URL"
                     : provider === "emby"
                     ? "Emby Server URL"
-                    : "Plex Server URL"
+                    : "Plex Server URL (optional)"
                 }
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
@@ -108,23 +207,38 @@ export function AuthView({
               />
             )}
 
-            <Input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="bg-muted border-input"
-            />
-            <PasswordInput
-              placeholder={provider === "plex" ? "Token" : "Password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            {isPlex ? (
+              <>
+                <Button
+                  type="button"
+                  className="w-full mt-2 font-semibold"
+                  onClick={startPlexPinAuth}
+                  disabled={loading}
+                >
+                  {loading ? "Creating PIN..." : "Sign in with Plex"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Input
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="bg-muted border-input"
+                />
+                <PasswordInput
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
 
-            <Button type="submit" className="w-full mt-2 font-semibold" disabled={loading}>
-              {loading ? "Connecting..." : "Log in"}
-            </Button>
+                <Button type="submit" className="w-full mt-2 font-semibold" disabled={loading}>
+                  {loading ? "Connecting..." : "Log in"}
+                </Button>
+              </>
+            )}
 
-            {hasQuickConnect && (
+            {hasQuickConnect && !isPlex && (
               <>
                 <div className="relative py-1">
                   <div className="absolute inset-0 flex items-center">
@@ -148,7 +262,7 @@ export function AuthView({
             {isExperimental && (
               <Alert className="max-w-full mt-2 ">
                 <AlertTriangleIcon className="text-amber-600!"/>
-                <AlertTitle>Experimental provider integration</AlertTitle>
+                <AlertTitle className="whitespace-nowrap">Experimental provider integration</AlertTitle>
                 <AlertDescription className="text-xs">
                   Certain features may not work as expected.
                 </AlertDescription>

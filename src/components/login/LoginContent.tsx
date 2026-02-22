@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
+import { usePlexPinAuth } from "@/hooks/usePlexPinAuth";
 import Image from "next/image";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
@@ -11,6 +12,7 @@ import { apiClient } from "@/lib/api-client";
 import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { PROVIDER_CAPABILITIES, ProviderType } from "@/lib/providers/types";
+import { createPlexPinClient, buildPlexAuthUrl } from "@/lib/plex/client-auth";
 
 import { AdminInitializedView } from "./AdminInitializedView";
 import { AuthView } from "./AuthView";
@@ -44,6 +46,9 @@ export default function LoginContent() {
   const [isFallbackOpen, setIsFallbackOpen] = useState(false);
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
+  const [plexPinId, setPlexPinId] = useState<number | null>(null);
+  const [plexPinCode, setPlexPinCode] = useState<string | null>(null);
+  const [plexAuthUrl, setPlexAuthUrl] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -131,6 +136,13 @@ export default function LoginContent() {
   }, [searchParams, basePath]);
 
   useQuickConnectUpdates(qcSecret, onAuthorized);
+  
+  // Custom wrapper for usePlexPinAuth to handle 400 errors
+  usePlexPinAuth(plexPinId, (data) => {
+    // Stop polling if we got a successful auth
+    setPlexPinId(null);
+    onAuthorized(data);
+  });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,11 +264,46 @@ export default function LoginContent() {
     });
   };
 
+  const startPlexPinAuth = async () => {
+    setLoading(true);
+
+    const promise = async () => {
+      const pinData = await createPlexPinClient();
+      const authUrl = buildPlexAuthUrl(pinData.code);
+      return {
+        id: pinData.id,
+        code: pinData.code,
+        authUrl
+      };
+    };
+
+    toast.promise(promise(), {
+      loading: "Creating Plex PIN...",
+      success: (data) => {
+        setPlexPinId(data.id);
+        setPlexPinCode(data.code);
+        setPlexAuthUrl(data.authUrl);
+        setLoading(false);
+        return "Plex PIN created";
+      },
+      error: (err) => {
+        setLoading(false);
+        return { message: "Failed to create Plex PIN", description: getErrorMessage(err) };
+      },
+      position: 'top-right'
+    });
+  };
+
   const contentHeight = useMemo(() => {
     if (wasMadeAdmin) return "h-auto";
 
     if (selectedProvider === "tmdb") {
       return providerLock ? "h-60" : "h-80";
+    }
+
+    // If showing Plex PIN, use auto height
+    if (plexPinCode && selectedProvider === ProviderType.PLEX) {
+      return "h-auto";
     }
 
     // Logic for default providers
@@ -270,7 +317,7 @@ export default function LoginContent() {
     if (sessionCodeParam) return "h-95"; // Guest log in with link
 
     return "h-115";
-  }, [wasMadeAdmin, selectedProvider, providerLock, activeTab, sessionCodeParam]);
+  }, [wasMadeAdmin, selectedProvider, providerLock, activeTab, sessionCodeParam, plexPinCode]);
 
   return (
     <>
@@ -355,11 +402,15 @@ export default function LoginContent() {
                   copyToClipboard={copyToClipboard}
                   setQcCode={setQcCode}
                   sessionCodeParam={sessionCodeParam}
-                  hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === ProviderType.JELLYFIN)}
+                  hasQuickConnect={capabilities.hasQuickConnect}
                   isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
                   onProfilePictureChange={setProfilePicture}
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
+                  startPlexPinAuth={startPlexPinAuth}
+                  plexPinCode={plexPinCode}
+                  setPlexPinCode={setPlexPinCode}
+                  plexAuthUrl={plexAuthUrl}
                 />
               )}
 

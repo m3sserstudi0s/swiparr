@@ -52,7 +52,7 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
   },
   [ProviderType.PLEX]: {
     hasAuth: true,
-    hasQuickConnect: false,
+    hasQuickConnect: true,
     hasWatchlist: true,
     hasLibraries: true,
     hasSettings: true,
