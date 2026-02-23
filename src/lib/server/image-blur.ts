@@ -1,3 +1,4 @@
+import "server-only";
 import sharp from "sharp";
 import axios from "axios";
 import { cacheLife, cacheTag } from "next/cache";

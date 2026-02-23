@@ -7,7 +7,7 @@ import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { handleApiError } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
-import { getBestServerUrl } from "@/lib/plex/api";
+import { getBestServerUrl, getPlexHeaders } from "@/lib/plex/api";
 import axios from "axios";
 
 export async function POST(request: NextRequest) {
@@ -30,11 +30,7 @@ export async function POST(request: NextRequest) {
     if (!userInfo) {
       try {
         const response = await axios.get("https://plex.tv/api/v2/user", {
-          headers: {
-            "X-Plex-Token": authToken,
-            "X-Plex-Client-Identifier": clientId,
-            "Accept": "application/json",
-          },
+          headers: getPlexHeaders(authToken, clientId),
         });
         userInfo = response.data;
       } catch (err) {

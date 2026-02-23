@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
-import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
+import { getAsyncRuntimeConfig } from '@/lib/server/runtime-config'
 
 export const runtime = 'nodejs'
 

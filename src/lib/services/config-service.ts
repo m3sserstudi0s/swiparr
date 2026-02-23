@@ -1,7 +1,8 @@
+import "server-only";
 import { db, config as configTable } from "@/lib/db";
-import { eq } from "drizzle-orm";
-import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { tagConfig, tagUserSettings } from "@/lib/cache-tags";
+import { getCachedConfigValue, getCachedUserSettingsValue } from "@/lib/server/config-cache";
 import { config as appConfig } from "@/lib/config";
 import { ProviderType } from "../providers/types";
 
@@ -12,21 +13,11 @@ const ACTIVE_PROVIDER_KEY = "active_provider";
 
 export class ConfigService {
   private static async getConfigValue(key: string): Promise<string | null> {
-    "use cache";
-    cacheLife({ revalidate: 300, stale: 60, expire: 3600 });
-    cacheTag(tagConfig(key));
-
-    const config = await db.select().from(configTable).where(eq(configTable.key, key)).then((rows: any[]) => rows[0]);
-    return config?.value ?? null;
+    return getCachedConfigValue(key);
   }
 
   private static async getUserSettingsValue(userId: string): Promise<string | null> {
-    "use cache";
-    cacheLife({ revalidate: 300, stale: 60, expire: 3600 });
-    cacheTag(tagUserSettings(userId));
-
-    const config = await db.select().from(configTable).where(eq(configTable.key, `user_settings:${userId}`)).then((rows: any[]) => rows[0]);
-    return config?.value ?? null;
+    return getCachedUserSettingsValue(userId);
   }
 
   static async getActiveProvider(): Promise<ProviderType> {
