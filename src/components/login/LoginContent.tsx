@@ -294,31 +294,6 @@ export default function LoginContent() {
     });
   };
 
-  const contentHeight = useMemo(() => {
-    if (wasMadeAdmin) return "h-auto";
-
-    if (selectedProvider === "tmdb") {
-      return providerLock ? "h-60" : "h-80";
-    }
-
-    // If showing Plex PIN, use auto height
-    if (plexPinCode && selectedProvider === ProviderType.PLEX) {
-      return "h-auto";
-    }
-
-    // Logic for default providers
-    if (providerLock) {
-      if (activeTab === 'login' || sessionCodeParam) return "h-80";
-      return "h-105";
-    }
-
-    // Logic for default providers (unlocked)
-    if (activeTab === 'login') return "h-105";
-    if (sessionCodeParam) return "h-95"; // Guest log in with link
-
-    return "h-115";
-  }, [wasMadeAdmin, selectedProvider, providerLock, activeTab, sessionCodeParam, plexPinCode]);
-
   return (
     <>
       <SecureContextCopyFallback
@@ -336,7 +311,7 @@ export default function LoginContent() {
             </GradientText>
           </CardTitle>
         </CardHeader>
-        <CardContent className={cn("transition-all duration-300", contentHeight, !providerLock && "px-5")}>
+        <CardContent className={cn("transition-all duration-300 h-auto", !providerLock && "px-5")}>
           {wasMadeAdmin ? (
             <AdminInitializedView onContinue={() => {
               const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
@@ -403,7 +378,7 @@ export default function LoginContent() {
                   setQcCode={setQcCode}
                   sessionCodeParam={sessionCodeParam}
                   hasQuickConnect={capabilities.hasQuickConnect}
-                  isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
+                  isExperimental={providerLock ? capabilities.isExperimental : selectedProvider === ProviderType.EMBY}
                   onProfilePictureChange={setProfilePicture}
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}

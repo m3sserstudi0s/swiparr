@@ -187,7 +187,7 @@ export function AuthView({
           <form onSubmit={handleLogin} className="space-y-3">
             <CardDescription>
               {isPlex 
-                ? 'Sign in to link Swiparr with your Plex account.'
+                ? 'Sign in to link with your Plex account'
                 : `Enter your ${providerName} credentials`
               }
             </CardDescription>
@@ -215,7 +215,7 @@ export function AuthView({
                   onClick={startPlexPinAuth}
                   disabled={loading}
                 >
-                  {loading ? "Creating PIN..." : "Sign in with Plex"}
+                  {loading ? "Creating PIN..." : "Sign in with PIN"}
                 </Button>
               </>
             ) : (
