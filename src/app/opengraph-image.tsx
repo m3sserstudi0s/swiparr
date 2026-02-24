@@ -1,8 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getRuntimeConfig } from '@/lib/runtime-config'
 
-export const runtime = 'nodejs'
-
 export const alt = 'Swiparr - Swipe on what to watch next'
 export const size = {
   width: 1200,

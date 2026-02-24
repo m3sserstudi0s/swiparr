@@ -2,8 +2,6 @@ import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
 import { getAsyncRuntimeConfig } from '@/lib/server/runtime-config'
 
-export const runtime = 'nodejs'
-
 async function loadGoogleFont(font: string, text: string) {
   const url = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`
   const css = await (await fetch(url)).text()
