@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getRuntimeConfig } from '../runtime-config';
 import { config as appConfig } from '../config';
+import { assertSafeUrl, getDefaultProviderBaseUrl } from '@/lib/security/url-guard';
 
 const JELLYFIN_URL = appConfig.JELLYFIN_URL || 'http://localhost:8096';
 
@@ -11,10 +12,13 @@ export const apiClient = axios.create({
 });
 
 export const getJellyfinUrl = (path: string, customBaseUrl?: string) => {
-  let base = (customBaseUrl || JELLYFIN_URL).replace(/\/$/, '');
+  const fallbackBase = getDefaultProviderBaseUrl();
+  let base = (customBaseUrl || JELLYFIN_URL || fallbackBase || '').replace(/\/$/, '');
   if (!base.startsWith('http')) {
     base = `http://${base}`;
   }
+  const source = customBaseUrl ? (appConfig.app.providerLock ? "env" : "user") : "env";
+  assertSafeUrl(base, { source });
   const cleanPath = path.replace(/^\//, '');
   return `${base}/${cleanPath}`;
 };

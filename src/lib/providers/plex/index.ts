@@ -18,6 +18,7 @@ import { plexClient, getPlexUrl, getPlexHeaders, getBestServerUrl } from "@/lib/
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
 import { PlexContainerSchema } from "../schemas";
 import { logger } from "@/lib/logger";
+import { assertSafeUrl, getAllowedPlexImageHosts, isAllowedHost } from "@/lib/security/url-guard";
 
 /**
  * Plex Provider
@@ -223,7 +224,15 @@ export class PlexProvider implements MediaProvider {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const path = tag || itemId;
     if (path.startsWith('http://') || path.startsWith('https://')) {
-        return path;
+        const parsed = assertSafeUrl(path, {
+          source: "user",
+          allowlist: getAllowedPlexImageHosts(),
+        });
+        const allowedHosts = getAllowedPlexImageHosts();
+        if (!isAllowedHost(parsed.hostname, allowedHosts)) {
+          throw new Error("External image host not allowed");
+        }
+        return parsed.toString();
     }
     if (path.startsWith('/')) {
         return getPlexUrl(`${path}?X-Plex-Token=${token}`, auth?.serverUrl);

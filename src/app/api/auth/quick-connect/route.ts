@@ -9,11 +9,17 @@ import { AuthService } from "@/lib/services/auth-service";
 import { quickConnectSchema } from "@/lib/validations";
 import { logger } from "@/lib/logger";
 import { handleApiError } from "@/lib/api-utils";
+import { assertSafeUrl } from "@/lib/security/url-guard";
+import { config } from "@/lib/config";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const serverUrl = searchParams.get("serverUrl") || undefined;
+    if (serverUrl) {
+      const source = config.app.providerLock ? "env" : "user";
+      assertSafeUrl(serverUrl, { source });
+    }
     const deviceId = crypto.randomUUID();
     const data = await initiateQuickConnect(deviceId, serverUrl);
     

@@ -4,29 +4,30 @@ import { getRuntimeConfig } from '../runtime-config';
 import { config as appConfig } from '../config';
 import { resolveServerUrl } from './discovery';
 import { logger } from '../logger';
+import { assertSafeUrl, getDefaultProviderBaseUrl } from '@/lib/security/url-guard';
 
 const PLEX_URL = appConfig.PLEX_URL || 'http://localhost:32400';
 
-// HTTPS agent that handles self-signed certificates for local Plex servers
-// This is needed when connecting to Plex servers using .plex.direct URLs
-// which use self-signed certificates that don't match the hostname
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-});
+const httpsAgent = appConfig.security.plexAllowSelfSigned
+  ? new https.Agent({ rejectUnauthorized: false })
+  : undefined;
 
 export const plexClient = axios.create({
   timeout: 60000,
   headers: {
     'Accept': 'application/json',
   },
-  httpsAgent,
+  ...(httpsAgent ? { httpsAgent } : {}),
 });
 
 export const getPlexUrl = (path: string, customBaseUrl?: string) => {
-  let base = (customBaseUrl || PLEX_URL).replace(/\/$/, '');
+  const fallbackBase = getDefaultProviderBaseUrl();
+  let base = (customBaseUrl || PLEX_URL || fallbackBase || '').replace(/\/$/, '');
   if (!base.startsWith('http')) {
     base = `http://${base}`;
   }
+  const source = customBaseUrl ? (appConfig.app.providerLock ? "env" : "user") : "env";
+  assertSafeUrl(base, { source });
   const cleanPath = path.replace(/^\//, '');
   return `${base}/${cleanPath}`;
 };

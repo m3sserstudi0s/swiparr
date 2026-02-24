@@ -74,6 +74,10 @@ One-click deployment, perfect for personal or small group use:
 
 Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out [^1].
 
+**Vercel security note:** Set `AUTH_SECRET` (required for sessions and guest lending encryption). See "Generating `AUTH_SECRET`" in Security & Privacy.
+
+
+
 ### Full Control: Self-Host with Docker
 
 **Using Docker Compose (Recommended):**
@@ -114,6 +118,8 @@ docker run -d \
 ```
 
 3. Open [http://localhost:4321](http://localhost:4321)
+
+**Docker security note:** `AUTH_SECRET` can be auto-generated and stored in the database. For production, set it explicitly. See "Generating `AUTH_SECRET`" in Security & Privacy.
 
 ---
 
@@ -167,7 +173,7 @@ TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
 
 ```env
 # Authentication
-AUTH_SECRET=random-string-32-chars-min     # Auto-generated if empty (NOTE: Required with unRAID)
+AUTH_SECRET=random-string-32-chars-min     # Auto-generated if empty (NOTE: Required with unRAID + Vercel). See Security & Privacy.
 USE_SECURE_COOKIES=true                    # Required for HTTPS
 
 # Application
@@ -185,6 +191,11 @@ EMBY_ADMIN_USERNAME=emby-admin                   # Provider-specific admin (over
 # Security Headers
 X_FRAME_OPTIONS=DENY                       # Frame control
 CSP_FRAME_ANCESTORS=none                   # Embedding policy
+
+# Network Safety
+ALLOW_PRIVATE_PROVIDER_URLS=false          # Block private/LAN URLs for user-supplied providers (BYOP)
+PLEX_ALLOW_SELF_SIGNED=false               # Allow self-signed TLS for Plex (LAN only)
+PLEX_IMAGE_ALLOWED_HOSTS=plex.example.com,*.plex.direct  # Optional extra image hosts
 
 # BYOP Mode - Bring Your Own Provider
 PROVIDER_LOCK=false                          # Let users choose and configure their own provider
@@ -209,7 +220,7 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `PLEX_PUBLIC_URL` | ❌ | - | Public URL of your Plex server (for client-side access) |
 | `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
 | `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
-| `AUTH_SECRET` | ❌ | Auto-generated (NOTE: Required with unRAID) | Secret used for session encryption (min 32 chars) |
+| `AUTH_SECRET` | ❌ | Auto-generated (NOTE: Required with unRAID + Vercel) | Secret used for session encryption and guest lending token encryption (min 32 chars). See Security & Privacy. |
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
@@ -221,6 +232,9 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `PLEX_ADMIN_USERNAME` | ❌ | - | Plex-specific admin username [^2] |
 | `X_FRAME_OPTIONS` | ❌ | `DENY` | Security header: X-Frame-Options |
 | `CSP_FRAME_ANCESTORS`| ❌ | `none` | Security header: Content-Security-Policy frame-ancestors |
+| `ALLOW_PRIVATE_PROVIDER_URLS` | ❌ | `false` | Allow private/LAN provider URLs for BYOP user inputs |
+| `PLEX_ALLOW_SELF_SIGNED` | ❌ | `false` | Allow self-signed TLS for Plex connections |
+| `PLEX_IMAGE_ALLOWED_HOSTS` | ❌ | - | Extra allowlist for Plex image hosts (comma-separated). `PLEX_URL`/`PLEX_PUBLIC_URL` are allowed by default. |
 | `USE_ANALYTICS` | ❌ | `false` | Enable anonymous usage analytics (Vercel deployments) |
 | `ENABLE_DEBUG` | ❌ | `false` | Enable verbose debug logging and client-server error mapping |
 
@@ -279,6 +293,8 @@ When you create a session, customize it for your group:
 4. Guest gets a unique ID, their swipes are tracked separately
 5. Guests cannot access host account or modify settings
 
+**Security note:** Host credentials are stored server-side and encrypted at rest using `AUTH_SECRET` while Guest Lending is enabled. See "Generating `AUTH_SECRET`" in Security & Privacy.
+
 **Perfect for:** Movie nights with friends who don't have media servers
 </details>
 
@@ -325,12 +341,25 @@ When you create a session, customize it for your group:
 
 ## 🔒 Security & Privacy
 
+- **Generating `AUTH_SECRET`**:
+
+```bash
+# macOS and Linux
+openssl rand -base64 32
+```
+
+Windows users can use https://generate-secret.vercel.app/32.
+
 - **Encrypted Sessions**: iron-session with secure, encrypted cookies
+- **Encrypted Guest Lending Tokens**: host access tokens are encrypted at rest when Guest Lending is enabled
+- **Edge Runtime Note**: set `AUTH_SECRET` for Vercel/Edge. See "Generating `AUTH_SECRET`" above.
 - **Scoped Access**: Guests can only swipe, no account access
 - **Data Ownership**: Self-hosted = your data stays on your server
 - **Provider Isolation**: No credential sharing in BYOP mode
 - **CORS Protection**: Configured for safe media server integration
 - **Security Headers**: X-Content-Type-Options, X-XSS-Protection, CSP, Referrer-Policy
+- **Network Safety**: Private/LAN provider URLs are blocked by default; enable via `ALLOW_PRIVATE_PROVIDER_URLS`
+- **Mode Awareness**: Env-configured providers are trusted when `PROVIDER_LOCK=true`; user-supplied URLs are checked
 
 ---
 
