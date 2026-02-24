@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
+import { connection } from 'next/server'
 import { getAsyncRuntimeConfig } from '@/lib/server/runtime-config'
 
 async function loadGoogleFont(font: string, text: string) {
@@ -18,8 +19,28 @@ async function loadGoogleFont(font: string, text: string) {
   throw new Error(`Failed to load font: ${font}`)
 }
 
+function renderFallbackImage(message: string) {
+  return new ImageResponse(
+    (
+      <div
+        tw="flex items-center justify-center w-full h-full bg-[#141414] text-white"
+        style={{ background: 'linear-gradient(to bottom right, #141414, #2a2a2a)' }}
+      >
+        <div tw="text-6xl font-bold">{message}</div>
+      </div>
+    ),
+    { width: 1200, height: 630 }
+  )
+}
+
 export async function GET(req: NextRequest) {
   try {
+    try {
+      await connection()
+    } catch (error) {
+      console.warn('[og] connection() failed during prerender.')
+      return renderFallbackImage('Swiparr')
+    }
     const { searchParams } = new URL(req.url)
     const join = searchParams.get('join')
     const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
