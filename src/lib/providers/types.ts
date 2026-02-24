@@ -57,7 +57,7 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     hasLibraries: true,
     hasSettings: true,
     requiresServerUrl: true,
-    isExperimental: true,
+    isExperimental: false,
     hasStreamingSettings: false,
     isAdminPanel: true,
   },
