@@ -3,11 +3,16 @@ import * as React from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 import { cn } from "@/lib/utils"
 
+type ScrollAreaProps = React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
+  viewportRef?: React.Ref<HTMLDivElement>;
+};
+
 function ScrollArea({
   className,
   children,
+  viewportRef,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+}: ScrollAreaProps) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -16,6 +21,7 @@ function ScrollArea({
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
+        ref={viewportRef}
         /* 
            We create a mask that is transparent at the top (0-10%), 
            solid black in the middle, and transparent at the bottom (90-100%).

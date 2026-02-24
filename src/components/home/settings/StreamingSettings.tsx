@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { VirtuosoGrid } from "react-virtuoso";
 import { SettingsSection } from "./SettingsSection";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,7 @@ export function StreamingSettings() {
     const [isExpanded, setIsExpanded] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
     const [container, setContainer] = useState<HTMLElement | null>(null);
+    const [providersScrollParent, setProvidersScrollParent] = useState<HTMLElement | null>(null);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -52,6 +54,35 @@ export function StreamingSettings() {
 
     const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || "SE", null, true);
     const availableProviders = useMemo(() => watchProvidersData?.providers || [], [watchProvidersData]);
+    const availableProviderIds = useMemo(
+        () => availableProviders.map((p: WatchProvider) => p.Id),
+        [availableProviders]
+    );
+    const gap = 12;
+    const gridComponents = useMemo(() => ({
+        List: ({ children, style, ...props }: React.ComponentProps<"div">) => (
+            <div
+                {...props}
+                style={{
+                    ...style,
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: `${gap}px`,
+                }}
+            >
+                {children}
+            </div>
+        ),
+        Item: ({ children, ...props }: React.ComponentProps<"div">) => (
+            <div {...props} className="w-full">
+                {children}
+            </div>
+        ),
+    }), [gap]);
+
+    const handleProvidersViewport = useCallback((node: HTMLDivElement | null) => {
+        setProvidersScrollParent(node);
+    }, []);
 
     useEffect(() => {
         if (settings && regions.length > 0 && !hasInitialized) {
@@ -61,19 +92,20 @@ export function StreamingSettings() {
             setSelectedRegion(region);
 
             if (settings.isNew) {
-                setSelectedProviders(availableProviders.map((p: WatchProvider) => p.Id));
+                setSelectedProviders(availableProviderIds);
             } else {
                 setSelectedProviders(settings.watchProviders || []);
             }
             setHasInitialized(true);
         }
-    }, [settings, regions, availableProviders, hasInitialized]);
+    }, [settings, regions, availableProviders, availableProviderIds, hasInitialized]);
 
     useEffect(() => {
         if (selectedRegion && availableProviders.length > 0 && hasInitialized) {
-            setSelectedProviders(prev => prev.filter(pId => availableProviders.some(p => p.Id === pId)));
+            const availableSet = new Set(availableProviderIds);
+            setSelectedProviders(prev => prev.filter(pId => availableSet.has(pId)));
         }
-    }, [selectedRegion, availableProviders, hasInitialized]);
+    }, [selectedRegion, availableProviders.length, availableProviderIds, hasInitialized]);
 
     const toggleProvider = (id: string) => {
         setSelectedProviders(prev =>
@@ -82,7 +114,7 @@ export function StreamingSettings() {
     };
 
     const selectAll = () => {
-        setSelectedProviders(availableProviders.map((p: WatchProvider) => p.Id));
+        setSelectedProviders(availableProviderIds);
     };
 
     const deselectAll = () => {
@@ -221,21 +253,25 @@ export function StreamingSettings() {
                                 <Loader2 className="size-6 animate-spin text-muted-foreground" />
                             </div>
                         ) : (
-                            <ScrollArea className="flex-1 overflow-y-auto h-75">
-                                <div className="grid grid-cols-2 gap-2 pr-4 my-3">
-                                    {availableProviders.length === 0 ? (
-                                        <div className="col-span-2 text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                                            No providers found for this region
-                                        </div>
-                                    ) : (
-                                        availableProviders.map((p: WatchProvider) => {
-                                            const isSelected = selectedProviders.includes(p.Id);
+                            <ScrollArea className="flex-1 overflow-y-auto h-75" viewportRef={handleProvidersViewport}>
+                                {availableProviders.length === 0 ? (
+                                    <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
+                                        No providers found for this region
+                                    </div>
+                                ) : (
+                                    <VirtuosoGrid
+                                        data={availableProviders}
+                                        components={gridComponents}
+                                        style={{ height: "100%" }}
+                                        className="mr-3 my-2"
+                                        customScrollParent={providersScrollParent || undefined}
+                                        itemContent={(_, provider) => {
+                                            const isSelected = selectedProviders.includes(provider.Id);
                                             return (
                                                 <button
-                                                    key={p.Id}
-                                                    onClick={() => toggleProvider(p.Id)}
+                                                    onClick={() => toggleProvider(provider.Id)}
                                                     className={cn(
-                                                        "flex items-center gap-2 p-2 rounded-md border text-sm transition-all",
+                                                        "flex items-center w-full gap-2 p-2 rounded-md border text-sm transition-all",
                                                         isSelected
                                                             ? "bg-primary/5 border-primary text-primary font-medium"
                                                             : "bg-background hover:bg-muted/50 border-input text-muted-foreground"
@@ -243,21 +279,21 @@ export function StreamingSettings() {
                                                 >
                                                     <div className="relative size-6 shrink-0 rounded overflow-hidden shadow-xs">
                                                         <OptimizedImage
-                                                            src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
-                                                            alt={p.Name}
+                                                            src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
+                                                            alt={provider.Name}
                                                             className="object-cover"
                                                             unoptimized
                                                             width={24}
                                                             height={24}
                                                         />
                                                     </div>
-                                                    <span className="truncate text-[11px]">{p.Name}</span>
+                                                    <span className="truncate text-[11px]">{provider.Name}</span>
                                                     {isSelected && <Check className="ml-auto size-3 shrink-0" />}
                                                 </button>
                                             );
-                                        })
-                                    )}
-                                </div>
+                                        }}
+                                    />
+                                )}
                             </ScrollArea>
                         )}
 

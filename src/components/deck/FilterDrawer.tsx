@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { VirtuosoGrid } from "react-virtuoso";
 import {
   Drawer,
   DrawerContent,
@@ -44,6 +45,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
+  const [providersScrollParent, setProvidersScrollParent] = useState<HTMLElement | null>(null);
 
   const { data: session } = useSession();
   const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending"; // Popular works better with TMDB
@@ -60,6 +62,10 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   );
 
   const availableWatchProviders = watchProvidersData?.providers || [];
+  const availableWatchProviderIds = useMemo(
+    () => availableWatchProviders.map(p => p.Id),
+    [availableWatchProviders]
+  );
   const members = watchProvidersData?.members || [];
   const isLoading = isLoadingFilters || isLoadingThemes || isLoadingProviders;
 
@@ -87,7 +93,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     if (open) {
       setSelectedGenres(currentFilters?.genres || []);
       setSelectedRatings(currentFilters?.officialRatings || []);
-      setSelectedWatchProviders(currentFilters?.watchProviders || availableWatchProviders.map(p => p.Id));
+      setSelectedWatchProviders(currentFilters?.watchProviders || availableWatchProviderIds);
       setSelectedThemes(currentFilters?.themes || []);
       setSelectedLanguages(currentFilters?.tmdbLanguages || DEFAULT_LANGUAGES);
       setSortBy(currentFilters?.sortBy || defaultSort);
@@ -96,7 +102,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
     }
-  }, [open, currentFilters, availableWatchProviders, minYearLimit, maxYearLimit, defaultSort]);
+  }, [open, currentFilters, availableWatchProviderIds, minYearLimit, maxYearLimit, defaultSort]);
 
   const normalizeFilters = (f: Filters): Filters => {
     const isYearDefault = !f.yearRange || (f.yearRange[0] === minYearLimit && f.yearRange[1] === maxYearLimit);
@@ -109,7 +115,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     // - If a specific subset is selected, we send the explicit list
     const isWatchProvidersDefault = !f.watchProviders ||
       f.watchProviders.length === 0 ||
-      f.watchProviders.length === availableWatchProviders.length;
+      f.watchProviders.length === availableWatchProviderIds.length;
 
     return {
       genres: f.genres?.length ? f.genres : [],
@@ -161,7 +167,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const resetAll = () => {
     setSelectedGenres([]);
     setSelectedRatings([]);
-    setSelectedWatchProviders(availableWatchProviders.map(p => p.Id));
+    setSelectedWatchProviders(availableWatchProviderIds);
     setSelectedThemes([]);
     setSelectedLanguages(DEFAULT_LANGUAGES);
     setSortBy(defaultSort);
@@ -172,6 +178,32 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   };
 
   const filteredSortOptions = sortOptions;
+  const gap = 12;
+
+  const gridComponents = useMemo(() => ({
+    List: ({ children, style, ...props }: React.ComponentProps<"div">) => (
+      <div
+        {...props}
+        style={{
+          ...style,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: `${gap}px`,
+        }}
+      >
+        {children}
+      </div>
+    ),
+    Item: ({ children, ...props }: React.ComponentProps<"div">) => (
+      <div {...props} className="w-full">
+        {children}
+      </div>
+    ),
+  }), [gap]);
+
+  const handleProvidersViewport = useCallback((node: HTMLDivElement | null) => {
+    setProvidersScrollParent(node);
+  }, []);
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
@@ -191,7 +223,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
           </Button>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1 overflow-y-auto">
+        <ScrollArea className="flex-1 overflow-y-auto" viewportRef={handleProvidersViewport}>
           <div className="flex flex-col gap-8 pt-6 pb-12 px-6">
             {isLoading ? (
               <div className="space-y-10">
@@ -414,69 +446,72 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         )}
                       </div>
                       <div className="flex gap-3">
-                        <button onClick={() => setSelectedWatchProviders(availableWatchProviders.map(p => p.Id))} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
+                        <button onClick={() => setSelectedWatchProviders(availableWatchProviderIds)} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
                         <button onClick={() => setSelectedWatchProviders([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {availableWatchProviders.map((p: WatchProvider & { MemberUserIds?: string[] }) => {
-                        const isSelected = selectedWatchProviders.includes(p.Id);
-                        const providerMembers = (p.MemberUserIds || [])
-                          .map(id => {
-                            const m = members.find(m => m.externalUserId === id);
-                            if (!m) return null;
-                            return { 
-                              userId: m.externalUserId, 
-                              userName: m.externalUserName,
-                              hasCustomProfilePicture: !!m.hasCustomProfilePicture,
-                              profileUpdatedAt: m.profileUpdatedAt
-                            };
-                          })
-                          .filter(Boolean) as { userId: string, userName: string, hasCustomProfilePicture?: boolean, profileUpdatedAt?: string }[];
+                      <VirtuosoGrid
+                        data={availableWatchProviders}
+                        components={gridComponents}
+                        style={{ height: "100%" }}
+                        customScrollParent={providersScrollParent || undefined}
+                        itemContent={(_, provider) => {
+                          const isSelected = selectedWatchProviders.includes(provider.Id);
+                          const providerMembers = (provider.MemberUserIds || [])
+                            .map(id => {
+                              const m = members.find(member => member.externalUserId === id);
+                              if (!m) return null;
+                              return {
+                                userId: m.externalUserId,
+                                userName: m.externalUserName,
+                                hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+                                profileUpdatedAt: m.profileUpdatedAt
+                              };
+                            })
+                            .filter(Boolean) as { userId: string, userName: string, hasCustomProfilePicture?: boolean, profileUpdatedAt?: string }[];
 
-                        return (
-                          <button
-                            key={p.Id}
-                            onClick={() => setSelectedWatchProviders(prev => prev.includes(p.Id) ? prev.filter(id => id !== p.Id) : [...prev, p.Id])}
-                            className={cn(
-                              "relative flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer",
-                              isSelected
-                                ? "bg-primary/5 border-primary shadow-sm"
-                                : "bg-background border-input text-muted-foreground opacity-85 grayscale-[0.5]"
-                            )}
-                          >
-                            <div className="relative size-10 shrink-0 rounded-lg overflow-hidden border">
-                              <OptimizedImage
-                                src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
-                                alt={p.Name}
-                                className="object-cover"
-                                unoptimized
-                                width={40}
-                                height={40}
-                              />
-                            </div>
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-xs font-bold truncate">{p.Name}</span>
-                              {providerMembers.length > 0 && (
-                                <UserAvatarList
-                                  users={providerMembers.map(m => ({ 
-                                    userId: m.userId, 
-                                    userName: m.userName,
-                                    hasCustomProfilePicture: !!m.hasCustomProfilePicture,
-                                    profileUpdatedAt: m.profileUpdatedAt
-                                  }))}
-                                  size="sm"
-                                  className="mt-1"
-                                />
+                          return (
+                            <button
+                              onClick={() => setSelectedWatchProviders(prev => prev.includes(provider.Id) ? prev.filter(id => id !== provider.Id) : [...prev, provider.Id])}
+                              className={cn(
+                                "relative flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer w-full",
+                                isSelected
+                                  ? "bg-primary/5 border-primary shadow-sm"
+                                  : "bg-background border-input text-muted-foreground opacity-85 grayscale-[0.5]"
                               )}
-                            </div>
-                            {isSelected && (
-                              <Check className="size-4 text-primary shrink-0 stroke-3" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+                            >
+                              <div className="relative size-10 shrink-0 rounded-lg overflow-hidden border">
+                                <OptimizedImage
+                                  src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
+                                  alt={provider.Name}
+                                  className="object-cover"
+                                  unoptimized
+                                  width={40}
+                                  height={40}
+                                />
+                              </div>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-xs font-bold truncate">{provider.Name}</span>
+                                {providerMembers.length > 0 && (
+                                  <UserAvatarList
+                                    users={providerMembers.map(m => ({
+                                      userId: m.userId,
+                                      userName: m.userName,
+                                      hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+                                      profileUpdatedAt: m.profileUpdatedAt
+                                    }))}
+                                    size="sm"
+                                    className="mt-1"
+                                  />
+                                )}
+                              </div>
+                              {isSelected && (
+                                <Check className="size-4 text-primary shrink-0 stroke-3" />
+                              )}
+                            </button>
+                          );
+                        }}
+                      />
                   </div>
                 )}
 
