@@ -35,8 +35,6 @@ export class EmbyProvider implements MediaProvider {
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
-    const hasLanguageFilter = filters.languages && filters.languages.length > 0;
-    
     // If multiple libraries are selected, we need to fetch from each one and merge
     // Emby's ParentId only supports a single ID
     if (filters.libraries && filters.libraries.length > 1) {
@@ -96,53 +94,6 @@ export class EmbyProvider implements MediaProvider {
 
     const data = JellyfinQueryResultSchema.parse(res.data);
     let rawItems = data.Items;
-    
-    // Client-side language/country filtering for Emby
-    if (hasLanguageFilter) {
-      const selectedLangs = filters.languages!.map(l => l.toLowerCase());
-      
-      rawItems = rawItems.filter((item: any) => {
-        // 1. Check PreferredMetadataLanguage
-        const prefLang = item.PreferredMetadataLanguage?.toLowerCase();
-        if (prefLang && selectedLangs.some(l => prefLang.includes(l))) {
-          return true;
-        }
-
-        // 2. Fallback: Check ProductionLocations (Country filtering)
-        const countryMap: Record<string, string[]> = {
-          'en': ['usa', 'united states', 'united kingdom', 'uk', 'canada', 'australia'],
-          'es': ['spain', 'mexico', 'argentina', 'colombia', 'peru', 'chile'],
-          'fr': ['france', 'belgium', 'canada', 'switzerland'],
-          'de': ['germany', 'austria', 'switzerland'],
-          'it': ['italy'],
-          'ja': ['japan'],
-          'ko': ['korea', 'south korea'],
-          'pt': ['portugal', 'brazil'],
-          'zh': ['china', 'hong kong', 'taiwan'],
-          'sv': ['sweden'],
-          'da': ['denmark'],
-          'no': ['norway'],
-          'fi': ['finland'],
-          'nl': ['netherlands', 'belgium'],
-          'pl': ['poland'],
-          'ru': ['russia'],
-          'tr': ['turkey'],
-          'hi': ['india'],
-          'ar': ['egypt', 'saudi arabia', 'uae'],
-        };
-
-        const locations = (item.ProductionLocations || []).map((l: string) => l.toLowerCase());
-        if (locations.length > 0) {
-          return selectedLangs.some(langCode => {
-            const countries = countryMap[langCode] || [];
-            return countries.some(c => locations.some((loc: string) => loc.includes(c)));
-          });
-        }
-
-        return false;
-      });
-    }
-    
     return rawItems.map((item) => this.mapToMediaItem(item));
   }
 
@@ -290,6 +241,7 @@ export class EmbyProvider implements MediaProvider {
       Id: item.Id,
       Name: item.Name,
       OriginalTitle: item.OriginalTitle,
+      Language: item.PreferredMetadataLanguage,
       RunTimeTicks: item.RunTimeTicks,
       ProductionYear: item.ProductionYear,
       CommunityRating: item.CommunityRating,

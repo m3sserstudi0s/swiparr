@@ -7,6 +7,7 @@ import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useSession } from "@/hooks/api";
 
 interface MatchOverlayProps {
   item: MediaItem | null;
@@ -16,6 +17,14 @@ interface MatchOverlayProps {
 
 export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) {
   const { openMovie } = useMovieDetail();
+  const { data: session } = useSession();
+  const likedBy = item?.likedBy ?? [];
+  const otherUsers = session?.userId
+    ? likedBy.filter((user) => user.userId !== session.userId)
+    : likedBy.slice(1);
+  const otherLabel = otherUsers.length > 1
+    ? `${otherUsers.length} others`
+    : (otherUsers[0]?.userName || "someone");
 
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && onClose()}>
@@ -45,11 +54,11 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 <Heart className="w-80 h-80 fill-neutral-900 text-neutral-900" />
               </motion.div>
 
-              <h1 className="text-5xl font-black italic text-white mb-2 drop-shadow-2xl tracking-tighter uppercase">
+              <h1 className="text-5xl font-black italic text-neutral-100 mb-2 drop-shadow-2xl tracking-tighter uppercase">
                 It's a match!
               </h1>
-              <p className="text-white/90 md:text-md text-lg mb-4 px-4">
-                You and {item.likedBy && item.likedBy.length > 2 ? `${item.likedBy.length - 1} others` : item.likedBy && item.likedBy.length === 2 ? (item.likedBy.find(u => u.userId !== item.likedBy?.[0].userId)?.userName || 'someone') : 'someone'} want to watch <span className="text-white font-bold">{item.Name}</span>
+              <p className="text-neutral-200 md:text-md text-lg mb-4 px-4">
+                You and {otherLabel} want to watch <span className="text-neutral-100 font-bold">{item.Name}</span>
               </p>
 
               {item.likedBy && item.likedBy.length > 0 && (

@@ -8,6 +8,7 @@ import { events, EVENT_TYPES } from "@/lib/events";
 import { revalidateTag } from "next/cache";
 import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
+import { tagProvider } from "@/lib/cache-tags";
 
 const configSchema = z.object({
     useStaticFilterValues: z.boolean(),
@@ -46,8 +47,8 @@ export async function PATCH(request: NextRequest) {
 
         // Purge caches
         const providers = ["jellyfin", "emby", "plex"];
-        const tags = ["years", "genres", "ratings", "libraries"];
-        providers.forEach(p => tags.forEach(t => revalidateTag(`${p}-${t}`, "default")));
+        const tags = ["years", "genres", "ratings", "libraries"] as const;
+        providers.forEach((p) => tags.forEach((t) => revalidateTag(tagProvider(p, t), "default")));
 
         events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
             type: 'filters',

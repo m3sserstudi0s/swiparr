@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex, blob } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex, index, blob } from "drizzle-orm/sqlite-core";
 import { sql, type InferSelectModel, type InferInsertModel } from "drizzle-orm";
 
 export const sessions = sqliteTable("Session", {
@@ -11,6 +11,7 @@ export const sessions = sqliteTable("Session", {
   providerConfig: text("providerConfig"),
   filters: text("filters"),
   settings: text("settings"),
+  randomSeed: text("randomSeed"),
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
@@ -32,6 +33,9 @@ export const likes = sqliteTable("Like", {
   return [
     uniqueIndex("Like_session_key").on(table.externalId, table.externalUserId, table.sessionCode).where(sql`sessionCode IS NOT NULL`),
     uniqueIndex("Like_solo_key").on(table.externalId, table.externalUserId).where(sql`sessionCode IS NULL`),
+    index("Like_externalUserId_createdAt_idx").on(table.externalUserId, table.createdAt),
+    index("Like_sessionCode_externalUserId_idx").on(table.sessionCode, table.externalUserId),
+    index("Like_sessionCode_externalId_idx").on(table.sessionCode, table.externalId),
   ];
 });
 
@@ -47,6 +51,8 @@ export const hiddens = sqliteTable("Hidden", {
   return [
     uniqueIndex("Hidden_session_key").on(table.externalId, table.externalUserId, table.sessionCode).where(sql`sessionCode IS NOT NULL`),
     uniqueIndex("Hidden_solo_key").on(table.externalId, table.externalUserId).where(sql`sessionCode IS NULL`),
+    index("Hidden_sessionCode_externalUserId_idx").on(table.sessionCode, table.externalUserId),
+    index("Hidden_externalUserId_sessionCode_idx").on(table.externalUserId, table.sessionCode),
   ];
 });
 
@@ -63,6 +69,7 @@ export const sessionMembers = sqliteTable("SessionMember", {
 }, (table) => {
   return [
     uniqueIndex("SessionMember_sessionCode_externalUserId_key").on(table.sessionCode, table.externalUserId),
+    index("SessionMember_sessionCode_idx").on(table.sessionCode),
   ];
 });
 
@@ -86,4 +93,3 @@ export const userProfiles = sqliteTable("UserProfile", {
 
 export type UserProfile = InferSelectModel<typeof userProfiles>;
 export type NewUserProfile = InferInsertModel<typeof userProfiles>;
-

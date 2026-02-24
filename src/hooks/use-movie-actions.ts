@@ -4,10 +4,12 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { MediaItem } from "@/types";
 import { apiClient } from "@/lib/api-client";
 import { useSettings } from "@/lib/settings";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useSession } from "@/hooks/api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
+import { logger } from "@/lib/logger";
 
 interface UseMovieActionsOptions {
   isLiked?: boolean;
@@ -21,6 +23,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
   const queryClient = useQueryClient();
   const { settings } = useSettings();
   const { data: sessionData } = useSession();
+  const { provider: runtimeProvider } = useRuntimeConfig();
 
   // Determine the effective session code for this movie action
   // Preference: 
@@ -54,7 +57,12 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     : (syncedMovie || initialMovie)) as T | null;
 
   const isGuest = sessionData?.isGuest || false;
-  const useWatchlist = settings.useWatchlist;
+  const activeProvider = sessionData?.provider || runtimeProvider;
+  const useWatchlist = activeProvider === "plex"
+    ? true
+    : activeProvider === "jellyfin"
+      ? settings.useWatchlist
+      : false;
 
   const isInList = (useWatchlist ? currentMovie?.UserData?.Likes : currentMovie?.UserData?.IsFavorite) ?? false;
   
@@ -67,11 +75,11 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     mutationFn: async (actionOverride?: "add" | "remove") => {
       if (isGuest || !currentMovie) return;
       const action = actionOverride || (isInList ? "remove" : "add");
-      await apiClient.post("/api/user/watchlist", {
-        itemId: currentMovie.Id,
-        action,
-        useWatchlist
-      });
+        await apiClient.post("/api/user/watchlist", {
+          itemId: currentMovie.Id,
+          action,
+          useWatchlist
+        });
     },
     onMutate: async (actionOverride) => {
         // Optimistic update
@@ -137,61 +145,69 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
   };
 
   const { mutateAsync: relike } = useMutation({
-    mutationFn: async () => {
-      if (!currentMovie) return;
+    mutationFn: async (params?: { movie: T; sessionCode: string | null }) => {
+      const movie = params?.movie || currentMovie;
+      const code = params?.sessionCode ?? movieSessionCode;
+      if (!movie) return;
       await apiClient.post("/api/swipe", {
-        itemId: currentMovie.Id,
+        itemId: movie.Id,
         direction: "right",
-        item: currentMovie,
-        sessionCode: movieSessionCode
+        item: movie,
+        sessionCode: code
       });
     },
-    onMutate: async () => {
-        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
-        await queryClient.cancelQueries({ queryKey: movieKey });
-        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
+    onMutate: async (params) => {
+      const movie = params?.movie || currentMovie;
+      const code = params?.sessionCode ?? movieSessionCode;
+      const movieKey = QUERY_KEYS.movie(movie?.Id || null, code);
+      await queryClient.cancelQueries({ queryKey: movieKey });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
 
-        const previousMovie = queryClient.getQueryData(movieKey);
-        const previousLikes = queryClient.getQueryData(QUERY_KEYS.likes);
+      const previousMovie = queryClient.getQueryData(movieKey);
+      const previousLikes = queryClient.getQueryData(QUERY_KEYS.likes);
 
-        if (currentMovie) {
-            queryClient.setQueryData(movieKey, (old: any) => {
-                if (!old) return old;
-                return {
-                    ...old,
-                    likedBy: [
-                        ...(old.likedBy || []).filter((l: any) => l.userId !== sessionData?.userId),
-                        {
-                            userId: sessionData?.userId || '',
-                            userName: sessionData?.userName || 'Me',
-                            sessionCode: movieSessionCode,
-                            hasCustomProfilePicture: sessionData?.hasCustomProfilePicture,
-                            profileUpdatedAt: sessionData?.profileUpdatedAt
-                        }
-                    ]
-                };
-            });
+      if (movie) {
+        queryClient.setQueryData(movieKey, (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            likedBy: [
+              ...(old.likedBy || []).filter((l: any) => l.userId !== sessionData?.userId),
+              {
+                userId: sessionData?.userId || '',
+                userName: sessionData?.userName || 'Me',
+                sessionCode: code,
+                hasCustomProfilePicture: sessionData?.hasCustomProfilePicture,
+                profileUpdatedAt: sessionData?.profileUpdatedAt
+              }
+            ]
+          };
+        });
+      }
 
-            // For relike, we don't optimistically add to the likes list because it's complex to reconstruct the MergedLike
-            // The invalidation will handle it
-        }
-
-        return { previousMovie, previousLikes };
+      return { previousMovie, previousLikes, movieId: movie?.Id, code };
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const movie = variables?.movie || currentMovie;
+      const code = variables?.sessionCode ?? movieSessionCode;
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(movie?.Id || null, code) });
     },
     onError: (err, variables, context) => {
-      const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
       if (context?.previousLikes) {
-          queryClient.setQueryData(QUERY_KEYS.likes, context.previousLikes);
+        queryClient.setQueryData(QUERY_KEYS.likes, context.previousLikes);
       }
-      if (currentMovie?.Id && context?.previousMovie) {
-          queryClient.setQueryData(movieKey, context.previousMovie);
+      if (context?.movieId && context?.previousMovie) {
+        const movieKey = QUERY_KEYS.movie(context.movieId, context.code);
+        queryClient.setQueryData(movieKey, context.previousMovie);
       }
+      logger.error("Relike failed:", err);
       toast.error("Failed to re-like movie", {
-        description: getErrorMessage(err)
+        description: getErrorMessage(err),
+        action: {
+          label: 'Retry',
+          onClick: () => relike(variables)
+        }
       });
     }
   });
@@ -240,18 +256,28 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     onError: (err, variables, context) => {
         const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
         if (context?.previousLikes) {
-            // Re-evaluating setQueriesData for error recovery is hard, just invalidate
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+            queryClient.setQueryData(QUERY_KEYS.likes, context.previousLikes);
         }
         if (currentMovie?.Id && context?.previousMovie) {
             queryClient.setQueryData(movieKey, context.previousMovie);
         }
+        logger.error("Unlike failed:", err);
+        toast.error("Failed to remove from likes", {
+          description: getErrorMessage(err),
+          action: {
+            label: 'Retry',
+            onClick: () => unlike()
+          }
+        });
     }
   });
 
   const handleUnlike = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!currentMovie) return;
+
+    const movieToRelike = currentMovie;
+    const sessionCodeToUse = movieSessionCode;
 
     toast.promise(unlike(), {
       loading: "Removing from likes...",
@@ -262,7 +288,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
       }),
       action: !isUnliking && {
         label: 'Undo',
-        onClick: () => relike()
+        onClick: () => relike({ movie: movieToRelike, sessionCode: sessionCodeToUse })
       },
       position: 'top-right'
     });

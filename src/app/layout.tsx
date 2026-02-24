@@ -2,12 +2,11 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { JetBrains_Mono, Zalando_Sans } from 'next/font/google'
 import { Providers } from '@/components/providers'
-import { getAsyncRuntimeConfig } from '@/lib/runtime-config'
+import { getAsyncRuntimeConfig } from '@/lib/server/runtime-config'
 import { TouchProvider } from '@/components/ui/hybrid-tooltip'
 import { Analytics } from "@vercel/analytics/next"
 import { config as appConfig } from "@/lib/config";
 
-export const dynamic = 'force-dynamic';
 
 const sansFlex = Zalando_Sans({
   subsets: ['latin'],

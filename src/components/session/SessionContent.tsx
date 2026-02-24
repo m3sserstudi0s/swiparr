@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Users } from "lucide-react";
@@ -43,6 +43,7 @@ export default function SessionContent() {
     const { data: sessionStatus, isLoading: isSessionLoading } = useSession();
     const activeCode = sessionStatus?.code || undefined;
     const isSuccess = !isSessionLoading && !!sessionStatus;
+    const joinInProgressRef = useRef(false);
 
     const { data: members } = useMembers();
     const { data: matches } = useMatches();
@@ -96,21 +97,68 @@ export default function SessionContent() {
 
     useEffect(() => {
         const joinParam = searchParams.get("join");
-        if (joinParam && isSuccess) {
-            if (!activeCode) {
-                setIsOpen(true);
-                handleJoinSession(joinParam);
-            } else {
-                // If we are already in a session, or just successfully joined, 
-                // remove the join param from URL to keep it clean
-                const params = new URLSearchParams(searchParams.toString());
-                params.delete("join");
-                const query = params.toString();
-                const newUrl = query ? `${pathname}?${query}` : pathname;
-                router.replace(newUrl, { scroll: false });
-            }
+        if (!joinParam || !isSuccess || joinInProgressRef.current) return;
+
+        const normalizedJoin = joinParam.trim().toUpperCase();
+        const normalizedActive = activeCode?.trim().toUpperCase();
+
+        const removeJoinParam = () => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete("join");
+            const query = params.toString();
+            const newUrl = query ? `${pathname}?${query}` : pathname;
+            router.replace(newUrl, { scroll: false });
+        };
+
+        if (normalizedActive && normalizedActive === normalizedJoin) {
+            removeJoinParam();
+            return;
         }
-    }, [searchParams, isSuccess, activeCode, router, pathname]);
+
+        setIsOpen(true);
+        joinInProgressRef.current = true;
+
+        if (!normalizedActive) {
+            const joinPromise = joinSession.mutateAsync(normalizedJoin);
+            toast.promise(joinPromise, {
+                loading: "Joining session...",
+                success: () => {
+                    removeJoinParam();
+                    return "Connected!";
+                },
+                error: (err) => ({
+                    message: "Invalid code",
+                    description: getErrorMessage(err)
+                }),
+            });
+            joinPromise.finally(() => {
+                joinInProgressRef.current = false;
+            });
+            return;
+        }
+
+        const switchPromise = (async () => {
+            await leaveSession.mutateAsync();
+            await joinSession.mutateAsync(normalizedJoin);
+        })();
+        toast.promise(
+            switchPromise,
+            {
+                loading: "Switching sessions...",
+                success: () => {
+                    removeJoinParam();
+                    return "Connected!";
+                },
+                error: (err) => ({
+                    message: "Failed to switch sessions",
+                    description: getErrorMessage(err)
+                }),
+            }
+        );
+        switchPromise.finally(() => {
+            joinInProgressRef.current = false;
+        });
+    }, [searchParams, isSuccess, activeCode, router, pathname, joinSession, leaveSession]);
 
     const handleShare = async () => {
         if (!activeCode) return;

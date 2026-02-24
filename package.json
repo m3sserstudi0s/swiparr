@@ -53,6 +53,8 @@
     "drizzle-orm": "^0.45.1",
     "framer-motion": "^12.23.26",
     "iron-session": "^8.0.4",
+    "iso-639-1": "^3.1.2",
+    "iso-639-3": "^3.0.1",
     "lucide-react": "^0.562.0",
     "motion": "^12.33.0",
     "next": "^16.1.6",

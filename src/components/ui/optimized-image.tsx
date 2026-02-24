@@ -43,13 +43,19 @@ export function OptimizedImage({
     ? `${basePath}${srcString}`
     : src;
 
-  // 2. Initialize state based on whether the image is in our global cache
-  const cacheKey = typeof resolvedSrc === "string" ? resolvedSrc : "";
-  const [isLoading, setIsLoading] = useState(!loadedImageCache.has(cacheKey));
-  const [hasError, setHasError] = useState(false);
-
   const isFill = fill ?? (!width && !height);
   const isMediaImage = !!externalId || (typeof src === "string" && (src.startsWith("/api/media/image") || src.startsWith(`${basePath}/api/media/image`)));
+
+  // 2. Initialize state based on whether the image is in our global cache
+  const sizeKey = isFill
+    ? `fill:${props.sizes || "auto"}`
+    : `${width || "auto"}x${height || "auto"}`;
+  const qualityKey = props.quality ? `q${props.quality}` : "";
+  const cacheKey = typeof resolvedSrc === "string"
+    ? `${resolvedSrc}::${sizeKey}${qualityKey ? `::${qualityKey}` : ""}`
+    : "";
+  const [isLoading, setIsLoading] = useState(!loadedImageCache.has(cacheKey));
+  const [hasError, setHasError] = useState(false);
 
   const blurDataURL = useBlurData(externalId, initialBlurDataURL, imageType);
 

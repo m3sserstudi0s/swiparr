@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink } from "lucide-react";
+import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink, Percent } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, WatchProvider } from "@/types";
@@ -20,6 +20,7 @@ import { apiClient } from "@/lib/api-client";
 import { useMovieActions } from "@/hooks/use-movie-actions";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
 import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
+import { getLanguageLabel } from "@/lib/language";
 
 interface Props {
   movieId: string | null;
@@ -71,6 +72,13 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   const { data: sessionStatus } = useSession({ enabled: !!movieId });
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
   const serverPublicUrl = sessionStatus?.serverUrl || runtimeServerUrl;
+  const languageLabel = getLanguageLabel(movie?.Language);
+
+  const ratingSource = movie?.CommunityRatingSource?.toLowerCase();
+  const isRottenTomatoes = ratingSource?.includes("rottentomatoes") || ratingSource?.includes("tomato");
+  const ratingDisplay = typeof movie?.CommunityRating === "number"
+    ? (isRottenTomatoes ? Math.round(movie.CommunityRating * 10) : movie.CommunityRating.toFixed(1))
+    : null;
 
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -172,10 +180,10 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                           <span className="mt-px">{movie.OfficialRating}</span>
                         </Badge>
                       )}
-                      {!!movie.CommunityRating && (
+                      {!!movie.CommunityRating && ratingDisplay !== null && (
                         <span className="flex items-center gap-1 font-bold">
-                          <Star className="w-3 h-3 fill-current" />
-                          {movie.CommunityRating.toFixed(1)}
+                          {isRottenTomatoes ? <Percent className="w-3 h-3" /> : <Star className="w-3 h-3 fill-current" />}
+                          {ratingDisplay}{isRottenTomatoes ? "%" : ""}
                         </span>
                       )}
                       {!!movie.RunTimeTicks && (
@@ -215,7 +223,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       </Button>
                     </Link>
                   )}
-                  {!isGuest && capabilities.hasWatchlist && (
+                  {!isGuest && capabilities.hasAuth && capabilities.hasWatchlist && (
                     <Button
                       className="w-32"
                       size="lg"
@@ -280,22 +288,30 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
 
                 {/* DETAILS ROW */}
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Director</h3>
-                    <div className="text-foreground font-medium">
-                      {movie.People?.find(p => p.Type === "Director")?.Name || "Unknown"}
-                    </div>
-                  </div>
-                  {movie.Studios && movie.Studios.length > 0 && (
+                  <div className="grid grid-cols-2 gap-8 mb-8">
                     <div>
-                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Studio</h3>
-                      <div className="text-foreground font-medium truncate">
-                        {movie.Studios[0].Name}
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Director</h3>
+                      <div className="text-foreground font-medium">
+                        {movie.People?.find(p => p.Type === "Director")?.Name || "Unknown"}
                       </div>
                     </div>
-                  )}
-                </div>
+                    {!!languageLabel && (
+                      <div>
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Language</h3>
+                        <div className="text-foreground font-medium truncate">
+                          {languageLabel}
+                        </div>
+                      </div>
+                    )}
+                    {movie.Studios && movie.Studios.length > 0 && (
+                      <div>
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Studio</h3>
+                        <div className="text-foreground font-medium truncate">
+                          {movie.Studios[0].Name}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                 {/* SYNOPSIS */}
                 <div className="mb-8">
@@ -317,7 +333,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         <div key={person.Id} className="flex flex-col items-center gap-2 min-w-20 text-center">
                           <Avatar className="w-16 h-16 border border-border shadow-sm">
                             <AvatarImage
-                              src={`/api/media/image/${person.Id}?tag=${person.PrimaryImageTag || person.Id}`}
+                              src={person.PrimaryImageTag ? `/api/media/image/${person.Id}?tag=${person.PrimaryImageTag}` : undefined}
                               className="object-cover"
                             />
                             <AvatarFallback className="bg-muted text-muted-foreground text-xs">

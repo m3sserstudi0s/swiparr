@@ -1,7 +1,7 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Star, Calendar, HeartOff, Clock, Bookmark } from "lucide-react";
+import { Play, Star, Calendar, HeartOff, Clock, Bookmark, Percent } from "lucide-react";
 import { cn, ticksToTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -29,7 +29,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
   const { data: sessionData } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
-      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean }>("/api/session");
+      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean; provider?: string }>("/api/session");
       return res.data;
     },
   });
@@ -47,11 +47,24 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
 
   const currentMovie = syncedMovie || movie;
 
-  const swipeDate = currentMovie.swipedAt ? new Date(currentMovie.swipedAt) : "";
+  const swipeDate = (() => {
+    if (!currentMovie.swipedAt) return null;
+    const raw = currentMovie.swipedAt;
+    if (typeof raw !== "string") return null;
+    const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+    const withZone = /Z|[+-]\d{2}:?\d{2}$/.test(normalized) ? normalized : `${normalized}Z`;
+    const parsed = new Date(withZone);
+    return Number.isNaN(parsed.getTime()) ? new Date(raw) : parsed;
+  })();
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
   const isCondensed = variant === "condensed";
+  const ratingSource = currentMovie.CommunityRatingSource?.toLowerCase();
+  const isRottenTomatoes = ratingSource?.includes("rottentomatoes") || ratingSource?.includes("tomato");
+  const ratingDisplay = typeof currentMovie.CommunityRating === "number"
+    ? (isRottenTomatoes ? Math.round(currentMovie.CommunityRating * 10) : currentMovie.CommunityRating.toFixed(1))
+    : null;
 
   return (
     <div
@@ -96,10 +109,10 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground h-6">
             <span>{currentMovie.ProductionYear}</span>
             {!!currentMovie.CommunityRating && '•'}
-            {!!currentMovie.CommunityRating && (
+            {!!currentMovie.CommunityRating && ratingDisplay !== null && (
               <span className="flex items-center">
-                <Star className="size-2.5 mr-0.5 mb-px" />
-                {currentMovie.CommunityRating.toFixed(1)}
+                {isRottenTomatoes ? <Percent className="size-2.5 mr-0.5 mb-px" /> : <Star className="size-2.5 mr-0.5 mb-px" />}
+                {ratingDisplay}{isRottenTomatoes ? "%" : ""}
               </span>
             )}
             •
@@ -162,7 +175,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 </span>
               )}
             </div>}
-            {!sessionData?.isGuest && capabilities.hasWatchlist && (
+            {!sessionData?.isGuest && capabilities.hasAuth && capabilities.hasWatchlist && (
               <Button
                 size="sm"
                 variant="ghost"

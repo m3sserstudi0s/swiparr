@@ -4,7 +4,7 @@ import LoginContent from "@/components/login/LoginContent";
 import { Loader2 } from "lucide-react";
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { getAsyncRuntimeConfig } from "@/lib/runtime-config";
+import { getAsyncRuntimeConfig } from "@/lib/server/runtime-config";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

@@ -17,6 +17,15 @@ export class SessionService {
     return result;
   }
 
+  private static generateRandomSeed(): string {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < 32; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
   static async createSession(user: SessionData["user"], allowGuestLending: boolean) {
     const code = this.generateCode();
     logger.info(`Creating session ${code} for user ${user.Name} (${user.Id})`);
@@ -29,6 +38,7 @@ export class SessionService {
       hostDeviceId: allowGuestLending ? user.DeviceId : null,
       provider: user.provider,
       providerConfig: user.providerConfig ? JSON.stringify(user.providerConfig) : null,
+      randomSeed: this.generateRandomSeed(),
     });
 
     const settings = await ConfigService.getUserSettings(user.Id);
@@ -99,6 +109,7 @@ export class SessionService {
         hostAccessToken: null,
         hostDeviceId: "guest-device",
         provider: "tmdb",
+        randomSeed: this.generateRandomSeed(),
       });
 
       const user = {

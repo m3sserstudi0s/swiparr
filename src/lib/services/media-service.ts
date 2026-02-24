@@ -7,6 +7,7 @@ import { getMediaProvider } from "@/lib/providers/factory";
 import { ProviderType } from "@/lib/providers/types";
 import { AuthService } from "./auth-service";
 import { ConfigService } from "./config-service";
+import { deckCache } from "./deck-cache";
 import { logger } from "@/lib/logger";
 
 export class MediaService {
@@ -124,6 +125,24 @@ export class MediaService {
   }
 
   private static async getSessionItems(sessionCode: string, sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
+    const sortBy = sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending");
+
+    // Handle deterministic Random sort for group sessions
+    if (sortBy === "Random") {
+      return this.getDeterministicRandomItems(
+        sessionCode,
+        sessionFilters,
+        auth,
+        provider,
+        excludeIds,
+        includedLibraries,
+        watchProviders,
+        watchRegion,
+        page,
+        limit
+      );
+    }
+
     const fetchedItems = await provider.getItems({
       libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
       genres: sessionFilters?.genres,
@@ -133,9 +152,9 @@ export class MediaService {
       runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
-      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
+      sortBy,
       themes: sessionFilters?.themes,
-      languages: sessionFilters?.languages,
+      tmdbLanguages: sessionFilters?.tmdbLanguages,
       unplayedOnly: sessionFilters?.unplayedOnly,
       limit: limit * 2, // Fetch a bit more to account for exclusions
       offset: effectiveOffset,
@@ -154,6 +173,333 @@ export class MediaService {
       items: slicedItems,
       hasMore: fetchedItems.length >= (auth.provider === 'tmdb' ? 20 : limit * 2)
     };
+  }
+
+  private static async getDeterministicRandomItems(
+    sessionCode: string,
+    sessionFilters: Filters | null,
+    auth: any,
+    provider: any,
+    excludeIds: Set<string>,
+    includedLibraries: string[],
+    watchProviders: string[] | undefined,
+    watchRegion: string,
+    page: number,
+    limit: number
+  ): Promise<{ items: MediaItem[]; hasMore: boolean }> {
+    // Get session for random seed
+    const session = await db.query.sessions.findFirst({
+      where: eq(sessions.code, sessionCode)
+    });
+
+    if (!session) {
+      throw new Error("Session not found");
+    }
+
+    // Use session's random seed, fallback to code if not present (backwards compatibility)
+    const randomSeed = session.randomSeed || sessionCode;
+
+    // Build filter object for cache key
+    const filterKey = {
+      libraries: includedLibraries,
+      genres: sessionFilters?.genres,
+      yearRange: sessionFilters?.yearRange,
+      officialRatings: sessionFilters?.officialRatings,
+      minCommunityRating: sessionFilters?.minCommunityRating,
+      runtimeRange: sessionFilters?.runtimeRange,
+      watchProviders,
+      watchRegion,
+      themes: sessionFilters?.themes,
+      tmdbLanguages: sessionFilters?.tmdbLanguages,
+      unplayedOnly: sessionFilters?.unplayedOnly,
+    };
+
+    // Check cache first
+    const filtersHash = this.generateFiltersHash(filterKey);
+    let cached = deckCache.getCachedDeck(sessionCode, auth.provider, filterKey);
+
+    if (!cached) {
+      // Build the full deck by fetching all items
+      logger.info(`Building deterministic deck for session ${sessionCode} with seed ${randomSeed}`);
+      const allItems = await this.fetchAllItemsForDeck(
+        provider,
+        auth,
+        includedLibraries,
+        sessionFilters,
+        watchProviders,
+        watchRegion
+      );
+
+      // Filter out any undefined/null items
+      const validItems = allItems.filter((item): item is MediaItem => item != null && item.Id != null);
+
+      // Apply client-side filters
+      let filteredItems = this.applyClientFilters(validItems, sessionFilters);
+
+      // Shuffle with deterministic seed
+      const compositeSeed = `${randomSeed}:${filtersHash}`;
+      filteredItems = shuffleWithSeed(filteredItems, compositeSeed);
+
+      // Store in cache (skip any invalid items defensively)
+      const orderedIds: string[] = [];
+      const itemsById = new Map<string, MediaItem>();
+      let invalidCount = 0;
+      for (const item of filteredItems) {
+        if (!item || !item.Id) {
+          invalidCount += 1;
+          continue;
+        }
+        orderedIds.push(item.Id);
+        itemsById.set(item.Id, item);
+      }
+      if (invalidCount > 0) {
+        logger.warn(`Filtered ${invalidCount} invalid items while building deck for session ${sessionCode}`);
+      }
+      deckCache.setCachedDeck(sessionCode, auth.provider, filterKey, orderedIds, itemsById);
+
+      cached = { orderedIds, itemsById };
+      logger.info(`Deck built with ${orderedIds.length} items`);
+    }
+
+    // Get paginated results excluding already swiped items
+    const result = deckCache.getPaginatedItems(
+      sessionCode,
+      auth.provider,
+      filterKey,
+      excludeIds,
+      page,
+      limit
+    );
+
+    if (!result) {
+      // Cache expired or invalid, return empty
+      return { items: [], hasMore: false };
+    }
+
+    // Load blur data for first item
+    if (result.items.length > 0) {
+      result.items[0].BlurDataURL = await provider.getBlurDataUrl(result.items[0].Id, "Primary", auth);
+    }
+
+    return {
+      items: result.items,
+      hasMore: result.hasMore,
+    };
+  }
+
+  private static generateFiltersHash(filters: Record<string, any>): string {
+    const sorted = Object.entries(filters)
+      .filter(([, value]) => value !== undefined && value !== null)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}:${JSON.stringify(value)}`)
+      .join('|');
+    
+    let hash = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const char = sorted.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  private static async fetchAllItemsForDeck(
+    provider: any,
+    auth: any,
+    includedLibraries: string[],
+    sessionFilters: Filters | null,
+    watchProviders: string[] | undefined,
+    watchRegion: string
+  ): Promise<MediaItem[]> {
+    const providerName = auth.provider as ProviderType;
+    const allItems: MediaItem[] = [];
+
+    // Provider-specific fetching strategies
+    if (providerName === ProviderType.JELLYFIN || providerName === ProviderType.EMBY) {
+      return this.fetchAllJellyfinEmbyItems(provider, auth, includedLibraries, sessionFilters, watchProviders, watchRegion);
+    } else if (providerName === ProviderType.PLEX) {
+      return this.fetchAllPlexItems(provider, auth, includedLibraries, sessionFilters);
+    } else if (providerName === ProviderType.TMDB) {
+      return this.fetchAllTMDBItems(provider, auth, sessionFilters, watchProviders, watchRegion);
+    }
+
+    return allItems;
+  }
+
+  private static async fetchAllJellyfinEmbyItems(
+    provider: any,
+    auth: any,
+    includedLibraries: string[],
+    sessionFilters: Filters | null,
+    watchProviders: string[] | undefined,
+    watchRegion: string
+  ): Promise<MediaItem[]> {
+    const allItems: MediaItem[] = [];
+    const seenIds = new Set<string>();
+    const batchSize = 100;
+    let offset = 0;
+    let hasMore = true;
+    const maxItems = 10000; // Safety limit
+
+    // Get libraries to fetch from
+    let libraries = includedLibraries;
+    if (libraries.length === 0) {
+      const availableLibraries = await provider.getLibraries(auth);
+      libraries = availableLibraries.map((lib: any) => lib.Id);
+    }
+
+    // Fetch from each library
+    for (const libraryId of libraries) {
+      offset = 0;
+      hasMore = true;
+
+      while (hasMore && allItems.length < maxItems) {
+        try {
+          const items = await provider.getItems({
+            libraries: [libraryId],
+            genres: sessionFilters?.genres,
+            years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
+            ratings: sessionFilters?.officialRatings,
+            minCommunityRating: sessionFilters?.minCommunityRating,
+            runtimeRange: sessionFilters?.runtimeRange,
+            watchProviders,
+            watchRegion,
+            themes: sessionFilters?.themes,
+            tmdbLanguages: sessionFilters?.tmdbLanguages,
+            unplayedOnly: sessionFilters?.unplayedOnly,
+            sortBy: "SortName", // Use consistent sort for fetching
+            limit: batchSize,
+            offset,
+          }, auth);
+
+          if (items.length === 0) {
+            hasMore = false;
+            break;
+          }
+
+          for (const item of items) {
+            if (item && item.Id && !seenIds.has(item.Id)) {
+              seenIds.add(item.Id);
+              allItems.push(item);
+            }
+          }
+
+          offset += batchSize;
+          hasMore = items.length === batchSize;
+        } catch (error) {
+          logger.error("Error fetching items for deck:", error);
+          hasMore = false;
+        }
+      }
+    }
+
+    return allItems;
+  }
+
+  private static async fetchAllPlexItems(
+    provider: any,
+    auth: any,
+    includedLibraries: string[],
+    sessionFilters: Filters | null
+  ): Promise<MediaItem[]> {
+    const allItems: MediaItem[] = [];
+    const seenIds = new Set<string>();
+
+    // Get libraries to fetch from
+    let libraries = includedLibraries;
+    if (libraries.length === 0) {
+      const availableLibraries = await provider.getLibraries(auth);
+      libraries = availableLibraries
+        .filter((lib: any) => lib.CollectionType === "movies")
+        .map((lib: any) => lib.Id);
+    }
+
+    // Fetch from each library section
+    for (const libraryId of libraries) {
+      try {
+        // Plex doesn't support pagination well in the same way, so fetch larger batches
+        const items = await provider.getItems({
+          libraries: [libraryId],
+          genres: sessionFilters?.genres,
+          years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
+          ratings: sessionFilters?.officialRatings,
+          minCommunityRating: sessionFilters?.minCommunityRating,
+          runtimeRange: sessionFilters?.runtimeRange,
+          themes: sessionFilters?.themes,
+          tmdbLanguages: sessionFilters?.tmdbLanguages,
+          unplayedOnly: sessionFilters?.unplayedOnly,
+          limit: 1000, // Fetch large batch
+          offset: 0,
+        }, auth);
+
+        for (const item of items) {
+          if (item && item.Id && !seenIds.has(item.Id)) {
+            seenIds.add(item.Id);
+            allItems.push(item);
+          }
+        }
+      } catch (error) {
+        logger.error("Error fetching Plex items for deck:", error);
+      }
+    }
+
+    return allItems;
+  }
+
+  private static async fetchAllTMDBItems(
+    provider: any,
+    auth: any,
+    sessionFilters: Filters | null,
+    watchProviders: string[] | undefined,
+    watchRegion: string
+  ): Promise<MediaItem[]> {
+    const allItems: MediaItem[] = [];
+    const seenIds = new Set<string>();
+    const maxPages = 25; // TMDB max is 500 pages, but limit to 25 (500 items) for performance
+
+    // Get genres for ID mapping
+    const genres = await provider.getGenres(auth);
+    const genreIdMap = new Map(genres.map((g: any) => [g.Name, g.Id]));
+
+    for (let page = 1; page <= maxPages; page++) {
+      try {
+        const items = await provider.getItems({
+          genres: sessionFilters?.genres,
+          years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
+          ratings: sessionFilters?.officialRatings,
+          minCommunityRating: sessionFilters?.minCommunityRating,
+          runtimeRange: sessionFilters?.runtimeRange,
+          watchProviders,
+          watchRegion,
+          themes: sessionFilters?.themes,
+          tmdbLanguages: sessionFilters?.tmdbLanguages,
+          sortBy: "Popular", // Use consistent sort
+          limit: 20,
+          offset: (page - 1) * 20,
+        }, auth);
+
+        if (items.length === 0) {
+          break;
+        }
+
+        for (const item of items) {
+          if (item && item.Id && !seenIds.has(item.Id)) {
+            seenIds.add(item.Id);
+            allItems.push(item);
+          }
+        }
+
+        // Stop if we got less than a full page
+        if (items.length < 20) {
+          break;
+        }
+      } catch (error) {
+        logger.error("Error fetching TMDB items for deck:", error);
+        break;
+      }
+    }
+
+    return allItems;
   }
 
   private static async getSoloItems(sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
@@ -180,7 +526,7 @@ export class MediaService {
       watchRegion,
       sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
       themes: sessionFilters?.themes,
-      languages: sessionFilters?.languages,
+      tmdbLanguages: sessionFilters?.tmdbLanguages,
       unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
       limit: fetchLimit,
       offset: effectiveOffset

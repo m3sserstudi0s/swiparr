@@ -52,7 +52,7 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
   },
   [ProviderType.PLEX]: {
     hasAuth: true,
-    hasQuickConnect: false,
+    hasQuickConnect: true,
     hasWatchlist: true,
     hasLibraries: true,
     hasSettings: true,
@@ -66,7 +66,7 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     hasQuickConnect: false,
     hasWatchlist: false,
     hasLibraries: false,
-    hasSettings: false,
+    hasSettings: true,
     requiresServerUrl: false,
     isExperimental: false,
     hasStreamingSettings: true,
@@ -88,7 +88,7 @@ export interface SearchFilters {
   sortBy?: string;
   unplayedOnly?: boolean;
   themes?: string[];
-  languages?: string[];
+  tmdbLanguages?: string[];
   limit?: number;
   offset?: number;
 }

@@ -18,7 +18,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       settings: {
-        useWatchlist: getRuntimeConfig().useWatchlist,
+        useWatchlist: getRuntimeConfig().provider === "jellyfin" && getRuntimeConfig().useWatchlist,
         allowGuestLending: false,
         hasDismissedGuestLendingAlert: false,
       },
@@ -28,7 +28,7 @@ export const useSettingsStore = create<SettingsState>()(
         })),
       resetSettings: () => set({
         settings: {
-          useWatchlist: getRuntimeConfig().useWatchlist,
+          useWatchlist: getRuntimeConfig().provider === "jellyfin" && getRuntimeConfig().useWatchlist,
           allowGuestLending: false,
           hasDismissedGuestLendingAlert: false,
         }

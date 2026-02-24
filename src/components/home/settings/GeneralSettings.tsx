@@ -20,6 +20,8 @@ export function GeneralSettings() {
     const updateSession = useUpdateSession();
 
     const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
+    const provider = sessionStatus?.provider || runtimeConfig.provider;
+    const showCollectionToggle = provider === "jellyfin";
     const isGuest = sessionStatus?.isGuest || false;
     const isHost = sessionStatus?.code && sessionStatus?.userId === sessionStatus?.hostUserId;
 
@@ -71,7 +73,7 @@ export function GeneralSettings() {
                 </>
             ) : (
                 <>
-                    {capabilities.hasWatchlist && (
+                    {showCollectionToggle && (
                         <div className="grid grid-flow-col items-center justify-between gap-2">
                             <div className="space-y-0.5">
                                 <div className="text-sm font-medium">Collection Type</div>

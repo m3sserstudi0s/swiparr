@@ -42,7 +42,7 @@ export const sessionSettingsSchema = z.object({
     watchRegion: z.string().optional(),
     sortBy: z.string().optional(),
     themes: z.array(z.string()).optional(),
-    languages: z.array(z.string()).optional(),
+    tmdbLanguages: z.array(z.string()).optional(),
     unplayedOnly: z.boolean().optional(),
   }).optional().or(z.any()),
   settings: z.object({
