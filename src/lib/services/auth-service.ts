@@ -28,6 +28,7 @@ export class AuthService {
         deviceId: session.user?.DeviceId,
         userId: session.user?.Id,
         serverUrl: session.user?.providerConfig?.serverUrl,
+        machineId: session.user?.providerConfig?.machineId,
         tmdbToken: session.user?.providerConfig?.tmdbToken,
         provider: session.user?.provider,
         watchRegion
@@ -73,6 +74,7 @@ export class AuthService {
       deviceId: decryptedDeviceId,
       userId: currentSession.hostUserId,
       serverUrl: currentSession.providerConfig ? JSON.parse(currentSession.providerConfig).serverUrl : undefined,
+      machineId: currentSession.providerConfig ? JSON.parse(currentSession.providerConfig).machineId : undefined,
       tmdbToken: currentSession.providerConfig ? JSON.parse(currentSession.providerConfig).tmdbToken : undefined,
       provider: currentSession.provider || undefined,
       watchRegion

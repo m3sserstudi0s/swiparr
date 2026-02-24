@@ -1,4 +1,5 @@
 import { config } from "@/lib/config";
+import { ALLOWED_DEFAULT_PLEX_IMAGE_URL } from "../constants";
 
 const PRIVATE_HOSTNAMES = new Set([
   "localhost",
@@ -56,7 +57,16 @@ const parseAllowlist = (raw?: string): string[] => {
   if (!raw) return [];
   return raw
     .split(",")
-    .map((value) => value.trim().toLowerCase())
+    .map((value) => value.trim())
+    .map((value) => {
+      if (!value) return value;
+      try {
+        const parsed = value.startsWith("http") ? new URL(value) : null;
+        return (parsed?.hostname || value).toLowerCase();
+      } catch {
+        return value.toLowerCase();
+      }
+    })
     .filter(Boolean);
 };
 
@@ -74,7 +84,12 @@ export const getProviderAllowlist = (): string[] => {
 };
 
 export const getAllowedPlexImageHosts = (): string[] => {
-  return Array.from(new Set([...getConfiguredProviderHosts(), ...getProviderAllowlist()]));
+  const normalizedDefault = parseAllowlist(ALLOWED_DEFAULT_PLEX_IMAGE_URL)[0];
+  return Array.from(new Set([
+    ...getConfiguredProviderHosts(),
+    ...getProviderAllowlist(),
+    ...(normalizedDefault ? [normalizedDefault] : []),
+  ]));
 };
 
 export const getConfiguredProviderHosts = (): string[] => {

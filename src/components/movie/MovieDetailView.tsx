@@ -21,6 +21,7 @@ import { useMovieActions } from "@/hooks/use-movie-actions";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
 import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 import { getLanguageLabel } from "@/lib/language";
+import { getProviderDetailsUrl } from "@/lib/provider-links";
 
 interface Props {
   movieId: string | null;
@@ -44,11 +45,11 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   };
 
   const { data: movie, isLoading } = useQuery({
-    queryKey: QUERY_KEYS.movie(movieId, sessionCode),
+    queryKey: QUERY_KEYS.movie(movieId, sessionCode, true),
     queryFn: async () => {
       if (!movieId) return null;
       const codeParam = sessionCode === null ? "" : (sessionCode ?? "");
-      const res = await apiClient.get<MediaItem>(`/api/media/item/${movieId}?sessionCode=${codeParam}`);
+      const res = await apiClient.get<MediaItem>(`/api/media/item/${movieId}?sessionCode=${codeParam}&includeUserState=1`);
       return res.data;
     },
     enabled: !!movieId,
@@ -65,13 +66,21 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     isGuest
   } = useMovieActions(movie || null, {
     onUnlikeSuccess: onClose,
-    sessionCode
+    sessionCode,
+    includeUserState: true
   });
 
-  const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities } = useRuntimeConfig();
+  const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities, provider: runtimeProvider } = useRuntimeConfig();
   const { data: sessionStatus } = useSession({ enabled: !!movieId });
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
-  const serverPublicUrl = sessionStatus?.serverUrl || runtimeServerUrl;
+  const activeProvider = sessionStatus?.provider || runtimeProvider;
+  const serverPublicUrl = activeProvider === "plex" ? runtimeServerUrl : (sessionStatus?.serverUrl || runtimeServerUrl);
+  const detailsUrl = getProviderDetailsUrl({
+    provider: activeProvider,
+    serverPublicUrl,
+    machineId: sessionStatus?.machineId,
+    itemId: movie?.Id || "",
+  });
   const languageLabel = getLanguageLabel(movie?.Language);
 
   const ratingSource = movie?.CommunityRatingSource?.toLowerCase();
@@ -206,7 +215,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
                 <div className="flex gap-2 mb-8 flex-wrap">
                   {capabilities.requiresServerUrl ? (
-                    <Link href={`${serverPublicUrl}/web/index.html#/details?id=${movie.Id}&context=home`} className="w-32">
+                    <Link href={detailsUrl} className="w-32" target="_blank">
                       <Button className="w-32" size="lg">
                         <Play className="w-4 h-4 mr-2 fill-current" /> Play
                       </Button>

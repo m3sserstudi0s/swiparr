@@ -53,6 +53,7 @@ export const JellyfinItemSchema = z.object({
   UserData: z.object({
     IsFavorite: z.boolean().optional(),
     Likes: z.boolean().optional(),
+    Played: z.boolean().optional(),
   }).optional(),
   People: z.array(z.object({
     Name: z.string(),
@@ -78,6 +79,9 @@ export const PlexMetadataSchema = z.object({
   title: z.string(),
   guid: z.string().optional(),
   Guid: z.array(z.object({ id: z.string() })).optional(),
+  viewCount: z.number().optional(),
+  viewOffset: z.number().optional(),
+  lastViewedAt: z.number().optional(),
   userState: z.object({
     watchlistedAt: z.number().optional(),
   }).optional(),

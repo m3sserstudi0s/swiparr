@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     // Try to discover the best server URL
     const discovered = await getBestServerUrl(authToken, session.providerConfig?.serverUrl, clientId);
     const effectiveServerUrl = discovered?.serverUrl || session.providerConfig?.serverUrl;
+    const effectiveMachineId = discovered?.machineId || session.providerConfig?.machineId;
 
     // Check if this should be the admin user
     const existingAdmin = await ConfigService.getAdminUserId("plex");
@@ -64,7 +65,9 @@ export async function POST(request: NextRequest) {
       isAdmin: await AuthService.isAdmin(userInfo.uuid || userInfo.id, userInfo.username, "plex"),
       wasMadeAdmin: wasMadeAdmin,
       provider: "plex",
-      providerConfig: effectiveServerUrl ? { serverUrl: effectiveServerUrl } : undefined,
+      providerConfig: effectiveServerUrl || effectiveMachineId
+        ? { serverUrl: effectiveServerUrl, machineId: effectiveMachineId || undefined }
+        : undefined,
     };
     session.isLoggedIn = true;
     

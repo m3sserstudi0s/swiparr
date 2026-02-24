@@ -749,9 +749,8 @@ export class MediaService {
       result = result.filter(item => (item.CommunityRating || 0) >= filters.minCommunityRating!);
     }
 
-    if (filters.unplayedOnly === false) {
-        // If explicitly false, we don't filter out anything based on played status here
-        // The exclusion of swiped items is handled outside this function
+    if (filters.unplayedOnly !== false) {
+      result = result.filter(item => !item.UserData?.Played);
     }
 
     return result;

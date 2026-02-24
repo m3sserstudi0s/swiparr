@@ -99,7 +99,7 @@ export interface MediaProvider {
 
   // Items
   getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]>;
-  getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem>;
+  getItemDetails(id: string, auth?: AuthContext, options?: { includeUserState?: boolean }): Promise<MediaItem>;
   
   // Metadata
   getGenres(auth?: AuthContext): Promise<MediaGenre[]>;

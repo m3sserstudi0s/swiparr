@@ -103,7 +103,7 @@ export class JellyfinProvider implements MediaProvider {
     return rawItems.map((item) => this.mapToMediaItem(item));
   }
 
-  async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
+  async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
@@ -310,6 +310,7 @@ export class JellyfinProvider implements MediaProvider {
       UserData: item.UserData ? {
         IsFavorite: item.UserData.IsFavorite,
         Likes: item.UserData.Likes,
+        Played: item.UserData.Played,
       } : undefined,
     };
   }
