@@ -51,21 +51,13 @@ jobs:
   sync_fork:
     name: Sync fork (only when a release is published)
     needs: release
-    # if: needs.release.outputs.published == 'true'
+    if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false   # don't keep GITHUB_TOKEN auth header
-
-      - name: Check token can access target repo
-        env:
-          SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
-        run: |
-          curl -sS -H "Authorization: Bearer $SYNC_TOKEN" \
-            https://api.github.com/repos/jakobbjelver/swiparr | head -c 300 && echo
-
       - name: Sync fork (master + tags)
         env:
           SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
@@ -86,8 +78,10 @@ jobs:
       always() &&
       (
         github.ref_name == 'develop' ||
-        (github.ref_name == 'master')
-      )
+        (github.ref_name == 'master' && needs.release.outputs.published == 'true')
+      ) &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
+      (needs.sync_fork.result == 'success' || needs.sync_fork.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       packages: write
