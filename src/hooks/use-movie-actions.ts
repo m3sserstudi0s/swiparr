@@ -129,11 +129,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         return {
           message: action === "remove"
             ? `Removed from ${useWatchlist ? "watchlist" : "favorites"}`
-            : `Added to ${useWatchlist ? "watchlist" : "favorites"}`,
-          action: {
-            label: 'Undo',
-            onClick: () => toggleWatchlist(action === "remove" ? "add" : "remove")
-          }
+            : `Added to ${useWatchlist ? "watchlist" : "favorites"}`,      
         };
       },
       error: (err) => ({

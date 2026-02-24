@@ -7,6 +7,16 @@ const PRIVATE_HOSTNAMES = new Set([
   "ip6-loopback",
 ]);
 
+const PRIVATE_HOST_SUFFIXES = [
+  ".local",
+  ".lan",
+  ".internal",
+  ".localhost",
+  ".localdomain",
+  ".home",
+  ".home.arpa",
+];
+
 const isPrivateIpv4 = (host: string): boolean => {
   if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false;
   const parts = host.split(".").map(Number);
@@ -27,6 +37,11 @@ const isPrivateIpv6 = (host: string): boolean => {
   if (normalized.startsWith("fe80:")) return true; // link-local
   if (normalized.startsWith("fc") || normalized.startsWith("fd")) return true; // unique local
   return false;
+};
+
+const isPrivateHostname = (host: string): boolean => {
+  if (!host.includes(".")) return true;
+  return PRIVATE_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
 };
 
 export const isPrivateHost = (hostname: string): boolean => {
@@ -99,7 +114,7 @@ export const assertSafeUrl = (
     options?.allowPrivate ?? (options?.source === "env" ? true : config.security.allowPrivateProviderUrls);
   const allowlist = options?.allowlist;
 
-  if (!allowPrivate && isPrivateHost(parsed.hostname) && !isAllowedHost(parsed.hostname, allowlist)) {
+  if (!allowPrivate && (isPrivateHost(parsed.hostname) || isPrivateHostname(parsed.hostname)) && !isAllowedHost(parsed.hostname, allowlist)) {
     throw new Error("Private network URLs are not allowed");
   }
 
