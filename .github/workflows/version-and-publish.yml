@@ -51,26 +51,33 @@ jobs:
   sync_fork:
     name: Sync fork (only when a release is published)
     needs: release
+    # if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false   # don't keep GITHUB_TOKEN auth header
+
       - name: Check token can access target repo
         env:
           SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
         run: |
           curl -sS -H "Authorization: Bearer $SYNC_TOKEN" \
             https://api.github.com/repos/jakobbjelver/swiparr | head -c 300 && echo
+
       - name: Sync fork (master + tags)
         env:
           SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
         run: |
-          FORK_URL="https://x-access-token:${SYNC_TOKEN}@github.com/jakobbjelver/swiparr.git"
+          # Add fork remote using PAT
+          git remote add fork "https://jakobbjelver:${SYNC_TOKEN}@github.com/jakobbjelver/swiparr.git"
+
           # Sync master branch
-          git push "$FORK_URL" HEAD:master --force
-          # Sync tags (includes vX.Y.Z created by semantic-release)
-          git push "$FORK_URL" --tags --force
+          git push fork HEAD:master --force
+
+          # Sync tags
+          git push fork --tags --force
 
   build_and_publish:
     name: Build and publish image
