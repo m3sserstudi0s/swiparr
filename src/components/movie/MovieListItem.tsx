@@ -47,7 +47,15 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
 
   const currentMovie = syncedMovie || movie;
 
-  const swipeDate = currentMovie.swipedAt ? new Date(currentMovie.swipedAt) : "";
+  const swipeDate = (() => {
+    if (!currentMovie.swipedAt) return null;
+    const raw = currentMovie.swipedAt;
+    if (typeof raw !== "string") return null;
+    const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+    const withZone = /Z|[+-]\d{2}:?\d{2}$/.test(normalized) ? normalized : `${normalized}Z`;
+    const parsed = new Date(withZone);
+    return Number.isNaN(parsed.getTime()) ? new Date(raw) : parsed;
+  })();
   const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
