@@ -51,7 +51,6 @@ jobs:
   sync_fork:
     name: Sync fork (only when a release is published)
     needs: release
-    if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,10 +79,8 @@ jobs:
       always() &&
       (
         github.ref_name == 'develop' ||
-        (github.ref_name == 'master' && needs.release.outputs.published == 'true')
-      ) &&
-      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
-      (needs.sync_fork.result == 'success' || needs.sync_fork.result == 'skipped')
+        (github.ref_name == 'master')
+      )
     runs-on: ubuntu-latest
     permissions:
       packages: write
