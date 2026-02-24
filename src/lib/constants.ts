@@ -55,5 +55,17 @@ export const LANGUAGES = [
 
 export const TMDB_MOVIE_BASE_URL = "https://www.themoviedb.org/movie";
 
+export const POPULAR_TMDB_WATCH_PROVIDER_IDS = [
+    "8",   // Netflix
+    "384", // HBO Max
+    "337", // Disney Plus
+    "9",   // Prime Video
+    "15",  // Hulu
+    "350", // Apple TV Plus
+    "531", // Paramount Plus
+    "386", // Peacock
+    "283"  // Crunchyroll
+];
+
 
 export const DEFAULT_LANGUAGES = ["en"]; // English is default selected

@@ -635,6 +635,20 @@ export class MediaService {
     if (!provider.getWatchProviders) return { providers: [] };
     
     const allProviders = await provider.getWatchProviders(region, auth);
+    const { POPULAR_TMDB_WATCH_PROVIDER_IDS } = await import("@/lib/constants");
+    const popularPriority = new Map(
+      POPULAR_TMDB_WATCH_PROVIDER_IDS.map((id, index) => [id, index])
+    );
+    const sortedProviders = [...allProviders].sort((a, b) => {
+      const aPriority = popularPriority.get(a.Id);
+      const bPriority = popularPriority.get(b.Id);
+      if (aPriority !== undefined || bPriority !== undefined) {
+        if (aPriority === undefined) return 1;
+        if (bPriority === undefined) return -1;
+        return aPriority - bPriority;
+      }
+      return a.Name.localeCompare(b.Name);
+    });
 
     let memberSelections: Record<string, string[]> = {};
     let members: { externalUserId: string, externalUserName: string }[] = [];
@@ -672,7 +686,7 @@ export class MediaService {
     }
 
     if (!wantAll && accumulatedProviderIds.length > 0) {
-        const filteredProviders = allProviders
+        const filteredProviders = sortedProviders
             .filter(p => accumulatedProviderIds.includes(p.Id))
             .map((p: any) => ({
                 ...p,
@@ -685,7 +699,7 @@ export class MediaService {
         };
     }
 
-    return { providers: allProviders };
+    return { providers: sortedProviders };
   }
 
   private static applyClientFilters(items: MediaItem[], filters: Filters | null): MediaItem[] {
