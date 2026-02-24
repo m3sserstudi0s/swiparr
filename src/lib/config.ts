@@ -44,6 +44,7 @@ const envSchema = z.object({
   JELLYFIN_USE_WATCHLIST: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 
   APP_VERSION: z.string().optional(),
+  NEXT_PUBLIC_APP_VERSION: z.string().optional(),
   X_FRAME_OPTIONS: z.string().default('DENY'),
   CSP_FRAME_ANCESTORS: z.string().default('none'),
 
@@ -91,7 +92,7 @@ export const config = {
     publicUrl: SERVER_PUBLIC_URL,
   },
   app: {
-    version: (parsedEnv.APP_VERSION || packageJson.version).replace(/^v/i, ''),
+    version: parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || packageJson.version,
     basePath: BASE_PATH,
     appPublicUrl: parsedEnv.APP_PUBLIC_URL,
     provider: parsedEnv.PROVIDER,
