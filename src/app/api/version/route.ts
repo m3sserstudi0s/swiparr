@@ -3,8 +3,6 @@ import { GITHUB_API_URL, GITHUB_REPO } from "@/lib/constants";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 import { logger } from "@/lib/logger";
 
-export const revalidate = 3600;
-
 export async function GET() {
     const { version: currentVersion } = getRuntimeConfig();
     const cacheHeaders = {
