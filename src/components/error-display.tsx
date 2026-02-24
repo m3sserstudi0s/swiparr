@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, WifiOff, Home, RotateCcw, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRuntimeConfig } from '@/lib/runtime-config';
+import { GITHUB_URL } from '@/lib/constants';
 
 interface ErrorDisplayProps {
   error?: Error & { digest?: string; errorId?: string };
@@ -40,14 +41,14 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
       icon: Search,
       title: 'Page Not Found',
       description: "We couldn't find the page you're looking for. It might have been moved or deleted.",
-      buttonText: 'Back to Home',
+      buttonText: 'Back',
       action: () => (window.location.href = `${basePath}/`),
     },
     '500': {
       icon: AlertCircle,
       title: 'System Error',
       description: "Something went wrong on our end. We're working on fixing it.",
-      buttonText: 'Try Again',
+      buttonText: 'Try again',
       action: reset || (() => window.location.reload()),
     },
     'offline': {
@@ -61,7 +62,7 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
       icon: AlertCircle,
       title: 'Application Error',
       description: error?.message || 'An unexpected client-side error occurred and the application crashed.',
-      buttonText: 'Restart Application',
+      buttonText: 'Restart',
       action: reset || (() => window.location.reload()),
     },
   };
@@ -79,7 +80,7 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
         {config.title}
       </h1>
       
-      <p className="text-muted-foreground max-w-md mb-8 text-lg">
+      <p className="text-muted-foreground max-w-md mb-8 text-sm">
         {config.description}
       </p>
 
@@ -120,7 +121,7 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
       
       {type === 'generic' && !isOffline && (
         <p className="mt-12 text-sm text-muted-foreground/60 max-w-sm italic">
-          If this problem persists, please try clearing your browser cache or contact support.
+          If this problem persists, please try clearing your browser cache or submit an issue <a href={GITHUB_URL} target="_blank">here.</a>
         </p>
       )}
     </div>

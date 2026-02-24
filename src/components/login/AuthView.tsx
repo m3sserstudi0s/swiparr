@@ -6,70 +6,85 @@ import { Button } from "@/components/ui/button";
 
 import { Label } from "@/components/ui/label";
 import { CardDescription } from "@/components/ui/card";
-import { QuickConnectView } from "./QuickConnectView";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangleIcon } from "lucide-react"
 import { ProviderType } from "@/lib/providers/types";
 import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
 import { ExternalLink, Copy, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface PlexPinViewProps {
-  pinCode: string;
-  authUrl: string;
+interface AuthCodeViewProps {
+  code: string;
   copied: boolean;
   onCopy: () => void;
   onCancel: () => void;
+  variant: "quick-connect" | "plex-pin";
+  authUrl?: string;
 }
 
-function PlexPinView({ pinCode, authUrl, copied, onCopy, onCancel }: PlexPinViewProps) {
+const truncatePlexPin = (pin: string): string => {
+  if (pin.length <= 4) {
+    return pin;
+  }
+
+  return `${pin.slice(0, 5)}...${pin.slice(-5)}`;
+};
+
+function AuthCodeView({ code, copied, onCopy, onCancel, variant, authUrl }: AuthCodeViewProps) {
+  const isPlex = variant === "plex-pin";
+  const displayCode = isPlex ? truncatePlexPin(code) : code;
+
   return (
     <div className="flex flex-col items-center space-y-6 py-4">
-      <div className="flex flex-col items-center space-y-3">
-        <div className="text-sm font-semibold tracking-[0.2em] text-primary bg-muted p-4 rounded-lg border border-primary/20">
-          {pinCode}
-        </div>
-        <div className="flex gap-2">
+      <div className="relative group">
+        <div className={cn("flex flex-row items-center text-primary font-mono bg-muted p-4 rounded-lg border border-primary/20", isPlex ? 'text-xl tracking-[0.15em] font-bold' : 'text-3xl tracking-[0.5em] font-black')}>
+          {displayCode}
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
+            className="ml-2"
             onClick={onCopy}
-            className="gap-2"
+            title="Copy to clipboard"
           >
             {copied ? (
-              <>
-                <Check className="h-4 w-4" />
-                Copied
-              </>
+              <Check className="h-4 w-4 " />
             ) : (
-              <>
-                <Copy className="h-4 w-4" />
-                Copy Code
-              </>
+              <Copy className="h-4 w-4" />
             )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(authUrl, '_blank')}
-            className="gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open Plex
           </Button>
         </div>
       </div>
-      <div className="text-xs text-center text-muted-foreground max-w-[280px]">
-        Enter this code in the{' '}
-        <a 
-          href={authUrl} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-foreground font-semibold hover:underline"
+      {isPlex && authUrl && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.open(authUrl, "_blank")}
+          className="gap-2"
         >
-          Plex app
-        </a>
-        {' '}or click the button to open Plex directly.
-      </div>
+          <ExternalLink className="h-4 w-4" />
+          Open Plex
+        </Button>
+      )}
+      <p className="text-xs text-center text-muted-foreground max-w-[280px]">
+        {isPlex ? (
+          <>
+            Enter this code in the{" "}
+            <a
+              href={authUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground font-semibold hover:underline"
+            >
+              Plex app
+            </a>
+            {" "}or click the button to open Plex directly.
+          </>
+        ) : (
+          <>
+            Go to <span className="text-foreground font-semibold">Settings → Quick Connect</span> on your logged-in device to authorize.
+          </>
+        )}
+      </p>
       <Button
         variant="ghost"
         size="sm"
@@ -169,19 +184,21 @@ export function AuthView({
       </TabsList>
       <TabsContent value="login" className="space-y-4">
         {qcCode ? (
-          <QuickConnectView
-            qcCode={qcCode}
+          <AuthCodeView
+            code={qcCode}
             copied={copied}
             onCopy={copyToClipboard}
             onCancel={() => setQcCode(null)}
+            variant="quick-connect"
           />
         ) : plexPinCode && plexAuthUrl && isPlex ? (
-          <PlexPinView
-            pinCode={plexPinCode}
+          <AuthCodeView
+            code={plexPinCode}
             authUrl={plexAuthUrl}
             copied={pinCopied}
             onCopy={handlePinCopy}
             onCancel={() => setPlexPinCode?.(null)}
+            variant="plex-pin"
           />
         ) : (
           <form onSubmit={handleLogin} className="space-y-3">
