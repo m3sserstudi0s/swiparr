@@ -54,7 +54,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
             {displayUsers.map((user, index) => (
                 <HybridTooltip key={user.userId}>
                     <HybridTooltipTrigger asChild>
-                        <div className={cn("inline-block border-2 bg- border-background/20 rounded-full", sizeClasses[size])}>
+                        <div className={cn("inline-block border-2 border-background/20 rounded-full", sizeClasses[size])}>
                             <SmoothAvatar 
                                 userId={user.userId} 
                                 userName={user.userName} 
