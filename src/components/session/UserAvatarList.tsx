@@ -33,11 +33,16 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
     };
 
     const grays = [
-        "bg-neutral-200 text-neutral-800",
-        "bg-neutral-300 text-neutral-900",
-        "bg-neutral-400 text-neutral-50",
-        "bg-neutral-500 text-neutral-50",
-        "bg-neutral-600 text-neutral-50",
+    "bg-purple-200 text-neutral-900",  // soft
+    "bg-emerald-600 text-white",       // bold
+    "bg-amber-200 text-neutral-900",   // soft
+    "bg-cyan-600 text-white",          // bold
+    "bg-pink-200 text-neutral-900",    // soft
+    "bg-indigo-600 text-white",        // bold
+    "bg-teal-200 text-neutral-900",    // soft
+    "bg-rose-600 text-white",          // bold
+    "bg-sky-200 text-neutral-900",     // soft
+    "bg-lime-600 text-neutral-900",    // bold
     ];
 
     const maxVisible = 5;
@@ -49,7 +54,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
             {displayUsers.map((user, index) => (
                 <HybridTooltip key={user.userId}>
                     <HybridTooltipTrigger asChild>
-                        <div className={cn("inline-block border-2 border-background/20 rounded-full", sizeClasses[size])}>
+                        <div className={cn("inline-block border-2 bg- border-background/20 rounded-full", sizeClasses[size])}>
                             <SmoothAvatar 
                                 userId={user.userId} 
                                 userName={user.userName} 
