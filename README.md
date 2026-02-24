@@ -130,7 +130,7 @@ Choose **one** provider setup based on your needs:
 PROVIDER=jellyfin
 JELLYFIN_URL=http://your-jellyfin:8096              # Internal URL (required)
 JELLYFIN_PUBLIC_URL=https://jellyfin.example.com    # Public URL (optional)
-JELLYFIN_USE_WATCHLIST=true                         # Use Watchlist vs Favorites (optional)
+JELLYFIN_USE_WATCHLIST=false                         # Use Watchlist (plugin needed) vs Favorites (optional)
 ```
 </details>
 
@@ -151,7 +151,6 @@ EMBY_PUBLIC_URL=https://emby.example.com  # Public URL (optional)
 PROVIDER=plex
 PLEX_URL=http://your-plex:32400       # Internal URL (required)
 PLEX_PUBLIC_URL=https://plex.example.com # Public URL (optional)
-PLEX_TOKEN=your-admin-token          # Admin token (optional)
 ```
 </details>
 
@@ -168,7 +167,7 @@ TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
 
 ```env
 # Authentication
-AUTH_SECRET=random-string-32-chars-min     # Auto-generated if empty
+AUTH_SECRET=random-string-32-chars-min     # Auto-generated if empty (NOTE: Required with unRAID)
 USE_SECURE_COOKIES=true                    # Required for HTTPS
 
 # Application
@@ -210,7 +209,7 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `PLEX_PUBLIC_URL` | ❌ | - | Public URL of your Plex server (for client-side access) |
 | `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
 | `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
-| `AUTH_SECRET` | ❌ | Auto-generated | Secret used for session encryption (min 32 chars) |
+| `AUTH_SECRET` | ❌ | Auto-generated (NOTE: Required with unRAID) | Secret used for session encryption (min 32 chars) |
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
