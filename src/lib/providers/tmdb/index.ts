@@ -188,7 +188,7 @@ export class TmdbProvider implements MediaProvider {
     });
   }
 
-  async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
+  async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
@@ -273,7 +273,7 @@ export class TmdbProvider implements MediaProvider {
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
     try {
-        const details = await this.getItemDetails(itemId, auth);
+        const details = await this.getItemDetails(itemId, auth, { includeUserState: false });
         const tag = type === "Backdrop" ? details.ImageTags?.Backdrop : details.ImageTags?.Primary;
         if (!tag) return "";
         const imageUrl = `https://image.tmdb.org/t/p/w200${tag.startsWith('/') ? tag : `/${tag}`}`; 

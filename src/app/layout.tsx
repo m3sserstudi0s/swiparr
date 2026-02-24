@@ -88,7 +88,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${sansFlex.variable} ${jetbrainsMono.variable}`}>
+      <body className={`${sansFlex.variable} ${jetbrainsMono.variable} overflow-y-hidden`}>
         {useAnalytics && <Analytics/>}
 
         <Providers

@@ -6,6 +6,7 @@ import { SessionSettings, Filters, SessionData } from "@/types";
 import { ProviderType } from "@/lib/providers/types";
 import { ConfigService } from "./config-service";
 import { logger } from "@/lib/logger";
+import { encryptValue, getGuestLendingSecret } from "@/lib/security/crypto";
 
 export class SessionService {
   private static generateCode(): string {
@@ -29,13 +30,18 @@ export class SessionService {
   static async createSession(user: SessionData["user"], allowGuestLending: boolean) {
     const code = this.generateCode();
     logger.info(`Creating session ${code} for user ${user.Name} (${user.Id})`);
+    const hasAccessToken = !!user.AccessToken;
+    const shouldEncrypt = allowGuestLending && hasAccessToken;
+    const encryptionSecret = shouldEncrypt ? await getGuestLendingSecret() : null;
+    const encryptedAccessToken = shouldEncrypt ? encryptValue(user.AccessToken!, encryptionSecret!) : null;
+    const encryptedDeviceId = shouldEncrypt ? encryptValue(user.DeviceId || "", encryptionSecret!) : null;
     
     await db.insert(sessions).values({
       id: uuidv4(),
       code,
       hostUserId: user.Id,
-      hostAccessToken: allowGuestLending ? user.AccessToken : null,
-      hostDeviceId: allowGuestLending ? user.DeviceId : null,
+      hostAccessToken: shouldEncrypt ? encryptedAccessToken : null,
+      hostDeviceId: shouldEncrypt ? encryptedDeviceId : null,
       provider: user.provider,
       providerConfig: user.providerConfig ? JSON.stringify(user.providerConfig) : null,
       randomSeed: this.generateRandomSeed(),
@@ -238,8 +244,14 @@ export class SessionService {
       }
       if (updates.settings !== undefined) updateData.settings = JSON.stringify(updates.settings);
       if (updates.allowGuestLending !== undefined) {
-        updateData.hostAccessToken = updates.allowGuestLending ? user.AccessToken : null;
-        updateData.hostDeviceId = updates.allowGuestLending ? user.DeviceId : null;
+        if (updates.allowGuestLending && user.AccessToken) {
+          const secret = await getGuestLendingSecret();
+          updateData.hostAccessToken = encryptValue(user.AccessToken, secret);
+          updateData.hostDeviceId = encryptValue(user.DeviceId || "", secret);
+        } else {
+          updateData.hostAccessToken = null;
+          updateData.hostDeviceId = null;
+        }
       }
     }
 

@@ -8,9 +8,7 @@ export async function getAuthSecret(): Promise<string> {
 
   // If in Edge Runtime, we cannot access the DB to generate/retrieve a secret
   if (process.env.NEXT_RUNTIME === 'edge') {
-    // Return a stable fallback derived from other env vars if possible, 
-    // or a temporary one (not ideal for persistent sessions)
-    return "swiparr-fallback-secret-for-middleware-only";
+    throw new Error("AUTH_SECRET is required when using Edge Runtime.");
   }
 
   try {

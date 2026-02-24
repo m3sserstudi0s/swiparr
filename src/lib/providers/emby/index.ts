@@ -61,7 +61,7 @@ export class EmbyProvider implements MediaProvider {
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations",
+      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams",
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Trending" ? "CommunityRating" :
               filters.sortBy === "Popular" ? "CommunityRating" :
@@ -97,7 +97,7 @@ export class EmbyProvider implements MediaProvider {
     return rawItems.map((item) => this.mapToMediaItem(item));
   }
 
-  async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
+  async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     const res = await apiClient.get(getEmbyUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
@@ -236,12 +236,32 @@ export class EmbyProvider implements MediaProvider {
     }
   }
 
+  private getItemLanguage(item: any): string | undefined {
+    const preferred = item.PreferredMetadataLanguage?.trim();
+    if (preferred) {
+      return preferred;
+    }
+
+    const streams = Array.isArray(item.MediaStreams) ? item.MediaStreams : [];
+    const audioStreams = streams.filter((stream: { Type: any; }) => {
+      const type = typeof stream?.Type === "string" ? stream.Type : "";
+      return type.toLowerCase() === "audio";
+    });
+
+    const defaultAudio = audioStreams.find((stream: { IsDefault: any; Language: any; }) => stream?.IsDefault && stream?.Language);
+    if (defaultAudio?.Language) {
+      return defaultAudio.Language;
+    }
+
+    return audioStreams.find((stream: { Language: any; }) => stream?.Language)?.Language;
+  }
+
   private mapToMediaItem(item: any): MediaItem {
     return {
       Id: item.Id,
       Name: item.Name,
       OriginalTitle: item.OriginalTitle,
-      Language: item.PreferredMetadataLanguage,
+      Language: this.getItemLanguage(item),
       RunTimeTicks: item.RunTimeTicks,
       ProductionYear: item.ProductionYear,
       CommunityRating: item.CommunityRating,
@@ -261,6 +281,7 @@ export class EmbyProvider implements MediaProvider {
       UserData: item.UserData ? {
         IsFavorite: item.UserData.IsFavorite,
         Likes: item.UserData.Likes,
+        Played: item.UserData.Played,
       } : undefined,
     };
   }

@@ -16,10 +16,11 @@ interface UseMovieActionsOptions {
   onUnlikeSuccess?: () => void;
   sessionCode?: string | null;
   syncData?: boolean;
+  includeUserState?: boolean;
 }
 
 export function useMovieActions<T extends MediaItem>(initialMovie: T | null, options: UseMovieActionsOptions = {}) {
-  const { onUnlikeSuccess, sessionCode: optionsSessionCode, syncData = true } = options;
+  const { onUnlikeSuccess, sessionCode: optionsSessionCode, syncData = true, includeUserState = false } = options;
   const queryClient = useQueryClient();
   const { settings } = useSettings();
   const { data: sessionData } = useSession();
@@ -38,12 +39,13 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
 
   // Subscribe to the movie query to keep state in sync across components
   const { data: syncedMovie } = useQuery({
-    queryKey: QUERY_KEYS.movie(initialMovie?.Id || null, movieSessionCode),
+    queryKey: QUERY_KEYS.movie(initialMovie?.Id || null, movieSessionCode, includeUserState),
     queryFn: async () => {
       if (!initialMovie?.Id) return null;
       // Pass sessionCode to API to get the correct likedBy context
       const codeParam = movieSessionCode === null ? "" : (movieSessionCode ?? "");
-      const res = await apiClient.get<MediaItem>(`/api/media/item/${initialMovie.Id}?sessionCode=${codeParam}`);
+      const userStateParam = includeUserState ? "&includeUserState=1" : "&includeUserState=0";
+      const res = await apiClient.get<MediaItem>(`/api/media/item/${initialMovie.Id}?sessionCode=${codeParam}${userStateParam}`);
       return res.data;
     },
     enabled: !!initialMovie?.Id && syncData,
@@ -86,7 +88,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         const action = actionOverride || (isInList ? "remove" : "add");
         const nextValue = action === "add";
         
-        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode, includeUserState);
         await queryClient.cancelQueries({ queryKey: movieKey });
 
         const previousMovie = queryClient.getQueryData(movieKey);
@@ -107,13 +109,13 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         return { previousMovie };
     },
     onError: (err, variables, context) => {
-        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode, includeUserState);
         if (currentMovie?.Id && context?.previousMovie) {
             queryClient.setQueryData(movieKey, context.previousMovie);
         }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode, includeUserState) });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
     },
   });
@@ -129,11 +131,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
         return {
           message: action === "remove"
             ? `Removed from ${useWatchlist ? "watchlist" : "favorites"}`
-            : `Added to ${useWatchlist ? "watchlist" : "favorites"}`,
-          action: {
-            label: 'Undo',
-            onClick: () => toggleWatchlist(action === "remove" ? "add" : "remove")
-          }
+            : `Added to ${useWatchlist ? "watchlist" : "favorites"}`,      
         };
       },
       error: (err) => ({
@@ -159,7 +157,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     onMutate: async (params) => {
       const movie = params?.movie || currentMovie;
       const code = params?.sessionCode ?? movieSessionCode;
-      const movieKey = QUERY_KEYS.movie(movie?.Id || null, code);
+      const movieKey = QUERY_KEYS.movie(movie?.Id || null, code, includeUserState);
       await queryClient.cancelQueries({ queryKey: movieKey });
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
 
@@ -191,14 +189,14 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
       const movie = variables?.movie || currentMovie;
       const code = variables?.sessionCode ?? movieSessionCode;
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(movie?.Id || null, code) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(movie?.Id || null, code, includeUserState) });
     },
     onError: (err, variables, context) => {
       if (context?.previousLikes) {
         queryClient.setQueryData(QUERY_KEYS.likes, context.previousLikes);
       }
       if (context?.movieId && context?.previousMovie) {
-        const movieKey = QUERY_KEYS.movie(context.movieId, context.code);
+        const movieKey = QUERY_KEYS.movie(context.movieId, context.code, includeUserState);
         queryClient.setQueryData(movieKey, context.previousMovie);
       }
       logger.error("Relike failed:", err);
@@ -222,7 +220,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
       await apiClient.delete(`/api/user/likes?itemId=${currentMovie.Id}${sessionParam}`);
     },
     onMutate: async () => {
-        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode, includeUserState);
         await queryClient.cancelQueries({ queryKey: movieKey });
         await queryClient.cancelQueries({ queryKey: QUERY_KEYS.likes });
 
@@ -250,11 +248,11 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode, includeUserState) });
       onUnlikeSuccess?.();
     },
     onError: (err, variables, context) => {
-        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode);
+        const movieKey = QUERY_KEYS.movie(currentMovie?.Id || null, movieSessionCode, includeUserState);
         if (context?.previousLikes) {
             queryClient.setQueryData(QUERY_KEYS.likes, context.previousLikes);
         }

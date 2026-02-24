@@ -7,12 +7,11 @@ import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
-
 import { MergedLike } from "@/types";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useMovieActions } from "@/hooks/use-movie-actions";
+import { getProviderDetailsUrl } from "@/lib/provider-links";
+import { useSession } from "@/hooks/api";
 
 
 interface MovieListItemProps {
@@ -24,15 +23,9 @@ interface MovieListItemProps {
 
 
 export function MovieListItem({ movie, onClick, variant = "full", isLiked }: MovieListItemProps) {
-  const { capabilities, serverPublicUrl } = useRuntimeConfig();
+  const { capabilities, serverPublicUrl, provider: runtimeProvider } = useRuntimeConfig();
 
-  const { data: sessionData } = useQuery({
-    queryKey: ["session"],
-    queryFn: async () => {
-      const res = await apiClient.get<{ code: string | null; userId: string; isGuest?: boolean; provider?: string }>("/api/session");
-      return res.data;
-    },
-  });
+  const { data: sessionStatus } = useSession();
 
   const {
     movie: syncedMovie,
@@ -43,9 +36,16 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
     handleToggleWatchlist,
     handleUnlike,
     useWatchlist
-  } = useMovieActions(movie, { isLiked });
+  } = useMovieActions(movie, { isLiked, includeUserState: true });
 
-  const currentMovie = syncedMovie || movie;
+  const currentMovie = syncedMovie ? { ...movie, ...syncedMovie } : movie;
+  const activeProvider = sessionStatus?.provider || runtimeProvider;
+  const detailsUrl = getProviderDetailsUrl({
+    provider: activeProvider,
+    serverPublicUrl,
+    machineId: sessionStatus?.machineId,
+    itemId: currentMovie.Id,
+  });
 
   const swipeDate = (() => {
     if (!currentMovie.swipedAt) return null;
@@ -143,7 +143,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           )}
 
           <div className="flex gap-2">
-            {capabilities.requiresServerUrl && <Link href={`${serverPublicUrl}/web/index.html#/details?id=${currentMovie.Id}&context=home`} onClick={e => e.stopPropagation()} className="flex-1">
+            {capabilities.requiresServerUrl && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"
@@ -175,7 +175,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 </span>
               )}
             </div>}
-            {!sessionData?.isGuest && capabilities.hasAuth && capabilities.hasWatchlist && (
+            {!sessionStatus?.isGuest && capabilities.hasAuth && capabilities.hasWatchlist && (
               <Button
                 size="sm"
                 variant="ghost"

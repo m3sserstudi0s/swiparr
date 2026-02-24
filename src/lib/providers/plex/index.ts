@@ -18,6 +18,7 @@ import { plexClient, getPlexUrl, getPlexHeaders, getBestServerUrl } from "@/lib/
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
 import { PlexContainerSchema } from "../schemas";
 import { logger } from "@/lib/logger";
+import { assertSafeUrl, getAllowedPlexImageHosts, isAllowedHost } from "@/lib/security/url-guard";
 
 /**
  * Plex Provider
@@ -135,9 +136,10 @@ export class PlexProvider implements MediaProvider {
     return allItems.slice(0, filters.limit || 20).map(item => this.mapToMediaItem(item));
   }
 
-  async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
+  async getItemDetails(id: string, auth?: AuthContext, options?: { includeUserState?: boolean }): Promise<MediaItem> {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     if (!token) throw new Error("Plex Token is required");
+    const includeUserState = options?.includeUserState ?? false;
     const path = id.includes("/") ? id : `/library/metadata/${id}`;
     const url = getPlexUrl(path, auth?.serverUrl);
     const res = await plexClient.get(url, {
@@ -146,13 +148,15 @@ export class PlexProvider implements MediaProvider {
         includeGuids: 1,
         includeCollections: 1,
         includeMeta: 1,
-        includeUserState: 1,
+        ...(includeUserState ? { includeUserState: 1 } : {}),
       },
     });
     const data = PlexContainerSchema.parse(res.data);
     const item = data.MediaContainer.Metadata?.[0];
     if (!item) throw new Error("Item not found");
-    await this.attachWatchlistState(item, token);
+    if (includeUserState) {
+      await this.attachWatchlistState(item, token);
+    }
     return this.mapToMediaItem(item);
   }
 
@@ -223,7 +227,15 @@ export class PlexProvider implements MediaProvider {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const path = tag || itemId;
     if (path.startsWith('http://') || path.startsWith('https://')) {
-        return path;
+        const parsed = assertSafeUrl(path, {
+          source: "user",
+          allowlist: getAllowedPlexImageHosts(),
+        });
+        const allowedHosts = getAllowedPlexImageHosts();
+        if (!isAllowedHost(parsed.hostname, allowedHosts)) {
+          throw new Error("External image host not allowed");
+        }
+        return parsed.toString();
     }
     if (path.startsWith('/')) {
         return getPlexUrl(`${path}?X-Plex-Token=${token}`, auth?.serverUrl);
@@ -238,8 +250,17 @@ export class PlexProvider implements MediaProvider {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     try {
-        const details = await this.getItemDetails(itemId, auth);
-        const tag = type === "Backdrop" ? details.ImageTags?.Backdrop : details.ImageTags?.Primary;
+        const path = itemId.includes("/") ? itemId : `/library/metadata/${itemId}`;
+        const url = getPlexUrl(path, auth?.serverUrl);
+        const res = await plexClient.get(url, {
+          headers: getPlexHeaders(token),
+          params: {
+            includeMeta: 1,
+          },
+        });
+        const data = PlexContainerSchema.parse(res.data);
+        const item = data.MediaContainer.Metadata?.[0];
+        const tag = type === "Backdrop" ? item?.art : item?.thumb;
         if (!tag) return "";
         const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any, tag, auth);
         const headers = getPlexHeaders(token);
@@ -327,6 +348,15 @@ export class PlexProvider implements MediaProvider {
 
     const watchlistGuid = item.guid || (item.Guid?.[0]?.id ?? undefined);
     const isWatchlisted = (item.userState?.watchlistedAt ?? 0) > 0;
+    const isPlayed = (item.viewCount ?? 0) > 0 || (item.viewOffset ?? 0) > 0 || (item.lastViewedAt ?? 0) > 0;
+
+    const ratingImage = item.ratingImage || item.audienceRatingImage;
+    const ratingSource = typeof ratingImage === "string" ? ratingImage.toLowerCase() : "";
+    const hasImdbRating = ratingSource.includes("imdb");
+    const communityRating = hasImdbRating
+      ? item.rating
+      : (item.audienceRating ?? item.rating);
+
 
     return {
       Id: item.ratingKey,
@@ -336,8 +366,8 @@ export class PlexProvider implements MediaProvider {
       Language: language,
       RunTimeTicks: item.duration ? item.duration * 10000 : undefined, 
       ProductionYear: item.year,
-      CommunityRating: item.audienceRating ?? item.rating,
-      CommunityRatingSource: item.audienceRatingImage || item.ratingImage,
+      CommunityRating: communityRating,
+      CommunityRatingSource: ratingImage,
       Overview: item.summary,
       Taglines: item.tagline ? [item.tagline] : [],
       OfficialRating: item.contentRating,
@@ -348,10 +378,11 @@ export class PlexProvider implements MediaProvider {
         Backdrop: item.art,
       },
       BackdropImageTags: item.art ? [item.art] : [],
-      UserData: item.userRating !== undefined || isWatchlisted
+      UserData: item.userRating !== undefined || isWatchlisted || isPlayed
         ? {
             IsFavorite: item.userRating > 0,
             Likes: isWatchlisted,
+            Played: isPlayed,
           }
         : undefined,
     };
@@ -380,7 +411,7 @@ export class PlexProvider implements MediaProvider {
     let ratingKey = itemId;
 
     try {
-      const details = await this.getItemDetails(itemId, auth);
+        const details = await this.getItemDetails(itemId, auth, { includeUserState: false });
       if (details.Guid) {
         const guidParts = details.Guid.split("/");
         ratingKey = guidParts[guidParts.length - 1] || itemId;
@@ -430,31 +461,31 @@ export class PlexProvider implements MediaProvider {
     const ratingKey = guidParts[guidParts.length - 1];
     if (!ratingKey) return;
 
-    const userStateBases = [
-      "https://discover.provider.plex.tv",
-      "https://metadata.provider.plex.tv",
-    ];
+        const userStateBases = [
+          "https://discover.provider.plex.tv",
+          "https://metadata.provider.plex.tv",
+        ];
 
-    for (const base of userStateBases) {
-      try {
-        const res = await plexClient.get(`${base}/library/metadata/${ratingKey}/userState`, {
-          headers: getPlexHeaders(token),
-          params: {
-            "X-Plex-Token": token,
-          },
-        });
+        for (const base of userStateBases) {
+          try {
+            const res = await plexClient.get(`${base}/library/metadata/${ratingKey}/userState`, {
+              headers: getPlexHeaders(token),
+              params: {
+                "X-Plex-Token": token,
+              },
+            });
 
-        const userState = res.data?.MediaContainer?.UserState?.[0];
-        if (userState) {
+            const userState = res.data?.MediaContainer?.UserState?.[0];
+            if (userState) {
           item.userState = userState;
         }
         return;
-      } catch (error: any) {
-        const status = error?.response?.status;
-        if (status === 404) continue;
-        logger.warn("[PlexProvider.attachWatchlistState] Failed to fetch watchlist state", error);
-        return;
-      }
-    }
+          } catch (error: any) {
+            const status = error?.response?.status;
+            if (status === 404) continue;
+            logger.warn("[PlexProvider.attachWatchlistState] Failed to fetch watchlist state", error);
+            return;
+          }
+        }
   }
 }

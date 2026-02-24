@@ -11,6 +11,7 @@ export interface UserSession {
   provider?: string;
   providerConfig?: {
     serverUrl?: string;
+    machineId?: string;
     tmdbToken?: string;
   };
 }
@@ -24,6 +25,7 @@ export interface SessionData {
   tempPinId?: number;
   providerConfig?: {
     serverUrl?: string;
+    machineId?: string;
     tmdbToken?: string;
   };
 }

@@ -67,5 +67,6 @@ export const POPULAR_TMDB_WATCH_PROVIDER_IDS = [
     "283"  // Crunchyroll
 ];
 
+export const ALLOWED_DEFAULT_PLEX_IMAGE_URL = "https://metadata-static.plex.tv"
 
 export const DEFAULT_LANGUAGES = ["en"]; // English is default selected

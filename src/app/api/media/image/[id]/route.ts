@@ -53,6 +53,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return new NextResponse("Missing image tag", { status: 400 });
   }
 
+  if ((providerType === "plex" || provider?.name === "plex") && effectiveTag && effectiveTag.startsWith("http")) {
+    try {
+      provider.getImageUrl(id, isUserType ? "user" : (imageType as any), effectiveTag, auth);
+    } catch (e: any) {
+      return new NextResponse("External image host not allowed", { status: 400 });
+    }
+  }
+
   try {
     const options: Record<string, string> = {};
     searchParams.forEach((value, key) => {

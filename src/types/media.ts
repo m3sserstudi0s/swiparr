@@ -39,6 +39,7 @@ export interface MediaItem {
   UserData?: {
     IsFavorite: boolean;
     Likes?: boolean;
+    Played?: boolean;
   };
   BlurDataURL?: string;
   WatchProviders?: WatchProvider[];

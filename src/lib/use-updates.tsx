@@ -64,6 +64,7 @@ export function useUpdates() {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
                 if (data.itemId) {
                     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode) });
+                    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode, false) });
                 }
 
                 if (userId && data.swiperId !== userId) {
@@ -86,6 +87,7 @@ export function useUpdates() {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
                 if (data.itemId) {
                     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode) });
+                    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode, false) });
                 }
             }
         };
@@ -190,6 +192,7 @@ export function useUpdates() {
                 queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
                 if (data.itemId) {
                     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode) });
+                    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(data.itemId, sessionCode, false) });
                 }
             }
         };

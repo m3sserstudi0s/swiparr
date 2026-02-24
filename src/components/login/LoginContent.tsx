@@ -136,7 +136,7 @@ export default function LoginContent() {
   }, [searchParams, basePath]);
 
   useQuickConnectUpdates(qcSecret, onAuthorized);
-  
+
   // Custom wrapper for usePlexPinAuth to handle 400 errors
   usePlexPinAuth(plexPinId, (data) => {
     // Stop polling if we got a successful auth
@@ -302,15 +302,8 @@ export default function LoginContent() {
         title="Quick Connect Code"
         value={qcCode || ""}
       />
-      <Card className={cn("w-full border-border bg-card text-card-foreground pt-0", !providerLock ? "max-w-sm" : "max-w-xs")}>
-        <CardHeader className="rounded-t-xl bg-linear-to-t to-foreground/20 via-foreground/5">
-          <CardTitle className="flex flex-row gap-3 justify-center items-center py-3 mt-4">
-            <Image src={logo} alt="Logo" className="size-6 dark:invert opacity-80" loading="eager" />
-            <GradientText className="text-3xl font-sans">
-              Swiparr
-            </GradientText>
-          </CardTitle>
-        </CardHeader>
+      <Image src={logo} alt="Logo" className="size-16 dark:invert dark:opacity-90 opacity-75 absolute top-16" loading="eager" />
+      <Card className={cn("w-full border-border bg-card text-card-foreground pt-8", !providerLock ? "max-w-sm" : "max-w-xs")}>
         <CardContent className={cn("transition-all duration-300 h-auto", !providerLock && "px-5")}>
           {wasMadeAdmin ? (
             <AdminInitializedView onContinue={() => {
