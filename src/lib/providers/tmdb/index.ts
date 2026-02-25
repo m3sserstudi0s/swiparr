@@ -20,7 +20,8 @@ import {
 } from "@/types/media";
 import { TmdbSearchResponseSchema, TmdbMovieSchema } from "../schemas";
 import { logger } from "@/lib/logger";
-import { DEFAULT_THEMES, TMDB_DEFAULT_REGION } from "@/lib/constants";
+import { DEFAULT_THEMES } from "@/lib/constants";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 /**
  * TMDB Provider
@@ -125,8 +126,10 @@ export class TmdbProvider implements MediaProvider {
 
     if (filters.watchProviders && filters.watchProviders.length > 0) {
         discoverParams.with_watch_providers = filters.watchProviders.join('|');
-        discoverParams.watch_region = filters.watchRegion || auth?.watchRegion || TMDB_DEFAULT_REGION;
         discoverParams.with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
+        if (filters.watchRegion || auth?.watchRegion) {
+            discoverParams.watch_region = filters.watchRegion || auth?.watchRegion;
+        }
     }
 
     if (filters.years && filters.years.length > 0) {
@@ -155,7 +158,8 @@ export class TmdbProvider implements MediaProvider {
         const regionMapping: Record<string, string> = {
             'UK': 'GB',
         };
-        const region = filters.watchRegion || auth?.watchRegion || TMDB_DEFAULT_REGION;
+        const { tmdbDefaultRegion } = getRuntimeConfig();
+        const region = filters.watchRegion || auth?.watchRegion || tmdbDefaultRegion;
         const certCountry = regionMapping[region] || region;
         discoverParams.certification_country = certCountry;
         discoverParams.certification = filters.ratings.join('|');
@@ -225,9 +229,10 @@ export class TmdbProvider implements MediaProvider {
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
     try {
-        const region = auth?.watchRegion || TMDB_DEFAULT_REGION;
+        const { tmdbDefaultRegion } = getRuntimeConfig();
+        const region = auth?.watchRegion || tmdbDefaultRegion;
         const data = await this.fetchTmdb<any>('certification/movie/list');
-        const certs = data.certifications?.[region] || data.certifications?.[TMDB_DEFAULT_REGION] || [];
+        const certs = data.certifications?.[region] || data.certifications?.[tmdbDefaultRegion] || [];
         return certs.map((c: any) => ({ Name: c.certification, Value: c.certification }));
     } catch (e) {
         return []; 
@@ -344,8 +349,9 @@ export class TmdbProvider implements MediaProvider {
     
     let officialRating: string | undefined = undefined;
     const releaseDates = movie.release_dates?.results || [];
-    const targetRegion = region || TMDB_DEFAULT_REGION;
-    const regionRelease = releaseDates.find((r: any) => r.iso_3166_1 === targetRegion) || releaseDates.find((r: any) => r.iso_3166_1 === TMDB_DEFAULT_REGION) || releaseDates[0];
+    const { tmdbDefaultRegion } = getRuntimeConfig();
+    const targetRegion = region || tmdbDefaultRegion;
+    const regionRelease = releaseDates.find((r: any) => r.iso_3166_1 === targetRegion) || releaseDates.find((r: any) => r.iso_3166_1 === tmdbDefaultRegion) || releaseDates[0];
     
     if (regionRelease) {
         officialRating = regionRelease.release_dates.find((rd: any) => rd.certification)?.certification;

@@ -9,7 +9,7 @@ import { userSettingsSchema } from "@/lib/validations";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { ConfigService } from "@/lib/services/config-service";
 import { handleApiError } from "@/lib/api-utils";
-import { TMDB_DEFAULT_REGION } from "@/lib/constants";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -22,9 +22,10 @@ export async function GET() {
     const settings = await ConfigService.getUserSettings(session.user.Id);
 
     if (!settings) {
+        const { tmdbDefaultRegion } = getRuntimeConfig();
         return NextResponse.json({
             watchProviders: [],
-            watchRegion: TMDB_DEFAULT_REGION,
+            watchRegion: tmdbDefaultRegion,
             isNew: true
         });
     }

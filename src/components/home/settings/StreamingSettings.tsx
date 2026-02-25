@@ -9,7 +9,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Tv, Check, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Tv, Check, Loader2, ChevronDown, ChevronRight, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage, cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
@@ -34,12 +34,19 @@ import {
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TMDB_DEFAULT_REGION } from "@/lib/constants";
+import { getRuntimeConfig } from "@/lib/runtime-config";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group";
 
 export function StreamingSettings() {
     const { data: settings, isLoading: isLoadingSettings } = useUserSettings();
     const { data: regions = [] } = useRegions();
     const updateSettingsMutation = useUpdateUserSettings();
+    const { tmdbDefaultRegion } = getRuntimeConfig();
 
     const [selectedRegion, setSelectedRegion] = useState<MediaRegion | null>(null);
     const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
@@ -47,18 +54,26 @@ export function StreamingSettings() {
     const [hasInitialized, setHasInitialized] = useState(false);
     const [container, setContainer] = useState<HTMLElement | null>(null);
     const [providersScrollParent, setProvidersScrollParent] = useState<HTMLElement | null>(null);
+    const [providerSearch, setProviderSearch] = useState<string>("");
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setContainer(document.querySelector('[data-slot="sheet-content"]') as HTMLElement);
     }, []);
 
-    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || TMDB_DEFAULT_REGION, null, true);
+    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || tmdbDefaultRegion, null, true);
     const availableProviders = useMemo(() => watchProvidersData?.providers || [], [watchProvidersData]);
     const availableProviderIds = useMemo(
         () => availableProviders.map((p: WatchProvider) => p.Id),
         [availableProviders]
     );
+    const filteredProviders = useMemo(() => {
+        const query = providerSearch.trim().toLowerCase();
+        if (!query) return availableProviders;
+        return availableProviders.filter((provider) =>
+            provider.Name?.toLowerCase().includes(query)
+        );
+    }, [availableProviders, providerSearch]);
     const gap = 12;
     const gridComponents = useMemo(() => ({
         List: ({ children, style, ...props }: React.ComponentProps<"div">) => (
@@ -87,8 +102,8 @@ export function StreamingSettings() {
 
     useEffect(() => {
         if (settings && regions.length > 0 && !hasInitialized) {
-            const regionCode = settings.watchRegion || TMDB_DEFAULT_REGION;
-            const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === TMDB_DEFAULT_REGION) || regions[0];
+            const regionCode = settings.watchRegion || tmdbDefaultRegion;
+            const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === tmdbDefaultRegion) || regions[0];
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedRegion(region);
 
@@ -122,6 +137,10 @@ export function StreamingSettings() {
         setSelectedProviders([]);
     };
 
+    const clearSearch = () => {
+        setProviderSearch("");
+    };
+
     const saveSettings = async (region: MediaRegion | null = selectedRegion) => {
         if (selectedProviders.length === 0) {
             toast.error("At least one streaming service must be selected");
@@ -129,7 +148,7 @@ export function StreamingSettings() {
         }
 
         toast.promise(updateSettingsMutation.mutateAsync({
-            watchRegion: region?.Id || TMDB_DEFAULT_REGION,
+            watchRegion: region?.Id || tmdbDefaultRegion,
             watchProviders: selectedProviders,
         }), {
             loading: "Updating streaming settings...",
@@ -249,6 +268,29 @@ export function StreamingSettings() {
                             </div>
                         </div>
 
+                        <InputGroup className="bg-muted/30 border-input">
+                            <InputGroupAddon align="inline-start">
+                                <Search className="size-4" />
+                            </InputGroupAddon>
+                            <InputGroupInput
+                                placeholder="Search services..."
+                                value={providerSearch}
+                                onChange={(event) => setProviderSearch(event.target.value)}
+                            />
+                            <InputGroupAddon align="inline-end">
+                                {providerSearch ? (
+                                    <InputGroupButton
+                                        variant="ghost"
+                                        size="icon-xs"
+                                        aria-label="Clear search"
+                                        onClick={clearSearch}
+                                    >
+                                        <X className="size-4" />
+                                    </InputGroupButton>
+                                ) : null}
+                            </InputGroupAddon>
+                        </InputGroup>
+
                         {isLoadingProviders ? (
                             <div className="flex items-center justify-center py-4">
                                 <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -259,9 +301,13 @@ export function StreamingSettings() {
                                     <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
                                         No providers found for this region
                                     </div>
+                                ) : filteredProviders.length === 0 ? (
+                                    <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
+                                        No services match your search
+                                    </div>
                                 ) : (
                                     <VirtuosoGrid
-                                        data={availableProviders}
+                                        data={filteredProviders}
                                         components={gridComponents}
                                         style={{ height: "100%" }}
                                         className="mr-3 my-2"

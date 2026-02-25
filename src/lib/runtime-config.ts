@@ -6,6 +6,7 @@
 
 import { ProviderCapabilities, ProviderType, PROVIDER_CAPABILITIES } from "./providers/types";
 import { config } from "./config";
+import { DEFAULT_TMDB_REGION } from "./constants";
 
 export interface RuntimeConfig {
   provider: ProviderType;
@@ -17,6 +18,7 @@ export interface RuntimeConfig {
   basePath: string;
   appPublicUrl: string;
   enableDebug: boolean;
+  tmdbDefaultRegion: string;
 }
 
 
@@ -45,6 +47,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     basePath: config.app.basePath,
     appPublicUrl: config.app.appPublicUrl,
     enableDebug: config.ENABLE_DEBUG,
+    tmdbDefaultRegion: config.TMDB_DEFAULT_REGION || DEFAULT_TMDB_REGION,
     ...overrides
   };
 }

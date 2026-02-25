@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { RotateCcw, Star, Check } from "lucide-react";
+import { RotateCcw, Star, Check, Search, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
@@ -24,9 +24,15 @@ import { OptimizedImage } from "../ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { cn } from "@/lib/utils";
-import { LANGUAGES, DEFAULT_LANGUAGES, SORT_OPTIONS, TMDB_DEFAULT_REGION } from "@/lib/constants";
+import { LANGUAGES, SORT_OPTIONS, POPULAR_LANGUAGE_CODES, DEFAULT_LANGUAGES } from "@/lib/constants";
 import { CountryFlag } from "../ui/country-flag";
 import { ProviderType } from "@/lib/providers/types";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -48,19 +54,21 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [excludedThemes, setExcludedThemes] = useState<string[]>([]);
   const [themeFilterMode, setThemeFilterMode] = useState<"include" | "exclude">("include");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(DEFAULT_LANGUAGES);
+  const [showAllLanguages, setShowAllLanguages] = useState(false);
   const [sortBy, setSortBy] = useState<string>("Trending");
   const [unplayedOnly, setUnplayedOnly] = useState<boolean>(true);
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
   const [providersScrollParent, setProvidersScrollParent] = useState<HTMLElement | null>(null);
+  const [providerSearch, setProviderSearch] = useState<string>("");
 
   const { data: session } = useSession();
   const defaultSort = session?.provider === ProviderType.TMDB ? "Popular" : "Trending"; // Popular works better with TMDB
   const isTmdb = session?.provider === ProviderType.TMDB;
-  const { capabilities } = useRuntimeConfig();
+  const { capabilities, tmdbDefaultRegion } = useRuntimeConfig();
   const { data: userSettings } = useUserSettings();
-  const watchRegion = session?.provider === ProviderType.TMDB ? (userSettings?.watchRegion || TMDB_DEFAULT_REGION) : undefined;
+  const watchRegion = session?.provider === ProviderType.TMDB ? (userSettings?.watchRegion || tmdbDefaultRegion) : undefined;
 
   const { genres, years, ratings, isLoading: isLoadingFilters } = useFilters(open, watchRegion);
   const { data: themes = [], isLoading: isLoadingThemes } = useThemes(open);
@@ -127,20 +135,22 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         setExcludedThemes([]);
         setThemeFilterMode("include");
       }
-      setSelectedLanguages(currentFilters?.tmdbLanguages || DEFAULT_LANGUAGES);
+      setSelectedLanguages(currentFilters?.tmdbLanguages ?? DEFAULT_LANGUAGES);
       setSortBy(currentFilters?.sortBy || defaultSort);
       setUnplayedOnly(currentFilters?.unplayedOnly ?? true);
       setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
+      setProviderSearch("");
     }
   }, [open, currentFilters, availableWatchProviderIds, minYearLimit, maxYearLimit, defaultSort]);
 
   const normalizeFilters = (f: Filters): Filters => {
     const isYearDefault = !f.yearRange || (f.yearRange[0] === minYearLimit && f.yearRange[1] === maxYearLimit);
     const isRuntimeDefault = !f.runtimeRange || (f.runtimeRange[0] === 0 && f.runtimeRange[1] === 240);
-    const isLanguageDefault = !f.tmdbLanguages || (f.tmdbLanguages.length === DEFAULT_LANGUAGES.length &&
-      f.tmdbLanguages.every(l => DEFAULT_LANGUAGES.includes(l)));
+    const isLanguageDefault = !f.tmdbLanguages ||
+      (f.tmdbLanguages.length === DEFAULT_LANGUAGES.length &&
+        f.tmdbLanguages.every((lang) => DEFAULT_LANGUAGES.includes(lang)));
 
     // Logic: 
     // - If all providers are selected OR none are selected, we treat it as "no filter" (undefined)
@@ -214,15 +224,26 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setExcludedThemes([]);
     setThemeFilterMode("include");
     setSelectedLanguages(DEFAULT_LANGUAGES);
+    setShowAllLanguages(false);
     setSortBy(defaultSort);
     setUnplayedOnly(true);
     setYearRange([minYearLimit, maxYearLimit]);
     setRuntimeRange([0, 240]);
     setMinRating(0);
+    setProviderSearch("");
   };
 
   const filteredSortOptions = sortOptions;
   const gap = 12;
+  const popularLanguageSet = useMemo(() => new Set(POPULAR_LANGUAGE_CODES), []);
+  const popularLanguages = useMemo(
+    () => LANGUAGES.filter((lang) => popularLanguageSet.has(lang.code)),
+    [popularLanguageSet]
+  );
+  const moreLanguages = useMemo(
+    () => LANGUAGES.filter((lang) => !popularLanguageSet.has(lang.code)),
+    [popularLanguageSet]
+  );
 
   const toggleGenre = (genreName: string) => {
     if (genreFilterMode === "exclude") {
@@ -314,6 +335,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const handleProvidersViewport = useCallback((node: HTMLDivElement | null) => {
     setProvidersScrollParent(node);
   }, []);
+
+  const filteredWatchProviders = useMemo(() => {
+    const query = providerSearch.trim().toLowerCase();
+    if (!query) return availableWatchProviders;
+    return availableWatchProviders.filter((provider) =>
+      provider.Name?.toLowerCase().includes(query)
+    );
+  }, [availableWatchProviders, providerSearch]);
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
@@ -662,9 +691,17 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {/* Language Section */}
                 {isTmdb && (
                   <div className="space-y-4">
-                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Language</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Language</Label>
+                      <button
+                        onClick={() => setSelectedLanguages([])}
+                        className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
+                      >
+                        Any language
+                      </button>
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {LANGUAGES.map((lang) => (
+                      {popularLanguages.map((lang) => (
                         <Badge
                           key={lang.code}
                           variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
@@ -678,6 +715,31 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         </Badge>
                       ))}
                     </div>
+                    {showAllLanguages && (
+                      <div className="flex flex-wrap gap-2">
+                        {moreLanguages.map((lang) => (
+                          <Badge
+                            key={lang.code}
+                            variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
+                            className={cn(
+                              "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                              selectedLanguages.includes(lang.code) && "bg-primary/20 text-primary border-primary/30"
+                            )}
+                            onClick={() => setSelectedLanguages([lang.code])}
+                          >
+                            {lang.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs"
+                      onClick={() => setShowAllLanguages((prev) => !prev)}
+                    >
+                      {showAllLanguages ? "Show less" : "See more"}
+                    </Button>
                   </div>
                 )}
 
@@ -697,73 +759,101 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           </Badge>
                         )}
                       </div>
-                      <div className="flex gap-3">
-                        <button onClick={() => setSelectedWatchProviders(availableWatchProviderIds)} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
-                        <button onClick={() => setSelectedWatchProviders([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>
+                        <div className="flex gap-3">
+                          <button onClick={() => setSelectedWatchProviders(availableWatchProviderIds)} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
+                          <button onClick={() => setSelectedWatchProviders([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>
+                        </div>
                       </div>
-                    </div>
-                      <VirtuosoGrid
-                        data={availableWatchProviders}
-                        components={gridComponents}
-                        style={{ height: "100%" }}
-                        customScrollParent={providersScrollParent || undefined}
-                        itemContent={(_, provider) => {
-                          const isSelected = selectedWatchProviders.includes(provider.Id);
-                          const providerMembers = (provider.MemberUserIds || [])
-                            .map(id => {
-                              const m = members.find(member => member.externalUserId === id);
-                              if (!m) return null;
-                              return {
-                                userId: m.externalUserId,
-                                userName: m.externalUserName,
-                                hasCustomProfilePicture: !!m.hasCustomProfilePicture,
-                                profileUpdatedAt: m.profileUpdatedAt
-                              };
-                            })
-                            .filter(Boolean) as { userId: string, userName: string, hasCustomProfilePicture?: boolean, profileUpdatedAt?: string }[];
-
-                          return (
-                            <button
-                              onClick={() => setSelectedWatchProviders(prev => prev.includes(provider.Id) ? prev.filter(id => id !== provider.Id) : [...prev, provider.Id])}
-                              className={cn(
-                                "relative flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer w-full",
-                                isSelected
-                                  ? "bg-primary/5 border-primary shadow-sm"
-                                  : "bg-background border-input text-muted-foreground opacity-85 grayscale-[0.5]"
-                              )}
+                      <InputGroup className="bg-muted/30 border-input">
+                        <InputGroupAddon align="inline-start">
+                          <Search className="size-4" />
+                        </InputGroupAddon>
+                        <InputGroupInput
+                          placeholder="Search services..."
+                          value={providerSearch}
+                          onChange={(event) => setProviderSearch(event.target.value)}
+                        />
+                        <InputGroupAddon align="inline-end">
+                          {providerSearch ? (
+                            <InputGroupButton
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label="Clear search"
+                              onClick={() => setProviderSearch("")}
                             >
-                              <div className="relative size-10 shrink-0 rounded-lg overflow-hidden border">
-                                <OptimizedImage
-                                  src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
-                                  alt={provider.Name}
-                                  className="object-cover"
-                                  unoptimized
-                                  width={40}
-                                  height={40}
-                                />
-                              </div>
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-xs font-bold truncate">{provider.Name}</span>
-                                {providerMembers.length > 0 && (
-                                  <UserAvatarList
-                                    users={providerMembers.map(m => ({
-                                      userId: m.userId,
-                                      userName: m.userName,
-                                      hasCustomProfilePicture: !!m.hasCustomProfilePicture,
-                                      profileUpdatedAt: m.profileUpdatedAt
-                                    }))}
-                                    size="sm"
-                                    className="mt-1"
-                                  />
+                              <X className="size-4" />
+                            </InputGroupButton>
+                          ) : null}
+                        </InputGroupAddon>
+                      </InputGroup>
+                      {filteredWatchProviders.length === 0 ? (
+                        <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
+                          No services match your search
+                        </div>
+                      ) : (
+                        <VirtuosoGrid
+                          data={filteredWatchProviders}
+                          components={gridComponents}
+                          style={{ height: "100%" }}
+                          customScrollParent={providersScrollParent || undefined}
+                          itemContent={(_, provider) => {
+                            const isSelected = selectedWatchProviders.includes(provider.Id);
+                            const providerMembers = (provider.MemberUserIds || [])
+                              .map(id => {
+                                const m = members.find(member => member.externalUserId === id);
+                                if (!m) return null;
+                                return {
+                                  userId: m.externalUserId,
+                                  userName: m.externalUserName,
+                                  hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+                                  profileUpdatedAt: m.profileUpdatedAt
+                                };
+                              })
+                              .filter(Boolean) as { userId: string, userName: string, hasCustomProfilePicture?: boolean, profileUpdatedAt?: string }[];
+
+                            return (
+                              <button
+                                onClick={() => setSelectedWatchProviders(prev => prev.includes(provider.Id) ? prev.filter(id => id !== provider.Id) : [...prev, provider.Id])}
+                                className={cn(
+                                  "relative flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer w-full",
+                                  isSelected
+                                    ? "bg-primary/5 border-primary shadow-sm"
+                                    : "bg-background border-input text-muted-foreground opacity-85 grayscale-[0.5]"
                                 )}
-                              </div>
-                              {isSelected && (
-                                <Check className="size-4 text-primary shrink-0 stroke-3" />
-                              )}
-                            </button>
-                          );
-                        }}
-                      />
+                              >
+                                <div className="relative size-10 shrink-0 rounded-lg overflow-hidden border">
+                                  <OptimizedImage
+                                    src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
+                                    alt={provider.Name}
+                                    className="object-cover"
+                                    unoptimized
+                                    width={40}
+                                    height={40}
+                                  />
+                                </div>
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <span className="text-xs font-bold truncate">{provider.Name}</span>
+                                  {providerMembers.length > 0 && (
+                                    <UserAvatarList
+                                      users={providerMembers.map(m => ({
+                                        userId: m.userId,
+                                        userName: m.userName,
+                                        hasCustomProfilePicture: !!m.hasCustomProfilePicture,
+                                        profileUpdatedAt: m.profileUpdatedAt
+                                      }))}
+                                      size="sm"
+                                      className="mt-1"
+                                    />
+                                  )}
+                                </div>
+                                {isSelected && (
+                                  <Check className="size-4 text-primary shrink-0 stroke-3" />
+                                )}
+                              </button>
+                            );
+                          }}
+                        />
+                      )}
                   </div>
                 )}
 

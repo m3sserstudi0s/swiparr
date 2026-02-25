@@ -168,8 +168,7 @@ export function CardDeck() {
       sortBy,
       tmdbLanguages
     } = sessionStatus.filters;
-    const hasNonDefaultLanguages = !!(tmdbLanguages && 
-      (tmdbLanguages.length > 1 || (tmdbLanguages.length === 1 && tmdbLanguages[0] !== "en")));
+    const hasNonDefaultLanguages = !!(tmdbLanguages && tmdbLanguages.length > 0);
     const defaultSort = sessionStatus?.provider === ProviderType.TMDB ? "Popular" : "Trending";
     return (genres && genres.length > 0) || 
            (excludedGenres && excludedGenres.length > 0) ||
