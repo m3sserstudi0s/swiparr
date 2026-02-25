@@ -75,7 +75,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   const { data: sessionStatus } = useSession({ enabled: !!movieId });
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
   const activeProvider = sessionStatus?.provider || runtimeProvider;
-  const serverPublicUrl = activeProvider === ProviderType.PLEX ? runtimeServerUrl : (sessionStatus?.serverUrl || runtimeServerUrl);
+  const serverPublicUrl = runtimeServerUrl;
   const detailsUrl = getProviderDetailsUrl({
     provider: activeProvider,
     serverPublicUrl,
