@@ -62,6 +62,7 @@ export function AccountSettings() {
                 <ProfilePicturePicker 
                     currentImage={profileImageUrl}
                     hasCustomImage={hasCustomProfilePicture}
+                    allowProviderFallback={!!capabilities.hasAuth}
                     userName={userName}
                     onUpload={handleUpload}
                     onDelete={handleDelete}
@@ -99,4 +100,3 @@ export function AccountSettings() {
         </SettingsSection>
     );
 }
-

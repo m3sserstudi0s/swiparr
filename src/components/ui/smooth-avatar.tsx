@@ -36,7 +36,8 @@ export function SmoothAvatar({
     // If hasImage is explicitly provided, respect it, unless we have auth capabilities (provider images)
     // If it's the current user, we can trust session.hasCustomProfilePicture.
     // We use !! to handle potential 0/1 from database
-    const knownNoImage = (hasImage !== undefined && !hasImage && !hasAuth) || (isCurrentUser && session?.hasCustomProfilePicture === false && !hasAuth);
+    const hasProviderFallback = !!hasAuth;
+    const knownNoImage = (hasImage !== undefined && !hasImage && !hasProviderFallback) || (isCurrentUser && session?.hasCustomProfilePicture === false && !hasProviderFallback);
 
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>(() => {
         if (!isActuallyUser || knownNoImage) return 'error';

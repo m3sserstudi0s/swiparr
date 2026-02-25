@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface ProfilePicturePickerProps {
     currentImage?: string; // URL
     hasCustomImage?: boolean;
+    allowProviderFallback?: boolean;
     onImageSelected?: (base64: string | null) => void;
     className?: string;
     size?: 'sm' | 'md' | 'lg'
@@ -22,6 +23,7 @@ interface ProfilePicturePickerProps {
 export function ProfilePicturePicker({
     currentImage,
     hasCustomImage,
+    allowProviderFallback,
     onImageSelected,
     className,
     size = 'lg',
@@ -35,7 +37,7 @@ export function ProfilePicturePicker({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const hasImage = (!!preview || (!!currentImage && !removed));
-    const shouldTryLoading = !!currentImage && hasCustomImage !== false && !removed && !preview;
+    const shouldTryLoading = !!currentImage && !removed && !preview && (hasCustomImage !== false || allowProviderFallback);
 
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>(() => {
         if (preview) return 'success';
