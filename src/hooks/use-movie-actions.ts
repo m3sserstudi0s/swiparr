@@ -25,7 +25,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
   const queryClient = useQueryClient();
   const { settings } = useSettings();
   const { data: sessionData } = useSession();
-  const { provider: runtimeProvider } = useRuntimeConfig();
+  const { provider: runtimeProvider, useWatchlist: runtimeUseWatchlist } = useRuntimeConfig();
 
   // Determine the effective session code for this movie action
   // Preference: 
@@ -64,7 +64,7 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
   const useWatchlist = activeProvider === ProviderType.PLEX
     ? true
     : activeProvider === ProviderType.JELLYFIN
-      ? settings.useWatchlist
+      ? (runtimeUseWatchlist && settings.useWatchlist)
       : false;
 
   const isInList = (useWatchlist ? currentMovie?.UserData?.Likes : currentMovie?.UserData?.IsFavorite) ?? false;
