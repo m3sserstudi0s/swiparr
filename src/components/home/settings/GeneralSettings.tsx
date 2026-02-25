@@ -22,7 +22,7 @@ export function GeneralSettings() {
 
     const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
     const provider = sessionStatus?.provider || runtimeConfig.provider;
-    const showCollectionToggle = provider === ProviderType.JELLYFIN;
+    const showCollectionToggle = provider === ProviderType.JELLYFIN && runtimeConfig.useWatchlist;
     const isGuest = sessionStatus?.isGuest || false;
     const isHost = sessionStatus?.code && sessionStatus?.userId === sessionStatus?.hostUserId;
 
