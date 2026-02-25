@@ -56,6 +56,22 @@ const envSchema = z.object({
 
 const parsedEnv = envSchema.parse(process.env);
 
+// Log config summary at startup (server-side only)
+if (typeof window === 'undefined' && parsedEnv.ENABLE_DEBUG) {
+  console.info('[Swiparr] Config loaded:', {
+    NODE_ENV: parsedEnv.NODE_ENV,
+    PROVIDER: parsedEnv.PROVIDER,
+    PROVIDER_LOCK: parsedEnv.PROVIDER_LOCK,
+    JELLYFIN_URL: parsedEnv.JELLYFIN_URL ? '(set)' : '(not set)',
+    JELLYFIN_PUBLIC_URL: parsedEnv.JELLYFIN_PUBLIC_URL ? '(set)' : '(not set)',
+    JELLYFIN_USE_WATCHLIST: parsedEnv.JELLYFIN_USE_WATCHLIST,
+    DATABASE_URL: parsedEnv.DATABASE_URL ? '(set)' : '(not set)',
+    AUTH_SECRET: parsedEnv.AUTH_SECRET ? '(set)' : '(not set)',
+    APP_VERSION: parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || '(not set)',
+    URL_BASE_PATH: parsedEnv.URL_BASE_PATH || '(not set)',
+  });
+}
+
 // Calculated values
 const getDefaultDbPath = () => {
   if (parsedEnv.NODE_ENV === 'production') {

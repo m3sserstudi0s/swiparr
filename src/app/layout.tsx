@@ -6,7 +6,8 @@ import { getAsyncRuntimeConfig } from '@/lib/server/runtime-config'
 import { TouchProvider } from '@/components/ui/hybrid-tooltip'
 import { Analytics } from "@vercel/analytics/next"
 import { config as appConfig } from "@/lib/config";
-
+import { Suspense } from 'react';
+import { RuntimeConfigScript } from '@/components/RuntimeConfigScript';
 
 const sansFlex = Zalando_Sans({
   subsets: ['latin'],
@@ -74,19 +75,14 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const config = await getAsyncRuntimeConfig();
   const useAnalytics = appConfig.USE_ANALYTICS
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.__SWIPARR_CONFIG__ = ${JSON.stringify(config)};
-            `,
-          }}
-        />
+        <Suspense>
+          <RuntimeConfigScript />
+        </Suspense>
       </head>
       <body className={`${sansFlex.variable} ${jetbrainsMono.variable} overflow-y-hidden`}>
         {useAnalytics && <Analytics/>}
