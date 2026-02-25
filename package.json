@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/set-app-version.mjs && npm run db:migrate && next build",
+    "build": "node scripts/set-app-version.mjs && node scripts/ensure-auth-secret.cjs && npm run db:migrate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",

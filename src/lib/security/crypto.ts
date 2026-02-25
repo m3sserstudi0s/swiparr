@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { config } from "@/lib/config";
+import { getAuthSecret } from "@/lib/server/session-secret";
 
 const KEY_LENGTH = 32;
 const IV_LENGTH = 12;
@@ -8,14 +8,8 @@ const deriveKey = (secret: string): Buffer => {
   return crypto.createHash("sha256").update(secret).digest().subarray(0, KEY_LENGTH);
 };
 
-export const getGuestLendingSecret = (): string => {
-  if (config.auth.secret && config.auth.secret.length >= 32) {
-    return config.auth.secret;
-  }
-  if (process.env.NEXT_RUNTIME === "edge") {
-    throw new Error("AUTH_SECRET is required when using Edge Runtime.");
-  }
-  throw new Error("AUTH_SECRET is required for guest lending encryption.");
+export const getGuestLendingSecret = async (): Promise<string> => {
+  return getAuthSecret();
 };
 
 export const encryptValue = (value: string, secret: string): string => {
