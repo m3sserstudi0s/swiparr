@@ -35,6 +35,12 @@ export async function GET(
             });
         }
 
+        // Guests either have a locally-stored profile picture (above) or none at all.
+        // Never fall through to the provider — their synthetic ID is unknown to Jellyfin/Emby/Plex.
+        if (id.startsWith("guest-")) {
+            return new NextResponse("User image not found", { status: 404 });
+        }
+
         const cookieStore = await cookies();
         const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
         let auth;
