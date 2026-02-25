@@ -736,12 +736,6 @@ export class MediaService {
   }
 
   static async getRatings(session: SessionData, regionOverride?: string) {
-    const useStatic = await ConfigService.getUseStaticFilterValues();
-    if (useStatic && !session.user.isGuest && session.user.provider !== ProviderType.TMDB) {
-        const { DEFAULT_RATINGS } = await import("@/lib/constants");
-        return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
-    }
-
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     
@@ -763,12 +757,6 @@ export class MediaService {
   }
 
   static async getGenres(session: SessionData) {
-    const useStatic = await ConfigService.getUseStaticFilterValues();
-    if (useStatic && !session.user.isGuest && session.user.provider !== ProviderType.TMDB) {
-        const { DEFAULT_GENRES } = await import("@/lib/constants");
-        return DEFAULT_GENRES;
-    }
-
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     
@@ -786,10 +774,8 @@ export class MediaService {
   }
 
   static async getThemes(session: SessionData) {
-    const auth = await AuthService.getEffectiveCredentials(session);
-    const provider = getMediaProvider(auth.provider);
-    if (typeof provider.getThemes === 'function') return provider.getThemes(auth);
-    return [];
+    const { DEFAULT_THEMES } = await import("@/lib/constants");
+    return DEFAULT_THEMES;
   }
 
   static async getRegions(session: SessionData) {
@@ -883,6 +869,34 @@ export class MediaService {
 
     if (!filters) return result;
 
+    const matchesThemes = (item: MediaItem, themes: string[]) => {
+      if (!themes || themes.length === 0) return true;
+      const normalizedThemes = themes.map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (normalizedThemes.length === 0) return true;
+
+      const candidates = new Set<string>();
+
+      (item.Genres || []).forEach((g) => {
+        if (g) candidates.add(g.toLowerCase());
+      });
+
+      (item.Taglines || []).forEach((t) => {
+        if (t) candidates.add(t.toLowerCase());
+      });
+
+      if (item.Overview) {
+        candidates.add(item.Overview.toLowerCase());
+      }
+
+      for (const theme of normalizedThemes) {
+        for (const candidate of candidates) {
+          if (candidate.includes(theme)) return true;
+        }
+      }
+
+      return false;
+    };
+
     if (filters.genres && filters.genres.length > 0) {
       result = result.filter(item => 
         item.Genres?.some(g => filters.genres.includes(g))
@@ -896,17 +910,11 @@ export class MediaService {
     }
 
     if (filters.themes && filters.themes.length > 0) {
-      // Tags/Keywords filtering usually done provider side, but we can double check here
-      // if the provider doesn't support it or returns raw data.
-      // We check if any of the item's genres or other metadata match the themes if possible
-      // but usually themes are provider-side specific tags.
+      result = result.filter(item => matchesThemes(item, filters.themes!));
     }
 
     if (filters.excludedThemes && filters.excludedThemes.length > 0) {
-      const excludeSet = new Set(filters.excludedThemes.map(t => t.toLowerCase()));
-      result = result.filter(item =>
-        !(item.Genres || []).some(g => excludeSet.has(g.toLowerCase()))
-      );
+      result = result.filter(item => !matchesThemes(item, filters.excludedThemes!));
     }
 
     if (filters.yearRange) {
@@ -926,7 +934,7 @@ export class MediaService {
 
     if (filters.excludedOfficialRatings && filters.excludedOfficialRatings.length > 0) {
       result = result.filter(item =>
-        !item.OfficialRating || !filters.excludedOfficialRatings!.includes(item.OfficialRating)
+        item.OfficialRating ? !filters.excludedOfficialRatings!.includes(item.OfficialRating) : true
       );
     }
 

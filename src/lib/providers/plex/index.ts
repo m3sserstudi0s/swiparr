@@ -106,25 +106,22 @@ export class PlexProvider implements MediaProvider {
         if (filters.ratings && filters.ratings.length > 0) {
             params.contentRating = filters.ratings.join(',');
         }
-        const excludedGenres = filters.excludedGenres && filters.excludedGenres.length > 0
-            ? await this.resolveGenreIds(filters.excludedGenres, auth)
-            : [];
-        const excludedThemes = filters.excludedThemes || [];
-        const excludedRatings = filters.excludedRatings || [];
-
-        if (excludedThemes.length > 0) {
-            const prefix = params.label ? `${params.label},` : "";
-            params.label = `${prefix}!${excludedThemes.join(',!')}`;
+        if (filters.excludedGenres && filters.excludedGenres.length > 0) {
+            logger.debug("[PlexProvider.getItems] Excluded genres will be applied client-side", {
+                excludedGenres: filters.excludedGenres,
+            });
         }
 
-        if (excludedGenres.length > 0) {
-            const prefix = params.genre ? `${params.genre},` : "";
-            params.genre = `${prefix}!${excludedGenres.map((g) => g.replace(/^\//, '')).join(',!')}`;
+        if (filters.excludedThemes && filters.excludedThemes.length > 0) {
+            logger.debug("[PlexProvider.getItems] Excluded themes will be applied client-side", {
+                excludedThemes: filters.excludedThemes,
+            });
         }
 
-        if (excludedRatings.length > 0) {
-            const prefix = params.contentRating ? `${params.contentRating},` : "";
-            params.contentRating = `${prefix}!${excludedRatings.join(',!')}`;
+        if (filters.excludedRatings && filters.excludedRatings.length > 0) {
+            logger.debug("[PlexProvider.getItems] Excluded ratings will be applied client-side", {
+                excludedRatings: filters.excludedRatings,
+            });
         }
         if (filters.years && filters.years.length > 0) {
             const minYear = Math.min(...filters.years);
