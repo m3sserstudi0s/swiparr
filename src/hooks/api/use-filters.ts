@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { MediaGenre, MediaRating, MediaYear } from "@/types/media";
 import { QUERY_KEYS } from "./query-keys";
-import { DEFAULT_GENRES, DEFAULT_RATINGS, DEFAULT_THEMES, TMDB_DEFAULT_REGION } from "@/lib/constants";
+import { DEFAULT_GENRES, DEFAULT_RATINGS, DEFAULT_THEMES } from "@/lib/constants";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export function useFilters(open: boolean, watchRegion?: string) {
-  const region = watchRegion || TMDB_DEFAULT_REGION;
+  const { tmdbDefaultRegion } = getRuntimeConfig();
+  const region = watchRegion || tmdbDefaultRegion;
 
   const genresQuery = useQuery({
     queryKey: QUERY_KEYS.media.genres,

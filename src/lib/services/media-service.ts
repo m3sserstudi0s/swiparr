@@ -9,7 +9,7 @@ import { AuthService } from "./auth-service";
 import { ConfigService } from "./config-service";
 import { deckCache } from "./deck-cache";
 import { logger } from "@/lib/logger";
-import { TMDB_DEFAULT_REGION } from "@/lib/constants";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
@@ -84,7 +84,8 @@ export class MediaService {
 
   private static async resolveWatchProviders(session: SessionData, sessionFilters: Filters | null, auth: any, activeProviderName: string) {
     let watchProviders = sessionFilters?.watchProviders;
-    let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || TMDB_DEFAULT_REGION;
+    const { tmdbDefaultRegion } = getRuntimeConfig();
+    let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || tmdbDefaultRegion;
 
     if (session.sessionCode && activeProviderName === ProviderType.TMDB) {
       const accumulated = new Set<string>();
@@ -797,16 +798,17 @@ export class MediaService {
     if (!provider.getWatchProviders) return { providers: [] };
     
     const allProviders = await provider.getWatchProviders(region, auth);
-    const { POPULAR_TMDB_WATCH_PROVIDER_IDS } = await import("@/lib/constants");
-    const popularPriority = new Map(
-      POPULAR_TMDB_WATCH_PROVIDER_IDS.map((id, index) => [id, index])
-    );
+    const { POPULAR_TMDB_WATCH_PROVIDER_NAMES } = await import("@/lib/constants");
+    const popularNames = POPULAR_TMDB_WATCH_PROVIDER_NAMES.map((name) => name.toLowerCase());
     const sortedProviders = [...allProviders].sort((a, b) => {
-      const aPriority = popularPriority.get(a.Id);
-      const bPriority = popularPriority.get(b.Id);
-      if (aPriority !== undefined || bPriority !== undefined) {
-        if (aPriority === undefined) return 1;
-        if (bPriority === undefined) return -1;
+      const aName = a.Name.toLowerCase();
+      const bName = b.Name.toLowerCase();
+      const aPriority = popularNames.findIndex((name) => aName.includes(name));
+      const bPriority = popularNames.findIndex((name) => bName.includes(name));
+      const hasMatch = aPriority !== -1 || bPriority !== -1;
+      if (hasMatch) {
+        if (aPriority === -1) return 1;
+        if (bPriority === -1) return -1;
         return aPriority - bPriority;
       }
       return a.Name.localeCompare(b.Name);

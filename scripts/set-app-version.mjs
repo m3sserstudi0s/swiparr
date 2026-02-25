@@ -11,6 +11,10 @@ const resolveVersion = () => {
   }
 
   try {
+    execSync('git fetch --tags --force', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+
     const tag = execSync('git describe --tags --abbrev=0', {
       stdio: ['ignore', 'pipe', 'ignore'],
     })
@@ -29,7 +33,7 @@ const resolveVersion = () => {
 
 const version = resolveVersion();
 const content = `NEXT_PUBLIC_APP_VERSION=${version}\n`;
-const targetPath = join(process.cwd(), '.env.app-version');
+const targetPath = join(process.cwd(), '.env.production.local');
 
 writeFileSync(targetPath, content, { encoding: 'ascii' });
 process.stdout.write(`Wrote ${targetPath} with version ${version}\n`);

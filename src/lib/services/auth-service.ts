@@ -1,13 +1,12 @@
 import { db, sessions } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { SessionData } from "@/types";
-import { getRuntimeConfig } from "@/lib/runtime-config";
 import { ConfigService } from "./config-service";
 import { ProviderType, PROVIDER_CAPABILITIES } from "../providers/types";
 import { config as appConfig } from "@/lib/config";
 import { logger } from "@/lib/logger";
 import { decryptValue, encryptValue, getGuestLendingSecret } from "@/lib/security/crypto";
-import { TMDB_DEFAULT_REGION } from "../constants";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export class GuestKickedError extends Error {
   constructor() {
@@ -19,9 +18,9 @@ export class GuestKickedError extends Error {
 export class AuthService {
   static async getEffectiveCredentials(session: SessionData) {
     logger.debug(`[AuthService.getEffectiveCredentials] for user ${session.user?.Name} (${session.user?.Id})`);
-    const { capabilities } = getRuntimeConfig();
+    const { capabilities, tmdbDefaultRegion } = getRuntimeConfig();
     const settings = await ConfigService.getUserSettings(session.user?.Id);
-    const watchRegion = settings?.watchRegion || TMDB_DEFAULT_REGION;
+    const watchRegion = settings?.watchRegion || tmdbDefaultRegion;
 
     if (!session.user?.isGuest) {
       return {

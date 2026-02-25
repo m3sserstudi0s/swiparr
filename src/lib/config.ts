@@ -37,6 +37,7 @@ const envSchema = z.object({
 
   // Provider Specific
   TMDB_ACCESS_TOKEN: z.string().optional(),
+  TMDB_DEFAULT_REGION: z.string().optional(),
   PLEX_TOKEN: z.string().optional(),
 
   // UI / Proxy
@@ -93,7 +94,7 @@ export const config = {
     publicUrl: SERVER_PUBLIC_URL,
   },
   app: {
-    version: parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || packageJson.version,
+    version: (parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || packageJson.version).replace(/^v/i, ''),
     basePath: BASE_PATH,
     appPublicUrl: parsedEnv.APP_PUBLIC_URL,
     provider: parsedEnv.PROVIDER,

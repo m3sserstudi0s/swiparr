@@ -161,11 +161,12 @@ PLEX_PUBLIC_URL=https://plex.example.com # Public URL (optional)
 </details>
 
 <details>
-<summary><strong>TMDB Setup (No Server Required)</strong></summary>
+  <summary><strong>TMDB Setup (No Server Required)</strong></summary>
 
 ```env
 PROVIDER=tmdb
 TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
+TMDB_DEFAULT_REGION=SE                # Default region for availability/certifications (optional)
 ```
 </details>
 
@@ -220,6 +221,7 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `PLEX_PUBLIC_URL` | ❌ | - | Public URL of your Plex server (for client-side access) |
 | `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
 | `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
+| `TMDB_DEFAULT_REGION` | ❌ | `SE` | Default TMDB region (ISO 3166-1) for streaming availability/certifications |
 | `AUTH_SECRET` | ❌ | Auto-generated (NOTE: Required with unRAID + Vercel) | Secret used for session encryption and guest lending token encryption (min 32 chars). See Security & Privacy. |
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |

@@ -46,30 +46,69 @@ export const LANGUAGES = [
     { code: "fr", name: "French" },
     { code: "de", name: "German" },
     { code: "it", name: "Italian" },
+    { code: "pt", name: "Portuguese" },
     { code: "ja", name: "Japanese" },
     { code: "ko", name: "Korean" },
-    { code: "pt", name: "Portuguese" },
     { code: "zh", name: "Chinese" },
+    { code: "hi", name: "Hindi" },
+    { code: "ar", name: "Arabic" },
+    { code: "ru", name: "Russian" },
+    { code: "tr", name: "Turkish" },
+    { code: "nl", name: "Dutch" },
     { code: "sv", name: "Swedish" },
     { code: "da", name: "Danish" },
+    { code: "no", name: "Norwegian" },
+    { code: "fi", name: "Finnish" },
+    { code: "pl", name: "Polish" },
+    { code: "cs", name: "Czech" },
+    { code: "hu", name: "Hungarian" },
+    { code: "el", name: "Greek" },
+    { code: "he", name: "Hebrew" },
+    { code: "ro", name: "Romanian" },
+    { code: "uk", name: "Ukrainian" },
+    { code: "th", name: "Thai" },
+    { code: "id", name: "Indonesian" },
+    { code: "vi", name: "Vietnamese" }
+];
+
+export const POPULAR_LANGUAGE_CODES = [
+    "en",
+    "es",
+    "fr",
+    "de",
+    "it",
+    "pt",
+    "ja",
+    "ko",
+    "zh",
+    "hi",
+    "ar"
 ];
 
 export const TMDB_MOVIE_BASE_URL = "https://www.themoviedb.org/movie";
 
-export const TMDB_DEFAULT_REGION = "SE"
+export const DEFAULT_TMDB_REGION = "SE";
 
-export const POPULAR_TMDB_WATCH_PROVIDER_IDS = [
-    "8",   // Netflix
-    "384", // HBO Max
-    "337", // Disney Plus
-    "9",   // Prime Video
-    "15",  // Hulu
-    "350", // Apple TV Plus
-    "531", // Paramount Plus
-    "386", // Peacock
-    "283"  // Crunchyroll
+export const POPULAR_TMDB_WATCH_PROVIDER_NAMES = [
+    "Netflix",
+    "HBO",
+    "Disney",
+    "Prime",
+    "Hulu",
+    "Apple",
+    "Paramount",
+    "Peacock",
+    "Crunchyroll",
+    "Rakuten",
+    "SkyShowtime",
+    "YoutTube",
+    "Draken",
+    "SVT",
+    "SF Anytime",
+    "Viaplay",
+    "TV4 Play",
 ];
 
-export const ALLOWED_DEFAULT_PLEX_IMAGE_URL = "https://metadata-static.plex.tv"
+export const ALLOWED_DEFAULT_PLEX_IMAGE_URL = "https://metadata-static.plex.tv";
 
-export const DEFAULT_LANGUAGES = ["en"]; // English is default selected
+export const DEFAULT_LANGUAGES = ["en"]; // English default for selection highlighting
