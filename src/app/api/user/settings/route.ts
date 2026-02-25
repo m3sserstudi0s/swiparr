@@ -9,6 +9,7 @@ import { userSettingsSchema } from "@/lib/validations";
 import { events, EVENT_TYPES } from "@/lib/events";
 import { ConfigService } from "@/lib/services/config-service";
 import { handleApiError } from "@/lib/api-utils";
+import { TMDB_DEFAULT_REGION } from "@/lib/constants";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -23,7 +24,7 @@ export async function GET() {
     if (!settings) {
         return NextResponse.json({
             watchProviders: [],
-            watchRegion: "SE",
+            watchRegion: TMDB_DEFAULT_REGION,
             isNew: true
         });
     }

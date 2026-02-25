@@ -1,13 +1,16 @@
 export interface Filters {
   genres: string[];
+  excludedGenres?: string[];
   yearRange?: [number, number];
   minCommunityRating?: number;
   officialRatings?: string[];
+  excludedOfficialRatings?: string[];
   runtimeRange?: [number, number];
   watchProviders?: string[];
   watchRegion?: string;
   sortBy?: string;
   themes?: string[];
+  excludedThemes?: string[];
   tmdbLanguages?: string[];
   unplayedOnly?: boolean;
 }

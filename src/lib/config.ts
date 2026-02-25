@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import packageJson from '../../package.json';
+import { ProviderType } from './providers/types';
 
 const envSchema = z.object({
   // Core
@@ -12,7 +13,7 @@ const envSchema = z.object({
   TURSO_AUTH_TOKEN: z.string().optional(),
 
   // Provider
-  PROVIDER: z.enum(['jellyfin', 'tmdb', 'plex', 'emby']).default('jellyfin'),
+  PROVIDER: z.enum(ProviderType).default(ProviderType.JELLYFIN),
   PROVIDER_LOCK: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
 
   // Server URLs
@@ -66,9 +67,9 @@ const DATABASE_URL = parsedEnv.DATABASE_URL || parsedEnv.TURSO_DATABASE_URL || g
 const DATABASE_AUTH_TOKEN = parsedEnv.DATABASE_AUTH_TOKEN || parsedEnv.TURSO_AUTH_TOKEN;
 
 const SERVER_URL = parsedEnv.JELLYFIN_URL || parsedEnv.EMBY_URL || parsedEnv.PLEX_URL || 
-  (parsedEnv.PROVIDER === 'jellyfin' ? 'http://localhost:8096' : 
-   parsedEnv.PROVIDER === 'emby' ? 'http://localhost:8096' : 
-   parsedEnv.PROVIDER === 'plex' ? 'http://localhost:32400' : '');
+  (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? 'http://localhost:8096' : 
+   parsedEnv.PROVIDER === ProviderType.EMBY ? 'http://localhost:8096' : 
+   parsedEnv.PROVIDER === ProviderType.PLEX ? 'http://localhost:32400' : '');
 
 const SERVER_PUBLIC_URL = (parsedEnv.JELLYFIN_PUBLIC_URL || parsedEnv.EMBY_PUBLIC_URL || parsedEnv.PLEX_PUBLIC_URL || SERVER_URL || '').replace(/\/$/, '');
 
@@ -76,9 +77,9 @@ const RAW_BASE_PATH = parsedEnv.URL_BASE_PATH.replace(/\/$/, '');
 const BASE_PATH = RAW_BASE_PATH && !RAW_BASE_PATH.startsWith('/') ? `/${RAW_BASE_PATH}` : RAW_BASE_PATH;
 
 const ADMIN_USERNAME = parsedEnv.ADMIN_USERNAME || 
-  (parsedEnv.PROVIDER === 'jellyfin' ? parsedEnv.JELLYFIN_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === 'emby' ? parsedEnv.EMBY_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === 'plex' ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
+  (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? parsedEnv.JELLYFIN_ADMIN_USERNAME :
+   parsedEnv.PROVIDER === ProviderType.EMBY ? parsedEnv.EMBY_ADMIN_USERNAME :
+   parsedEnv.PROVIDER === ProviderType.PLEX ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
 
 export const config = {
   ...parsedEnv,

@@ -17,14 +17,16 @@ import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import { Switch } from "../ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFilters, useThemes, useSession, useWatchProviders, useUserSettings } from "@/hooks/api";
 import { MediaGenre, MediaRating, MediaYear, WatchProvider } from "@/types/media";
 import { OptimizedImage } from "../ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { cn } from "@/lib/utils";
-import { LANGUAGES, DEFAULT_LANGUAGES, SORT_OPTIONS } from "@/lib/constants";
+import { LANGUAGES, DEFAULT_LANGUAGES, SORT_OPTIONS, TMDB_DEFAULT_REGION } from "@/lib/constants";
 import { CountryFlag } from "../ui/country-flag";
+import { ProviderType } from "@/lib/providers/types";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -36,9 +38,15 @@ interface FilterDrawerProps {
 
 export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: FilterDrawerProps) {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
+  const [genreFilterMode, setGenreFilterMode] = useState<"include" | "exclude">("include");
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
+  const [excludedRatings, setExcludedRatings] = useState<string[]>([]);
+  const [ratingFilterMode, setRatingFilterMode] = useState<"include" | "exclude">("include");
   const [selectedWatchProviders, setSelectedWatchProviders] = useState<string[]>([]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  const [excludedThemes, setExcludedThemes] = useState<string[]>([]);
+  const [themeFilterMode, setThemeFilterMode] = useState<"include" | "exclude">("include");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(DEFAULT_LANGUAGES);
   const [sortBy, setSortBy] = useState<string>("Trending");
   const [unplayedOnly, setUnplayedOnly] = useState<boolean>(true);
@@ -48,11 +56,11 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [providersScrollParent, setProvidersScrollParent] = useState<HTMLElement | null>(null);
 
   const { data: session } = useSession();
-  const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending"; // Popular works better with TMDB
-  const isTmdb = session?.provider === 'tmdb';
+  const defaultSort = session?.provider === ProviderType.TMDB ? "Popular" : "Trending"; // Popular works better with TMDB
+  const isTmdb = session?.provider === ProviderType.TMDB;
   const { capabilities } = useRuntimeConfig();
   const { data: userSettings } = useUserSettings();
-  const watchRegion = session?.provider === 'tmdb' ? (userSettings?.watchRegion || "SE") : undefined;
+  const watchRegion = session?.provider === ProviderType.TMDB ? (userSettings?.watchRegion || TMDB_DEFAULT_REGION) : undefined;
 
   const { genres, years, ratings, isLoading: isLoadingFilters } = useFilters(open, watchRegion);
   const { data: themes = [], isLoading: isLoadingThemes } = useThemes(open);
@@ -95,6 +103,30 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setSelectedRatings(currentFilters?.officialRatings || []);
       setSelectedWatchProviders(currentFilters?.watchProviders || availableWatchProviderIds);
       setSelectedThemes(currentFilters?.themes || []);
+      if (currentFilters?.excludedGenres && currentFilters.excludedGenres.length > 0) {
+        setExcludedGenres(currentFilters.excludedGenres);
+        setSelectedGenres([]);
+        setGenreFilterMode("exclude");
+      } else {
+        setExcludedGenres([]);
+        setGenreFilterMode("include");
+      }
+      if (currentFilters?.excludedOfficialRatings && currentFilters.excludedOfficialRatings.length > 0) {
+        setExcludedRatings(currentFilters.excludedOfficialRatings);
+        setSelectedRatings([]);
+        setRatingFilterMode("exclude");
+      } else {
+        setExcludedRatings([]);
+        setRatingFilterMode("include");
+      }
+      if (currentFilters?.excludedThemes && currentFilters.excludedThemes.length > 0) {
+        setExcludedThemes(currentFilters.excludedThemes);
+        setSelectedThemes([]);
+        setThemeFilterMode("exclude");
+      } else {
+        setExcludedThemes([]);
+        setThemeFilterMode("include");
+      }
       setSelectedLanguages(currentFilters?.tmdbLanguages || DEFAULT_LANGUAGES);
       setSortBy(currentFilters?.sortBy || defaultSort);
       setUnplayedOnly(currentFilters?.unplayedOnly ?? true);
@@ -119,9 +151,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
     return {
       genres: f.genres?.length ? f.genres : [],
+      excludedGenres: f.excludedGenres?.length ? f.excludedGenres : undefined,
       officialRatings: f.officialRatings?.length ? f.officialRatings : undefined,
+      excludedOfficialRatings: f.excludedOfficialRatings?.length ? f.excludedOfficialRatings : undefined,
       watchProviders: isWatchProvidersDefault ? undefined : f.watchProviders,
       themes: f.themes?.length ? f.themes : undefined,
+      excludedThemes: f.excludedThemes?.length ? f.excludedThemes : undefined,
       tmdbLanguages: isLanguageDefault ? undefined : f.tmdbLanguages,
       sortBy: (f.sortBy === defaultSort || !f.sortBy) ? undefined : f.sortBy,
       unplayedOnly: f.unplayedOnly ?? true,
@@ -134,9 +169,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const getCurrentFiltersObject = (): Filters => {
     return normalizeFilters({
       genres: selectedGenres,
+      excludedGenres,
       officialRatings: selectedRatings,
+      excludedOfficialRatings: excludedRatings,
       watchProviders: selectedWatchProviders,
       themes: selectedThemes,
+      excludedThemes,
       tmdbLanguages: selectedLanguages,
       sortBy: sortBy,
       unplayedOnly: unplayedOnly,
@@ -166,9 +204,15 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
   const resetAll = () => {
     setSelectedGenres([]);
+    setExcludedGenres([]);
+    setGenreFilterMode("include");
     setSelectedRatings([]);
+    setExcludedRatings([]);
+    setRatingFilterMode("include");
     setSelectedWatchProviders(availableWatchProviderIds);
     setSelectedThemes([]);
+    setExcludedThemes([]);
+    setThemeFilterMode("include");
     setSelectedLanguages(DEFAULT_LANGUAGES);
     setSortBy(defaultSort);
     setUnplayedOnly(true);
@@ -179,6 +223,72 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
   const filteredSortOptions = sortOptions;
   const gap = 12;
+
+  const toggleGenre = (genreName: string) => {
+    if (genreFilterMode === "exclude") {
+      setExcludedGenres(prev => prev.includes(genreName) ? prev.filter(g => g !== genreName) : [...prev, genreName]);
+    } else {
+      setSelectedGenres(prev => prev.includes(genreName) ? prev.filter(g => g !== genreName) : [...prev, genreName]);
+    }
+  };
+
+  const handleGenreModeChange = (value: string) => {
+    if (!value) return;
+    const next = value as "include" | "exclude";
+    if (next === genreFilterMode) return;
+    if (next === "exclude") {
+      setExcludedGenres(selectedGenres);
+      setSelectedGenres([]);
+    } else {
+      setSelectedGenres(excludedGenres);
+      setExcludedGenres([]);
+    }
+    setGenreFilterMode(next);
+  };
+
+  const toggleTheme = (theme: string) => {
+    if (themeFilterMode === "exclude") {
+      setExcludedThemes(prev => prev.includes(theme) ? prev.filter(t => t !== theme) : [...prev, theme]);
+    } else {
+      setSelectedThemes(prev => prev.includes(theme) ? prev.filter(t => t !== theme) : [...prev, theme]);
+    }
+  };
+
+  const handleThemeModeChange = (value: string) => {
+    if (!value) return;
+    const next = value as "include" | "exclude";
+    if (next === themeFilterMode) return;
+    if (next === "exclude") {
+      setExcludedThemes(selectedThemes);
+      setSelectedThemes([]);
+    } else {
+      setSelectedThemes(excludedThemes);
+      setExcludedThemes([]);
+    }
+    setThemeFilterMode(next);
+  };
+
+  const toggleRating = (ratingValue: string) => {
+    if (ratingFilterMode === "exclude") {
+      setExcludedRatings(prev => prev.includes(ratingValue) ? prev.filter(r => r !== ratingValue) : [...prev, ratingValue]);
+    } else {
+      setSelectedRatings(prev => prev.includes(ratingValue) ? prev.filter(r => r !== ratingValue) : [...prev, ratingValue]);
+    }
+  };
+
+  const handleRatingModeChange = (value: string) => {
+    if (!value) return;
+    const next = value as "include" | "exclude";
+    if (next === ratingFilterMode) return;
+    if (next === "exclude") {
+      setExcludedRatings(selectedRatings);
+      setSelectedRatings([]);
+    } else {
+      setSelectedRatings(excludedRatings);
+      setExcludedRatings([]);
+    }
+    setRatingFilterMode(next);
+  };
 
   const gridComponents = useMemo(() => ({
     List: ({ children, style, ...props }: React.ComponentProps<"div">) => (
@@ -224,7 +334,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         </DrawerHeader>
 
         <ScrollArea className="flex-1 overflow-y-auto" viewportRef={handleProvidersViewport}>
-          <div className="flex flex-col gap-8 pt-6 pb-12 px-6">
+          <div className="flex flex-col gap-10 pt-6 pb-12 px-6">
             {isLoading ? (
               <div className="space-y-10">
                 {[1, 2, 3].map((i) => (
@@ -237,7 +347,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             ) : (
               <>
                 {/* Sort Section */}
-                <div className="space-y-4">
+                <div className="space-y-4 -mb-4">
                   <div className="flex flex-wrap gap-2">
                     {filteredSortOptions.map((option) => (
                       <Badge
@@ -332,45 +442,138 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
                 {/* Genres Section */}
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
+                  <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Genres</Label>
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      size={'sm'}
+                      value={genreFilterMode}
+                      onValueChange={handleGenreModeChange}
+                      className="flex mr-auto"
+                    >
+                      <ToggleGroupItem value="include" aria-label="Include genres">Include</ToggleGroupItem>
+                      <ToggleGroupItem value="exclude" aria-label="Exclude genres">Exclude</ToggleGroupItem>
+                    </ToggleGroup>
                     <div className="flex gap-3">
-                      <button onClick={() => setSelectedGenres(genres.map(g => g.Name))} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
-                      <button onClick={() => setSelectedGenres([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>
+                      <button
+                        onClick={() => {
+                          if (genreFilterMode === "exclude") {
+                            setExcludedGenres(genres.map(g => g.Name));
+                            setSelectedGenres([]);
+                          } else {
+                            setSelectedGenres(genres.map(g => g.Name));
+                            setExcludedGenres([]);
+                          }
+                        }}
+                        className="text-xs font-semibold cursor-pointer text-primary hover:underline"
+                      >
+                        Select all
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (genreFilterMode === "exclude") {
+                            setExcludedGenres([]);
+                          } else {
+                            setSelectedGenres([]);
+                          }
+                        }}
+                        className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
+                      >
+                        Clear
+                      </button>
                     </div>
                   </div>
+                </div>
                   <div className="flex flex-wrap gap-2">
-                    {genres?.map((genre: MediaGenre) => (
-                      <Badge
-                        key={genre.Id}
-                        variant={selectedGenres.includes(genre.Name) ? "default" : "outline"}
-                        className="cursor-pointer text-sm py-1.5 px-4 rounded-full"
-                        onClick={() => setSelectedGenres(prev => prev.includes(genre.Name) ? prev.filter(g => g !== genre.Name) : [...prev, genre.Name])}
-                      >
-                        {genre.Name}
-                      </Badge>
-                    ))}
+                    {genres?.map((genre: MediaGenre) => {
+                      const isSelected = genreFilterMode === "exclude"
+                        ? excludedGenres.includes(genre.Name)
+                        : selectedGenres.includes(genre.Name);
+                      return (
+                        <Badge
+                          key={genre.Id}
+                          variant={isSelected ? "default" : "outline"}
+                          className={cn(
+                            "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                            genreFilterMode === "exclude" && isSelected && "bg-muted text-muted-foreground border-muted"
+                          )}
+                          onClick={() => toggleGenre(genre.Name)}
+                        >
+                          {genre.Name}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Themes Section */}
                 {themes.length > 0 && (
                   <div className="space-y-4">
-                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Themes</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {themes.map((theme: string) => (
-                        <Badge
-                          key={theme}
-                          variant={selectedThemes.includes(theme) ? "secondary" : "outline"}
-                          className={cn(
-                            "cursor-pointer text-sm py-1.5 px-4 rounded-full",
-                            selectedThemes.includes(theme) && "bg-primary/20 text-primary border-primary/30"
-                          )}
-                          onClick={() => setSelectedThemes(prev => prev.includes(theme) ? prev.filter(t => t !== theme) : [...prev, theme])}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Themes</Label>
+                        <ToggleGroup
+                          type="single"
+                          variant="outline"
+                          size={'sm'}
+                          value={themeFilterMode}
+                          onValueChange={handleThemeModeChange}
+                          className="flex mr-auto"
                         >
-                          {theme}
-                        </Badge>
-                      ))}
+                          <ToggleGroupItem value="include" aria-label="Include themes">Include</ToggleGroupItem>
+                          <ToggleGroupItem value="exclude" aria-label="Exclude themes">Exclude</ToggleGroupItem>
+                        </ToggleGroup>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => {
+                              if (themeFilterMode === "exclude") {
+                                setExcludedThemes(themes);
+                                setSelectedThemes([]);
+                              } else {
+                                setSelectedThemes(themes);
+                                setExcludedThemes([]);
+                              }
+                            }}
+                            className="text-xs font-semibold cursor-pointer text-primary hover:underline"
+                          >
+                            Select all
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (themeFilterMode === "exclude") {
+                                setExcludedThemes([]);
+                              } else {
+                                setSelectedThemes([]);
+                              }
+                            }}
+                            className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {themes.map((theme: string) => {
+                        const isSelected = themeFilterMode === "exclude"
+                          ? excludedThemes.includes(theme)
+                          : selectedThemes.includes(theme);
+                        return (
+                          <Badge
+                            key={theme}
+                            variant={isSelected ? "default" : "outline"}
+                            className={cn(
+                              "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                              themeFilterMode === "exclude" && isSelected && "bg-muted text-muted-foreground border-muted"
+                            )}
+                            onClick={() => toggleTheme(theme)}
+                          >
+                            {theme}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -378,31 +581,80 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {/* Maturity Ratings Section */}
                 {ratings && ratings.length > 0 && (
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                          Maturity rating
-                        </Label>
-                        {watchRegion && (
-                          <Badge variant="outline" className="gap-1.5 py-0.5 px-2 h-5 font-bold opacity-80 bg-muted/30">
-                            <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0">
-                              <CountryFlag countryCode={watchRegion} />
-                            </div>
-                          </Badge>
-                        )}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                            Maturity rating
+                          </Label>
+                          {watchRegion && (
+                            <Badge variant="outline" className="gap-1.5 py-0.5 px-2 h-5 font-bold opacity-80 bg-muted/30">
+                              <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0">
+                                <CountryFlag countryCode={watchRegion} />
+                              </div>
+                            </Badge>
+                          )}
+                        </div>
+                        <ToggleGroup
+                          type="single"
+                          variant="outline"
+                          size={'sm'}
+                          value={ratingFilterMode}
+                          onValueChange={handleRatingModeChange}
+                          className="flex mr-auto"
+                        >
+                          <ToggleGroupItem value="include" aria-label="Include ratings">Include</ToggleGroupItem>
+                          <ToggleGroupItem value="exclude" aria-label="Exclude ratings">Exclude</ToggleGroupItem>
+                        </ToggleGroup>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => {
+                              if (ratingFilterMode === "exclude") {
+                                setExcludedRatings(ratings.map(r => r.Value));
+                                setSelectedRatings([]);
+                              } else {
+                                setSelectedRatings(ratings.map(r => r.Value));
+                                setExcludedRatings([]);
+                              }
+                            }}
+                            className="text-xs font-semibold cursor-pointer text-primary hover:underline"
+                          >
+                            Select all
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (ratingFilterMode === "exclude") {
+                                setExcludedRatings([]);
+                              } else {
+                                setSelectedRatings([]);
+                              }
+                            }}
+                            className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
+                          >
+                            Clear
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {ratings.map((rating: MediaRating) => (
-                        <Badge
-                          key={rating.Value}
-                          variant={selectedRatings.includes(rating.Value) ? "default" : "outline"}
-                          className="cursor-pointer text-sm py-1.5 px-4 rounded-full"
-                          onClick={() => setSelectedRatings(prev => prev.includes(rating.Value) ? prev.filter(r => r !== rating.Value) : [...prev, rating.Value])}
-                        >
-                          {rating.Name}
-                        </Badge>
-                      ))}
+                      {ratings.map((rating: MediaRating) => {
+                        const isSelected = ratingFilterMode === "exclude"
+                          ? excludedRatings.includes(rating.Value)
+                          : selectedRatings.includes(rating.Value);
+                        return (
+                          <Badge
+                            key={rating.Value}
+                            variant={isSelected ? "default" : "outline"}
+                            className={cn(
+                              "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                              ratingFilterMode === "exclude" && isSelected && "bg-muted text-muted-foreground border-muted"
+                            )}
+                            onClick={() => toggleRating(rating.Value)}
+                          >
+                            {rating.Name}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

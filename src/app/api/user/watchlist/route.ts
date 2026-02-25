@@ -6,6 +6,7 @@ import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { handleApiError } from "@/lib/api-utils";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
 
-    const effectiveUseWatchlist = auth.provider === "plex" ? true : useWatchlist;
+    const effectiveUseWatchlist = auth.provider === ProviderType.PLEX ? true : useWatchlist;
 
     if (effectiveUseWatchlist && provider.toggleWatchlist) {
       await provider.toggleWatchlist(itemId, action, auth);

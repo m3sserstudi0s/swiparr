@@ -45,14 +45,17 @@ export const sessionActionSchema = z.object({
 export const sessionSettingsSchema = z.object({
   filters: z.object({
     genres: z.array(z.string()).optional(),
+    excludedGenres: z.array(z.string()).optional(),
     yearRange: z.array(z.number()).length(2).optional(),
     minCommunityRating: z.number().optional(),
     officialRatings: z.array(z.string()).optional(),
+    excludedOfficialRatings: z.array(z.string()).optional(),
     runtimeRange: z.array(z.number()).length(2).optional(),
     watchProviders: z.array(z.string()).optional(),
     watchRegion: z.string().optional(),
     sortBy: z.string().optional(),
     themes: z.array(z.string()).optional(),
+    excludedThemes: z.array(z.string()).optional(),
     tmdbLanguages: z.array(z.string()).optional(),
     unplayedOnly: z.boolean().optional(),
   }).optional().or(z.any()),

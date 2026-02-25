@@ -7,6 +7,7 @@ import { ProviderType, PROVIDER_CAPABILITIES } from "../providers/types";
 import { config as appConfig } from "@/lib/config";
 import { logger } from "@/lib/logger";
 import { decryptValue, encryptValue, getGuestLendingSecret } from "@/lib/security/crypto";
+import { TMDB_DEFAULT_REGION } from "../constants";
 
 export class GuestKickedError extends Error {
   constructor() {
@@ -20,7 +21,7 @@ export class AuthService {
     logger.debug(`[AuthService.getEffectiveCredentials] for user ${session.user?.Name} (${session.user?.Id})`);
     const { capabilities } = getRuntimeConfig();
     const settings = await ConfigService.getUserSettings(session.user?.Id);
-    const watchRegion = settings?.watchRegion || "SE";
+    const watchRegion = settings?.watchRegion || TMDB_DEFAULT_REGION;
 
     if (!session.user?.isGuest) {
       return {

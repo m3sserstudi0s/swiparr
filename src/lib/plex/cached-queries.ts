@@ -1,11 +1,12 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { tagProvider } from "@/lib/cache-tags";
 import { plexClient, getPlexUrl, getPlexHeaders } from "./api";
+import { ProviderType } from "../providers/types";
 
 export async function getCachedYears(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("plex", "years"));
+    cacheTag(tagProvider(ProviderType.PLEX, "years"));
 
     const token = accessToken;
     const headers = getPlexHeaders(token);
@@ -33,7 +34,7 @@ export async function getCachedYears(accessToken: string, deviceId: string, user
 export async function getCachedGenres(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("plex", "genres"));
+    cacheTag(tagProvider(ProviderType.PLEX, "genres"));
 
     const token = accessToken;
     const headers = getPlexHeaders(token);
@@ -70,7 +71,7 @@ export async function getCachedGenres(accessToken: string, deviceId: string, use
 export async function getCachedLibraries(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("plex", "libraries"));
+    cacheTag(tagProvider(ProviderType.PLEX, "libraries"));
 
     const token = accessToken;
     const url = getPlexUrl("/library/sections", serverUrl);
@@ -81,7 +82,7 @@ export async function getCachedLibraries(accessToken: string, deviceId: string, 
 export async function getCachedRatings(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 86400, stale: 3600, expire: 172800 });
-    cacheTag(tagProvider("plex", "ratings"));
+    cacheTag(tagProvider(ProviderType.PLEX, "ratings"));
 
     const token = accessToken;
     const headers = getPlexHeaders(token);

@@ -9,6 +9,7 @@ import { revalidateTag } from "next/cache";
 import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { tagProvider } from "@/lib/cache-tags";
+import { ProviderType } from "@/lib/providers/types";
 
 const configSchema = z.object({
     useStaticFilterValues: z.boolean(),
@@ -46,7 +47,7 @@ export async function PATCH(request: NextRequest) {
         await ConfigService.setUseStaticFilterValues(useStaticFilterValues);
 
         // Purge caches
-        const providers = ["jellyfin", "emby", "plex"];
+        const providers = [ProviderType.JELLYFIN, ProviderType.EMBY, ProviderType.PLEX];
         const tags = ["years", "genres", "ratings", "libraries"] as const;
         providers.forEach((p) => tags.forEach((t) => revalidateTag(tagProvider(p, t), "default")));
 

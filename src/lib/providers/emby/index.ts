@@ -3,7 +3,8 @@ import {
   ProviderCapabilities, 
   SearchFilters, 
   AuthContext,
-  ImageResponse
+  ImageResponse,
+  ProviderType
 } from "../types";
 import { 
   MediaItem, 
@@ -14,13 +15,14 @@ import {
 } from "@/types/media";
 import { apiClient, getEmbyUrl, getAuthenticatedHeaders } from "@/lib/emby/api";
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
+import { DEFAULT_THEMES } from "@/lib/constants";
 
 /**
  * Emby Provider
  * Docs: https://dev.emby.media/reference/restapi/ItemService.html
  */
 export class EmbyProvider implements MediaProvider {
-  readonly name = "emby";
+  readonly name = ProviderType.EMBY;
   
   readonly capabilities: ProviderCapabilities = {
     hasAuth: true,
@@ -113,6 +115,10 @@ export class EmbyProvider implements MediaProvider {
   }
 
   async getThemes(auth?: AuthContext): Promise<string[]> {
+
+    return DEFAULT_THEMES;
+    
+    /*
     // Use /Items/Filters2 to get all available tags for movies
     // This is the correct Emby API endpoint for getting filter values (same as Jellyfin)
     const res = await apiClient.get(getEmbyUrl("/Items/Filters2", auth?.serverUrl), {
@@ -126,6 +132,7 @@ export class EmbyProvider implements MediaProvider {
 
     // The response contains a Tags array directly
     return (res.data.Tags || []).slice(0, 15);
+    */
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {

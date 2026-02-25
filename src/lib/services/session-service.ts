@@ -114,7 +114,7 @@ export class SessionService {
         hostUserId: hostId,
         hostAccessToken: null,
         hostDeviceId: "guest-device",
-        provider: "tmdb",
+        provider: ProviderType.TMDB,
         randomSeed: this.generateRandomSeed(),
       });
 
@@ -124,7 +124,7 @@ export class SessionService {
         AccessToken: "",
         DeviceId: "guest-device",
         isGuest: false,
-        provider: "tmdb" as ProviderType,
+        provider: ProviderType.TMDB,
       };
 
       await db.insert(sessionMembers).values({
@@ -160,7 +160,7 @@ export class SessionService {
       AccessToken: "",
       DeviceId: "guest-device",
       isGuest: isGuest,
-      provider: isGuest ? undefined : (existingSession.provider as ProviderType || "tmdb" as ProviderType),
+      provider: isGuest ? undefined : (existingSession.provider as ProviderType || ProviderType.TMDB),
       providerConfig: existingSession.providerConfig ? JSON.parse(existingSession.providerConfig) : undefined,
     };
 
@@ -177,7 +177,7 @@ export class SessionService {
   static async leaveSession(user: SessionData["user"], sessionCode: string) {
     const userId = user.Id;
     
-    if (user.isGuest || user.provider === "tmdb") {
+    if (user.isGuest || user.provider === ProviderType.TMDB) {
       try {
         await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
       } catch (e) {

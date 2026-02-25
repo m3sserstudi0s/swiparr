@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { MediaService } from "@/lib/services/media-service";
 import { handleApiError } from "@/lib/api-utils";
+import { TMDB_DEFAULT_REGION } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const region = searchParams.get("region") || "SE";
+    const region = searchParams.get("region") || TMDB_DEFAULT_REGION;
     const sessionCode = searchParams.get("sessionCode");
     const wantAll = searchParams.get("all") === "true";
 

@@ -1,11 +1,12 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { tagProvider } from "@/lib/cache-tags";
 import { apiClient, getEmbyUrl, getAuthenticatedHeaders } from "./api";
+import { ProviderType } from "../providers/types";
 
 export async function getCachedYears(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("emby", "years"));
+    cacheTag(tagProvider(ProviderType.EMBY, "years"));
 
     const res = await apiClient.get(getEmbyUrl("/Years", serverUrl), {
         headers: getAuthenticatedHeaders(accessToken, deviceId),
@@ -16,7 +17,7 @@ export async function getCachedYears(accessToken: string, deviceId: string, user
 export async function getCachedGenres(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("emby", "genres"));
+    cacheTag(tagProvider(ProviderType.EMBY, "genres"));
 
     const res = await apiClient.get(getEmbyUrl("/Genres", serverUrl), {
         headers: getAuthenticatedHeaders(accessToken, deviceId),
@@ -27,7 +28,7 @@ export async function getCachedGenres(accessToken: string, deviceId: string, use
 export async function getCachedLibraries(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("emby", "libraries"));
+    cacheTag(tagProvider(ProviderType.EMBY, "libraries"));
 
     const res = await apiClient.get(getEmbyUrl(`/Users/${userId}/Views`, serverUrl), {
         headers: getAuthenticatedHeaders(accessToken, deviceId),
@@ -38,7 +39,7 @@ export async function getCachedLibraries(accessToken: string, deviceId: string, 
 export async function getCachedRatings(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
     "use cache";
     cacheLife({ revalidate: 86400, stale: 3600, expire: 172800 });
-    cacheTag(tagProvider("emby", "ratings"));
+    cacheTag(tagProvider(ProviderType.EMBY, "ratings"));
 
     const res = await apiClient.get(getEmbyUrl("/Items", serverUrl), {
         params: {

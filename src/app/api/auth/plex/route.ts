@@ -9,6 +9,7 @@ import { handleApiError } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 import { getBestServerUrl, getPlexHeaders } from "@/lib/plex/api";
 import axios from "axios";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,11 +49,11 @@ export async function POST(request: NextRequest) {
     const effectiveMachineId = discovered?.machineId || session.providerConfig?.machineId;
 
     // Check if this should be the admin user
-    const existingAdmin = await ConfigService.getAdminUserId("plex");
+    const existingAdmin = await ConfigService.getAdminUserId(ProviderType.PLEX);
     let wasMadeAdmin = false;
 
     if (!existingAdmin) {
-      await ConfigService.setAdminUserId(userInfo.uuid || userInfo.id, "plex" as any);
+      await ConfigService.setAdminUserId(userInfo.uuid || userInfo.id, ProviderType.PLEX);
       wasMadeAdmin = true;
       logger.info(`[PlexAuth] User ${userInfo.username} set as initial admin.`);
     }
@@ -62,9 +63,9 @@ export async function POST(request: NextRequest) {
       Name: userInfo.username,
       AccessToken: discovered?.accessToken || authToken,
       DeviceId: clientId,
-      isAdmin: await AuthService.isAdmin(userInfo.uuid || userInfo.id, userInfo.username, "plex"),
+      isAdmin: await AuthService.isAdmin(userInfo.uuid || userInfo.id, userInfo.username, ProviderType.PLEX),
       wasMadeAdmin: wasMadeAdmin,
-      provider: "plex",
+      provider: ProviderType.PLEX,
       providerConfig: effectiveServerUrl || effectiveMachineId
         ? { serverUrl: effectiveServerUrl, machineId: effectiveMachineId || undefined }
         : undefined,

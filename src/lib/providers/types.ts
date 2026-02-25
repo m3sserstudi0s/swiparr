@@ -77,8 +77,10 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
 
 export interface SearchFilters {
   genres?: string[];
+  excludedGenres?: string[];
   years?: number[];
   ratings?: string[];
+  excludedRatings?: string[];
   minCommunityRating?: number;
   runtimeRange?: [number, number];
   libraries?: string[];
@@ -88,6 +90,7 @@ export interface SearchFilters {
   sortBy?: string;
   unplayedOnly?: boolean;
   themes?: string[];
+  excludedThemes?: string[];
   tmdbLanguages?: string[];
   limit?: number;
   offset?: number;

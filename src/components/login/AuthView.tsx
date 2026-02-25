@@ -214,7 +214,7 @@ export function AuthView({
                 placeholder={
                   provider === ProviderType.JELLYFIN
                     ? "Jellyfin Server URL"
-                    : provider === "emby"
+                    : provider === ProviderType.EMBY
                     ? "Emby Server URL"
                     : "Plex Server URL (optional)"
                 }

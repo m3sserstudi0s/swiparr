@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSession, useUpdateSession } from "@/hooks/api";
 import { toast } from "sonner";
 import { useRuntimeConfig } from "@/lib/runtime-config";
+import { ProviderType } from "@/lib/providers/types";
 
 export function GeneralSettings() {
     const { setTheme, resolvedTheme: theme } = useTheme();
@@ -21,7 +22,7 @@ export function GeneralSettings() {
 
     const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
     const provider = sessionStatus?.provider || runtimeConfig.provider;
-    const showCollectionToggle = provider === "jellyfin";
+    const showCollectionToggle = provider === ProviderType.JELLYFIN;
     const isGuest = sessionStatus?.isGuest || false;
     const isHost = sessionStatus?.code && sessionStatus?.userId === sessionStatus?.hostUserId;
 

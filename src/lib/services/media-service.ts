@@ -9,6 +9,7 @@ import { AuthService } from "./auth-service";
 import { ConfigService } from "./config-service";
 import { deckCache } from "./deck-cache";
 import { logger } from "@/lib/logger";
+import { TMDB_DEFAULT_REGION } from "@/lib/constants";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
@@ -59,7 +60,7 @@ export class MediaService {
     }
 
     const { watchProviders, watchRegion } = await this.resolveWatchProviders(session, sessionFilters, auth, activeProviderName);
-    const defaultSort = activeProviderName === 'tmdb' ? "Popular" : "Trending";
+    const defaultSort = activeProviderName === ProviderType.TMDB ? "Popular" : "Trending";
 
     // 3. Handle Search
     if (searchTerm) {
@@ -83,9 +84,9 @@ export class MediaService {
 
   private static async resolveWatchProviders(session: SessionData, sessionFilters: Filters | null, auth: any, activeProviderName: string) {
     let watchProviders = sessionFilters?.watchProviders;
-    let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || "SE";
+    let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || TMDB_DEFAULT_REGION;
 
-    if (session.sessionCode && activeProviderName === "tmdb") {
+    if (session.sessionCode && activeProviderName === ProviderType.TMDB) {
       const accumulated = new Set<string>();
       const sessionMembersList = await db.query.sessionMembers.findMany({
         where: eq(sessionMembers.sessionCode, session.sessionCode)
@@ -125,7 +126,7 @@ export class MediaService {
   }
 
   private static async getSessionItems(sessionCode: string, sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
-    const sortBy = sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending");
+    const sortBy = sessionFilters?.sortBy || (auth.provider === ProviderType.TMDB ? "Popular" : "Trending");
 
     // Handle deterministic Random sort for group sessions
     if (sortBy === "Random") {
@@ -143,25 +144,96 @@ export class MediaService {
       );
     }
 
-    const fetchedItems = await provider.getItems({
-      libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
-      genres: sessionFilters?.genres,
-      years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
-      ratings: sessionFilters?.officialRatings,
-      minCommunityRating: sessionFilters?.minCommunityRating,
-      runtimeRange: sessionFilters?.runtimeRange,
-      watchProviders,
-      watchRegion,
-      sortBy,
-      themes: sessionFilters?.themes,
-      tmdbLanguages: sessionFilters?.tmdbLanguages,
-      unplayedOnly: sessionFilters?.unplayedOnly,
-      limit: limit * 2, // Fetch a bit more to account for exclusions
-      offset: effectiveOffset,
-    }, auth);
+    const isTmdb = auth.provider === ProviderType.TMDB;
+    const baseFetchLimit = isTmdb ? 20 : Math.max(limit * 2, 40);
+    const maxFetchLimit = isTmdb ? 20 : 200;
+    const maxAttempts = isTmdb ? 1 : 4;
+    const items: MediaItem[] = [];
+    let fetchedItems: MediaItem[] = [];
+    let attempts = 0;
+    let scanOffset = 0;
+    let exhausted = false;
 
-    let items = this.applyClientFilters(fetchedItems, sessionFilters);
-    items = items.filter(item => !excludeIds.has(item.Id));
+    const hasExclusionFilters = !!(
+      sessionFilters?.excludedGenres?.length ||
+      sessionFilters?.excludedOfficialRatings?.length ||
+      sessionFilters?.excludedThemes?.length
+    );
+
+    while (attempts < maxAttempts && items.length < limit) {
+      const requestLimit = Math.min(baseFetchLimit * (2 ** attempts), maxFetchLimit);
+      if (hasExclusionFilters) {
+        logger.debug("[MediaService.getSessionItems] Fetch attempt", {
+          attempt: attempts + 1,
+          requestLimit,
+          scanOffset,
+          effectiveOffset,
+          provider: auth.provider,
+        });
+      }
+      fetchedItems = await provider.getItems({
+        libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
+        genres: sessionFilters?.genres,
+        excludedGenres: sessionFilters?.excludedGenres,
+        years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
+        ratings: sessionFilters?.officialRatings,
+        excludedRatings: sessionFilters?.excludedOfficialRatings,
+        minCommunityRating: sessionFilters?.minCommunityRating,
+        runtimeRange: sessionFilters?.runtimeRange,
+        watchProviders,
+        watchRegion,
+        sortBy,
+        themes: sessionFilters?.themes,
+        excludedThemes: sessionFilters?.excludedThemes,
+        tmdbLanguages: sessionFilters?.tmdbLanguages,
+        unplayedOnly: sessionFilters?.unplayedOnly,
+        limit: requestLimit,
+        offset: effectiveOffset + scanOffset,
+      }, auth);
+
+      if (fetchedItems.length === 0) {
+        exhausted = true;
+        if (hasExclusionFilters) {
+          logger.debug("[MediaService.getSessionItems] No items fetched", {
+            attempt: attempts + 1,
+            scanOffset,
+            requestLimit,
+          });
+        }
+        break;
+      }
+
+      let filtered = this.applyClientFilters(fetchedItems, sessionFilters);
+      filtered = filtered.filter(item => !excludeIds.has(item.Id));
+      items.push(...filtered);
+
+      if (hasExclusionFilters) {
+        logger.debug("[MediaService.getSessionItems] Filter results", {
+          attempt: attempts + 1,
+          fetchedCount: fetchedItems.length,
+          filteredCount: filtered.length,
+          accumulated: items.length,
+          scanOffset,
+        });
+      }
+
+      scanOffset += fetchedItems.length;
+
+      if (fetchedItems.length < requestLimit) {
+        exhausted = true;
+        if (hasExclusionFilters) {
+          logger.debug("[MediaService.getSessionItems] Provider exhausted", {
+            attempt: attempts + 1,
+            fetchedCount: fetchedItems.length,
+            requestLimit,
+            scanOffset,
+          });
+        }
+        break;
+      }
+
+      attempts += 1;
+    }
     
     const slicedItems = items.slice(0, limit);
 
@@ -169,9 +241,19 @@ export class MediaService {
       slicedItems[0].BlurDataURL = await provider.getBlurDataUrl(slicedItems[0].Id, "Primary", auth);
     }
 
+    const providerPageSize = isTmdb ? 20 : Math.min(baseFetchLimit * (2 ** Math.max(attempts - 1, 0)), maxFetchLimit);
+    if (hasExclusionFilters) {
+      logger.debug("[MediaService.getSessionItems] Page summary", {
+        returnedCount: slicedItems.length,
+        accumulated: items.length,
+        exhausted,
+        providerPageSize,
+        fetchedCount: fetchedItems.length,
+      });
+    }
     return {
       items: slicedItems,
-      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' ? 20 : limit * 2)
+      hasMore: !exhausted && items.length >= limit && fetchedItems.length >= providerPageSize
     };
   }
 
@@ -203,13 +285,16 @@ export class MediaService {
     const filterKey = {
       libraries: includedLibraries,
       genres: sessionFilters?.genres,
+      excludedGenres: sessionFilters?.excludedGenres,
       yearRange: sessionFilters?.yearRange,
       officialRatings: sessionFilters?.officialRatings,
+      excludedOfficialRatings: sessionFilters?.excludedOfficialRatings,
       minCommunityRating: sessionFilters?.minCommunityRating,
       runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
       themes: sessionFilters?.themes,
+      excludedThemes: sessionFilters?.excludedThemes,
       tmdbLanguages: sessionFilters?.tmdbLanguages,
       unplayedOnly: sessionFilters?.unplayedOnly,
     };
@@ -358,13 +443,16 @@ export class MediaService {
           const items = await provider.getItems({
             libraries: [libraryId],
             genres: sessionFilters?.genres,
+            excludedGenres: sessionFilters?.excludedGenres,
             years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
             ratings: sessionFilters?.officialRatings,
+            excludedRatings: sessionFilters?.excludedOfficialRatings,
             minCommunityRating: sessionFilters?.minCommunityRating,
             runtimeRange: sessionFilters?.runtimeRange,
             watchProviders,
             watchRegion,
             themes: sessionFilters?.themes,
+            excludedThemes: sessionFilters?.excludedThemes,
             tmdbLanguages: sessionFilters?.tmdbLanguages,
             unplayedOnly: sessionFilters?.unplayedOnly,
             sortBy: "SortName", // Use consistent sort for fetching
@@ -421,11 +509,14 @@ export class MediaService {
         const items = await provider.getItems({
           libraries: [libraryId],
           genres: sessionFilters?.genres,
+          excludedGenres: sessionFilters?.excludedGenres,
           years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
           ratings: sessionFilters?.officialRatings,
+          excludedRatings: sessionFilters?.excludedOfficialRatings,
           minCommunityRating: sessionFilters?.minCommunityRating,
           runtimeRange: sessionFilters?.runtimeRange,
           themes: sessionFilters?.themes,
+          excludedThemes: sessionFilters?.excludedThemes,
           tmdbLanguages: sessionFilters?.tmdbLanguages,
           unplayedOnly: sessionFilters?.unplayedOnly,
           limit: 1000, // Fetch large batch
@@ -465,13 +556,16 @@ export class MediaService {
       try {
         const items = await provider.getItems({
           genres: sessionFilters?.genres,
+          excludedGenres: sessionFilters?.excludedGenres,
           years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
           ratings: sessionFilters?.officialRatings,
+          excludedRatings: sessionFilters?.excludedOfficialRatings,
           minCommunityRating: sessionFilters?.minCommunityRating,
           runtimeRange: sessionFilters?.runtimeRange,
           watchProviders,
           watchRegion,
           themes: sessionFilters?.themes,
+          excludedThemes: sessionFilters?.excludedThemes,
           tmdbLanguages: sessionFilters?.tmdbLanguages,
           sortBy: "Popular", // Use consistent sort
           limit: 20,
@@ -512,28 +606,100 @@ export class MediaService {
       sessionFilters.yearRange || 
       sessionFilters.themes?.length || 
       sessionFilters.runtimeRange ||
-      sessionFilters.minCommunityRating
+      sessionFilters.minCommunityRating ||
+      sessionFilters.officialRatings?.length
     )) ? Math.max(limit * 4, 100) : limit;
 
-    const fetchedItems = await provider.getItems({
-      libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
-      genres: sessionFilters?.genres,
-      years: soloYears,
-      ratings: sessionFilters?.officialRatings,
-      minCommunityRating: sessionFilters?.minCommunityRating,
-      runtimeRange: sessionFilters?.runtimeRange,
-      watchProviders,
-      watchRegion,
-      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
-      themes: sessionFilters?.themes,
-      tmdbLanguages: sessionFilters?.tmdbLanguages,
-      unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
-      limit: fetchLimit,
-      offset: effectiveOffset
-    }, auth);
-    
-    let items = this.applyClientFilters(fetchedItems, sessionFilters);
-    items = items.filter(item => !excludeIds.has(item.Id));
+    const isTmdb = auth.provider === ProviderType.TMDB;
+    const baseFetchLimit = isTmdb ? 20 : fetchLimit;
+    const maxFetchLimit = isTmdb ? 20 : 200;
+    const maxAttempts = isTmdb ? 1 : 4;
+    const items: MediaItem[] = [];
+    let fetchedItems: MediaItem[] = [];
+    let attempts = 0;
+    let scanOffset = 0;
+    let exhausted = false;
+
+    const hasExclusionFilters = !!(
+      sessionFilters?.excludedGenres?.length ||
+      sessionFilters?.excludedOfficialRatings?.length ||
+      sessionFilters?.excludedThemes?.length
+    );
+
+    while (attempts < maxAttempts && items.length < limit) {
+      const requestLimit = Math.min(baseFetchLimit * (2 ** attempts), maxFetchLimit);
+      if (hasExclusionFilters) {
+        logger.debug("[MediaService.getSoloItems] Fetch attempt", {
+          attempt: attempts + 1,
+          requestLimit,
+          scanOffset,
+          effectiveOffset,
+          provider: auth.provider,
+        });
+      }
+      fetchedItems = await provider.getItems({
+        libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
+        genres: sessionFilters?.genres,
+        excludedGenres: sessionFilters?.excludedGenres,
+        years: soloYears,
+        ratings: sessionFilters?.officialRatings,
+        excludedRatings: sessionFilters?.excludedOfficialRatings,
+        minCommunityRating: sessionFilters?.minCommunityRating,
+        runtimeRange: sessionFilters?.runtimeRange,
+        watchProviders,
+        watchRegion,
+        sortBy: sessionFilters?.sortBy || (auth.provider === ProviderType.TMDB ? "Popular" : "Trending"),
+        themes: sessionFilters?.themes,
+        excludedThemes: sessionFilters?.excludedThemes,
+        tmdbLanguages: sessionFilters?.tmdbLanguages,
+        unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
+        limit: requestLimit,
+        offset: effectiveOffset + scanOffset
+      }, auth);
+      
+      if (fetchedItems.length === 0) {
+        exhausted = true;
+        if (hasExclusionFilters) {
+          logger.debug("[MediaService.getSoloItems] No items fetched", {
+            attempt: attempts + 1,
+            scanOffset,
+            requestLimit,
+          });
+        }
+        break;
+      }
+
+      let filtered = this.applyClientFilters(fetchedItems, sessionFilters);
+      filtered = filtered.filter(item => !excludeIds.has(item.Id));
+      items.push(...filtered);
+
+      if (hasExclusionFilters) {
+        logger.debug("[MediaService.getSoloItems] Filter results", {
+          attempt: attempts + 1,
+          fetchedCount: fetchedItems.length,
+          filteredCount: filtered.length,
+          accumulated: items.length,
+          scanOffset,
+        });
+      }
+
+      scanOffset += fetchedItems.length;
+
+      if (fetchedItems.length < requestLimit) {
+        exhausted = true;
+        if (hasExclusionFilters) {
+          logger.debug("[MediaService.getSoloItems] Provider exhausted", {
+            attempt: attempts + 1,
+            fetchedCount: fetchedItems.length,
+            requestLimit,
+            scanOffset,
+          });
+        }
+        break;
+      }
+
+      attempts += 1;
+    }
     
     const slicedItems = items.slice(0, limit);
 
@@ -541,9 +707,19 @@ export class MediaService {
       slicedItems[0].BlurDataURL = await provider.getBlurDataUrl(slicedItems[0].Id, "Primary", auth);
     }
 
+    const providerPageSize = isTmdb ? 20 : Math.min(baseFetchLimit * (2 ** Math.max(attempts - 1, 0)), maxFetchLimit);
+    if (hasExclusionFilters) {
+      logger.debug("[MediaService.getSoloItems] Page summary", {
+        returnedCount: slicedItems.length,
+        accumulated: items.length,
+        exhausted,
+        providerPageSize,
+        fetchedCount: fetchedItems.length,
+      });
+    }
     return {
       items: slicedItems,
-      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' ? 20 : fetchLimit)
+      hasMore: !exhausted && items.length >= limit && fetchedItems.length >= providerPageSize
     };
   }
 
@@ -561,7 +737,7 @@ export class MediaService {
 
   static async getRatings(session: SessionData, regionOverride?: string) {
     const useStatic = await ConfigService.getUseStaticFilterValues();
-    if (useStatic && !session.user.isGuest && session.user.provider !== "tmdb") {
+    if (useStatic && !session.user.isGuest && session.user.provider !== ProviderType.TMDB) {
         const { DEFAULT_RATINGS } = await import("@/lib/constants");
         return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
     }
@@ -588,7 +764,7 @@ export class MediaService {
 
   static async getGenres(session: SessionData) {
     const useStatic = await ConfigService.getUseStaticFilterValues();
-    if (useStatic && !session.user.isGuest && session.user.provider !== "tmdb") {
+    if (useStatic && !session.user.isGuest && session.user.provider !== ProviderType.TMDB) {
         const { DEFAULT_GENRES } = await import("@/lib/constants");
         return DEFAULT_GENRES;
     }
@@ -628,7 +804,7 @@ export class MediaService {
     const provider = getMediaProvider(auth.provider);
     const activeProvider = auth.provider || session.user.provider || ProviderType.JELLYFIN;
 
-    if (activeProvider !== "tmdb") {
+    if (activeProvider !== ProviderType.TMDB) {
       return { providers: [] };
     }
 
@@ -713,11 +889,24 @@ export class MediaService {
       );
     }
 
+    if (filters.excludedGenres && filters.excludedGenres.length > 0) {
+      result = result.filter(item =>
+        !item.Genres?.some(g => filters.excludedGenres!.includes(g))
+      );
+    }
+
     if (filters.themes && filters.themes.length > 0) {
       // Tags/Keywords filtering usually done provider side, but we can double check here
       // if the provider doesn't support it or returns raw data.
       // We check if any of the item's genres or other metadata match the themes if possible
       // but usually themes are provider-side specific tags.
+    }
+
+    if (filters.excludedThemes && filters.excludedThemes.length > 0) {
+      const excludeSet = new Set(filters.excludedThemes.map(t => t.toLowerCase()));
+      result = result.filter(item =>
+        !(item.Genres || []).some(g => excludeSet.has(g.toLowerCase()))
+      );
     }
 
     if (filters.yearRange) {
@@ -731,6 +920,13 @@ export class MediaService {
     if (filters.officialRatings && filters.officialRatings.length > 0) {
       result = result.filter(item => 
         item.OfficialRating && filters.officialRatings!.includes(item.OfficialRating)
+      );
+    }
+
+
+    if (filters.excludedOfficialRatings && filters.excludedOfficialRatings.length > 0) {
+      result = result.filter(item =>
+        !item.OfficialRating || !filters.excludedOfficialRatings!.includes(item.OfficialRating)
       );
     }
 

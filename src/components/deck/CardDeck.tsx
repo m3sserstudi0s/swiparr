@@ -23,6 +23,7 @@ import {
   useUpdateSession 
 } from "@/hooks/api";
 import { useBackgroundStore } from "@/lib/background-store";
+import { ProviderType } from "@/lib/providers/types";
 
 export function CardDeck() {
 
@@ -154,16 +155,31 @@ export function CardDeck() {
 
   const hasAppliedFilters = useMemo(() => {
     if (!sessionStatus?.filters) return false;
-    const { genres, yearRange, minCommunityRating, officialRatings, runtimeRange, themes, sortBy, tmdbLanguages } = sessionStatus.filters;
+    const {
+      genres,
+      excludedGenres,
+      yearRange,
+      minCommunityRating,
+      officialRatings,
+      excludedOfficialRatings,
+      runtimeRange,
+      themes,
+      excludedThemes,
+      sortBy,
+      tmdbLanguages
+    } = sessionStatus.filters;
     const hasNonDefaultLanguages = !!(tmdbLanguages && 
       (tmdbLanguages.length > 1 || (tmdbLanguages.length === 1 && tmdbLanguages[0] !== "en")));
-    const defaultSort = sessionStatus?.provider === 'tmdb' ? "Popular" : "Trending";
+    const defaultSort = sessionStatus?.provider === ProviderType.TMDB ? "Popular" : "Trending";
     return (genres && genres.length > 0) || 
+           (excludedGenres && excludedGenres.length > 0) ||
            (minCommunityRating !== undefined && minCommunityRating > 0) || 
            (yearRange !== undefined) || 
            (officialRatings && officialRatings.length > 0) || 
+           (excludedOfficialRatings && excludedOfficialRatings.length > 0) ||
            (runtimeRange !== undefined) ||
            (themes && themes.length > 0) ||
+           (excludedThemes && excludedThemes.length > 0) ||
            (sortBy !== undefined && sortBy !== defaultSort) ||
            hasNonDefaultLanguages;
   }, [sessionStatus?.filters]);

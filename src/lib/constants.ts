@@ -4,6 +4,7 @@ export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 export const SUPPORT_URL = "https://buymeacoffee.com/jakobbjelver";
 export const MESSER_STUDIOS_URL = "https://messerstudios.dev";
 
+export const DEFAULT_THEMES = ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"]
 
 export const DEFAULT_GENRES = [
     { Id: "1", Name: "Action" },
@@ -54,6 +55,8 @@ export const LANGUAGES = [
 ];
 
 export const TMDB_MOVIE_BASE_URL = "https://www.themoviedb.org/movie";
+
+export const TMDB_DEFAULT_REGION = "SE"
 
 export const POPULAR_TMDB_WATCH_PROVIDER_IDS = [
     "8",   // Netflix

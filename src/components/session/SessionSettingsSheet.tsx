@@ -210,7 +210,7 @@ export function SessionSettingsSheet({
                   onClick={handleResetStats}
                   disabled={isResettingStats}
                 >
-                  <RotateCcw className={cn('size-3 mt-px', isResettingStats && "animate-spin")} />
+                  <RotateCcw className={cn('size-3 text-xs/0', isResettingStats && "animate-spin")} />
                   {isResettingStats ? "Resetting..." : confirmResetStats ? "Confirm reset" : "Reset stats"}
                 </Button>
               </div>
@@ -322,7 +322,7 @@ export function SessionSettingsSheet({
               className="gap-2 text-muted-foreground hover:text-foreground"
               onClick={resetAll}
             >
-              <RotateCcw className="size-3 mt-px" />
+              <RotateCcw className="size-3 text-xs/0" />
               Reset settings
             </Button>
             </div>

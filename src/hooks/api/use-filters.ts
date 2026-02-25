@@ -4,12 +4,12 @@ import { MediaGenre, MediaRating, MediaYear } from "@/types/media";
 import { QUERY_KEYS } from "./query-keys";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useSession } from "./use-session";
-import { DEFAULT_GENRES, DEFAULT_RATINGS } from "@/lib/constants";
+import { DEFAULT_GENRES, DEFAULT_RATINGS, TMDB_DEFAULT_REGION } from "@/lib/constants";
 
 export function useFilters(open: boolean, watchRegion?: string) {
   const { useStaticFilterValues, capabilities } = useRuntimeConfig();
   const isExternal = !capabilities.hasAuth;
-  const region = watchRegion || "SE";
+  const region = watchRegion || TMDB_DEFAULT_REGION;
 
   const genresQuery = useQuery({
     queryKey: QUERY_KEYS.media.genres,
