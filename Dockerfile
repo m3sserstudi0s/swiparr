@@ -45,6 +45,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Drizzle files needed at runtime for migrations
 COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrations ./src/db/migrations
 COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrate.js ./src/db/migrate.js
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/ensure-auth-secret.cjs ./scripts/ensure-auth-secret.cjs
 
 # Note: drizzle-orm and @libsql/client are needed by migrate.js. 
 # Next.js standalone usually bundles deps, but migrate.js is run outside that bundle.
@@ -65,4 +66,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:4321${URL_BASE_PATH:-}/api/health || exit 1
 
 # Ensure auth secret, run migrations, then start Next standalone server
-CMD ["sh", "-c", "node scripts/ensure-auth-secret.mjs && node src/db/migrate.js && node server.js"]
+CMD ["sh", "-c", "node scripts/ensure-auth-secret.cjs && node src/db/migrate.js && node server.js"]

@@ -74,7 +74,7 @@ One-click deployment, perfect for personal or small group use:
 
 Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out [^1].
 
-**Vercel security note:** `AUTH_SECRET` is auto-generated during the build (via `scripts/ensure-auth-secret.mjs`) and persisted in the database when not provided.
+**Vercel security note:** `AUTH_SECRET` is auto-generated during the build (via `scripts/ensure-auth-secret.cjs`) and persisted in the database when not provided.
 
 
 
@@ -119,7 +119,7 @@ docker run -d \
 
 3. Open [http://localhost:4321](http://localhost:4321)
 
-**Docker security note:** `AUTH_SECRET` is auto-generated on first boot (via `scripts/ensure-auth-secret.mjs`) and stored in the database when not provided.
+**Docker security note:** `AUTH_SECRET` is auto-generated on first boot (via `scripts/ensure-auth-secret.cjs`) and stored in the database when not provided.
 
 ---
 

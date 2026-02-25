@@ -1,11 +1,16 @@
-import crypto from 'node:crypto';
-import dotenv from 'dotenv';
-import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
-import { eq } from 'drizzle-orm';
-import { config as dbConfig } from '../src/db/schema';
+const crypto = require('node:crypto');
+const dotenv = require('dotenv');
+const { createClient } = require('@libsql/client');
+const { drizzle } = require('drizzle-orm/libsql');
+const { eq } = require('drizzle-orm');
+const { sqliteTable, text } = require('drizzle-orm/sqlite-core');
 
 dotenv.config();
+
+const configTable = sqliteTable('Config', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
 
 const getDefaultDbPath = () => {
   if (process.env.NODE_ENV === 'production') {
@@ -35,13 +40,13 @@ const ensureAuthSecret = async () => {
     authToken,
   });
 
-  const db = drizzle(client);
+  const db = drizzle(client, { schema: { configTable } });
 
   try {
     const existing = await db
       .select()
-      .from(dbConfig)
-      .where(eq(dbConfig.key, 'auth_secret'))
+      .from(configTable)
+      .where(eq(configTable.key, 'auth_secret'))
       .limit(1);
 
     if (existing && existing.length > 0) {
@@ -49,7 +54,7 @@ const ensureAuthSecret = async () => {
     }
 
     const generated = crypto.randomUUID().repeat(2).slice(0, 32);
-    await db.insert(dbConfig).values({ key: 'auth_secret', value: generated });
+    await db.insert(configTable).values({ key: 'auth_secret', value: generated });
     console.log('[Auth] Generated AUTH_SECRET and stored in database.');
   } finally {
     client.close();
