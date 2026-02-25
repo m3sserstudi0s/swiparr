@@ -3,7 +3,8 @@ import {
   ProviderCapabilities, 
   SearchFilters, 
   AuthContext,
-  ImageResponse
+  ImageResponse,
+  ProviderType
 } from "../types";
 
 import { 
@@ -16,13 +17,14 @@ import {
 import { apiClient, getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 import { logger } from "@/lib/logger";
+import { DEFAULT_THEMES } from "@/lib/constants";
 
 /**
  * Jellyfin Provider
  * Docs: https://api.jellyfin.org/
  */
 export class JellyfinProvider implements MediaProvider {
-  readonly name = "jellyfin";
+  readonly name = ProviderType.JELLYFIN;
   
   readonly capabilities: ProviderCapabilities = {
     hasAuth: true,
@@ -121,6 +123,9 @@ export class JellyfinProvider implements MediaProvider {
   async getThemes(auth?: AuthContext): Promise<string[]> {
     logger.debug("[JellyfinProvider.getThemes] Starting with auth:", { userId: auth?.userId, serverUrl: auth?.serverUrl });
     
+    return DEFAULT_THEMES;
+
+    /* 
     try {
       // Use /Items/Filters2 to get all available tags for movies
       // This is the correct Jellyfin API endpoint for getting filter values
@@ -155,6 +160,7 @@ export class JellyfinProvider implements MediaProvider {
       // Return fallback themes on error
       return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
     }
+      */
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {

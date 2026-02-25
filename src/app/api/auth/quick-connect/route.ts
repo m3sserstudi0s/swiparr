@@ -11,6 +11,7 @@ import { logger } from "@/lib/logger";
 import { handleApiError } from "@/lib/api-utils";
 import { assertSafeUrl } from "@/lib/security/url-guard";
 import { config } from "@/lib/config";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,10 +59,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Pending" });
     }
 
-    const existingAdmin = await ConfigService.getAdminUserId("jellyfin");
+    const existingAdmin = await ConfigService.getAdminUserId(ProviderType.JELLYFIN);
     let wasMadeAdmin = false;
     if (!existingAdmin) {
-        await ConfigService.setAdminUserId(authData.User.Id, "jellyfin" as any);
+        await ConfigService.setAdminUserId(authData.User.Id, ProviderType.JELLYFIN as any);
         wasMadeAdmin = true;
         logger.info(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
     }
@@ -71,9 +72,9 @@ export async function POST(request: NextRequest) {
       Name: authData.User.Name,
       AccessToken: authData.AccessToken,
       DeviceId: session.tempDeviceId,
-      isAdmin: await AuthService.isAdmin(authData.User.Id, authData.User.Name, "jellyfin"),
+      isAdmin: await AuthService.isAdmin(authData.User.Id, authData.User.Name, ProviderType.JELLYFIN),
       wasMadeAdmin: wasMadeAdmin,
-      provider: "jellyfin",
+      provider: ProviderType.JELLYFIN,
       providerConfig: session.providerConfig,
     };
     session.isLoggedIn = true;

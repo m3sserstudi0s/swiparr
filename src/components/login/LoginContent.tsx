@@ -148,7 +148,7 @@ export default function LoginContent() {
     e.preventDefault();
     setLoading(true);
 
-    const isTmdbJoin = selectedProvider === "tmdb" && !!sessionCodeParam;
+    const isTmdbJoin = selectedProvider === ProviderType.TMDB && !!sessionCodeParam;
 
     const promise = async () => {
       if (isTmdbJoin) {
@@ -163,7 +163,7 @@ export default function LoginContent() {
       const config: any = {};
       if (selectedProvider === ProviderType.JELLYFIN || selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY) {
         if (serverUrl) config.serverUrl = serverUrl;
-      } else if (selectedProvider === "tmdb") {
+      } else if (selectedProvider === ProviderType.TMDB) {
         if (tmdbToken) config.tmdbToken = tmdbToken;
       }
 
@@ -179,7 +179,7 @@ export default function LoginContent() {
     };
 
     toast.promise(promise(), {
-      loading: isTmdbJoin ? "Joining session..." : (selectedProvider !== "tmdb" ? "Logging in..." : "Initializing..."),
+      loading: isTmdbJoin ? "Joining session..." : (selectedProvider !== ProviderType.TMDB ? "Logging in..." : "Initializing..."),
       success: (data) => {
         if (data.wasMadeAdmin) {
           setWasMadeAdmin(true);
@@ -196,7 +196,7 @@ export default function LoginContent() {
         window.location.href = callbackUrl;
         setLoading(false);
         if (isTmdbJoin) return `Joined as ${data.user.Name}`;
-        return selectedProvider !== "tmdb" ? "Logged in successfully" : "Profile created";
+        return selectedProvider !== ProviderType.TMDB ? "Logged in successfully" : "Profile created";
       },
       error: (err) => {
         setLoading(false);
@@ -315,19 +315,19 @@ export default function LoginContent() {
               {!providerLock && (
                 <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
                   <TabsList className="grid w-full grid-cols-4 h-9">
-                    <TabsTrigger value="jellyfin" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.JELLYFIN} className="text-xs font-semibold">
                       <SiJellyfin />
                       Jellyfin
                     </TabsTrigger>
-                    <TabsTrigger value="emby" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.EMBY} className="text-xs font-semibold">
                       <SiEmby />
                       Emby
                     </TabsTrigger>
-                    <TabsTrigger value="plex" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.PLEX} className="text-xs font-semibold">
                       <SiPlex />
                       Plex
                     </TabsTrigger>
-                    <TabsTrigger value="tmdb" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.TMDB} className="text-xs font-semibold">
                       <SiThemoviedatabase />
                       TMDB
                     </TabsTrigger>
@@ -335,7 +335,7 @@ export default function LoginContent() {
                 </Tabs>
               )}
 
-              {selectedProvider === "tmdb" ? (
+              {selectedProvider === ProviderType.TMDB ? (
                 <UniversalView
                   providerLock={providerLock}
                   tmdbToken={tmdbToken}

@@ -11,6 +11,7 @@ import { ProfilePicturePicker } from "../../profile/ProfilePicturePicker";
 import { apiClient } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserStore } from "@/lib/user-store";
+import { ProviderType } from "@/lib/providers/types";
 
 export function AccountSettings() {
     const { data: sessionStatus, isLoading } = useSession();
@@ -61,6 +62,7 @@ export function AccountSettings() {
                 <ProfilePicturePicker 
                     currentImage={profileImageUrl}
                     hasCustomImage={hasCustomProfilePicture}
+                    allowProviderFallback={!!capabilities.hasAuth}
                     userName={userName}
                     onUpload={handleUpload}
                     onDelete={handleDelete}
@@ -89,7 +91,7 @@ export function AccountSettings() {
                         ) : (
                             <>
                                 <Shield className="size-3" />
-                                {activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1)} Account
+                                {activeProvider === ProviderType.TMDB ? activeProvider.toUpperCase() + ' Profile' : activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1) + ' Account'}
                             </>
                         )}
                     </div>
@@ -98,4 +100,3 @@ export function AccountSettings() {
         </SettingsSection>
     );
 }
-

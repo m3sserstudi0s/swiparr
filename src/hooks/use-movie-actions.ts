@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
 import { logger } from "@/lib/logger";
+import { ProviderType } from "@/lib/providers/types";
 
 interface UseMovieActionsOptions {
   isLiked?: boolean;
@@ -60,9 +61,9 @@ export function useMovieActions<T extends MediaItem>(initialMovie: T | null, opt
 
   const isGuest = sessionData?.isGuest || false;
   const activeProvider = sessionData?.provider || runtimeProvider;
-  const useWatchlist = activeProvider === "plex"
+  const useWatchlist = activeProvider === ProviderType.PLEX
     ? true
-    : activeProvider === "jellyfin"
+    : activeProvider === ProviderType.JELLYFIN
       ? settings.useWatchlist
       : false;
 

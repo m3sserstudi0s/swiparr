@@ -8,7 +8,6 @@ import { ProviderType } from "../providers/types";
 
 const ADMIN_USER_ID_KEY = "admin_user_id";
 const INCLUDED_LIBRARIES_KEY = "included_libraries";
-const USE_STATIC_FILTER_VALUES_KEY = "use_static_filter_values";
 const ACTIVE_PROVIDER_KEY = "active_provider";
 
 export class ConfigService {
@@ -83,22 +82,6 @@ export class ConfigService {
       set: { value: JSON.stringify(libraries) },
     });
     revalidateTag(tagConfig(INCLUDED_LIBRARIES_KEY), "max");
-  }
-
-  static async getUseStaticFilterValues(): Promise<boolean> {
-    const value = await this.getConfigValue(USE_STATIC_FILTER_VALUES_KEY);
-    return value === "true";
-  }
-
-  static async setUseStaticFilterValues(useStatic: boolean): Promise<void> {
-    await db.insert(configTable).values({
-      key: USE_STATIC_FILTER_VALUES_KEY,
-      value: useStatic ? "true" : "false",
-    }).onConflictDoUpdate({
-      target: configTable.key,
-      set: { value: useStatic ? "true" : "false" },
-    });
-    revalidateTag(tagConfig(USE_STATIC_FILTER_VALUES_KEY), "max");
   }
 
   static async getUserSettings(userId: string): Promise<any> {

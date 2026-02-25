@@ -3,7 +3,7 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { MediaService } from "@/lib/services/media-service";
+import { DEFAULT_THEMES } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
@@ -11,8 +11,7 @@ export async function GET(request: NextRequest) {
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const themes = await MediaService.getThemes(session);
-        return NextResponse.json(themes);
+        return NextResponse.json(DEFAULT_THEMES);
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch themes" }, { status: 500 });
     }

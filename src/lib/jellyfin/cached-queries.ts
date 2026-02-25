@@ -1,11 +1,12 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { tagProvider } from "@/lib/cache-tags";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "./api";
+import { ProviderType } from "../providers/types";
 
 export async function getCachedYears(accessToken: string, deviceId: string, userId: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("jellyfin", "years"));
+    cacheTag(tagProvider(ProviderType.JELLYFIN, "years"));
 
     const res = await apiClient.get(getJellyfinUrl(`/Years`), {
         params: {
@@ -21,7 +22,7 @@ export async function getCachedYears(accessToken: string, deviceId: string, user
 export async function getCachedGenres(accessToken: string, deviceId: string, userId: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("jellyfin", "genres"));
+    cacheTag(tagProvider(ProviderType.JELLYFIN, "genres"));
 
     const res = await apiClient.get(getJellyfinUrl(`/Genres`), {
         params: {
@@ -37,7 +38,7 @@ export async function getCachedGenres(accessToken: string, deviceId: string, use
 export async function getCachedLibraries(accessToken: string, deviceId: string, userId: string) {
     "use cache";
     cacheLife({ revalidate: 3600, stale: 300, expire: 86400 });
-    cacheTag(tagProvider("jellyfin", "libraries"));
+    cacheTag(tagProvider(ProviderType.JELLYFIN, "libraries"));
 
     const res = await apiClient.get(getJellyfinUrl(`/Users/${userId}/Views`), {
         headers: getAuthenticatedHeaders(accessToken, deviceId),
@@ -52,7 +53,7 @@ export async function getCachedLibraries(accessToken: string, deviceId: string, 
 export async function getCachedRatings(accessToken: string, deviceId: string, userId: string) {
     "use cache";
     cacheLife({ revalidate: 86400, stale: 3600, expire: 172800 });
-    cacheTag(tagProvider("jellyfin", "ratings"));
+    cacheTag(tagProvider(ProviderType.JELLYFIN, "ratings"));
 
     // Official ratings from items
     const res = await apiClient.get(getJellyfinUrl(`/Items`), {

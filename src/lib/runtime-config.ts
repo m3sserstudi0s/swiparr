@@ -13,7 +13,6 @@ export interface RuntimeConfig {
   capabilities: ProviderCapabilities;
   serverPublicUrl: string;
   useWatchlist: boolean;
-  useStaticFilterValues: boolean;
   version: string;
   basePath: string;
   appPublicUrl: string;
@@ -42,7 +41,6 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     capabilities,
     serverPublicUrl: config.server.publicUrl,
     useWatchlist: config.app.useWatchlist,
-    useStaticFilterValues: !!overrides?.useStaticFilterValues,
     version: config.app.version,
     basePath: config.app.basePath,
     appPublicUrl: config.app.appPublicUrl,

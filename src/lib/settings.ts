@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getRuntimeConfig } from './runtime-config';
+import { ProviderType } from './providers/types';
 
 export interface Settings {
   useWatchlist: boolean;
@@ -18,7 +19,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       settings: {
-        useWatchlist: getRuntimeConfig().provider === "jellyfin" && getRuntimeConfig().useWatchlist,
+        useWatchlist: getRuntimeConfig().provider === ProviderType.JELLYFIN && getRuntimeConfig().useWatchlist,
         allowGuestLending: false,
         hasDismissedGuestLendingAlert: false,
       },
@@ -28,7 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
         })),
       resetSettings: () => set({
         settings: {
-          useWatchlist: getRuntimeConfig().provider === "jellyfin" && getRuntimeConfig().useWatchlist,
+          useWatchlist: getRuntimeConfig().provider === ProviderType.JELLYFIN && getRuntimeConfig().useWatchlist,
           allowGuestLending: false,
           hasDismissedGuestLendingAlert: false,
         }

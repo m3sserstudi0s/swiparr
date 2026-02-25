@@ -10,24 +10,14 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight, Info } from "lucide-react";
+import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 import { useRuntimeConfig } from "@/lib/runtime-config";
-import { useSession, useAdminStatus, useAdminConfig, useMediaLibraries, useAdminLibraries, useUpdateAdminConfig, useUpdateAdminLibraries, useClaimAdmin } from "@/hooks/api";
+import { useSession, useAdminStatus, useMediaLibraries, useAdminLibraries, useUpdateAdminLibraries, useClaimAdmin } from "@/hooks/api";
 import { MediaLibrary } from "@/types/media";
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
 
 export function AdminSettings() {
     const { data: sessionStatus } = useSession();
@@ -38,11 +28,9 @@ export function AdminSettings() {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const { data: adminStatus } = useAdminStatus();
-    const { data: config, isLoading: isLoadingConfig } = useAdminConfig();
     const { data: availableLibraries = [], isLoading: isLoadingLibs } = useMediaLibraries();
     const { data: adminLibraries } = useAdminLibraries();
 
-    const updateConfigMutation = useUpdateAdminConfig();
     const updateLibrariesMutation = useUpdateAdminLibraries();
     const claimMutation = useClaimAdmin();
 
@@ -117,49 +105,6 @@ export function AdminSettings() {
             ) : (
                 <div className="space-y-6">
                     <div className="space-y-6">
-                        <div className="grid grid-flow-col items-center justify-between gap-2">
-                            <div className="space-y-0.5">
-                                <div className="flex items-center gap-1.5">
-                                    <div className="text-sm font-medium">Static Filters</div>
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="size-4 p-0 hover:bg-transparent">
-                                                <Info className="size-3.5 text-muted-foreground cursor-help" />
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Static Filter Values</DialogTitle>
-                                                <DialogDescription className="pt-2">
-                                                    Instead of fetching years, genres, and ratings from your server,
-                                                    Swiparr will use a predefined list of values.
-                                                    <br /><br />
-                                                    This is <strong>only</strong>, and highly recommended for large libraries (3000+ items)
-                                                    to significantly speed up the filter sheet loading.
-                                                    <br /><br />
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <DialogFooter className="sm:justify-start">
-                                                <DialogClose asChild>
-                                                    <Button type="button" variant="secondary">
-                                                        Okay
-                                                    </Button>
-                                                </DialogClose>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                                <div className="text-xs text-muted-foreground text-pretty">Speed up filtering for extremely large libraries</div>
-                            </div>
-                            <Switch
-                                checked={config?.useStaticFilterValues || false}
-                                onCheckedChange={(checked) => {
-                                  updateConfigMutation.mutate({ useStaticFilterValues: checked });
-                                }}
-                                disabled={isLoadingConfig || updateConfigMutation.isPending}
-                            />
-                        </div>
-
                         {capabilities.hasLibraries && (
                             <Collapsible
                                 open={isExpanded}

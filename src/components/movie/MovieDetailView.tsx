@@ -22,6 +22,7 @@ import { QUERY_KEYS } from "@/hooks/api/query-keys";
 import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 import { getLanguageLabel } from "@/lib/language";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
+import { ProviderType } from "@/lib/providers/types";
 
 interface Props {
   movieId: string | null;
@@ -74,7 +75,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   const { data: sessionStatus } = useSession({ enabled: !!movieId });
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
   const activeProvider = sessionStatus?.provider || runtimeProvider;
-  const serverPublicUrl = activeProvider === "plex" ? runtimeServerUrl : (sessionStatus?.serverUrl || runtimeServerUrl);
+  const serverPublicUrl = activeProvider === ProviderType.PLEX ? runtimeServerUrl : (sessionStatus?.serverUrl || runtimeServerUrl);
   const detailsUrl = getProviderDetailsUrl({
     provider: activeProvider,
     serverPublicUrl,
@@ -179,24 +180,24 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     )}
                     <div className="flex flex-wrap gap-3 text-xs items-center">
                       {!!movie.ProductionYear && (
-                        <span className="font-semibold text-foreground/90">
+                        <span className="font-semibold text-foreground/90 text-xs/0">
                           {movie.ProductionYear}
                         </span>
                       )}
                       {!!movie.OfficialRating && (
-                        <Badge variant="outline" className="text-[10px] py-0 h-4 border-foreground/30 text-foreground/80">
+                        <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
                           <ShieldCheck className="w-3 h-3"/>
-                          <span className="mt-px">{movie.OfficialRating}</span>
+                          {movie.OfficialRating}
                         </Badge>
                       )}
                       {!!movie.CommunityRating && ratingDisplay !== null && (
-                        <span className="flex items-center gap-1 font-bold">
+                        <span className="flex items-center gap-1 font-bold text-xs/0">
                           {isRottenTomatoes ? <Percent className="w-3 h-3" /> : <Star className="w-3 h-3 fill-current" />}
                           {ratingDisplay}{isRottenTomatoes ? "%" : ""}
                         </span>
                       )}
                       {!!movie.RunTimeTicks && (
-                        <span className="flex items-center gap-1 text-foreground/70">
+                        <span className="flex items-center gap-1 text-foreground/70 text-xs/0">
                           <Clock className="w-3 h-3" /> {ticksToTime(movie.RunTimeTicks)}
                         </span>
                       )}

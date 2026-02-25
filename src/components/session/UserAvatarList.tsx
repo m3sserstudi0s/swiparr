@@ -76,20 +76,20 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                                 className={cn("size-full", isHost && "bg-background")}
                                 fallbackClassName={cn(
                                     "font-semibold",
-                                    size === "sm" ? "text-[10px]" : "text-sm",
-                                    isHost ? "bg-background text-foreground" : grays[index % grays.length]
+                                    size === "sm" ? "text-[10px]/0" : "text-sm/0",
+                                    isHost ? "bg-accent text-foreground" : grays[index % grays.length]
                                 )}
                             />
                         </div>
                     </HybridTooltipTrigger>
                     <HybridTooltipContent className="py-2 px-3 w-fit">
                         {isHost ? (
-                            <p className="inline-flex items-center gap-1">
-                                <Crown className="size-3 mb-1" />
+                            <p className="inline-flex items-center gap-1 text-sm/0">
+                                <Crown className="size-3.5 fill-accent" />
                                 {user.userName}
                             </p>
                         ) : (
-                            <p>{user.userName}</p>
+                            <p className="text-sm/0">{user.userName}</p>
                         )}
                     </HybridTooltipContent>
                 </HybridTooltip>
@@ -102,7 +102,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                             <AvatarFallback
                                 className={cn(
                                     "bg-neutral-800 text-neutral-50 font-semibold",
-                                    size === "sm" ? "text-[10px]" : "text-sm"
+                                    size === "sm" ? "text-[10px]/0" : "text-sm/0"
                                 )}
                             >
                                 +{remainingCount}

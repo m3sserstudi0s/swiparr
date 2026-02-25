@@ -34,6 +34,7 @@ import {
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { TMDB_DEFAULT_REGION } from "@/lib/constants";
 
 export function StreamingSettings() {
     const { data: settings, isLoading: isLoadingSettings } = useUserSettings();
@@ -52,7 +53,7 @@ export function StreamingSettings() {
         setContainer(document.querySelector('[data-slot="sheet-content"]') as HTMLElement);
     }, []);
 
-    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || "SE", null, true);
+    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || TMDB_DEFAULT_REGION, null, true);
     const availableProviders = useMemo(() => watchProvidersData?.providers || [], [watchProvidersData]);
     const availableProviderIds = useMemo(
         () => availableProviders.map((p: WatchProvider) => p.Id),
@@ -86,8 +87,8 @@ export function StreamingSettings() {
 
     useEffect(() => {
         if (settings && regions.length > 0 && !hasInitialized) {
-            const regionCode = settings.watchRegion || "SE";
-            const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === "SE") || regions[0];
+            const regionCode = settings.watchRegion || TMDB_DEFAULT_REGION;
+            const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === TMDB_DEFAULT_REGION) || regions[0];
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedRegion(region);
 
@@ -128,7 +129,7 @@ export function StreamingSettings() {
         }
 
         toast.promise(updateSettingsMutation.mutateAsync({
-            watchRegion: region?.Id || "SE",
+            watchRegion: region?.Id || TMDB_DEFAULT_REGION,
             watchProviders: selectedProviders,
         }), {
             loading: "Updating streaming settings...",

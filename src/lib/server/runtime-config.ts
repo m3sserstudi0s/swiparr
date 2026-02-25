@@ -13,11 +13,8 @@ export async function getAsyncRuntimeConfig(): Promise<RuntimeConfig> {
     provider = config.app.provider;
   }
 
-  const useStaticFilterValues = await ConfigService.getUseStaticFilterValues();
-
   return getRuntimeConfig({
     provider: provider as ProviderType,
-    useStaticFilterValues,
   });
 }
 
@@ -38,10 +35,7 @@ export async function getAsyncRuntimeConfigFromSession(): Promise<RuntimeConfig>
     provider = base.provider;
   }
 
-  const useStaticFilterValues = await ConfigService.getUseStaticFilterValues();
-
   return getRuntimeConfig({
     provider: provider as ProviderType,
-    useStaticFilterValues,
   });
 }
