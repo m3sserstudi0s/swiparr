@@ -38,16 +38,16 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
     };
 
     const grays = [
-    "bg-purple-200 text-neutral-900",  // soft
-    "bg-emerald-600 text-white",       // bold
-    "bg-amber-200 text-neutral-900",   // soft
-    "bg-cyan-600 text-white",          // bold
-    "bg-pink-200 text-neutral-900",    // soft
-    "bg-indigo-600 text-white",        // bold
-    "bg-teal-200 text-neutral-900",    // soft
-    "bg-rose-600 text-white",          // bold
-    "bg-sky-200 text-neutral-900",     // soft
-    "bg-lime-600 text-neutral-900",    // bold
+    "bg-indigo-100 text-neutral-900",  // soft
+    "bg-emerald-500 text-white",       // bold
+    "bg-amber-100 text-neutral-900",   // soft
+    "bg-cyan-500 text-white",          // bold
+    "bg-pink-100 text-neutral-900",    // soft
+    "bg-indigo-500 text-white",        // bold
+    "bg-teal-100 text-neutral-900",    // soft
+    "bg-rose-500 text-white",          // bold
+    "bg-sky-100 text-neutral-900",     // soft
+    "bg-lime-500 text-neutral-900",    // bold
     ];
 
     const maxVisible = 5;
@@ -57,6 +57,11 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
             ...users.filter((user) => user.userId !== hostUserId),
         ]
         : users;
+    
+    // const testUsers = [...orderedUsers, ...orderedUsers, ...orderedUsers, ...orderedUsers]
+    // const displayUsers = testUsers.slice(0, maxVisible);
+    // const remainingCount = testUsers.length - maxVisible;
+
     const displayUsers = orderedUsers.slice(0, maxVisible);
     const remainingCount = orderedUsers.length - maxVisible;
 
@@ -75,21 +80,20 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                                 updatedAt={user.profileUpdatedAt}
                                 className={cn("size-full", isHost && "bg-background")}
                                 fallbackClassName={cn(
-                                    "font-semibold",
-                                    size === "sm" ? "text-[10px]/0" : "text-sm/0",
-                                    isHost ? "bg-accent text-foreground" : grays[index % grays.length]
+                                    size === "sm" ? "text-[10px]/0 font-normal" : "text-sm/0 font-semibold",
+                                    isHost ? "bg-accent text-foreground" : grays[(index - 1) % grays.length]
                                 )}
                             />
                         </div>
                     </HybridTooltipTrigger>
                     <HybridTooltipContent className="py-2 px-3 w-fit">
                         {isHost ? (
-                            <p className="inline-flex items-center gap-1 text-sm/0">
+                            <p className="inline-flex items-center gap-1 text-sm">
                                 <Crown className="size-3.5 fill-accent" />
                                 {user.userName}
                             </p>
                         ) : (
-                            <p className="text-sm/0">{user.userName}</p>
+                            <p className="text-sm">{user.userName}</p>
                         )}
                     </HybridTooltipContent>
                 </HybridTooltip>
@@ -101,8 +105,8 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                         <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
                             <AvatarFallback
                                 className={cn(
-                                    "bg-neutral-800 text-neutral-50 font-semibold",
-                                    size === "sm" ? "text-[10px]/0" : "text-sm/0"
+                                    "bg-background text-foreground font-light text-[10px]/0",
+                                    size === "sm" ? "text-[7px]/0" : "text-[10px]/0"
                                 )}
                             >
                                 +{remainingCount}
