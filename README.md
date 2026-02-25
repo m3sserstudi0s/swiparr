@@ -74,7 +74,7 @@ One-click deployment, perfect for personal or small group use:
 
 Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out [^1].
 
-**Vercel security note:** Set `AUTH_SECRET` (required for sessions and guest lending encryption). See "Generating `AUTH_SECRET`" in Security & Privacy.
+**Vercel security note:** `AUTH_SECRET` is auto-generated during the build (via `scripts/ensure-auth-secret.mjs`) and persisted in the database when not provided.
 
 
 
@@ -119,7 +119,7 @@ docker run -d \
 
 3. Open [http://localhost:4321](http://localhost:4321)
 
-**Docker security note:** `AUTH_SECRET` can be auto-generated and stored in the database. For production, set it explicitly. See "Generating `AUTH_SECRET`" in Security & Privacy.
+**Docker security note:** `AUTH_SECRET` is auto-generated on first boot (via `scripts/ensure-auth-secret.mjs`) and stored in the database when not provided.
 
 ---
 
@@ -174,7 +174,7 @@ TMDB_DEFAULT_REGION=SE                # Default region for availability/certific
 
 ```env
 # Authentication
-AUTH_SECRET=random-string-32-chars-min     # Auto-generated if empty (NOTE: Required with unRAID + Vercel). See Security & Privacy.
+AUTH_SECRET=random-string-32-chars-min     # Auto-generated on boot/build when not provided. See Security & Privacy.
 USE_SECURE_COOKIES=true                    # Required for HTTPS
 
 # Application
@@ -222,7 +222,7 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
 | `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
 | `TMDB_DEFAULT_REGION` | ❌ | `SE` | Default TMDB region (ISO 3166-1) for streaming availability/certifications |
-| `AUTH_SECRET` | ❌ | Auto-generated (NOTE: Required with unRAID + Vercel) | Secret used for session encryption and guest lending token encryption (min 32 chars). See Security & Privacy. |
+| `AUTH_SECRET` | ❌ | Auto-generated on boot/build | Secret used for session encryption and guest lending token encryption (min 32 chars). See Security & Privacy. |
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
@@ -343,7 +343,7 @@ When you create a session, customize it for your group:
 
 ## 🔒 Security & Privacy
 
-- **Generating `AUTH_SECRET`**:
+- **Generating `AUTH_SECRET` (optional)**:
 
 ```bash
 # macOS and Linux
@@ -354,7 +354,6 @@ Windows users can use https://generate-secret.vercel.app/32.
 
 - **Encrypted Sessions**: iron-session with secure, encrypted cookies
 - **Encrypted Guest Lending Tokens**: host access tokens are encrypted at rest when Guest Lending is enabled
-- **Edge Runtime Note**: set `AUTH_SECRET` for Vercel/Edge. See "Generating `AUTH_SECRET`" above.
 - **Scoped Access**: Guests can only swipe, no account access
 - **Data Ownership**: Self-hosted = your data stays on your server
 - **Provider Isolation**: No credential sharing in BYOP mode
