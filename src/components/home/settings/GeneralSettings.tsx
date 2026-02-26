@@ -112,7 +112,7 @@ export function GeneralSettings() {
                                                     They will use your connection to fetch movies and images for the duration of the session.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <DialogFooter className="sm:justify-start">
+                                            <DialogFooter>
                                                 <DialogClose asChild>
                                                     <Button type="button" variant="secondary">
                                                         Okay
