@@ -79,8 +79,9 @@ export async function DELETE(request: NextRequest) {
     await db.delete(hiddens).where(eq(hiddens.sessionCode, sessionCode));
 
     // Emit event
-    const { events, EVENT_TYPES } = await import("@/lib/events");
-    events.emit(EVENT_TYPES.STATS_RESET, {
+    const { EventService } = await import("@/lib/services/event-service");
+    const { EVENT_TYPES } = await import("@/lib/events");
+    await EventService.emit(EVENT_TYPES.STATS_RESET, {
         sessionCode,
         userId: session.user.Id,
         userName: session.user.Name,

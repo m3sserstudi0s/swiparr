@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { eq, and, ne, count, sql, isNull } from "drizzle-orm";
 import { db, sessions, sessionMembers, likes, hiddens, userProfiles } from "@/lib/db";
-import { events, EVENT_TYPES } from "@/lib/events";
+import { EVENT_TYPES } from "@/lib/events";
+import { EventService } from "./event-service";
 import { SessionSettings, Filters, SessionData } from "@/types";
 import { ProviderType } from "@/lib/providers/types";
 import { ConfigService } from "./config-service";
@@ -56,7 +57,7 @@ export class SessionService {
       settings: settings ? JSON.stringify(settings) : null,
     });
 
-    events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+    await EventService.emit(EVENT_TYPES.SESSION_UPDATED, code);
     return code;
   }
 
@@ -95,8 +96,8 @@ export class SessionService {
       set: { settings: settings ? JSON.stringify(settings) : null }
     });
 
-    events.emit(EVENT_TYPES.USER_JOINED, { sessionCode: upperCode, userName: user.Name, userId: user.Id });
-    events.emit(EVENT_TYPES.SESSION_UPDATED, upperCode);
+    await EventService.emit(EVENT_TYPES.USER_JOINED, { sessionCode: upperCode, userName: user.Name, userId: user.Id });
+    await EventService.emit(EVENT_TYPES.SESSION_UPDATED, upperCode);
 
     return upperCode;
   }
@@ -133,7 +134,7 @@ export class SessionService {
         externalUserName: username,
       });
 
-      events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+      await EventService.emit(EVENT_TYPES.SESSION_UPDATED, code);
       return { user, code };
     }
 
@@ -170,7 +171,7 @@ export class SessionService {
       externalUserName: username,
     }).onConflictDoNothing();
 
-    events.emit(EVENT_TYPES.SESSION_UPDATED, code);
+    await EventService.emit(EVENT_TYPES.SESSION_UPDATED, code);
     return { user, code };
   }
 
@@ -218,8 +219,8 @@ export class SessionService {
           await this.reEvaluateMatch(sessionCode, itemId, settings, remainingMembers);
         }
       }
-      events.emit(EVENT_TYPES.USER_LEFT, { sessionCode: sessionCode, userName: user.Name, userId });
-      events.emit(EVENT_TYPES.SESSION_UPDATED, sessionCode);
+      await EventService.emit(EVENT_TYPES.USER_LEFT, { sessionCode: sessionCode, userName: user.Name, userId });
+      await EventService.emit(EVENT_TYPES.SESSION_UPDATED, sessionCode);
     }
   }
 
@@ -258,13 +259,13 @@ export class SessionService {
     await db.update(sessions).set(updateData).where(eq(sessions.code, sessionCode));
 
     if (updates.filters !== undefined) {
-      events.emit(EVENT_TYPES.FILTERS_UPDATED, { sessionCode, userId: user.Id, userName: user.Name, filters: updates.filters });
+      await EventService.emit(EVENT_TYPES.FILTERS_UPDATED, { sessionCode, userId: user.Id, userName: user.Name, filters: updates.filters });
     }
     if (updates.settings !== undefined) {
-      events.emit(EVENT_TYPES.SETTINGS_UPDATED, { sessionCode, userId: user.Id, userName: user.Name, settings: updates.settings });
+      await EventService.emit(EVENT_TYPES.SETTINGS_UPDATED, { sessionCode, userId: user.Id, userName: user.Name, settings: updates.settings });
     }
     
-    events.emit(EVENT_TYPES.SESSION_UPDATED, sessionCode);
+    await EventService.emit(EVENT_TYPES.SESSION_UPDATED, sessionCode);
   }
 
   static async addSwipe(user: SessionData["user"], sessionCode: string | null | undefined, itemId: string, direction: "left" | "right", item?: any) {
@@ -340,7 +341,7 @@ export class SessionService {
 
         if (isMatch) {
           await db.update(likes).set({ isMatch: true }).where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId)));
-          events.emit(EVENT_TYPES.MATCH_FOUND, { sessionCode, itemId, swiperId: user.Id, itemName: item?.Name || "a movie" });
+          await EventService.emit(EVENT_TYPES.MATCH_FOUND, { sessionCode, itemId, swiperId: user.Id, itemName: item?.Name || "a movie" });
           
           const allItemLikes = await db.query.likes.findMany({
             where: and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId))
@@ -391,7 +392,7 @@ export class SessionService {
       }
 
       if (sessionCode && !isMatch) {
-        events.emit(EVENT_TYPES.LIKE_UPDATED, { sessionCode, itemId, userId: user.Id });
+        await EventService.emit(EVENT_TYPES.LIKE_UPDATED, { sessionCode, itemId, userId: user.Id });
       }
     } else {
       // If we are hiding something that was previously liked, remove it from likes
@@ -407,7 +408,7 @@ export class SessionService {
           ]);
           const sessionSettings: SessionSettings | null = s?.settings ? JSON.parse(s.settings) : null;
           await this.reEvaluateMatch(sessionCode, itemId, sessionSettings, members, remainingLikes);
-          events.emit(EVENT_TYPES.MATCH_REMOVED, { sessionCode, itemId, userId: user.Id });
+          await EventService.emit(EVENT_TYPES.MATCH_REMOVED, { sessionCode, itemId, userId: user.Id });
         }
       }
 
@@ -458,7 +459,7 @@ export class SessionService {
       const settings: SessionSettings | null = s?.settings ? JSON.parse(s.settings) : null;
       await this.reEvaluateMatch(sessionCode, itemId, settings, members, remainingLikes);
       
-      events.emit(EVENT_TYPES.MATCH_REMOVED, { sessionCode, itemId, userId: user.Id });
+      await EventService.emit(EVENT_TYPES.MATCH_REMOVED, { sessionCode, itemId, userId: user.Id });
     }
 
     await db.delete(hiddens).where(and(eq(hiddens.externalUserId, user.Id), eq(hiddens.externalId, itemId)));

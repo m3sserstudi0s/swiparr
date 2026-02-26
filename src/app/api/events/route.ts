@@ -1,182 +1,124 @@
 import { NextRequest } from "next/server";
-import { events, EVENT_TYPES } from "@/lib/events";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
+import { db } from "@/lib/db";
+import { sessionEvents } from "@/db/schema";
+import { and, eq, gt, or, asc, desc } from "drizzle-orm";
+import { GLOBAL_SESSION_CODE } from "@/lib/services/event-service";
+
+// Allow long-lived SSE connections on Vercel Hobby (max 300s) and similar platforms.
+export const maxDuration = 300;
+
+/** How long (ms) the server-side loop waits between DB polls when idle. */
+const POLL_INTERVAL_MS = 500;
+
+/** How often (ms) a keepalive comment is sent to prevent proxy timeouts. */
+const KEEPALIVE_INTERVAL_MS = 25_000;
 
 export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
+    // Only serve SSE to authenticated users who are in a session.
+    // Unauthenticated or session-less users don't need the stream.
+    if (!session.isLoggedIn || !session.sessionCode) {
+        return new Response(null, { status: 204 });
+    }
+
+    const sessionCode = session.sessionCode;
     const encoder = new TextEncoder();
 
+    // Capture the latest event ID at the moment of connection so we only
+    // deliver events that were created *after* the client connected.
+    const latestRow = await db
+        .select({ id: sessionEvents.id })
+        .from(sessionEvents)
+        .orderBy(desc(sessionEvents.id))
+        .limit(1);
+
+    let lastSeenId: number = latestRow[0]?.id ?? 0;
+
     const stream = new ReadableStream({
-        start(controller) {
-            let closed = false;
-            let keepAlive: any;
+        async start(controller) {
+            // Send an initial comment so the client knows the connection is live.
+            controller.enqueue(encoder.encode(": connected\n\n"));
 
-            const onSessionUpdate = (payload: any) => {
-                const isString = typeof payload === 'string';
-                const sessionCode = isString ? payload : payload.sessionCode;
-                
-                if (!closed && session.sessionCode === sessionCode) {
-                    try {
-                        const data = isString ? { sessionCode } : payload;
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.SESSION_UPDATED}\ndata: ${JSON.stringify(data)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onMatch = (payload: { sessionCode: string; itemId: string }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.MATCH_FOUND}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onMatchRemoved = (payload: { sessionCode: string; itemId: string }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.MATCH_REMOVED}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onFiltersUpdate = (payload: { sessionCode: string; userName: string; filters: any }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.FILTERS_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onSettingsUpdate = (payload: { sessionCode: string; userName: string; settings: any }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.SETTINGS_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onStatsReset = (payload: { sessionCode: string; userName: string }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.STATS_RESET}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onUserJoined = (payload: { sessionCode: string; userName: string }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.USER_JOINED}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onUserLeft = (payload: { sessionCode: string; userName: string }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.USER_LEFT}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onLike = (payload: { sessionCode: string; itemId: string }) => {
-                if (!closed && session.sessionCode === payload.sessionCode) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.LIKE_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const onAdminConfigUpdate = (payload: any) => {
-                if (!closed) {
-                    try {
-                        controller.enqueue(encoder.encode(`event: ${EVENT_TYPES.ADMIN_CONFIG_UPDATED}\ndata: ${JSON.stringify(payload)}\n\n`));
-                    } catch (e) {
-                        cleanup();
-                    }
-                }
-            };
-
-            const cleanup = () => {
-                if (closed) return;
-                closed = true;
-                events.off(EVENT_TYPES.SESSION_UPDATED, onSessionUpdate);
-                events.off(EVENT_TYPES.MATCH_FOUND, onMatch);
-                events.off(EVENT_TYPES.MATCH_REMOVED, onMatchRemoved);
-                events.off(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
-                events.off(EVENT_TYPES.SETTINGS_UPDATED, onSettingsUpdate);
-                events.off(EVENT_TYPES.STATS_RESET, onStatsReset);
-                events.off(EVENT_TYPES.USER_JOINED, onUserJoined);
-                events.off(EVENT_TYPES.USER_LEFT, onUserLeft);
-                events.off(EVENT_TYPES.LIKE_UPDATED, onLike);
-                events.off(EVENT_TYPES.ADMIN_CONFIG_UPDATED, onAdminConfigUpdate);
-                if (keepAlive) clearInterval(keepAlive);
+            // Keepalive ticker — prevents proxies and load-balancers from
+            // closing the connection due to inactivity.
+            const keepAlive = setInterval(() => {
+                if (request.signal.aborted) return;
                 try {
-                    controller.close();
-                } catch (e) {
-                    // Ignore errors if already closed
+                    controller.enqueue(encoder.encode(": keepalive\n\n"));
+                } catch {
+                    clearInterval(keepAlive);
                 }
-            };
+            }, KEEPALIVE_INTERVAL_MS);
 
-            events.on(EVENT_TYPES.SESSION_UPDATED, onSessionUpdate);
-            events.on(EVENT_TYPES.MATCH_FOUND, onMatch);
-            events.on(EVENT_TYPES.MATCH_REMOVED, onMatchRemoved);
-            events.on(EVENT_TYPES.FILTERS_UPDATED, onFiltersUpdate);
-            events.on(EVENT_TYPES.SETTINGS_UPDATED, onSettingsUpdate);
-            events.on(EVENT_TYPES.STATS_RESET, onStatsReset);
-            events.on(EVENT_TYPES.USER_JOINED, onUserJoined);
-            events.on(EVENT_TYPES.USER_LEFT, onUserLeft);
-            events.on(EVENT_TYPES.LIKE_UPDATED, onLike);
-            events.on(EVENT_TYPES.ADMIN_CONFIG_UPDATED, onAdminConfigUpdate);
+            // Main event-delivery loop.
+            // Runs until the client disconnects (abort signal fires).
+            while (!request.signal.aborted) {
+                try {
+                    // Fetch all new events for this session (or global) since
+                    // the last cursor position.
+                    const newEvents = await db
+                        .select()
+                        .from(sessionEvents)
+                        .where(
+                            and(
+                                gt(sessionEvents.id, lastSeenId),
+                                or(
+                                    eq(sessionEvents.sessionCode, sessionCode),
+                                    eq(sessionEvents.sessionCode, GLOBAL_SESSION_CODE)
+                                )
+                            )
+                        )
+                        .orderBy(asc(sessionEvents.id));
 
-            keepAlive = setInterval(() => {
-                if (!closed) {
-                    try {
-                        controller.enqueue(encoder.encode(": keepalive\n\n"));
-                    } catch (e) {
-                        cleanup();
+                    for (const ev of newEvents) {
+                        try {
+                            controller.enqueue(
+                                encoder.encode(
+                                    `event: ${ev.type}\ndata: ${ev.payload}\n\n`
+                                )
+                            );
+                        } catch {
+                            // Stream was closed mid-loop; bail out.
+                            clearInterval(keepAlive);
+                            return;
+                        }
                     }
-                }
-            }, 30000);
 
-            request.signal.addEventListener('abort', cleanup);
-            
-            // In some environments, the stream might be closed without abort signal
-            // This is a fallback to ensure we eventually clean up
-            const checkInterval = setInterval(() => {
-                if (request.signal.aborted) {
-                    cleanup();
-                    clearInterval(checkInterval);
+                    if (newEvents.length > 0) {
+                        lastSeenId = newEvents[newEvents.length - 1].id;
+                    }
+                } catch {
+                    // DB error — log and continue; the loop will retry after
+                    // the sleep below rather than crashing the stream.
                 }
-            }, 60000);
 
+                // Yield to the event loop and wait before the next poll.
+                // This is the only "polling" — it happens server-side and is
+                // invisible to the browser client.
+                await new Promise<void>((resolve) => {
+                    const t = setTimeout(resolve, POLL_INTERVAL_MS);
+                    // If the client disconnects while we're sleeping, wake up
+                    // immediately so we can exit the loop cleanly.
+                    request.signal.addEventListener("abort", () => {
+                        clearTimeout(t);
+                        resolve();
+                    }, { once: true });
+                });
+            }
+
+            clearInterval(keepAlive);
+            try {
+                controller.close();
+            } catch {
+                // Already closed — ignore.
+            }
         },
-        cancel() {
-            // Handled via abort signal and internal state
-        }
     });
 
     return new Response(stream, {
