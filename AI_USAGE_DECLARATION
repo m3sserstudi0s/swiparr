@@ -6,3 +6,13 @@ Agentic AI chatbots have been, and continue to be, used to implement ideas, fix 
 When used, AI is guided by the reviewing human, who is responsible for pulling the trigger to commit changes. No AI has made any commits or opened any pull requests, nor does any AI have a "direct integration" (via an AI SDK or similar) into the codebase. Between the codebase and any AI agent, there is always a human reviewer and tester.
 
 The developers of Swiparr believe in responsible AI usage that benefits both the user and developer experience.
+
+
+Personal note from the creator/initiator of the project (me):
+
+As of writing this, people in the community are getting more and more concerned about "vide coded" apps - especially self-hosting them on their own infra. This is perfectly reasonable, and there have already surfaced instances where these concerns where realized to be useful...
+
+But I must say, that I refuse to let AI-assisted software development be limited by this. There have been numerous counters to this phenomenon already, and here is mine:
+I work as a software developer during daytime - it's my line of work and I know what I am doing when I code. I'm not the best, nor the most experienced, but I know how to write, ensure, test and maintain software. 
+With a master's degree in information systems, graduating with a thesis in generative AI's effect on software - I know what AI is capable, and not capable of, to an extent that I would call sufficient in this matter.
+I hate having to write this out like that (yes, I really do), but until I can prove Swiparr's "innocence" another way, this will have to do.
