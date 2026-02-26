@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { config as appConfig } from "@/lib/config";
 import { 
   MediaProvider, 
@@ -17,7 +16,7 @@ import {
   WatchProvider,
   MediaRegion
 } from "@/types/media";
-import { TmdbSearchResponseSchema, TmdbMovieSchema } from "../schemas";
+import { TmdbSearchResponseSchema, TmdbTvSearchResponseSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 
 /**
@@ -26,7 +25,7 @@ import { logger } from "@/lib/logger";
  * Official Docs: https://developer.themoviedb.org/reference/intro/getting-started
  */
 export class TmdbProvider implements MediaProvider {
-  readonly name = "tmdb";
+  readonly name: string = "tmdb";
   private apiKey: string;
   
   readonly capabilities: ProviderCapabilities = {
@@ -60,137 +59,185 @@ export class TmdbProvider implements MediaProvider {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
-    
+
     const genres = await this.getGenres(auth);
     const genreIdMap = new Map(genres.map(g => [g.Name, g.Id]));
     const genreNameMap = new Map(genres.map(g => [g.Id, g.Name]));
 
+    const mediaType = filters.mediaType ?? "movie";
+    const pageSize = mediaType === "both" ? 40 : 20;
+    const page = filters.offset ? Math.floor(filters.offset / pageSize) + 1 : 1;
+
+    // --- Search ---
     if (filters.searchTerm) {
-        const data = await this.fetchTmdb<any>('search/movie', {
-            query: filters.searchTerm,
-            page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1
-        });
-        const searchRes = TmdbSearchResponseSchema.parse(data);
-        return searchRes.results.map(m => this.mapMovieToMediaItem(m, genreNameMap));
+        const results: MediaItem[] = [];
+        if (mediaType === "movie" || mediaType === "both") {
+            const data = await this.fetchTmdb<any>('search/movie', { query: filters.searchTerm, page });
+            const res = TmdbSearchResponseSchema.parse(data);
+            results.push(...res.results.map(m => this.mapMovieToMediaItem(m, genreNameMap)));
+        }
+        if (mediaType === "tv" || mediaType === "both") {
+            const data = await this.fetchTmdb<any>('search/tv', { query: filters.searchTerm, page });
+            const res = TmdbTvSearchResponseSchema.parse(data);
+            results.push(...res.results.map(s => this.mapTvToMediaItem(s, genreNameMap)));
+        }
+        return results;
     }
 
+    // --- Trending ---
     if (filters.sortBy === "Trending" && (!filters.watchProviders || filters.watchProviders.length === 0)) {
-        const data = await this.fetchTmdb<any>('trending/movie/week', {
-            page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1
-        });
-
-        const searchRes = TmdbSearchResponseSchema.parse(data);
-        const results = searchRes.results.map(m => this.mapMovieToMediaItem(m, genreNameMap));
-        // Client-side filtering for trending as it's a separate endpoint
+        const results: MediaItem[] = [];
+        if (mediaType === "movie" || mediaType === "both") {
+            const data = await this.fetchTmdb<any>('trending/movie/week', { page });
+            const res = TmdbSearchResponseSchema.parse(data);
+            results.push(...res.results.map(m => this.mapMovieToMediaItem(m, genreNameMap)));
+        }
+        if (mediaType === "tv" || mediaType === "both") {
+            const data = await this.fetchTmdb<any>('trending/tv/week', { page });
+            const res = TmdbTvSearchResponseSchema.parse(data);
+            results.push(...res.results.map(s => this.mapTvToMediaItem(s, genreNameMap)));
+        }
         return this.applyTrendingFilters(results, filters);
     }
 
-    // Default to discover
+    // --- Discover ---
     // Docs: https://developer.themoviedb.org/reference/discover-movie-get
-    const discoverParams: Record<string, any> = {
-        page: filters.offset ? Math.floor(filters.offset / 20) + 1 : 1,
-        with_genres: filters.genres?.map(name => genreIdMap.get(name)).filter(Boolean).join(','),
-        sort_by: filters.sortBy === "Popular" ? "popularity.desc" : 
-                 filters.sortBy === "Top Rated" ? "vote_average.desc" : 
-                 filters.sortBy === "Newest" ? "primary_release_date.desc" : "popularity.desc"
+    const buildDiscoverParams = (type: "movie" | "tv"): Record<string, any> => {
+        const sortBy = filters.sortBy === "Popular" ? "popularity.desc" :
+                       filters.sortBy === "Top Rated" ? "vote_average.desc" :
+                       filters.sortBy === "Newest" ? (type === "movie" ? "primary_release_date.desc" : "first_air_date.desc") :
+                       "popularity.desc";
+        const params: Record<string, any> = {
+            page,
+            with_genres: filters.genres?.map(name => genreIdMap.get(name)).filter(Boolean).join(','),
+            sort_by: sortBy,
+        };
+
+        if (filters.watchProviders && filters.watchProviders.length > 0) {
+            params.with_watch_providers = filters.watchProviders.join('|');
+            params.watch_region = filters.watchRegion || auth?.watchRegion || 'US';
+            params.with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
+        }
+
+        if (filters.years && filters.years.length > 0) {
+            const minYear = Math.min(...filters.years);
+            const maxYear = Math.max(...filters.years);
+            if (type === "movie") {
+                if (minYear === maxYear) {
+                    params.primary_release_year = minYear;
+                } else {
+                    params['primary_release_date.gte'] = `${minYear}-01-01`;
+                    params['primary_release_date.lte'] = `${maxYear}-12-31`;
+                }
+            } else {
+                params['first_air_date.gte'] = `${minYear}-01-01`;
+                params['first_air_date.lte'] = `${maxYear}-12-31`;
+            }
+        }
+
+        if (filters.minCommunityRating && filters.minCommunityRating > 0) {
+            params['vote_average.gte'] = filters.minCommunityRating;
+        }
+
+        if (filters.runtimeRange) {
+            const [min, max] = filters.runtimeRange;
+            if (min > 0) params['with_runtime.gte'] = min;
+            if (max < 240) params['with_runtime.lte'] = max;
+        }
+
+        if (filters.languages && filters.languages.length > 0) {
+            params.with_original_language = filters.languages.join('|');
+            logger.debug("[TMDBProvider.getItems] Applying language filter:", { languages: filters.languages });
+        }
+
+        return params;
     };
 
+    // Keywords (themes) — movies only, TV keyword search works differently
+    let keywordIds: number[] = [];
     if (filters.themes && filters.themes.length > 0) {
         const themeKeywords = await Promise.all(filters.themes.map(async (theme) => {
             const searchData = await this.fetchTmdb<any>('search/keyword', { query: theme });
             return searchData.results?.[0]?.id;
         }));
-        const keywordIds = themeKeywords.filter(Boolean);
-        if (keywordIds.length > 0) {
-            discoverParams.with_keywords = keywordIds.join('|');
+        keywordIds = themeKeywords.filter(Boolean);
+    }
+
+    // Rating/certification — movies only (TMDB TV certifications are structured differently)
+    const regionMapping: Record<string, string> = {
+        'US': 'US', 'UK': 'GB', 'DE': 'DE', 'FR': 'FR', 'SE': 'SE',
+        'AU': 'AU', 'CA': 'CA', 'ES': 'ES', 'IT': 'IT', 'JP': 'JP',
+        'NL': 'NL', 'NO': 'NO', 'NZ': 'NZ', 'RU': 'RU',
+    };
+
+    const movieResults: MediaItem[] = [];
+    const tvResults: MediaItem[] = [];
+
+    if (mediaType === "movie" || mediaType === "both") {
+        const movieParams = buildDiscoverParams("movie");
+        if (keywordIds.length > 0) movieParams.with_keywords = keywordIds.join('|');
+        if (filters.ratings && filters.ratings.length > 0) {
+            const region = filters.watchRegion || auth?.watchRegion || 'US';
+            movieParams.certification_country = regionMapping[region] || 'US';
+            movieParams.certification = filters.ratings.join('|');
+            logger.debug("[TMDBProvider.getItems] Applying certification filter:", { region, ratings: filters.ratings });
         }
-    }
-
-    if (filters.watchProviders && filters.watchProviders.length > 0) {
-        discoverParams.with_watch_providers = filters.watchProviders.join('|');
-        discoverParams.watch_region = filters.watchRegion || auth?.watchRegion || 'US';
-        discoverParams.with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
-    }
-
-    if (filters.years && filters.years.length > 0) {
-        const minYear = Math.min(...filters.years);
-        const maxYear = Math.max(...filters.years);
-        if (minYear === maxYear) {
-            discoverParams.primary_release_year = minYear;
-        } else {
-            discoverParams['primary_release_date.gte'] = `${minYear}-01-01`;
-            discoverParams['primary_release_date.lte'] = `${maxYear}-12-31`;
+        if (filters.sortBy === "Random") {
+            try {
+                const initialRes = await this.fetchTmdb<any>('discover/movie', { ...movieParams, page: 1 });
+                movieParams.page = Math.floor(Math.random() * Math.min(initialRes.total_pages, 500)) + 1;
+            } catch {
+                movieParams.page = Math.floor(Math.random() * 20) + 1;
+            }
         }
+        const data = await this.fetchTmdb<any>('discover/movie', movieParams);
+        const res = TmdbSearchResponseSchema.parse(data);
+        movieResults.push(...res.results.map(m => {
+            const item = this.mapMovieToMediaItem(m, genreNameMap);
+            if (filters.ratings && filters.ratings.length === 1) item.OfficialRating = filters.ratings[0];
+            return item;
+        }));
     }
 
-    if (filters.minCommunityRating && filters.minCommunityRating > 0) {
-        discoverParams['vote_average.gte'] = filters.minCommunityRating;
-    }
-
-    if (filters.runtimeRange) {
-        const [min, max] = filters.runtimeRange;
-        if (min > 0) discoverParams['with_runtime.gte'] = min;
-        if (max < 240) discoverParams['with_runtime.lte'] = max;
-    }
-
-    if (filters.ratings && filters.ratings.length > 0) {
-        // Map region codes to TMDB certification country codes
-        const regionMapping: Record<string, string> = {
-            'US': 'US',
-            'UK': 'GB',
-            'DE': 'DE',
-            'FR': 'FR',
-            'SE': 'SE',
-            'AU': 'AU',
-            'CA': 'CA',
-            'ES': 'ES',
-            'IT': 'IT',
-            'JP': 'JP',
-            'NL': 'NL',
-            'NO': 'NO',
-            'NZ': 'NZ',
-            'RU': 'RU',
-        };
-        const region = filters.watchRegion || auth?.watchRegion || 'US';
-        const certCountry = regionMapping[region] || 'US';
-        discoverParams.certification_country = certCountry;
-        discoverParams.certification = filters.ratings.join('|');
-        logger.debug("[TMDBProvider.getItems] Applying certification filter:", { certCountry, ratings: filters.ratings });
-    }
-
-    if (filters.languages && filters.languages.length > 0) {
-        // TMDB uses ISO 639-1 codes for with_original_language
-        // If only one language selected, use it directly
-        // If multiple, use pipe separator for OR logic
-        discoverParams.with_original_language = filters.languages.join('|');
-        logger.debug("[TMDBProvider.getItems] Applying language filter:", { languages: filters.languages });
-    }
-
-    if (filters.sortBy === "Random") {
-        try {
-            const initialRes = await this.fetchTmdb<any>('discover/movie', { ...discoverParams, page: 1 });
-            const totalPages = Math.min(initialRes.total_pages, 500);
-            discoverParams.page = Math.floor(Math.random() * totalPages) + 1;
-        } catch (e) {
-            discoverParams.page = Math.floor(Math.random() * 20) + 1;
+    if (mediaType === "tv" || mediaType === "both") {
+        const tvParams = buildDiscoverParams("tv");
+        if (filters.sortBy === "Random") {
+            try {
+                const initialRes = await this.fetchTmdb<any>('discover/tv', { ...tvParams, page: 1 });
+                tvParams.page = Math.floor(Math.random() * Math.min(initialRes.total_pages, 500)) + 1;
+            } catch {
+                tvParams.page = Math.floor(Math.random() * 20) + 1;
+            }
         }
+        const data = await this.fetchTmdb<any>('discover/tv', tvParams);
+        const res = TmdbTvSearchResponseSchema.parse(data);
+        tvResults.push(...res.results.map(s => this.mapTvToMediaItem(s, genreNameMap)));
     }
 
-    const data = await this.fetchTmdb<any>('discover/movie', discoverParams);
-    const discoverRes = TmdbSearchResponseSchema.parse(data);
-    
-    return discoverRes.results.map(m => {
-        const item = this.mapMovieToMediaItem(m, genreNameMap);
-        if (filters.ratings && filters.ratings.length === 1) {
-            item.OfficialRating = filters.ratings[0];
+    // Interleave movies and TV shows so both appear throughout the deck
+    if (movieResults.length > 0 && tvResults.length > 0) {
+        const interleaved: MediaItem[] = [];
+        const len = Math.max(movieResults.length, tvResults.length);
+        for (let i = 0; i < len; i++) {
+            if (i < movieResults.length) interleaved.push(movieResults[i]);
+            if (i < tvResults.length) interleaved.push(tvResults[i]);
         }
-        return item;
-    });
+        return interleaved;
+    }
+
+    return [...movieResults, ...tvResults];
   }
 
   async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
+    }
+    if (id.startsWith('tv-')) {
+        const tmdbId = id.slice(3);
+        const show = await this.fetchTmdb<any>(`tv/${tmdbId}`, {
+            append_to_response: 'credits,images,watch/providers,content_ratings'
+        });
+        return this.mapTvDetailsToMediaItem(show, auth?.watchRegion);
     }
     const movie = await this.fetchTmdb<any>(`movie/${id}`, {
         append_to_response: 'credits,images,watch/providers,release_dates'
@@ -202,8 +249,19 @@ export class TmdbProvider implements MediaProvider {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
-    const data = await this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/movie/list');
-    return data.genres.map(g => ({ Id: g.id.toString(), Name: g.name }));
+    const [movieData, tvData] = await Promise.all([
+        this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/movie/list'),
+        this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/tv/list'),
+    ]);
+    const seen = new Set<string>();
+    const merged: MediaGenre[] = [];
+    for (const g of [...movieData.genres, ...tvData.genres]) {
+        if (!seen.has(g.name)) {
+            seen.add(g.name);
+            merged.push({ Id: g.id.toString(), Name: g.name });
+        }
+    }
+    return merged;
   }
 
   async getThemes(auth?: AuthContext): Promise<string[]> {
@@ -238,12 +296,23 @@ export class TmdbProvider implements MediaProvider {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
-    const data = await this.fetchTmdb<any>('watch/providers/movie', { watch_region: region });
-    return data.results.map((p: any) => ({
-      Id: p.provider_id.toString(),
-      Name: p.provider_name,
-      LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`,
-    }));
+    const [movieData, tvData] = await Promise.all([
+        this.fetchTmdb<any>('watch/providers/movie', { watch_region: region }),
+        this.fetchTmdb<any>('watch/providers/tv', { watch_region: region }),
+    ]);
+    const seen = new Set<number>();
+    const providers: WatchProvider[] = [];
+    for (const p of [...movieData.results, ...tvData.results]) {
+        if (!seen.has(p.provider_id)) {
+            seen.add(p.provider_id);
+            providers.push({
+                Id: p.provider_id.toString(),
+                Name: p.provider_name,
+                LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`,
+            });
+        }
+    }
+    return providers;
   }
 
   async getRegions(auth?: AuthContext): Promise<MediaRegion[]> {
@@ -297,7 +366,7 @@ export class TmdbProvider implements MediaProvider {
 
   async authenticate(username: string, password?: string, deviceId?: string, tmdbToken?: string): Promise<any> {
     return {
-        id: `tmdb-${uuidv4()}`,
+        id: `tmdb-${username.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
         name: username,
         accessToken: null,
         tmdbToken: tmdbToken,
@@ -364,6 +433,61 @@ export class TmdbProvider implements MediaProvider {
       BackdropImageTags: movie.backdrop_path ? [movie.backdrop_path] : [],
       People: people,
       WatchProviders: this.mapWatchProviders(movie['watch/providers']?.results, region),
+    };
+  }
+
+  private mapTvToMediaItem(show: any, genreMap?: Map<string, string>): MediaItem {
+    return {
+      Id: `tv-${show.id}`,
+      Name: show.name,
+      Overview: show.overview,
+      ProductionYear: show.first_air_date ? new Date(show.first_air_date).getFullYear() : undefined,
+      CommunityRating: show.vote_average,
+      ImageTags: {
+        Primary: show.poster_path,
+        Backdrop: show.backdrop_path,
+      },
+      Genres: show.genre_ids?.map((id: number) => genreMap?.get(id.toString())).filter(Boolean) || [],
+    };
+  }
+
+  private mapTvDetailsToMediaItem(show: any, region?: string): MediaItem {
+    const people = [
+        ...(show.credits?.cast?.slice(0, 10).map((p: any) => ({
+            Id: p.id.toString(),
+            Name: p.name,
+            Role: p.character,
+            Type: "Actor",
+            PrimaryImageTag: p.profile_path,
+        })) || []),
+        ...(show.credits?.crew?.filter((p: any) => p.job === "Executive Producer" || p.job === "Creator").map((p: any) => ({
+            Id: p.id.toString(),
+            Name: p.name,
+            Role: p.job,
+            Type: "Director",
+            PrimaryImageTag: p.profile_path,
+        })) || []),
+    ];
+
+    const runtime = show.episode_run_time?.[0];
+
+    return {
+      Id: `tv-${show.id}`,
+      Name: show.name,
+      OriginalTitle: show.original_name,
+      Overview: show.overview,
+      ProductionYear: show.first_air_date ? new Date(show.first_air_date).getFullYear() : undefined,
+      CommunityRating: show.vote_average,
+      RunTimeTicks: runtime ? runtime * 60 * 10000000 : undefined,
+      Taglines: show.tagline ? [show.tagline] : [],
+      Genres: show.genres?.map((g: any) => g.name),
+      ImageTags: {
+        Primary: show.poster_path,
+        Backdrop: show.backdrop_path,
+      },
+      BackdropImageTags: show.backdrop_path ? [show.backdrop_path] : [],
+      People: people,
+      WatchProviders: this.mapWatchProviders(show['watch/providers']?.results, region),
     };
   }
 

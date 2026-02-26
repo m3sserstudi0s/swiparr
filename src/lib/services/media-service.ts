@@ -84,7 +84,7 @@ export class MediaService {
     let watchProviders = sessionFilters?.watchProviders;
     let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || "SE";
 
-    if (session.sessionCode && activeProviderName === "tmdb") {
+    if (session.sessionCode && (activeProviderName === "tmdb" || activeProviderName === "streaming")) {
       const accumulated = new Set<string>();
       const sessionMembersList = await db.query.sessionMembers.findMany({
         where: eq(sessionMembers.sessionCode, session.sessionCode)
@@ -133,10 +133,11 @@ export class MediaService {
       runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
-      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
+      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' || auth.provider === 'streaming' ? "Popular" : "Trending"),
       themes: sessionFilters?.themes,
       languages: sessionFilters?.languages,
       unplayedOnly: sessionFilters?.unplayedOnly,
+      mediaType: sessionFilters?.mediaType,
       limit: limit * 2, // Fetch a bit more to account for exclusions
       offset: effectiveOffset,
     }, auth);
@@ -152,7 +153,7 @@ export class MediaService {
 
     return {
       items: slicedItems,
-      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' ? 20 : limit * 2)
+      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' || auth.provider === 'streaming' ? 20 : limit * 2)
     };
   }
 
@@ -178,10 +179,11 @@ export class MediaService {
       runtimeRange: sessionFilters?.runtimeRange,
       watchProviders,
       watchRegion,
-      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' ? "Popular" : "Trending"),
+      sortBy: sessionFilters?.sortBy || (auth.provider === 'tmdb' || auth.provider === 'streaming' ? "Popular" : "Trending"),
       themes: sessionFilters?.themes,
       languages: sessionFilters?.languages,
       unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
+      mediaType: sessionFilters?.mediaType,
       limit: fetchLimit,
       offset: effectiveOffset
     }, auth);
@@ -197,7 +199,7 @@ export class MediaService {
 
     return {
       items: slicedItems,
-      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' ? 20 : fetchLimit)
+      hasMore: fetchedItems.length >= (auth.provider === 'tmdb' || auth.provider === 'streaming' ? 20 : fetchLimit)
     };
   }
 
@@ -282,7 +284,7 @@ export class MediaService {
     const provider = getMediaProvider(auth.provider);
     const activeProvider = auth.provider || session.user.provider || ProviderType.JELLYFIN;
 
-    if (activeProvider !== "tmdb") {
+    if (activeProvider !== "tmdb" && activeProvider !== "streaming") {
       return { providers: [] };
     }
 

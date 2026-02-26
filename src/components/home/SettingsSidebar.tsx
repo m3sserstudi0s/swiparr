@@ -15,6 +15,7 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 import { Button } from "../ui/button";
 import { useState, Suspense, lazy } from "react";
 import { UserGuide } from "./UserGuide";
+import { Changelog } from "./Changelog";
 import {
     Dialog,
     DialogContent,
@@ -41,6 +42,7 @@ export function SettingsSidebar() {
     const router = useRouter();
     const [showClearDialog, setShowClearDialog] = useState(false);
     const [showUserGuide, setShowUserGuide] = useState(false);
+    const [showChangelog, setShowChangelog] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
     const [open, setOpen] = useState(false);
 
@@ -106,6 +108,9 @@ export function SettingsSidebar() {
                             <AboutSettings onShowUserGuide={() => {
                                 setShowUserGuide(true);
                                 setOpen(false);
+                            }} onShowChangelog={() => {
+                                setShowChangelog(true);
+                                setOpen(false);
                             }} />
                             <DangerZone
                                 onClearData={() => setShowClearDialog(true)}
@@ -119,6 +124,7 @@ export function SettingsSidebar() {
             </Sheet>
 
             <UserGuide open={showUserGuide} onOpenChange={setShowUserGuide} />
+            <Changelog open={showChangelog} onOpenChange={setShowChangelog} />
 
             <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
                 <DialogContent>

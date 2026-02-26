@@ -11,9 +11,10 @@ import { useVersion } from "@/hooks/api";
 
 interface AboutSettingsProps {
     onShowUserGuide: () => void;
+    onShowChangelog: () => void;
 }
 
-export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
+export function AboutSettings({ onShowUserGuide, onShowChangelog }: AboutSettingsProps) {
     const { version: currentVersion } = useRuntimeConfig();
     const { data: versionData, error: versionError, isFetching: isCheckingVersion, refetch } = useVersion();
 
@@ -71,8 +72,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                 <Button
                     variant="outline"
                     className="w-full justify-between font-normal h-12 px-3 py-7"
-                    onClick={handleCheckUpdate}
-                    disabled={isCheckingVersion}
+                    onClick={onShowChangelog}
                 >
                     <div className="flex flex-row items-center justify-between w-full">
                         <div className="flex items-center gap-3">

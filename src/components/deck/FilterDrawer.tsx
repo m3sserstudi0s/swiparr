@@ -44,6 +44,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const [yearRange, setYearRange] = useState<[number, number]>([1900, new Date().getFullYear()]);
   const [runtimeRange, setRuntimeRange] = useState<[number, number]>([0, 240]);
   const [minRating, setMinRating] = useState<number>(0);
+  const [mediaType, setMediaType] = useState<"movie" | "tv" | "both">("both");
 
   const { data: session } = useSession();
   const defaultSort = session?.provider === 'tmdb' ? "Popular" : "Trending"; // Popular works better with TMDB
@@ -94,6 +95,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
+      setMediaType(currentFilters?.mediaType || "both");
     }
   }, [open, currentFilters, availableWatchProviders, minYearLimit, maxYearLimit, defaultSort]);
 
@@ -120,7 +122,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       unplayedOnly: f.unplayedOnly ?? true,
       yearRange: isYearDefault ? undefined : f.yearRange,
       runtimeRange: isRuntimeDefault ? undefined : f.runtimeRange,
-      minCommunityRating: (f.minCommunityRating && f.minCommunityRating > 0) ? f.minCommunityRating : undefined
+      minCommunityRating: (f.minCommunityRating && f.minCommunityRating > 0) ? f.minCommunityRating : undefined,
+      mediaType: f.mediaType,
     };
   };
 
@@ -135,7 +138,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       unplayedOnly: unplayedOnly,
       yearRange: yearRange,
       runtimeRange: runtimeRange,
-      minCommunityRating: minRating
+      minCommunityRating: minRating,
+      mediaType: mediaType,
     });
   };
 
@@ -168,6 +172,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setYearRange([minYearLimit, maxYearLimit]);
     setRuntimeRange([0, 240]);
     setMinRating(0);
+    setMediaType("both");
   };
 
   const isSession = !!session?.code;
@@ -206,6 +211,25 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               </div>
             ) : (
               <>
+                {/* Media Type Section */}
+                {capabilities.hasStreamingSettings && (
+                  <div className="space-y-4">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Content Type</Label>
+                    <div className="flex gap-2">
+                      {(["both", "movie", "tv"] as const).map((type) => (
+                        <Badge
+                          key={type}
+                          variant={mediaType === type ? "default" : "outline"}
+                          className="cursor-pointer text-sm py-1.5 px-4 rounded-full transition-colors"
+                          onClick={() => setMediaType(type)}
+                        >
+                          {type === "both" ? "Movies & TV" : type === "movie" ? "Movies" : "TV Shows"}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Sort Section */}
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">

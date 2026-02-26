@@ -12,7 +12,8 @@ export enum ProviderType {
   JELLYFIN = 'jellyfin',
   TMDB = 'tmdb',
   PLEX = 'plex',
-  EMBY = 'emby'
+  EMBY = 'emby',
+  STREAMING = 'streaming'
 }
 
 export interface ProviderCapabilities {
@@ -72,6 +73,17 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     hasStreamingSettings: true,
     isAdminPanel: false,
   },
+  [ProviderType.STREAMING]: {
+    hasAuth: false,
+    hasQuickConnect: false,
+    hasWatchlist: false,
+    hasLibraries: false,
+    hasSettings: false,
+    requiresServerUrl: false,
+    isExperimental: false,
+    hasStreamingSettings: true,
+    isAdminPanel: false,
+  },
 };
 
 
@@ -91,6 +103,7 @@ export interface SearchFilters {
   languages?: string[];
   limit?: number;
   offset?: number;
+  mediaType?: "movie" | "tv" | "both";
 }
 
 export interface MediaProvider {

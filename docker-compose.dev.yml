@@ -1,0 +1,13 @@
+services:
+  swiparr-dev:
+    image: node:24-alpine
+    container_name: swiparr-dev
+    working_dir: /app
+    command: sh -c "apk add --no-cache libc6-compat && npm install && npm run db:migrate && npx next dev -p 4322"
+    env_file: .env.dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./dev-data:/app/data
+    ports:
+      - "4322:4322"

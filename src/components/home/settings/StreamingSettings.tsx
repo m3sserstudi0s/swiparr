@@ -53,27 +53,31 @@ export function StreamingSettings() {
     const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || "SE", null, true);
     const availableProviders = useMemo(() => watchProvidersData?.providers || [], [watchProvidersData]);
 
+    // Step 1: once settings + regions are loaded, set the region and saved provider list
     useEffect(() => {
         if (settings && regions.length > 0 && !hasInitialized) {
             const regionCode = settings.watchRegion || "SE";
             const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === "SE") || regions[0];
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedRegion(region);
-
-            if (settings.isNew) {
-                setSelectedProviders(availableProviders.map((p: WatchProvider) => p.Id));
-            } else {
-                setSelectedProviders(settings.watchProviders || []);
-            }
+            setSelectedProviders(settings.isNew ? [] : (settings.watchProviders || []));
             setHasInitialized(true);
         }
-    }, [settings, regions, availableProviders, hasInitialized]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [settings, regions, hasInitialized]);
 
+    // Step 2: once the provider list for the current region has loaded, reconcile selections.
+    // Uses watchProvidersData (not availableProviders) as the trigger so we know the fetch
+    // corresponds to the currently selected region.
     useEffect(() => {
-        if (selectedRegion && availableProviders.length > 0 && hasInitialized) {
-            setSelectedProviders(prev => prev.filter(pId => availableProviders.some(p => p.Id === pId)));
-        }
-    }, [selectedRegion, availableProviders, hasInitialized]);
+        if (!hasInitialized || !watchProvidersData || availableProviders.length === 0) return;
+        setSelectedProviders(prev => {
+            const filtered = prev.filter(pId => availableProviders.some(p => p.Id === pId));
+            // New user or region change with no carry-over → select all providers
+            return filtered.length > 0 ? filtered : availableProviders.map((p: WatchProvider) => p.Id);
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [watchProvidersData]);
 
     const toggleProvider = (id: string) => {
         setSelectedProviders(prev =>
@@ -119,9 +123,7 @@ export function StreamingSettings() {
     }
 
     const handleSaveSelectedRegion = (region: MediaRegion | null) => {
-        console.log("Selected region:", region);
         setSelectedRegion(region);
-        saveSettings(region);
     }
 
     return (

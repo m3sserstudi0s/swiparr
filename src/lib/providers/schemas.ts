@@ -25,6 +25,27 @@ export const TmdbSearchResponseSchema = z.object({
   total_results: z.number(),
 });
 
+export const TmdbTvShowSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  original_name: z.string().optional(),
+  overview: z.string().optional(),
+  first_air_date: z.string().optional(),
+  vote_average: z.number().optional(),
+  poster_path: z.string().nullable(),
+  backdrop_path: z.string().nullable(),
+  genre_ids: z.array(z.number()).optional(),
+  episode_run_time: z.array(z.number()).optional(),
+  tagline: z.string().optional(),
+});
+
+export const TmdbTvSearchResponseSchema = z.object({
+  page: z.number(),
+  results: z.array(TmdbTvShowSchema),
+  total_pages: z.number(),
+  total_results: z.number(),
+});
+
 /**
  * Jellyfin / Emby API Schemas
  * Jellyfin Docs: https://api.jellyfin.org/

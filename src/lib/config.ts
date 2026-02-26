@@ -12,7 +12,7 @@ const envSchema = z.object({
   TURSO_AUTH_TOKEN: z.string().optional(),
 
   // Provider
-  PROVIDER: z.enum(['jellyfin', 'tmdb', 'plex', 'emby']).default('jellyfin'),
+  PROVIDER: z.enum(['jellyfin', 'tmdb', 'plex', 'emby', 'streaming']).default('jellyfin'),
   PROVIDER_LOCK: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
 
   // Server URLs

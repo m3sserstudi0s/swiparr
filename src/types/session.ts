@@ -10,6 +10,7 @@ export interface Filters {
   themes?: string[];
   languages?: string[];
   unplayedOnly?: boolean;
+  mediaType?: "movie" | "tv" | "both";
 }
 
 export interface SessionSettings {
