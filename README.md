@@ -183,6 +183,9 @@ HOSTNAME=0.0.0.0                          # Bind address
 DATABASE_URL=file:/app/data/swiparr.db    # SQLite path or Turso URL
 DATABASE_AUTH_TOKEN=your-token            # Required for Turso/Remote DB
 
+# Base path (build-time only — see Custom Base Path section)
+# URL_BASE_PATH=/swipe
+
 # Admin
 ADMIN_USERNAME=your-username                      # Global auto-grant admin privileges
 JELLYFIN_ADMIN_USERNAME=jelly-admin               # Provider-specific admin (overrides global)
@@ -227,7 +230,7 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
 | `APP_PUBLIC_URL` | ❌ | `swiparr.com` | The public domain where the app is hosted |
-| `URL_BASE_PATH` | ❌ | - | Base path if running behind a subpath (e.g. `/swiparr`) |
+| `URL_BASE_PATH` | ❌ | - | Base path for subpath deployments (e.g. `/swipe`). **Must be set at image build time** — see [Custom Base Path](#custom-base-path). |
 | `ADMIN_USERNAME` | ❌ | - | Global admin username (overrides provider-specific) [^2] |
 | `JELLYFIN_ADMIN_USERNAME` | ❌ | - | Jellyfin-specific admin username [^2] |
 | `EMBY_ADMIN_USERNAME` | ❌ | - | Emby-specific admin username [^2] |
@@ -425,7 +428,76 @@ All support, questions, and discussions happen in GitHub Discussions:
 
 ## 🐳 Docker Advanced Topics
 
-### Reverse Proxy Configuration
+### Custom Base Path
+
+If you want to serve Swiparr under a subpath — e.g. `https://jellyfin.example.com/swipe/` — you need to set `URL_BASE_PATH` **at image build time**, not as a runtime environment variable.
+
+**Why?** Next.js bakes asset URLs (`/_next/static/...`) into the compiled output at build time. Setting a base path only at runtime can fix page routing but leaves all JS/CSS/image references pointing at the wrong path, breaking the app. The prefix must be known before the build.
+
+> **The prebuilt image from `ghcr.io` does not support `URL_BASE_PATH`** — it is built without a base path. You must build your own image.
+
+#### Step 1 — Clone and build with your base path
+
+```bash
+git clone https://github.com/m3sserstudi0s/swiparr.git
+cd swiparr
+docker build --build-arg URL_BASE_PATH=/swipe -t swiparr-custom .
+```
+
+#### Step 2 — Use your custom image in compose
+
+```yaml
+services:
+  swiparr:
+    image: swiparr-custom          # your locally built image
+    container_name: swiparr
+    restart: unless-stopped
+    environment:
+      - JELLYFIN_URL=http://jellyfin:8096
+      - URL_BASE_PATH=/swipe       # must match the --build-arg value exactly
+    volumes:
+      - ./swiparr-data:/app/data
+    ports:
+      - 4321:4321
+```
+
+> `URL_BASE_PATH` must also be passed as a runtime environment variable so the app generates correct internal links and auth redirects. It must match the `--build-arg` value exactly.
+
+#### Step 3 — Configure your reverse proxy
+
+Forward requests for the subpath to the container. The app handles stripping the prefix internally — **do not strip it in the proxy**.
+
+**Nginx:**
+
+```nginx
+location /swipe {
+    proxy_pass http://swiparr:4321;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+**Traefik (Docker labels):**
+
+```yaml
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.swiparr.rule=Host(`jellyfin.example.com`) && PathPrefix(`/swipe`)"
+  - "traefik.http.routers.swiparr.tls=true"
+```
+
+**Caddy:**
+
+```caddy
+handle /swipe* {
+    reverse_proxy swiparr:4321
+}
+```
+
+---
+
+### Reverse Proxy Configuration (root path)
 
 **Nginx Example:**
 
@@ -439,7 +511,7 @@ location / {
 ```
 
 **Required Headers:**
-- `Host` - Required for Next.js 15+ authentication
+- `Host` - Required for authentication
 - `X-Forwarded-For` - Client IP for logging
 - `X-Forwarded-Proto` - Protocol detection
 
