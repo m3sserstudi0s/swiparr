@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/7803607a-e4e7-4824-81a3-8e2df132fc03" alt="Swiparr" width="200" />
+  <img src="https://github.com/user-attachments/assets/7803607a-e4e7-4824-81a3-8e2df132fc03" alt="Swiparr" width="300" />
 </p>
 
 <h1 align="center">Swiparr 🍿</h1>
