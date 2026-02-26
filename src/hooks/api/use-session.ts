@@ -19,10 +19,9 @@ export function useSession(options: { enabled?: boolean } = {}) {
       }
     },
     staleTime: 1000 * 30, // 30 seconds stale time is better for reactive UI
-    refetchInterval: (query) => {
-      // Poll more frequently if we are in a session to catch filter/settings updates from other users
-      return query.state.data?.code ? 5000 : false;
-    },
+    // Polling removed: session updates are now delivered via SSE (see /api/events)
+    // which works reliably across both single-process (Docker) and multi-instance
+    // (Vercel/serverless) deployments via the DB-backed event cursor.
     ...options
   });
 }

@@ -3,7 +3,8 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { events, EVENT_TYPES } from "@/lib/events";
+import { EventService } from "@/lib/services/event-service";
+import { EVENT_TYPES } from "@/lib/events";
 import { revalidateTag } from "next/cache";
 import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
@@ -44,7 +45,7 @@ export async function PATCH(request: NextRequest) {
         
         revalidateTag(tagProvider(ProviderType.JELLYFIN, "libraries"), "default");
 
-        events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
+        await EventService.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
             type: 'libraries',
             userId: session.user.Id
         });
