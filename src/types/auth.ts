@@ -11,6 +11,7 @@ export interface UserSession {
   provider?: string;
   providerConfig?: {
     serverUrl?: string;
+    machineId?: string;
     tmdbToken?: string;
   };
 }
@@ -21,8 +22,10 @@ export interface SessionData {
   isLoggedIn: boolean;
   soloFilters?: Filters;
   tempDeviceId?: string;
+  tempPinId?: number;
   providerConfig?: {
     serverUrl?: string;
+    machineId?: string;
     tmdbToken?: string;
   };
 }

@@ -6,6 +6,7 @@ import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { handleApiError } from "@/lib/api-utils";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Guests cannot modify watchlist/favorites" }, { status: 403 });
   }
 
-  const { itemId, action, useWatchlist } = await request.json();
+    const { itemId, action, useWatchlist } = await request.json();
 
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
 
@@ -24,9 +25,11 @@ export async function POST(request: NextRequest) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
 
-    if (useWatchlist && provider.toggleWatchlist) {
+    const effectiveUseWatchlist = auth.provider === ProviderType.PLEX ? true : useWatchlist;
+
+    if (effectiveUseWatchlist && provider.toggleWatchlist) {
       await provider.toggleWatchlist(itemId, action, auth);
-    } else if (!useWatchlist && provider.toggleFavorite) {
+    } else if (!effectiveUseWatchlist && provider.toggleFavorite) {
       await provider.toggleFavorite(itemId, action, auth);
     } else {
       return NextResponse.json({ error: "Operation not supported by this provider" }, { status: 400 });

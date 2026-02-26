@@ -6,6 +6,7 @@ import { SessionSettings, Filters, SessionData } from "@/types";
 import { ProviderType } from "@/lib/providers/types";
 import { ConfigService } from "./config-service";
 import { logger } from "@/lib/logger";
+import { encryptValue, getGuestLendingSecret } from "@/lib/security/crypto";
 
 export class SessionService {
   private static generateCode(): string {
@@ -17,18 +18,33 @@ export class SessionService {
     return result;
   }
 
+  private static generateRandomSeed(): string {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < 32; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
   static async createSession(user: SessionData["user"], allowGuestLending: boolean) {
     const code = this.generateCode();
     logger.info(`Creating session ${code} for user ${user.Name} (${user.Id})`);
+    const hasAccessToken = !!user.AccessToken;
+    const shouldEncrypt = allowGuestLending && hasAccessToken;
+    const encryptionSecret = shouldEncrypt ? await getGuestLendingSecret() : null;
+    const encryptedAccessToken = shouldEncrypt ? encryptValue(user.AccessToken!, encryptionSecret!) : null;
+    const encryptedDeviceId = shouldEncrypt ? encryptValue(user.DeviceId || "", encryptionSecret!) : null;
     
     await db.insert(sessions).values({
       id: uuidv4(),
       code,
       hostUserId: user.Id,
-      hostAccessToken: allowGuestLending ? user.AccessToken : null,
-      hostDeviceId: allowGuestLending ? user.DeviceId : null,
+      hostAccessToken: shouldEncrypt ? encryptedAccessToken : null,
+      hostDeviceId: shouldEncrypt ? encryptedDeviceId : null,
       provider: user.provider,
       providerConfig: user.providerConfig ? JSON.stringify(user.providerConfig) : null,
+      randomSeed: this.generateRandomSeed(),
     });
 
     const settings = await ConfigService.getUserSettings(user.Id);
@@ -98,7 +114,8 @@ export class SessionService {
         hostUserId: hostId,
         hostAccessToken: null,
         hostDeviceId: "guest-device",
-        provider: "tmdb",
+        provider: ProviderType.TMDB,
+        randomSeed: this.generateRandomSeed(),
       });
 
       const user = {
@@ -107,7 +124,7 @@ export class SessionService {
         AccessToken: "",
         DeviceId: "guest-device",
         isGuest: false,
-        provider: "tmdb" as ProviderType,
+        provider: ProviderType.TMDB,
       };
 
       await db.insert(sessionMembers).values({
@@ -143,7 +160,7 @@ export class SessionService {
       AccessToken: "",
       DeviceId: "guest-device",
       isGuest: isGuest,
-      provider: isGuest ? undefined : (existingSession.provider as ProviderType || "tmdb" as ProviderType),
+      provider: isGuest ? undefined : (existingSession.provider as ProviderType || ProviderType.TMDB),
       providerConfig: existingSession.providerConfig ? JSON.parse(existingSession.providerConfig) : undefined,
     };
 
@@ -160,7 +177,7 @@ export class SessionService {
   static async leaveSession(user: SessionData["user"], sessionCode: string) {
     const userId = user.Id;
     
-    if (user.isGuest || user.provider === "tmdb") {
+    if (user.isGuest || user.provider === ProviderType.TMDB) {
       try {
         await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
       } catch (e) {
@@ -227,8 +244,14 @@ export class SessionService {
       }
       if (updates.settings !== undefined) updateData.settings = JSON.stringify(updates.settings);
       if (updates.allowGuestLending !== undefined) {
-        updateData.hostAccessToken = updates.allowGuestLending ? user.AccessToken : null;
-        updateData.hostDeviceId = updates.allowGuestLending ? user.DeviceId : null;
+        if (updates.allowGuestLending && user.AccessToken) {
+          const secret = await getGuestLendingSecret();
+          updateData.hostAccessToken = encryptValue(user.AccessToken, secret);
+          updateData.hostDeviceId = encryptValue(user.DeviceId || "", secret);
+        } else {
+          updateData.hostAccessToken = null;
+          updateData.hostDeviceId = null;
+        }
       }
     }
 

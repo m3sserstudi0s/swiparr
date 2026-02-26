@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getRuntimeConfig } from './runtime-config';
+import { ProviderType } from './providers/types';
 
 export interface Settings {
   useWatchlist: boolean;
@@ -14,29 +15,37 @@ interface SettingsState {
   resetSettings: () => void;
 }
 
+function getDefaultSettings(): Settings {
+  const rc = getRuntimeConfig();
+  return {
+    useWatchlist: rc.provider === ProviderType.JELLYFIN && rc.useWatchlist,
+    allowGuestLending: false,
+    hasDismissedGuestLendingAlert: false,
+  };
+}
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      settings: {
-        useWatchlist: getRuntimeConfig().useWatchlist,
-        allowGuestLending: false,
-        hasDismissedGuestLendingAlert: false,
-      },
+      settings: getDefaultSettings(),
       updateSettings: (updates) =>
         set((state) => ({
           settings: { ...state.settings, ...updates },
         })),
-      resetSettings: () => set({
-        settings: {
-          useWatchlist: getRuntimeConfig().useWatchlist,
-          allowGuestLending: false,
-          hasDismissedGuestLendingAlert: false,
-        }
-      }),
+      resetSettings: () => set({ settings: getDefaultSettings() }),
     }),
     {
       name: 'swiparr-settings',
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // If the server no longer advertises watchlist support, clamp the
+        // persisted value to false so stale localStorage can't re-enable it.
+        const rc = getRuntimeConfig();
+        if (!rc.useWatchlist && state.settings.useWatchlist) {
+          state.settings.useWatchlist = false;
+        }
+      },
     }
   )
 );

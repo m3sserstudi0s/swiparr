@@ -4,7 +4,7 @@ import React, { forwardRef, useRef, memo } from "react";
 import { MediaItem } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Clock } from "lucide-react";
+import { Star, Clock, Percent } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { cn, ticksToTime } from "@/lib/utils";
@@ -49,6 +49,12 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
 
       clickCoords.current = null;
     };
+
+    const ratingSource = item.CommunityRatingSource?.toLowerCase();
+    const isRottenTomatoes = ratingSource?.includes("rottentomatoes") || ratingSource?.includes("tomato");
+    const ratingDisplay = typeof item.CommunityRating === "number"
+      ? (isRottenTomatoes ? Math.round(item.CommunityRating * 10) : item.CommunityRating.toFixed(1))
+      : null;
 
     return (
       // 1. Outer Container: Positions the slot in the center of the deck
@@ -113,7 +119,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                   {!!item.Genres?.[0] && (
                     <Badge
                       variant="secondary"
-                      className="text-neutral-100 bg-primary/20 border border-primary/10 hover:bg-primary/30"
+                      className="text-neutral-100 text-xs/0 bg-primary/20 border border-primary/10 hover:bg-primary/30"
                     >
                       {item.Genres[0]}
                     </Badge>
@@ -121,19 +127,19 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                   {!!item.ProductionYear && (
                     <Badge
                       variant="secondary"
-                      className="bg-neutral-600/70 hover:bg-accent text-neutral-100 border-0 flex"
+                      className="bg-neutral-600/70 text-xs/0 hover:bg-accent text-neutral-100 border-0 flex"
                     >
                       {item.ProductionYear}
                     </Badge>
                   )}
-                  {!!item.CommunityRating && (
-                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
-                      <Star className="w-3 h-3 fill-neutral-100 mb-px" />
-                      {item.CommunityRating.toFixed(1)}
+                  {!!item.CommunityRating && ratingDisplay !== null && (
+                    <Badge variant="outline" className="gap-1 text-xs/0 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
+                      {isRottenTomatoes ? <Percent className="w-3 h-3 mb-px" /> : <Star className="w-3 h-3 fill-neutral-100 mb-px" />}
+                      {ratingDisplay}{isRottenTomatoes ? "%" : ""}
                     </Badge>
                   )}
                    {!!item.RunTimeTicks && (
-                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
+                    <Badge variant="outline" className="gap-1 text-xs/0 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
                       <Clock className="w-3 h-3 mb-px" />
                       {ticksToTime(item.RunTimeTicks)}
                     </Badge>

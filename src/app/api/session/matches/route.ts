@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     
     const itemsPromises = ids.map(async (id: any) => {
         try {
-            return await provider.getItemDetails(id, auth);
+            return await provider.getItemDetails(id, auth, { includeUserState: true });
         } catch (error) {
             return null;
         }
@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
                 return {
                     userId: lb.externalUserId,
                     userName: member?.externalUserName || "Unknown",
+                    sessionCode: lb.sessionCode,
                     hasCustomProfilePicture: !!member?.hasCustomProfilePicture,
                     profileUpdatedAt: member?.profileUpdatedAt,
                 };

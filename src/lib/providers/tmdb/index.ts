@@ -4,7 +4,8 @@ import {
   ProviderCapabilities, 
   SearchFilters, 
   AuthContext,
-  ImageResponse
+  ImageResponse,
+  ProviderType
 } from "../types";
 import axios from "axios";
 import { 
@@ -18,6 +19,8 @@ import {
 } from "@/types/media";
 import { TmdbSearchResponseSchema, TmdbTvSearchResponseSchema } from "../schemas";
 import { logger } from "@/lib/logger";
+import { DEFAULT_THEMES } from "@/lib/constants";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 /**
  * TMDB Provider
@@ -155,6 +158,7 @@ export class TmdbProvider implements MediaProvider {
 
     // Keywords (themes) — movies only, TV keyword search works differently
     let keywordIds: number[] = [];
+
     if (filters.themes && filters.themes.length > 0) {
         const themeKeywords = await Promise.all(filters.themes.map(async (theme) => {
             const searchData = await this.fetchTmdb<any>('search/keyword', { query: theme });
@@ -228,7 +232,7 @@ export class TmdbProvider implements MediaProvider {
     return [...movieResults, ...tvResults];
   }
 
-  async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
+  async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
@@ -265,7 +269,7 @@ export class TmdbProvider implements MediaProvider {
   }
 
   async getThemes(auth?: AuthContext): Promise<string[]> {
-    return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
+    return DEFAULT_THEMES;
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
@@ -279,9 +283,10 @@ export class TmdbProvider implements MediaProvider {
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
     try {
-        const region = auth?.watchRegion || 'US';
+        const { tmdbDefaultRegion } = getRuntimeConfig();
+        const region = auth?.watchRegion || tmdbDefaultRegion;
         const data = await this.fetchTmdb<any>('certification/movie/list');
-        const certs = data.certifications?.[region] || data.certifications?.['US'] || [];
+        const certs = data.certifications?.[region] || data.certifications?.[tmdbDefaultRegion] || [];
         return certs.map((c: any) => ({ Name: c.certification, Value: c.certification }));
     } catch (e) {
         return []; 
@@ -342,7 +347,7 @@ export class TmdbProvider implements MediaProvider {
   async getBlurDataUrl(itemId: string, type?: string, auth?: AuthContext): Promise<string> {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
     try {
-        const details = await this.getItemDetails(itemId, auth);
+        const details = await this.getItemDetails(itemId, auth, { includeUserState: false });
         const tag = type === "Backdrop" ? details.ImageTags?.Backdrop : details.ImageTags?.Primary;
         if (!tag) return "";
         const imageUrl = `https://image.tmdb.org/t/p/w200${tag.startsWith('/') ? tag : `/${tag}`}`; 
@@ -378,6 +383,7 @@ export class TmdbProvider implements MediaProvider {
       Id: movie.id.toString(),
       Name: movie.title,
       Overview: movie.overview,
+      Language: movie.original_language,
       ProductionYear: movie.release_date ? new Date(movie.release_date).getFullYear() : undefined,
       CommunityRating: movie.vote_average,
       ImageTags: {
@@ -408,8 +414,9 @@ export class TmdbProvider implements MediaProvider {
     
     let officialRating: string | undefined = undefined;
     const releaseDates = movie.release_dates?.results || [];
-    const targetRegion = region || 'US';
-    const regionRelease = releaseDates.find((r: any) => r.iso_3166_1 === targetRegion) || releaseDates.find((r: any) => r.iso_3166_1 === 'US') || releaseDates[0];
+    const { tmdbDefaultRegion } = getRuntimeConfig();
+    const targetRegion = region || tmdbDefaultRegion;
+    const regionRelease = releaseDates.find((r: any) => r.iso_3166_1 === targetRegion) || releaseDates.find((r: any) => r.iso_3166_1 === tmdbDefaultRegion) || releaseDates[0];
     
     if (regionRelease) {
         officialRating = regionRelease.release_dates.find((rd: any) => rd.certification)?.certification;
@@ -420,6 +427,7 @@ export class TmdbProvider implements MediaProvider {
       Name: movie.title,
       OriginalTitle: movie.original_title,
       Overview: movie.overview,
+      Language: movie.original_language,
       ProductionYear: movie.release_date ? new Date(movie.release_date).getFullYear() : undefined,
       CommunityRating: movie.vote_average,
       RunTimeTicks: movie.runtime ? movie.runtime * 60 * 10000000 : undefined,

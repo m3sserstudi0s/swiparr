@@ -81,12 +81,14 @@ export async function GET() {
   let effectiveUserId = null;
   let activeProvider = session.user.provider || ProviderType.JELLYFIN;
   let activeServerUrl = session.user.providerConfig?.serverUrl;
+  let activeMachineId = session.user.providerConfig?.machineId;
 
   try {
     const creds = await AuthService.getEffectiveCredentials(session);
     effectiveUserId = creds.userId;
     if (creds.provider) activeProvider = creds.provider;
     if (creds.serverUrl) activeServerUrl = creds.serverUrl;
+    if (creds.machineId) activeMachineId = creds.machineId;
   } catch (err) {
     if (err instanceof GuestKickedError) {
       session.destroy();
@@ -141,6 +143,7 @@ export async function GET() {
     provider: activeProvider,
     capabilities: getMediaProvider(activeProvider).capabilities,
     serverUrl: activeServerUrl,
+    machineId: activeMachineId,
     settingsHash,
     hasCustomProfilePicture: !!profile,
     profileUpdatedAt: profile?.updatedAt

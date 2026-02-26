@@ -84,7 +84,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                     <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex gap-4">
                                         <Filter className="size-4 text-primary mt-1 shrink-0" />
                                         <p className="text-sm text-muted-foreground">
-                                            Filter by Genre, Year, or Rating. Toggle Watchlist/Favorites sync in settings.
+                                            Filter by Genre, Year, or Rating. Toggle Watchlist/Favorites sync in settings (Jellyfin only).
                                         </p>
                                     </div>
                                 </TabsContent>

@@ -1,6 +1,6 @@
 {
   "name": "swiparr",
-  "version": "1.0.34",
+  "version": "1.2.12",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "npm run db:migrate && next build",
+    "build": "node scripts/set-app-version.mjs && npm run db:migrate && node scripts/ensure-auth-secret.cjs && next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
@@ -53,6 +53,8 @@
     "drizzle-orm": "^0.45.1",
     "framer-motion": "^12.23.26",
     "iron-session": "^8.0.4",
+    "iso-639-1": "^3.1.2",
+    "iso-639-3": "^3.0.1",
     "lucide-react": "^0.562.0",
     "motion": "^12.33.0",
     "next": "^16.1.6",
@@ -64,7 +66,7 @@
     "react-hook-form": "^7.69.0",
     "react-hotkeys-hook": "^5.2.1",
     "react-icons": "^5.5.0",
-    "react-tinder-card-react19": "^1.6.8",
+    "react-virtuoso": "^4.18.1",
     "server-only": "^0.0.1",
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",

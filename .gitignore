@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.production.local
 
 # vercel
 .vercel
@@ -42,3 +43,4 @@ next-env.d.ts
 
 swiparr.db
 docs/*
+.env.production.local

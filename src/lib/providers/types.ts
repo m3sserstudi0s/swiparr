@@ -53,12 +53,12 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
   },
   [ProviderType.PLEX]: {
     hasAuth: true,
-    hasQuickConnect: false,
+    hasQuickConnect: true,
     hasWatchlist: true,
     hasLibraries: true,
     hasSettings: true,
     requiresServerUrl: true,
-    isExperimental: true,
+    isExperimental: false,
     hasStreamingSettings: false,
     isAdminPanel: true,
   },
@@ -67,7 +67,7 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     hasQuickConnect: false,
     hasWatchlist: false,
     hasLibraries: false,
-    hasSettings: false,
+    hasSettings: true,
     requiresServerUrl: false,
     isExperimental: false,
     hasStreamingSettings: true,
@@ -89,8 +89,10 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
 
 export interface SearchFilters {
   genres?: string[];
+  excludedGenres?: string[];
   years?: number[];
   ratings?: string[];
+  excludedRatings?: string[];
   minCommunityRating?: number;
   runtimeRange?: [number, number];
   libraries?: string[];
@@ -100,7 +102,8 @@ export interface SearchFilters {
   sortBy?: string;
   unplayedOnly?: boolean;
   themes?: string[];
-  languages?: string[];
+  excludedThemes?: string[];
+  tmdbLanguages?: string[];
   limit?: number;
   offset?: number;
   mediaType?: "movie" | "tv" | "both";
@@ -112,7 +115,7 @@ export interface MediaProvider {
 
   // Items
   getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]>;
-  getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem>;
+  getItemDetails(id: string, auth?: AuthContext, options?: { includeUserState?: boolean }): Promise<MediaItem>;
   
   // Metadata
   getGenres(auth?: AuthContext): Promise<MediaGenre[]>;

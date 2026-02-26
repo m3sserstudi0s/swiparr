@@ -13,11 +13,14 @@ export interface MediaStudio {
 
 export interface MediaItem {
   Id: string;
+  Guid?: string;
   Name: string;
   OriginalTitle?: string;
+  Language?: string;
   RunTimeTicks?: number;
   ProductionYear?: number;
   CommunityRating?: number;
+  CommunityRatingSource?: string;
   Overview?: string;
   Taglines?: string[];
   OfficialRating?: string;
@@ -36,6 +39,7 @@ export interface MediaItem {
   UserData?: {
     IsFavorite: boolean;
     Likes?: boolean;
+    Played?: boolean;
   };
   BlurDataURL?: string;
   WatchProviders?: WatchProvider[];

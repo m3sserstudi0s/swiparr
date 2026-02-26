@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const itemsMap = new Map<string, MediaItem>();
     await Promise.all(ids.map(async (id: string) => {
         try {
-            const item = await provider.getItemDetails(id, auth);
+            const item = await provider.getItemDetails(id, auth, { includeUserState: true });
             if (item) itemsMap.set(id, item);
         } catch (error) {
             logger.error(`Failed to fetch details for ${id}`, error);

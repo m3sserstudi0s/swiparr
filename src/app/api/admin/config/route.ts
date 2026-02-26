@@ -3,15 +3,7 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { z } from "zod";
-import { events, EVENT_TYPES } from "@/lib/events";
-import { revalidateTag } from "next/cache";
-import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
-
-const configSchema = z.object({
-    useStaticFilterValues: z.boolean(),
-});
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -21,8 +13,7 @@ export async function GET() {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const useStaticFilterValues = await ConfigService.getUseStaticFilterValues();
-    return NextResponse.json({ useStaticFilterValues });
+    return NextResponse.json({});
 }
 
 export async function PATCH(request: NextRequest) {
@@ -34,26 +25,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     try {
-        const body = await request.json();
-        const validated = configSchema.safeParse(body);
-        
-        if (!validated.success) {
-            return NextResponse.json({ error: "Invalid data" }, { status: 400 });
-        }
-
-        const { useStaticFilterValues } = validated.data;
-        await ConfigService.setUseStaticFilterValues(useStaticFilterValues);
-
-        // Purge caches
-        const providers = ["jellyfin", "emby", "plex"];
-        const tags = ["years", "genres", "ratings", "libraries"];
-        providers.forEach(p => tags.forEach(t => revalidateTag(`${p}-${t}`, "default")));
-
-        events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
-            type: 'filters',
-            userId: session.user.Id
-        });
-
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: "Failed to update config" }, { status: 500 });

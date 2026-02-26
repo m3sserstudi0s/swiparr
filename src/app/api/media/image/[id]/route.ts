@@ -8,6 +8,7 @@ import { AuthService } from "@/lib/services/auth-service";
 import { db, userProfiles } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { ProviderType } from "@/lib/providers/types";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,10 +48,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const provider = getMediaProvider(providerType);
 
   // If no tag is provided, some providers (like TMDB) might use the ID if it looks like a path
-  const effectiveTag = tag || (providerType === 'tmdb' ? id : undefined);
+  const effectiveTag = tag || (providerType === ProviderType.TMDB ? id : undefined);
 
-  if (!effectiveTag && !isUserType && providerType === 'tmdb') {
+  if (!effectiveTag && !isUserType && providerType === ProviderType.TMDB) {
     return new NextResponse("Missing image tag", { status: 400 });
+  }
+
+  if ((providerType === ProviderType.PLEX || provider?.name === ProviderType.PLEX) && effectiveTag && effectiveTag.startsWith("http")) {
+    try {
+      provider.getImageUrl(id, isUserType ? "user" : (imageType as any), effectiveTag, auth);
+    } catch (e: any) {
+      return new NextResponse("External image host not allowed", { status: 400 });
+    }
   }
 
   try {

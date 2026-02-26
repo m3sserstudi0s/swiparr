@@ -3,7 +3,8 @@ import {
   ProviderCapabilities, 
   SearchFilters, 
   AuthContext,
-  ImageResponse
+  ImageResponse,
+  ProviderType
 } from "../types";
 
 import { 
@@ -16,13 +17,14 @@ import {
 import { apiClient, getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 import { logger } from "@/lib/logger";
+import { DEFAULT_THEMES } from "@/lib/constants";
 
 /**
  * Jellyfin Provider
  * Docs: https://api.jellyfin.org/
  */
 export class JellyfinProvider implements MediaProvider {
-  readonly name = "jellyfin";
+  readonly name = ProviderType.JELLYFIN;
   
   readonly capabilities: ProviderCapabilities = {
     hasAuth: true,
@@ -37,8 +39,6 @@ export class JellyfinProvider implements MediaProvider {
   };
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
-    const hasLanguageFilter = filters.languages && filters.languages.length > 0;
-    
     // If multiple libraries are selected, we need to fetch from each one and merge
     // Jellyfin's ParentId only supports a single ID
     if (filters.libraries && filters.libraries.length > 1) {
@@ -69,7 +69,7 @@ export class JellyfinProvider implements MediaProvider {
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations",
+      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams",
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Trending" ? "CommunityRating" :
               filters.sortBy === "Popular" ? "CommunityRating" :
@@ -102,58 +102,10 @@ export class JellyfinProvider implements MediaProvider {
 
     const data = JellyfinQueryResultSchema.parse(res.data);
     let rawItems = data.Items;
-    
-    // Client-side language/country filtering for Jellyfin
-    if (hasLanguageFilter) {
-      const selectedLangs = filters.languages!.map(l => l.toLowerCase());
-      
-      rawItems = rawItems.filter((item: any) => {
-        // 1. Check PreferredMetadataLanguage
-        const prefLang = item.PreferredMetadataLanguage?.toLowerCase();
-        if (prefLang && selectedLangs.some(l => prefLang.includes(l))) {
-          return true;
-        }
-
-        // 2. Fallback: Check ProductionLocations (Country filtering)
-        // Map common languages to country codes/names as a fallback
-        const countryMap: Record<string, string[]> = {
-          'en': ['usa', 'united states', 'united kingdom', 'uk', 'canada', 'australia'],
-          'es': ['spain', 'mexico', 'argentina', 'colombia', 'peru', 'chile'],
-          'fr': ['france', 'belgium', 'canada', 'switzerland'],
-          'de': ['germany', 'austria', 'switzerland'],
-          'it': ['italy'],
-          'ja': ['japan'],
-          'ko': ['korea', 'south korea'],
-          'pt': ['portugal', 'brazil'],
-          'zh': ['china', 'hong kong', 'taiwan'],
-          'sv': ['sweden'],
-          'da': ['denmark'],
-          'no': ['norway'],
-          'fi': ['finland'],
-          'nl': ['netherlands', 'belgium'],
-          'pl': ['poland'],
-          'ru': ['russia'],
-          'tr': ['turkey'],
-          'hi': ['india'],
-          'ar': ['egypt', 'saudi arabia', 'uae'],
-        };
-
-        const locations = (item.ProductionLocations || []).map((l: string) => l.toLowerCase());
-        if (locations.length > 0) {
-          return selectedLangs.some(langCode => {
-            const countries = countryMap[langCode] || [];
-            return countries.some(c => locations.some((loc: string) => loc.includes(c)));
-          });
-        }
-
-        return false;
-      });
-    }
-    
     return rawItems.map((item) => this.mapToMediaItem(item));
   }
 
-  async getItemDetails(id: string, auth?: AuthContext): Promise<MediaItem> {
+  async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
@@ -171,6 +123,9 @@ export class JellyfinProvider implements MediaProvider {
   async getThemes(auth?: AuthContext): Promise<string[]> {
     logger.debug("[JellyfinProvider.getThemes] Starting with auth:", { userId: auth?.userId, serverUrl: auth?.serverUrl });
     
+    return DEFAULT_THEMES;
+
+    /* 
     try {
       // Use /Items/Filters2 to get all available tags for movies
       // This is the correct Jellyfin API endpoint for getting filter values
@@ -205,6 +160,7 @@ export class JellyfinProvider implements MediaProvider {
       // Return fallback themes on error
       return ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"];
     }
+      */
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
@@ -315,11 +271,32 @@ export class JellyfinProvider implements MediaProvider {
     }
   }
 
+  private getItemLanguage(item: any): string | undefined {
+    const preferred = item.PreferredMetadataLanguage?.trim();
+    if (preferred) {
+      return preferred;
+    }
+
+    const streams = Array.isArray(item.MediaStreams) ? item.MediaStreams : [];
+    const audioStreams = streams.filter((stream: { Type: any; }) => {
+      const type = typeof stream?.Type === "string" ? stream.Type : "";
+      return type.toLowerCase() === "audio";
+    });
+
+    const defaultAudio = audioStreams.find((stream: { IsDefault: any; Language: any; }) => stream?.IsDefault && stream?.Language);
+    if (defaultAudio?.Language) {
+      return defaultAudio.Language;
+    }
+
+    return audioStreams.find((stream: { Language: any; }) => stream?.Language)?.Language;
+  }
+
   private mapToMediaItem(item: any): MediaItem {
     return {
       Id: item.Id,
       Name: item.Name,
       OriginalTitle: item.OriginalTitle,
+      Language: this.getItemLanguage(item),
       RunTimeTicks: item.RunTimeTicks,
       ProductionYear: item.ProductionYear,
       CommunityRating: item.CommunityRating,
@@ -339,6 +316,7 @@ export class JellyfinProvider implements MediaProvider {
       UserData: item.UserData ? {
         IsFavorite: item.UserData.IsFavorite,
         Likes: item.UserData.Likes,
+        Played: item.UserData.Played,
       } : undefined,
     };
   }

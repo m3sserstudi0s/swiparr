@@ -1,11 +1,22 @@
 import { z } from "zod";
+import { assertSafeUrl } from "@/lib/security/url-guard";
+import { config } from "@/lib/config";
 
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().optional(),
   provider: z.string().optional(),
   config: z.object({
-    serverUrl: z.string().optional(),
+    serverUrl: z.string().optional().refine((value) => {
+      if (!value) return true;
+      try {
+        const source = config.app.providerLock ? "env" : "user";
+        assertSafeUrl(value, { source });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Invalid or blocked server URL"),
     tmdbToken: z.string().optional(),
   }).optional(),
   profilePicture: z.string().optional(), // Base64 encoded
@@ -34,15 +45,18 @@ export const sessionActionSchema = z.object({
 export const sessionSettingsSchema = z.object({
   filters: z.object({
     genres: z.array(z.string()).optional(),
+    excludedGenres: z.array(z.string()).optional(),
     yearRange: z.array(z.number()).length(2).optional(),
     minCommunityRating: z.number().optional(),
     officialRatings: z.array(z.string()).optional(),
+    excludedOfficialRatings: z.array(z.string()).optional(),
     runtimeRange: z.array(z.number()).length(2).optional(),
     watchProviders: z.array(z.string()).optional(),
     watchRegion: z.string().optional(),
     sortBy: z.string().optional(),
     themes: z.array(z.string()).optional(),
-    languages: z.array(z.string()).optional(),
+    excludedThemes: z.array(z.string()).optional(),
+    tmdbLanguages: z.array(z.string()).optional(),
     unplayedOnly: z.boolean().optional(),
     mediaType: z.enum(["movie", "tv", "both"]).optional(),
   }).optional().or(z.any()),

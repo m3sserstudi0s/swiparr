@@ -6,6 +6,7 @@
 
 import { ProviderCapabilities, ProviderType, PROVIDER_CAPABILITIES } from "./providers/types";
 import { config } from "./config";
+import { DEFAULT_TMDB_REGION } from "./constants";
 
 export interface RuntimeConfig {
   provider: ProviderType;
@@ -13,11 +14,11 @@ export interface RuntimeConfig {
   capabilities: ProviderCapabilities;
   serverPublicUrl: string;
   useWatchlist: boolean;
-  useStaticFilterValues: boolean;
   version: string;
   basePath: string;
   appPublicUrl: string;
   enableDebug: boolean;
+  tmdbDefaultRegion: string;
 }
 
 
@@ -42,11 +43,11 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     capabilities,
     serverPublicUrl: config.server.publicUrl,
     useWatchlist: config.app.useWatchlist,
-    useStaticFilterValues: !!overrides?.useStaticFilterValues,
     version: config.app.version,
     basePath: config.app.basePath,
     appPublicUrl: config.app.appPublicUrl,
     enableDebug: config.ENABLE_DEBUG,
+    tmdbDefaultRegion: config.TMDB_DEFAULT_REGION || DEFAULT_TMDB_REGION,
     ...overrides
   };
 }
@@ -56,44 +57,6 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
  * This function uses dynamic imports to ensure database code is never 
  * executed on the client.
  */
-export async function getAsyncRuntimeConfig(): Promise<RuntimeConfig> {
-    if (typeof window === 'undefined') {
-        const [
-            { ConfigService }, 
-            { cookies }, 
-            { getIronSession }, 
-            { getSessionOptions }
-        ] = await Promise.all([
-            import("./services/config-service"),
-            import("next/headers"),
-            import("iron-session"),
-            import("./session")
-        ]);
-
-        const cookieStore = await cookies();
-        const session = await getIronSession<any>(cookieStore, await getSessionOptions());
-
-        let provider: string | undefined;
-
-        if (session?.user?.provider) {
-            provider = session.user.provider;
-        } else if (!config.app.providerLock) {
-            provider = await ConfigService.getActiveProvider();
-        } else {
-            provider = config.app.provider;
-        }
-
-        const useStaticFilterValues = await ConfigService.getUseStaticFilterValues();
-
-        return getRuntimeConfig({ 
-            provider: provider as ProviderType,
-            useStaticFilterValues 
-        });
-    }
-
-    return getRuntimeConfig();
-}
-
 /**
  * Client-side global variable to store the config once injected.
  */

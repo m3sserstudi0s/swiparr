@@ -1,14 +1,17 @@
 export interface Filters {
   genres: string[];
+  excludedGenres?: string[];
   yearRange?: [number, number];
   minCommunityRating?: number;
   officialRatings?: string[];
+  excludedOfficialRatings?: string[];
   runtimeRange?: [number, number];
   watchProviders?: string[];
   watchRegion?: string;
   sortBy?: string;
   themes?: string[];
-  languages?: string[];
+  excludedThemes?: string[];
+  tmdbLanguages?: string[];
   unplayedOnly?: boolean;
   mediaType?: "movie" | "tv" | "both";
 }
@@ -35,4 +38,3 @@ export interface SessionMember {
   hasCustomProfilePicture?: boolean;
   profileUpdatedAt?: string;
 }
-

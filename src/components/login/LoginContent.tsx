@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuickConnectUpdates } from "@/lib/use-updates";
+import { usePlexPinAuth } from "@/hooks/usePlexPinAuth";
 import Image from "next/image";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "../../../public/icon0.svg"
@@ -11,6 +12,7 @@ import { apiClient } from "@/lib/api-client";
 import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { PROVIDER_CAPABILITIES, ProviderType } from "@/lib/providers/types";
+import { createPlexPinClient, buildPlexAuthUrl } from "@/lib/plex/client-auth";
 
 import { AdminInitializedView } from "./AdminInitializedView";
 import { AuthView } from "./AuthView";
@@ -44,6 +46,9 @@ export default function LoginContent() {
   const [isFallbackOpen, setIsFallbackOpen] = useState(false);
   const [qcCode, setQcCode] = useState<string | null>(null);
   const [qcSecret, setQcSecret] = useState<string | null>(null);
+  const [plexPinId, setPlexPinId] = useState<number | null>(null);
+  const [plexPinCode, setPlexPinCode] = useState<string | null>(null);
+  const [plexAuthUrl, setPlexAuthUrl] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -132,11 +137,18 @@ export default function LoginContent() {
 
   useQuickConnectUpdates(qcSecret, onAuthorized);
 
+  // Custom wrapper for usePlexPinAuth to handle 400 errors
+  usePlexPinAuth(plexPinId, (data) => {
+    // Stop polling if we got a successful auth
+    setPlexPinId(null);
+    onAuthorized(data);
+  });
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const isTmdbJoin = selectedProvider === "tmdb" && !!sessionCodeParam;
+    const isTmdbJoin = selectedProvider === ProviderType.TMDB && !!sessionCodeParam;
 
     const promise = async () => {
       if (isTmdbJoin) {
@@ -151,7 +163,7 @@ export default function LoginContent() {
       const config: any = {};
       if (selectedProvider === ProviderType.JELLYFIN || selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY) {
         if (serverUrl) config.serverUrl = serverUrl;
-      } else if (selectedProvider === "tmdb") {
+      } else if (selectedProvider === ProviderType.TMDB) {
         if (tmdbToken) config.tmdbToken = tmdbToken;
       }
 
@@ -167,7 +179,7 @@ export default function LoginContent() {
     };
 
     toast.promise(promise(), {
-      loading: isTmdbJoin ? "Joining session..." : (selectedProvider !== "tmdb" ? "Logging in..." : "Initializing..."),
+      loading: isTmdbJoin ? "Joining session..." : (selectedProvider !== ProviderType.TMDB ? "Logging in..." : "Initializing..."),
       success: (data) => {
         if (data.wasMadeAdmin) {
           setWasMadeAdmin(true);
@@ -184,7 +196,7 @@ export default function LoginContent() {
         window.location.href = callbackUrl;
         setLoading(false);
         if (isTmdbJoin) return `Joined as ${data.user.Name}`;
-        return selectedProvider !== "tmdb" ? "Logged in successfully" : "Profile created";
+        return selectedProvider !== ProviderType.TMDB ? "Logged in successfully" : "Profile created";
       },
       error: (err) => {
         setLoading(false);
@@ -252,25 +264,35 @@ export default function LoginContent() {
     });
   };
 
-  const contentHeight = useMemo(() => {
-    if (wasMadeAdmin) return "h-auto";
+  const startPlexPinAuth = async () => {
+    setLoading(true);
 
-    if (selectedProvider === "tmdb") {
-      return providerLock ? "h-60" : "h-80";
-    }
+    const promise = async () => {
+      const pinData = await createPlexPinClient();
+      const authUrl = buildPlexAuthUrl(pinData.code);
+      return {
+        id: pinData.id,
+        code: pinData.code,
+        authUrl
+      };
+    };
 
-    // Logic for default providers
-    if (providerLock) {
-      if (activeTab === 'login' || sessionCodeParam) return "h-80";
-      return "h-105";
-    }
-
-    // Logic for default providers (unlocked)
-    if (activeTab === 'login') return "h-105";
-    if (sessionCodeParam) return "h-95"; // Guest log in with link
-
-    return "h-115";
-  }, [wasMadeAdmin, selectedProvider, providerLock, activeTab, sessionCodeParam]);
+    toast.promise(promise(), {
+      loading: "Creating Plex PIN...",
+      success: (data) => {
+        setPlexPinId(data.id);
+        setPlexPinCode(data.code);
+        setPlexAuthUrl(data.authUrl);
+        setLoading(false);
+        return "Plex PIN created";
+      },
+      error: (err) => {
+        setLoading(false);
+        return { message: "Failed to create Plex PIN", description: getErrorMessage(err) };
+      },
+      position: 'top-right'
+    });
+  };
 
   return (
     <>
@@ -280,16 +302,9 @@ export default function LoginContent() {
         title="Quick Connect Code"
         value={qcCode || ""}
       />
-      <Card className={cn("w-full border-border bg-card text-card-foreground pt-0", !providerLock ? "max-w-sm" : "max-w-xs")}>
-        <CardHeader className="rounded-t-xl bg-linear-to-t to-foreground/20 via-foreground/5">
-          <CardTitle className="flex flex-row gap-3 justify-center items-center py-3 mt-4">
-            <Image src={logo} alt="Logo" className="size-6 dark:invert opacity-80" loading="eager" />
-            <GradientText className="text-3xl font-sans">
-              Swiparr
-            </GradientText>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className={cn("transition-all duration-300", contentHeight, !providerLock && "px-5")}>
+      <Image src={logo} alt="Logo" className="size-16 dark:invert dark:opacity-90 opacity-75 absolute top-16" loading="eager" />
+      <Card className={cn("w-full border-border bg-card text-card-foreground pt-8", !providerLock ? "max-w-sm" : "max-w-xs")}>
+        <CardContent className={cn("transition-all duration-300 h-auto", !providerLock && "px-5")}>
           {wasMadeAdmin ? (
             <AdminInitializedView onContinue={() => {
               const callbackUrl = searchParams.get("callbackUrl") || `${basePath}/`;
@@ -300,19 +315,19 @@ export default function LoginContent() {
               {!providerLock && (
                 <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full">
                   <TabsList className="grid w-full grid-cols-4 h-9">
-                    <TabsTrigger value="jellyfin" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.JELLYFIN} className="text-xs font-semibold">
                       <SiJellyfin />
                       Jellyfin
                     </TabsTrigger>
-                    <TabsTrigger value="emby" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.EMBY} className="text-xs font-semibold">
                       <SiEmby />
                       Emby
                     </TabsTrigger>
-                    <TabsTrigger value="plex" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.PLEX} className="text-xs font-semibold">
                       <SiPlex />
                       Plex
                     </TabsTrigger>
-                    <TabsTrigger value="tmdb" className="text-xs font-semibold">
+                    <TabsTrigger value={ProviderType.TMDB} className="text-xs font-semibold">
                       <SiThemoviedatabase />
                       TMDB
                     </TabsTrigger>
@@ -320,7 +335,7 @@ export default function LoginContent() {
                 </Tabs>
               )}
 
-              {selectedProvider === "tmdb" ? (
+              {selectedProvider === ProviderType.TMDB ? (
                 <UniversalView
                   providerLock={providerLock}
                   tmdbToken={tmdbToken}
@@ -355,11 +370,15 @@ export default function LoginContent() {
                   copyToClipboard={copyToClipboard}
                   setQcCode={setQcCode}
                   sessionCodeParam={sessionCodeParam}
-                  hasQuickConnect={providerLock ? capabilities.hasQuickConnect : (selectedProvider === ProviderType.JELLYFIN)}
-                  isExperimental={providerLock ? capabilities.isExperimental : (selectedProvider === ProviderType.PLEX || selectedProvider === ProviderType.EMBY)}
+                  hasQuickConnect={capabilities.hasQuickConnect}
+                  isExperimental={providerLock ? capabilities.isExperimental : selectedProvider === ProviderType.EMBY}
                   onProfilePictureChange={setProfilePicture}
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
+                  startPlexPinAuth={startPlexPinAuth}
+                  plexPinCode={plexPinCode}
+                  setPlexPinCode={setPlexPinCode}
+                  plexAuthUrl={plexAuthUrl}
                 />
               )}
 

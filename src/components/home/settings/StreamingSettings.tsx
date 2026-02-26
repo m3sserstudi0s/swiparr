@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { VirtuosoGrid } from "react-virtuoso";
 import { SettingsSection } from "./SettingsSection";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +9,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Tv, Check, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Tv, Check, Loader2, ChevronDown, ChevronRight, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage, cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
@@ -33,51 +34,98 @@ import {
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getRuntimeConfig } from "@/lib/runtime-config";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group";
 
 export function StreamingSettings() {
     const { data: settings, isLoading: isLoadingSettings } = useUserSettings();
     const { data: regions = [] } = useRegions();
     const updateSettingsMutation = useUpdateUserSettings();
+    const { tmdbDefaultRegion } = getRuntimeConfig();
 
     const [selectedRegion, setSelectedRegion] = useState<MediaRegion | null>(null);
     const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
     const [container, setContainer] = useState<HTMLElement | null>(null);
+    const [providersScrollParent, setProvidersScrollParent] = useState<HTMLElement | null>(null);
+    const [providerSearch, setProviderSearch] = useState<string>("");
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setContainer(document.querySelector('[data-slot="sheet-content"]') as HTMLElement);
     }, []);
 
-    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || "SE", null, true);
+    const { data: watchProvidersData, isLoading: isLoadingProviders } = useWatchProviders(selectedRegion?.Id || tmdbDefaultRegion, null, true);
     const availableProviders = useMemo(() => watchProvidersData?.providers || [], [watchProvidersData]);
+    const availableProviderIds = useMemo(
+        () => availableProviders.map((p: WatchProvider) => p.Id),
+        [availableProviders]
+    );
+    const filteredProviders = useMemo(() => {
+        const query = providerSearch.trim().toLowerCase();
+        if (!query) return availableProviders;
+        return availableProviders.filter((provider) =>
+            provider.Name?.toLowerCase().includes(query)
+        );
+    }, [availableProviders, providerSearch]);
+    const gap = 12;
+    const gridComponents = useMemo(() => ({
+        List: ({ children, style, ...props }: React.ComponentProps<"div">) => (
+            <div
+                {...props}
+                style={{
+                    ...style,
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: `${gap}px`,
+                }}
+            >
+                {children}
+            </div>
+        ),
+        Item: ({ children, ...props }: React.ComponentProps<"div">) => (
+            <div {...props} className="w-full">
+                {children}
+            </div>
+        ),
+    }), [gap]);
+
+    const handleProvidersViewport = useCallback((node: HTMLDivElement | null) => {
+        setProvidersScrollParent(node);
+    }, []);
 
     // Step 1: once settings + regions are loaded, set the region and saved provider list
     useEffect(() => {
         if (settings && regions.length > 0 && !hasInitialized) {
-            const regionCode = settings.watchRegion || "SE";
-            const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === "SE") || regions[0];
+            const regionCode = settings.watchRegion || tmdbDefaultRegion;
+            const region = regions.find(r => r.Id === regionCode) || regions.find(r => r.Id === tmdbDefaultRegion) || regions[0];
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedRegion(region);
-            setSelectedProviders(settings.isNew ? [] : (settings.watchProviders || []));
+
+            if (settings.isNew) {
+                setSelectedProviders(availableProviderIds);
+            } else {
+                setSelectedProviders(settings.watchProviders || []);
+            }
             setHasInitialized(true);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [settings, regions, hasInitialized]);
+    }, [settings, regions, availableProviders, availableProviderIds, hasInitialized]);
 
     // Step 2: once the provider list for the current region has loaded, reconcile selections.
     // Uses watchProvidersData (not availableProviders) as the trigger so we know the fetch
     // corresponds to the currently selected region.
     useEffect(() => {
-        if (!hasInitialized || !watchProvidersData || availableProviders.length === 0) return;
-        setSelectedProviders(prev => {
-            const filtered = prev.filter(pId => availableProviders.some(p => p.Id === pId));
-            // New user or region change with no carry-over → select all providers
-            return filtered.length > 0 ? filtered : availableProviders.map((p: WatchProvider) => p.Id);
-        });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [watchProvidersData]);
+        if (selectedRegion && availableProviders.length > 0 && hasInitialized) {
+            const availableSet = new Set(availableProviderIds);
+            setSelectedProviders(prev => prev.filter(pId => availableSet.has(pId)));
+        }
+    }, [selectedRegion, availableProviders.length, availableProviderIds, hasInitialized]);
 
     const toggleProvider = (id: string) => {
         setSelectedProviders(prev =>
@@ -86,11 +134,15 @@ export function StreamingSettings() {
     };
 
     const selectAll = () => {
-        setSelectedProviders(availableProviders.map((p: WatchProvider) => p.Id));
+        setSelectedProviders(availableProviderIds);
     };
 
     const deselectAll = () => {
         setSelectedProviders([]);
+    };
+
+    const clearSearch = () => {
+        setProviderSearch("");
     };
 
     const saveSettings = async (region: MediaRegion | null = selectedRegion) => {
@@ -100,7 +152,7 @@ export function StreamingSettings() {
         }
 
         toast.promise(updateSettingsMutation.mutateAsync({
-            watchRegion: region?.Id || "SE",
+            watchRegion: region?.Id || tmdbDefaultRegion,
             watchProviders: selectedProviders,
         }), {
             loading: "Updating streaming settings...",
@@ -218,26 +270,57 @@ export function StreamingSettings() {
                             </div>
                         </div>
 
+                        <InputGroup className="bg-muted/30 border-input">
+                            <InputGroupAddon align="inline-start">
+                                <Search className="size-4" />
+                            </InputGroupAddon>
+                            <InputGroupInput
+                                placeholder="Search services..."
+                                value={providerSearch}
+                                onChange={(event) => setProviderSearch(event.target.value)}
+                            />
+                            <InputGroupAddon align="inline-end">
+                                {providerSearch ? (
+                                    <InputGroupButton
+                                        variant="ghost"
+                                        size="icon-xs"
+                                        aria-label="Clear search"
+                                        onClick={clearSearch}
+                                    >
+                                        <X className="size-4" />
+                                    </InputGroupButton>
+                                ) : null}
+                            </InputGroupAddon>
+                        </InputGroup>
+
                         {isLoadingProviders ? (
                             <div className="flex items-center justify-center py-4">
                                 <Loader2 className="size-6 animate-spin text-muted-foreground" />
                             </div>
                         ) : (
-                            <ScrollArea className="flex-1 overflow-y-auto h-75">
-                                <div className="grid grid-cols-2 gap-2 pr-4 my-3">
-                                    {availableProviders.length === 0 ? (
-                                        <div className="col-span-2 text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                                            No providers found for this region
-                                        </div>
-                                    ) : (
-                                        availableProviders.map((p: WatchProvider) => {
-                                            const isSelected = selectedProviders.includes(p.Id);
+                            <ScrollArea className="flex-1 overflow-y-auto h-75" viewportRef={handleProvidersViewport}>
+                                {availableProviders.length === 0 ? (
+                                    <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
+                                        No providers found for this region
+                                    </div>
+                                ) : filteredProviders.length === 0 ? (
+                                    <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
+                                        No services match your search
+                                    </div>
+                                ) : (
+                                    <VirtuosoGrid
+                                        data={filteredProviders}
+                                        components={gridComponents}
+                                        style={{ height: "100%" }}
+                                        className="mr-3 my-2"
+                                        customScrollParent={providersScrollParent || undefined}
+                                        itemContent={(_, provider) => {
+                                            const isSelected = selectedProviders.includes(provider.Id);
                                             return (
                                                 <button
-                                                    key={p.Id}
-                                                    onClick={() => toggleProvider(p.Id)}
+                                                    onClick={() => toggleProvider(provider.Id)}
                                                     className={cn(
-                                                        "flex items-center gap-2 p-2 rounded-md border text-sm transition-all",
+                                                        "flex items-center w-full gap-2 p-2 rounded-md border text-sm transition-all",
                                                         isSelected
                                                             ? "bg-primary/5 border-primary text-primary font-medium"
                                                             : "bg-background hover:bg-muted/50 border-input text-muted-foreground"
@@ -245,21 +328,21 @@ export function StreamingSettings() {
                                                 >
                                                     <div className="relative size-6 shrink-0 rounded overflow-hidden shadow-xs">
                                                         <OptimizedImage
-                                                            src={`https://image.tmdb.org/t/p/w92${p.LogoPath}`}
-                                                            alt={p.Name}
+                                                            src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}
+                                                            alt={provider.Name}
                                                             className="object-cover"
                                                             unoptimized
                                                             width={24}
                                                             height={24}
                                                         />
                                                     </div>
-                                                    <span className="truncate text-[11px]">{p.Name}</span>
+                                                    <span className="truncate text-[11px]">{provider.Name}</span>
                                                     {isSelected && <Check className="ml-auto size-3 shrink-0" />}
                                                 </button>
                                             );
-                                        })
-                                    )}
-                                </div>
+                                        }}
+                                    />
+                                )}
                             </ScrollArea>
                         )}
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import packageJson from '../../package.json';
+import { ProviderType } from './providers/types';
 
 const envSchema = z.object({
   // Core
@@ -26,6 +27,9 @@ const envSchema = z.object({
   // Auth & Security
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters").optional(),
   USE_SECURE_COOKIES: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  ALLOW_PRIVATE_PROVIDER_URLS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  PLEX_ALLOW_SELF_SIGNED: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  PLEX_IMAGE_ALLOWED_HOSTS: z.string().optional(),
   ADMIN_USERNAME: z.string().optional(),
   JELLYFIN_ADMIN_USERNAME: z.string().optional(),
   EMBY_ADMIN_USERNAME: z.string().optional(),
@@ -33,6 +37,7 @@ const envSchema = z.object({
 
   // Provider Specific
   TMDB_ACCESS_TOKEN: z.string().optional(),
+  TMDB_DEFAULT_REGION: z.string().optional(),
   PLEX_TOKEN: z.string().optional(),
 
   // UI / Proxy
@@ -41,6 +46,7 @@ const envSchema = z.object({
   JELLYFIN_USE_WATCHLIST: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 
   APP_VERSION: z.string().optional(),
+  NEXT_PUBLIC_APP_VERSION: z.string().optional(),
   X_FRAME_OPTIONS: z.string().default('DENY'),
   CSP_FRAME_ANCESTORS: z.string().default('none'),
 
@@ -49,6 +55,22 @@ const envSchema = z.object({
 });
 
 const parsedEnv = envSchema.parse(process.env);
+
+// Log config summary at startup (server-side only)
+if (typeof window === 'undefined' && parsedEnv.ENABLE_DEBUG) {
+  console.info('[Swiparr] Config loaded:', {
+    NODE_ENV: parsedEnv.NODE_ENV,
+    PROVIDER: parsedEnv.PROVIDER,
+    PROVIDER_LOCK: parsedEnv.PROVIDER_LOCK,
+    JELLYFIN_URL: parsedEnv.JELLYFIN_URL ? '(set)' : '(not set)',
+    JELLYFIN_PUBLIC_URL: parsedEnv.JELLYFIN_PUBLIC_URL ? '(set)' : '(not set)',
+    JELLYFIN_USE_WATCHLIST: parsedEnv.JELLYFIN_USE_WATCHLIST,
+    DATABASE_URL: parsedEnv.DATABASE_URL ? '(set)' : '(not set)',
+    AUTH_SECRET: parsedEnv.AUTH_SECRET ? '(set)' : '(not set)',
+    APP_VERSION: parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || '(not set)',
+    URL_BASE_PATH: parsedEnv.URL_BASE_PATH || '(not set)',
+  });
+}
 
 // Calculated values
 const getDefaultDbPath = () => {
@@ -62,9 +84,9 @@ const DATABASE_URL = parsedEnv.DATABASE_URL || parsedEnv.TURSO_DATABASE_URL || g
 const DATABASE_AUTH_TOKEN = parsedEnv.DATABASE_AUTH_TOKEN || parsedEnv.TURSO_AUTH_TOKEN;
 
 const SERVER_URL = parsedEnv.JELLYFIN_URL || parsedEnv.EMBY_URL || parsedEnv.PLEX_URL || 
-  (parsedEnv.PROVIDER === 'jellyfin' ? 'http://localhost:8096' : 
-   parsedEnv.PROVIDER === 'emby' ? 'http://localhost:8096' : 
-   parsedEnv.PROVIDER === 'plex' ? 'http://localhost:32400' : '');
+  (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? 'http://localhost:8096' : 
+   parsedEnv.PROVIDER === ProviderType.EMBY ? 'http://localhost:8096' : 
+   parsedEnv.PROVIDER === ProviderType.PLEX ? 'http://localhost:32400' : '');
 
 const SERVER_PUBLIC_URL = (parsedEnv.JELLYFIN_PUBLIC_URL || parsedEnv.EMBY_PUBLIC_URL || parsedEnv.PLEX_PUBLIC_URL || SERVER_URL || '').replace(/\/$/, '');
 
@@ -72,9 +94,9 @@ const RAW_BASE_PATH = parsedEnv.URL_BASE_PATH.replace(/\/$/, '');
 const BASE_PATH = RAW_BASE_PATH && !RAW_BASE_PATH.startsWith('/') ? `/${RAW_BASE_PATH}` : RAW_BASE_PATH;
 
 const ADMIN_USERNAME = parsedEnv.ADMIN_USERNAME || 
-  (parsedEnv.PROVIDER === 'jellyfin' ? parsedEnv.JELLYFIN_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === 'emby' ? parsedEnv.EMBY_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === 'plex' ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
+  (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? parsedEnv.JELLYFIN_ADMIN_USERNAME :
+   parsedEnv.PROVIDER === ProviderType.EMBY ? parsedEnv.EMBY_ADMIN_USERNAME :
+   parsedEnv.PROVIDER === ProviderType.PLEX ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
 
 export const config = {
   ...parsedEnv,
@@ -88,7 +110,7 @@ export const config = {
     publicUrl: SERVER_PUBLIC_URL,
   },
   app: {
-    version: (parsedEnv.APP_VERSION || packageJson.version).replace(/^v/i, ''),
+    version: (parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || packageJson.version).replace(/^v/i, ''),
     basePath: BASE_PATH,
     appPublicUrl: parsedEnv.APP_PUBLIC_URL,
     provider: parsedEnv.PROVIDER,
@@ -99,6 +121,11 @@ export const config = {
     secret: parsedEnv.AUTH_SECRET,
     secureCookies: parsedEnv.USE_SECURE_COOKIES,
     adminUsername: ADMIN_USERNAME,
+  },
+  security: {
+    allowPrivateProviderUrls: parsedEnv.ALLOW_PRIVATE_PROVIDER_URLS,
+    plexAllowSelfSigned: parsedEnv.PLEX_ALLOW_SELF_SIGNED,
+    plexImageAllowedHosts: parsedEnv.PLEX_IMAGE_ALLOWED_HOSTS,
   },
   proxy: {
     xFrameOptions: parsedEnv.X_FRAME_OPTIONS,

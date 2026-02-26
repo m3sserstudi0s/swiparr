@@ -74,6 +74,10 @@ One-click deployment, perfect for personal or small group use:
 
 Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out [^1].
 
+**Vercel security note:** `AUTH_SECRET` is auto-generated during the build (via `scripts/ensure-auth-secret.cjs`) and persisted in the database when not provided.
+
+
+
 ### Full Control: Self-Host with Docker
 
 **Using Docker Compose (Recommended):**
@@ -115,6 +119,8 @@ docker run -d \
 
 3. Open [http://localhost:4321](http://localhost:4321)
 
+**Docker security note:** `AUTH_SECRET` is auto-generated on first boot (via `scripts/ensure-auth-secret.cjs`) and stored in the database when not provided.
+
 ---
 
 ## ⚙️ Configuration Reference
@@ -130,7 +136,7 @@ Choose **one** provider setup based on your needs:
 PROVIDER=jellyfin
 JELLYFIN_URL=http://your-jellyfin:8096              # Internal URL (required)
 JELLYFIN_PUBLIC_URL=https://jellyfin.example.com    # Public URL (optional)
-JELLYFIN_USE_WATCHLIST=true                         # Use Watchlist vs Favorites (optional)
+JELLYFIN_USE_WATCHLIST=false                         # Use Watchlist (plugin needed) vs Favorites (optional)
 ```
 </details>
 
@@ -151,16 +157,16 @@ EMBY_PUBLIC_URL=https://emby.example.com  # Public URL (optional)
 PROVIDER=plex
 PLEX_URL=http://your-plex:32400       # Internal URL (required)
 PLEX_PUBLIC_URL=https://plex.example.com # Public URL (optional)
-PLEX_TOKEN=your-admin-token          # Admin token (optional)
 ```
 </details>
 
 <details>
-<summary><strong>TMDB Setup (No Server Required)</strong></summary>
+  <summary><strong>TMDB Setup (No Server Required)</strong></summary>
 
 ```env
 PROVIDER=tmdb
 TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
+TMDB_DEFAULT_REGION=SE                # Default region for availability/certifications (optional)
 ```
 </details>
 
@@ -168,7 +174,7 @@ TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
 
 ```env
 # Authentication
-AUTH_SECRET=random-string-32-chars-min     # Auto-generated if empty
+AUTH_SECRET=random-string-32-chars-min     # Auto-generated on boot/build when not provided. See Security & Privacy.
 USE_SECURE_COOKIES=true                    # Required for HTTPS
 
 # Application
@@ -186,6 +192,11 @@ EMBY_ADMIN_USERNAME=emby-admin                   # Provider-specific admin (over
 # Security Headers
 X_FRAME_OPTIONS=DENY                       # Frame control
 CSP_FRAME_ANCESTORS=none                   # Embedding policy
+
+# Network Safety
+ALLOW_PRIVATE_PROVIDER_URLS=false          # Block private/LAN URLs for user-supplied providers (BYOP)
+PLEX_ALLOW_SELF_SIGNED=false               # Allow self-signed TLS for Plex (LAN only)
+PLEX_IMAGE_ALLOWED_HOSTS=plex.example.com,*.plex.direct  # Optional extra image hosts
 
 # BYOP Mode - Bring Your Own Provider
 PROVIDER_LOCK=false                          # Let users choose and configure their own provider
@@ -210,7 +221,8 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `PLEX_PUBLIC_URL` | ❌ | - | Public URL of your Plex server (for client-side access) |
 | `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
 | `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
-| `AUTH_SECRET` | ❌ | Auto-generated | Secret used for session encryption (min 32 chars) |
+| `TMDB_DEFAULT_REGION` | ❌ | `SE` | Default TMDB region (ISO 3166-1) for streaming availability/certifications |
+| `AUTH_SECRET` | ❌ | Auto-generated on boot/build | Secret used for session encryption and guest lending token encryption (min 32 chars). See Security & Privacy. |
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
@@ -222,6 +234,9 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `PLEX_ADMIN_USERNAME` | ❌ | - | Plex-specific admin username [^2] |
 | `X_FRAME_OPTIONS` | ❌ | `DENY` | Security header: X-Frame-Options |
 | `CSP_FRAME_ANCESTORS`| ❌ | `none` | Security header: Content-Security-Policy frame-ancestors |
+| `ALLOW_PRIVATE_PROVIDER_URLS` | ❌ | `false` | Allow private/LAN provider URLs for BYOP user inputs |
+| `PLEX_ALLOW_SELF_SIGNED` | ❌ | `false` | Allow self-signed TLS for Plex connections |
+| `PLEX_IMAGE_ALLOWED_HOSTS` | ❌ | - | Extra allowlist for Plex image hosts (comma-separated). `PLEX_URL`/`PLEX_PUBLIC_URL` are allowed by default. |
 | `USE_ANALYTICS` | ❌ | `false` | Enable anonymous usage analytics (Vercel deployments) |
 | `ENABLE_DEBUG` | ❌ | `false` | Enable verbose debug logging and client-server error mapping |
 
@@ -280,6 +295,8 @@ When you create a session, customize it for your group:
 4. Guest gets a unique ID, their swipes are tracked separately
 5. Guests cannot access host account or modify settings
 
+**Security note:** Host credentials are stored server-side and encrypted at rest using `AUTH_SECRET` while Guest Lending is enabled. See "Generating `AUTH_SECRET`" in Security & Privacy.
+
 **Perfect for:** Movie nights with friends who don't have media servers
 </details>
 
@@ -326,12 +343,24 @@ When you create a session, customize it for your group:
 
 ## 🔒 Security & Privacy
 
+- **Generating `AUTH_SECRET` (optional)**:
+
+```bash
+# macOS and Linux
+openssl rand -base64 32
+```
+
+Windows users can use https://generate-secret.vercel.app/32.
+
 - **Encrypted Sessions**: iron-session with secure, encrypted cookies
+- **Encrypted Guest Lending Tokens**: host access tokens are encrypted at rest when Guest Lending is enabled
 - **Scoped Access**: Guests can only swipe, no account access
 - **Data Ownership**: Self-hosted = your data stays on your server
 - **Provider Isolation**: No credential sharing in BYOP mode
 - **CORS Protection**: Configured for safe media server integration
 - **Security Headers**: X-Content-Type-Options, X-XSS-Protection, CSP, Referrer-Policy
+- **Network Safety**: Private/LAN provider URLs are blocked by default; enable via `ALLOW_PRIVATE_PROVIDER_URLS`
+- **Mode Awareness**: Env-configured providers are trusted when `PROVIDER_LOCK=true`; user-supplied URLs are checked
 
 ---
 

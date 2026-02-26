@@ -18,7 +18,7 @@ export function useAdminConfig() {
   return useQuery({
     queryKey: QUERY_KEYS.admin.config,
     queryFn: async () => {
-      const res = await apiClient.get<{ useStaticFilterValues: boolean }>("/api/admin/config");
+      const res = await apiClient.get<Record<string, never>>("/api/admin/config");
       return res.data;
     },
     enabled: !!adminStatus?.isAdmin,
@@ -28,8 +28,8 @@ export function useAdminConfig() {
 export function useUpdateAdminConfig() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: { useStaticFilterValues: boolean }) => {
-      await apiClient.patch("/api/admin/config", updates);
+    mutationFn: async () => {
+      await apiClient.patch("/api/admin/config", {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.config });

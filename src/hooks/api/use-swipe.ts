@@ -3,6 +3,8 @@ import { apiClient } from "@/lib/api-client";
 import { MediaItem, SwipePayload, SwipeResponse, SessionStats } from "@/types";
 import { QUERY_KEYS } from "./query-keys";
 import { useSession } from "./use-session";
+import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export function useSwipe() {
   const queryClient = useQueryClient();
@@ -83,6 +85,8 @@ export function useSwipe() {
     },
     // If the mutation fails, use the context returned from onMutate to roll back
     onError: (err, newSwipe, context) => {
+      logger.error("Swipe failed:", err);
+      
       if (context?.previousDeck) {
         queryClient.setQueryData(QUERY_KEYS.deck(sessionCode), context.previousDeck);
       }
@@ -94,13 +98,17 @@ export function useSwipe() {
           queryClient.setQueryData(queryKey, data);
         });
       }
+      
+      toast.error("Swipe failed", {
+        description: "Could not save your swipe. Please try again."
+      });
     },
 
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.stats(sessionCode!) });
-      // We don't necessarily want to refetch the whole deck on every swipe
-      // but maybe just invalidate to keep it fresh
+      // Invalidate movie details to ensure fresh image data
+      queryClient.invalidateQueries({ queryKey: ["movie"] });
     },
     onSuccess: (data) => {
       if (data.isMatch) {

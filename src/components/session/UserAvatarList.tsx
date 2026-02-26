@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SmoothAvatar } from "@/components/ui/smooth-avatar";
 import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "@/components/ui/hybrid-tooltip";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/hooks/api";
+import { Crown } from "lucide-react";
 
 
 interface Member {
@@ -20,6 +22,9 @@ interface UserAvatarListProps {
 }
 
 export function UserAvatarList({ users, size = "md", className }: UserAvatarListProps) {
+    const { data: session } = useSession();
+    const hostUserId = session?.hostUserId || null;
+
     const sizeClasses = {
         sm: "w-5 h-5",
         md: "w-8 h-8",
@@ -33,20 +38,38 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
     };
 
     const grays = [
-        "bg-neutral-200 text-neutral-800",
-        "bg-neutral-300 text-neutral-900",
-        "bg-neutral-400 text-neutral-50",
-        "bg-neutral-500 text-neutral-50",
-        "bg-neutral-600 text-neutral-50",
+    "bg-indigo-100 text-neutral-900",  // soft
+    "bg-emerald-500 text-white",       // bold
+    "bg-amber-100 text-neutral-900",   // soft
+    "bg-cyan-500 text-white",          // bold
+    "bg-pink-100 text-neutral-900",    // soft
+    "bg-indigo-500 text-white",        // bold
+    "bg-teal-100 text-neutral-900",    // soft
+    "bg-rose-500 text-white",          // bold
+    "bg-sky-100 text-neutral-900",     // soft
+    "bg-lime-500 text-neutral-900",    // bold
     ];
 
     const maxVisible = 5;
-    const displayUsers = users.slice(0, maxVisible);
-    const remainingCount = users.length - maxVisible;
+    const orderedUsers = hostUserId
+        ? [
+            ...users.filter((user) => user.userId === hostUserId),
+            ...users.filter((user) => user.userId !== hostUserId),
+        ]
+        : users;
+    
+    // const testUsers = [...orderedUsers, ...orderedUsers, ...orderedUsers, ...orderedUsers]
+    // const displayUsers = testUsers.slice(0, maxVisible);
+    // const remainingCount = testUsers.length - maxVisible;
+
+    const displayUsers = orderedUsers.slice(0, maxVisible);
+    const remainingCount = orderedUsers.length - maxVisible;
 
     return (
         <div className={cn("flex overflow-hidden", overlapClasses[size], className)}>
-            {displayUsers.map((user, index) => (
+            {displayUsers.map((user, index) => {
+                const isHost = !!hostUserId && user.userId === hostUserId;
+                return (
                 <HybridTooltip key={user.userId}>
                     <HybridTooltipTrigger asChild>
                         <div className={cn("inline-block border-2 border-background/20 rounded-full", sizeClasses[size])}>
@@ -55,28 +78,35 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                                 userName={user.userName} 
                                 hasImage={user.hasCustomProfilePicture}
                                 updatedAt={user.profileUpdatedAt}
-                                className="size-full"
+                                className={cn("size-full", isHost && "bg-background")}
                                 fallbackClassName={cn(
-                                    "font-semibold",
-                                    size === "sm" ? "text-[10px]" : "text-sm",
-                                    grays[index % grays.length]
+                                    size === "sm" ? "text-[10px]/0 font-normal" : "text-sm/0 font-semibold",
+                                    isHost ? "bg-accent text-foreground" : grays[(index - 1) % grays.length]
                                 )}
                             />
                         </div>
                     </HybridTooltipTrigger>
                     <HybridTooltipContent className="py-2 px-3 w-fit">
-                        <p>{user.userName}</p>
+                        {isHost ? (
+                            <p className="inline-flex items-center gap-1 text-sm">
+                                <Crown className="size-3.5 fill-accent" />
+                                {user.userName}
+                            </p>
+                        ) : (
+                            <p className="text-sm">{user.userName}</p>
+                        )}
                     </HybridTooltipContent>
                 </HybridTooltip>
-            ))}
+                );
+            })}
             {remainingCount > 0 && (
                 <HybridTooltip>
                     <HybridTooltipTrigger asChild>
                         <Avatar className={cn("inline-block border-2 border-background/20", sizeClasses[size])}>
                             <AvatarFallback
                                 className={cn(
-                                    "bg-neutral-800 text-neutral-50 font-semibold",
-                                    size === "sm" ? "text-[10px]" : "text-sm"
+                                    "bg-background text-foreground font-light text-[10px]/0",
+                                    size === "sm" ? "text-[7px]/0" : "text-[10px]/0"
                                 )}
                             >
                                 +{remainingCount}
@@ -84,7 +114,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                         </Avatar>
                     </HybridTooltipTrigger>
                     <HybridTooltipContent>
-                        <p>{users.slice(maxVisible).map(u => u.userName).join(", ")}</p>
+                        <p>{orderedUsers.slice(maxVisible).map(u => u.userName).join(", ")}</p>
                     </HybridTooltipContent>
                 </HybridTooltip>
             )}

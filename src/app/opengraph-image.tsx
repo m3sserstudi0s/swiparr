@@ -1,8 +1,10 @@
 import { ImageResponse } from 'next/og'
+import { connection } from 'next/server'
 import { getRuntimeConfig } from '@/lib/runtime-config'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
 
 export const alt = 'Swiparr - Swipe on what to watch next'
 export const size = {
@@ -27,8 +29,28 @@ async function loadGoogleFont(font: string, text: string) {
   throw new Error(`Failed to load font: ${font}`)
 }
 
+function renderFallbackImage(message: string) {
+  return new ImageResponse(
+    (
+      <div
+        tw="flex items-center justify-center w-full h-full bg-[#141414] text-white"
+        style={{ background: 'linear-gradient(to bottom right, #141414, #2a2a2a)' }}
+      >
+        <div tw="text-6xl font-bold">{message}</div>
+      </div>
+    ),
+    { ...size }
+  )
+}
+
 export default async function Image() {
   try {
+    try {
+      await connection()
+    } catch (error) {
+      console.warn('[opengraph-image] connection() failed during prerender.')
+      return renderFallbackImage('Swiparr')
+    }
     const { basePath, appPublicUrl } = getRuntimeConfig();
     const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
     const logoUrl = `${origin}${basePath}/icon1.png`;

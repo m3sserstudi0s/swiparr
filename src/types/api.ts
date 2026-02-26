@@ -36,6 +36,7 @@ export interface SessionStatus {
   provider: string;
   capabilities: ProviderCapabilities;
   serverUrl?: string;
+  machineId?: string;
     settingsHash?: string;
     hasCustomProfilePicture?: boolean;
     profileUpdatedAt?: string;

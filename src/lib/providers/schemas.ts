@@ -74,6 +74,7 @@ export const JellyfinItemSchema = z.object({
   UserData: z.object({
     IsFavorite: z.boolean().optional(),
     Likes: z.boolean().optional(),
+    Played: z.boolean().optional(),
   }).optional(),
   People: z.array(z.object({
     Name: z.string(),
@@ -97,10 +98,22 @@ export const PlexMetadataSchema = z.object({
   ratingKey: z.string(),
   key: z.string(),
   title: z.string(),
+  guid: z.string().optional(),
+  Guid: z.array(z.object({ id: z.string() })).optional(),
+  viewCount: z.number().optional(),
+  viewOffset: z.number().optional(),
+  lastViewedAt: z.number().optional(),
+  userState: z.object({
+    watchlistedAt: z.number().optional(),
+  }).optional(),
   originalTitle: z.string().optional(),
   summary: z.string().optional(),
   year: z.number().optional(),
   rating: z.number().optional(),
+  audienceRating: z.number().optional(),
+  audienceRatingImage: z.string().optional(),
+  ratingImage: z.string().optional(),
+  userRating: z.number().optional(),
   contentRating: z.string().optional(),
   duration: z.number().optional(),
   thumb: z.string().optional(),
@@ -108,7 +121,19 @@ export const PlexMetadataSchema = z.object({
   tagline: z.string().optional(),
   Genre: z.array(z.object({ tag: z.string() })).optional(),
   Director: z.array(z.object({ tag: z.string() })).optional(),
-  Role: z.array(z.object({ tag: z.string(), id: z.number().optional(), thumb: z.string().optional() })).optional(),
+  Role: z.array(z.object({ tag: z.string(), role: z.string().optional(), id: z.number().optional(), thumb: z.string().optional() })).optional(),
+  Language: z.array(z.object({ tag: z.string() })).optional(),
+  Country: z.array(z.object({ tag: z.string() })).optional(),
+  Media: z.array(z.object({
+    Part: z.array(z.object({
+      Stream: z.array(z.object({
+        language: z.string().optional(),
+        languageCode: z.string().optional(),
+        title: z.string().optional(),
+        streamType: z.number().optional(),
+      })).optional(),
+    })).optional(),
+  })).optional(),
 });
 
 export const PlexContainerSchema = z.object({
