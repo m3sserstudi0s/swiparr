@@ -1,7 +1,8 @@
-The purpose of this file is to provide insight into the making of Swiparr, and the AI tools that has contributed to its creation and development.
+The purpose of this text is to provide insight into the making of Swiparr and the AI tools that have contributed to its creation and development.
 
-Swiparr is made by humans in the sense that humans review, question, and test every line of code being committed to the code base.
+Swiparr is made by humans in the sense that humans review, question, and test every line of code committed to the codebase.
 
-Agentic AI chatbots have been, and are being, used to implement ideas, bug fixes and code refactors. When used, AI is guided by the reviewing human, which is responsible for pulling the trigger to commit changes. No AI has made any commits, pull requests nor have any "direct integration" (via an AI SDK or alike) to the code base. Between the code base and the AI agent, there is always a human reviewer and tester.
+Agentic AI chatbots have been, and continue to be, used to implement ideas, fix bugs, and refactor code. 
+When used, AI is guided by the reviewing human, who is responsible for pulling the trigger to commit changes. No AI has made any commits or opened any pull requests, nor does any AI have a "direct integration" (via an AI SDK or similar) into the codebase. Between the codebase and any AI agent, there is always a human reviewer and tester.
 
-The developers of Swiparr believe in responsible AI usage, benefitting the user and developer experience.
+The developers of Swiparr believe in responsible AI usage that benefits both the user and developer experience.
