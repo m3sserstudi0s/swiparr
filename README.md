@@ -1,5 +1,5 @@
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/c80f162f-aba9-4df3-9494-54e8df8e5343" alt="Swiparr" width="300" />
+  [swiparr_demo.webm](https://github.com/user-attachments/assets/2e506f5c-3c6b-42eb-8a65-b5b31c2d84f5)
 </p>
 
 <h1 align="center">Swiparr 🍿</h1>
