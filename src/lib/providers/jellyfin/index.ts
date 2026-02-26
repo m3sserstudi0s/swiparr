@@ -15,6 +15,7 @@ import {
   MediaRating 
 } from "@/types/media";
 import { apiClient, getJellyfinUrl, getAuthenticatedHeaders } from "@/lib/jellyfin/api";
+import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/jellyfin/cached-queries";
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
@@ -114,10 +115,11 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Genres", auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
-    return (res.data.Items || []).map((g: any) => ({ Id: g.Name, Name: g.Name }));
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
+    const items = await getCachedGenres(auth.accessToken, auth.deviceId, auth.userId);
+    return items.map((g: any) => ({ Id: g.Name, Name: g.Name }));
   }
 
   async getThemes(auth?: AuthContext): Promise<string[]> {
@@ -164,57 +166,51 @@ export class JellyfinProvider implements MediaProvider {
   }
 
   async getYears(auth?: AuthContext): Promise<MediaYear[]> {
-    const res = await apiClient.get(getJellyfinUrl("/Years", auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
-    return (res.data.Items || []).map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
+    const items = await getCachedYears(auth.accessToken, auth.deviceId, auth.userId);
+    return items.map((y: any) => ({ Name: y.Name, Value: parseInt(y.Name) }));
   }
 
   async getRatings(auth?: AuthContext): Promise<MediaRating[]> {
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
     try {
-      const res = await apiClient.get(getJellyfinUrl("/Items/Filters2", auth?.serverUrl), {
-        params: {
-          userId: auth?.userId,
-          includeItemTypes: "Movie",
-          recursive: true,
-        },
-        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-      });
-
-      const ratings = res.data.ContentRatings || [];
+      const ratings = await getCachedRatings(auth.accessToken, auth.deviceId, auth.userId);
       if (ratings.length === 0) {
-          return [
-              { Name: "G", Value: "G" },
-              { Name: "PG", Value: "PG" },
-              { Name: "PG-13", Value: "PG-13" },
-              { Name: "R", Value: "R" },
-              { Name: "NC-17", Value: "NC-17" }
-          ];
-      }
-      return ratings.map((r: any) => ({ Name: r.Name, Value: r.Name }));
-    } catch (error) {
-        logger.error("[JellyfinProvider.getRatings] Error:", error);
         return [
-            { Name: "G", Value: "G" },
-            { Name: "PG", Value: "PG" },
-            { Name: "PG-13", Value: "PG-13" },
-            { Name: "R", Value: "R" },
-            { Name: "NC-17", Value: "NC-17" }
+          { Name: "G", Value: "G" },
+          { Name: "PG", Value: "PG" },
+          { Name: "PG-13", Value: "PG-13" },
+          { Name: "R", Value: "R" },
+          { Name: "NC-17", Value: "NC-17" }
         ];
+      }
+      return ratings.map((r: any) => ({ Name: r, Value: r }));
+    } catch (error) {
+      logger.error("[JellyfinProvider.getRatings] Error:", error);
+      return [
+        { Name: "G", Value: "G" },
+        { Name: "PG", Value: "PG" },
+        { Name: "PG-13", Value: "PG-13" },
+        { Name: "R", Value: "R" },
+        { Name: "NC-17", Value: "NC-17" }
+      ];
     }
   }
 
   async getLibraries(auth?: AuthContext): Promise<MediaLibrary[]> {
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Views`, auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
-    });
-    return (res.data.Items || [])
-      .filter((l: any) => l.CollectionType === "movies")
-      .map((l: any) => ({
-        Id: l.Id,
-        Name: l.Name,
-        CollectionType: l.CollectionType,
-      }));
+    if (!auth?.accessToken || !auth?.deviceId || !auth?.userId) {
+      throw new Error("Auth credentials required");
+    }
+    const items = await getCachedLibraries(auth.accessToken, auth.deviceId, auth.userId);
+    return items.map((l: any) => ({
+      Id: l.Id,
+      Name: l.Name,
+      CollectionType: l.CollectionType,
+    }));
   }
 
   getImageUrl(itemId: string, type: "Primary" | "Backdrop" | "Logo" | "Thumb" | "Banner" | "Art" | "user", tag?: string, auth?: AuthContext): string {
