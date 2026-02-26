@@ -211,7 +211,7 @@ export default function SessionContent() {
                     members={members}
                     currentSettings={sessionStatus?.settings || undefined}
                 />
-                <div className="px-1">
+                <div className="px-1 w-full h-20 items-center grid">
                     <SessionAlert />
                 </div>
                 <div className="space-y-6 px-1">
