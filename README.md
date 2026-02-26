@@ -1,5 +1,5 @@
 <p align="center">
-  [swiparr_demo.webm](https://github.com/user-attachments/assets/2e506f5c-3c6b-42eb-8a65-b5b31c2d84f5)
+  ![swiparr_demo](https://github.com/user-attachments/assets/a4189871-ba68-4c6b-b177-1eb3e3f99fdb)
 </p>
 
 <h1 align="center">Swiparr 🍿</h1>
