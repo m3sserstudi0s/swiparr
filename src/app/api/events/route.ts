@@ -8,8 +8,8 @@ import { sessionEvents } from "@/db/schema";
 import { and, eq, gt, or, asc, desc } from "drizzle-orm";
 import { GLOBAL_SESSION_CODE } from "@/lib/services/event-service";
 
-// Allow long-lived SSE connections on Vercel Hobby (max 300s) and similar platforms.
-export const maxDuration = 300;
+// Allow long-lived SSE connections on Vercel Hobby (max 60s) and similar platforms.
+export const maxDuration = 60;
 
 /** How long (ms) the server-side loop waits between DB polls when idle. */
 const POLL_INTERVAL_MS = 500;
