@@ -49,7 +49,7 @@ export function SessionAlert() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Guest Session</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    You are currently joined as a guest. Some features are unavailable due you lending the session host's account.
+                                    You are currently joined as a guest. Some features are unavailable due to you lending the session host's account.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
