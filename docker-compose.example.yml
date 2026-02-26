@@ -31,8 +31,12 @@ services:
       # IMPORTANT: When using a reverse proxy, ensure it passes the "Host" header.
       - USE_SECURE_COOKIES=false
       
-      # OPTIONAL: Custom base path for the application
-      # Example: /swipe
+      # OPTIONAL: Custom base path for the application (e.g. /swipe)
+      # IMPORTANT: This must be set at BUILD TIME via --build-arg, not just as a
+      # runtime environment variable. The prebuilt image does not support this.
+      # To use it, build your own image:
+      #   docker build --build-arg URL_BASE_PATH=/swipe -t swiparr-custom .
+      # Then replace the image field above with: image: swiparr-custom
       # - URL_BASE_PATH=
       
       # OPTIONAL: The hostname the server binds to
@@ -49,7 +53,7 @@ services:
     ports:
       - 4321:4321
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4321/api/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:4321${URL_BASE_PATH:-}/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
