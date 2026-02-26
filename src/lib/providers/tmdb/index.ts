@@ -148,9 +148,9 @@ export class TmdbProvider implements MediaProvider {
             if (max < 240) params['with_runtime.lte'] = max;
         }
 
-        if (filters.languages && filters.languages.length > 0) {
-            params.with_original_language = filters.languages.join('|');
-            logger.debug("[TMDBProvider.getItems] Applying language filter:", { languages: filters.languages });
+        if (filters.tmdbLanguages && filters.tmdbLanguages.length > 0) {
+            params.with_original_language = filters.tmdbLanguages.join('|');
+            logger.debug("[TMDBProvider.getItems] Applying language filter:", { languages: filters.tmdbLanguages });
         }
 
         return params;
