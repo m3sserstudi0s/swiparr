@@ -87,7 +87,7 @@ export const POPULAR_LANGUAGE_CODES = [
 
 export const TMDB_MOVIE_BASE_URL = "https://www.themoviedb.org/movie";
 
-export const DEFAULT_TMDB_REGION = "SE";
+export const DEFAULT_TMDB_REGION = "US";
 
 export const POPULAR_TMDB_WATCH_PROVIDER_NAMES = [
     "Netflix",

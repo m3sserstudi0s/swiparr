@@ -39,6 +39,8 @@ const envSchema = z.object({
   TMDB_ACCESS_TOKEN: z.string().optional(),
   TMDB_DEFAULT_REGION: z.string().optional(),
   PLEX_TOKEN: z.string().optional(),
+  EXCLUDED_LANGUAGES: z.string().optional(),
+  TMDB_LANGUAGES: z.string().optional(),
 
   // UI / Proxy
   URL_BASE_PATH: z.string().default(''),
