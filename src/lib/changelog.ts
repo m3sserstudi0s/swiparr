@@ -9,6 +9,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.12",
+    date: "2026-02-26",
+    changes: [
+      { type: "feature", description: "Confetti burst animation now plays when a match is found" },
+      { type: "improvement", description: "Maturity ratings now default to US certifications (G, PG, PG-13, R, NC-17)" },
+      { type: "feature", description: "New TMDB_LANGUAGES env var restricts content to specific original languages (e.g. English only)" },
+      { type: "feature", description: "New EXCLUDED_LANGUAGES env var blocks content by original language as a secondary filter" },
+      { type: "improvement", description: "Login sessions now persist for 1 year — no more being logged out when closing the browser" },
+    ],
+  },
+  {
     version: "1.0.34",
     date: "2026-02-23",
     changes: [

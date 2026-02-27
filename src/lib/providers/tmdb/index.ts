@@ -88,7 +88,8 @@ export class TmdbProvider implements MediaProvider {
     }
 
     // --- Trending ---
-    if (filters.sortBy === "Trending" && (!filters.watchProviders || filters.watchProviders.length === 0)) {
+    const hasCertFilter = (filters.ratings && filters.ratings.length > 0) || (filters.excludedRatings && filters.excludedRatings.length > 0);
+    if (filters.sortBy === "Trending" && (!filters.watchProviders || filters.watchProviders.length === 0) && !hasCertFilter) {
         const results: MediaItem[] = [];
         if (mediaType === "movie" || mediaType === "both") {
             const data = await this.fetchTmdb<any>('trending/movie/week', { page });
@@ -183,14 +184,30 @@ export class TmdbProvider implements MediaProvider {
     const movieResults: MediaItem[] = [];
     const tvResults: MediaItem[] = [];
 
+    // Resolve effective certification filters for movies
+    let effectiveRatings: string[] | undefined = filters.ratings;
+    if ((!effectiveRatings || effectiveRatings.length === 0) && filters.excludedRatings && filters.excludedRatings.length > 0) {
+        // TMDB only supports include-based certification filtering, so invert the exclusion list
+        try {
+            const region = filters.watchRegion || auth?.watchRegion || 'US';
+            const certData = await this.fetchTmdb<any>('certification/movie/list');
+            const allCerts: string[] = (certData.certifications?.[regionMapping[region] || 'US'] || []).map((c: any) => c.certification);
+            if (allCerts.length > 0) {
+                effectiveRatings = allCerts.filter(c => !filters.excludedRatings!.includes(c));
+            }
+        } catch {
+            // If we can't fetch certs, skip certification filtering
+        }
+    }
+
     if (mediaType === "movie" || mediaType === "both") {
         const movieParams = buildDiscoverParams("movie");
         if (keywordIds.length > 0) movieParams.with_keywords = keywordIds.join('|');
-        if (filters.ratings && filters.ratings.length > 0) {
+        if (effectiveRatings && effectiveRatings.length > 0) {
             const region = filters.watchRegion || auth?.watchRegion || 'US';
             movieParams.certification_country = regionMapping[region] || 'US';
-            movieParams.certification = filters.ratings.join('|');
-            logger.debug("[TMDBProvider.getItems] Applying certification filter:", { region, ratings: filters.ratings });
+            movieParams.certification = effectiveRatings.join('|');
+            logger.debug("[TMDBProvider.getItems] Applying certification filter:", { region, ratings: effectiveRatings });
         }
         if (filters.sortBy === "Random") {
             try {
