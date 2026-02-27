@@ -68,6 +68,23 @@ export const sessionSettingsSchema = z.object({
   allowGuestLending: z.boolean().optional(),
 });
 
+export const plexAuthSchema = z.object({
+  authToken: z.string().min(1, "authToken is required"),
+  clientId: z.string().min(1, "clientId is required"),
+  // Note: 'user' is intentionally NOT accepted. User identity is always
+  // fetched server-side from plex.tv to prevent client impersonation (H5).
+});
+
+export const deleteSwipeSchema = z.object({
+  itemId: z.string().min(1).max(256),
+});
+
+export const watchlistSchema = z.object({
+  itemId: z.string().min(1).max(256),
+  action: z.enum(["add", "remove"]),
+  useWatchlist: z.boolean().optional(),
+});
+
 export const libraryUpdateSchema = z.array(z.string());
 
 export const quickConnectSchema = z.object({

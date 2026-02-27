@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import crypto from "crypto";
 import { eq, and, ne, count, sql, isNull } from "drizzle-orm";
 import { db, sessions, sessionMembers, likes, hiddens, userProfiles } from "@/lib/db";
 import { EVENT_TYPES } from "@/lib/events";
@@ -11,21 +12,14 @@ import { encryptValue, getGuestLendingSecret } from "@/lib/security/crypto";
 
 export class SessionService {
   private static generateCode(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let result = "";
-    for (let i = 0; i < 4; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 32 chars, no ambiguous I/O/0/1
+    const bytes = crypto.randomBytes(4);
+    return Array.from(bytes).map(b => chars[b % 32]).join("");
   }
 
   private static generateRandomSeed(): string {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < 32; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    // 24 random bytes → 32 base64url characters, 192 bits of entropy
+    return crypto.randomBytes(24).toString("base64url");
   }
 
   static async createSession(user: SessionData["user"], allowGuestLending: boolean) {

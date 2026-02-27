@@ -4,7 +4,7 @@ import { getRuntimeConfig } from '../runtime-config';
 import { config as appConfig } from '../config';
 import { resolveServerUrl } from './discovery';
 import { logger } from '../logger';
-import { assertSafeUrl, getDefaultProviderBaseUrl } from '@/lib/security/url-guard';
+import { assertSafeUrl, assertSafeResolvedUrl, getDefaultProviderBaseUrl } from '@/lib/security/url-guard';
 
 const PLEX_URL = appConfig.PLEX_URL || 'http://localhost:32400';
 
@@ -20,16 +20,33 @@ export const plexClient = axios.create({
   ...(httpsAgent ? { httpsAgent } : {}),
 });
 
-export const getPlexUrl = (path: string, customBaseUrl?: string) => {
+export const getPlexUrl = (path: string, customBaseUrl?: string): string => {
   const fallbackBase = getDefaultProviderBaseUrl();
   let base = (customBaseUrl || PLEX_URL || fallbackBase || '').replace(/\/$/, '');
   if (!base.startsWith('http')) {
     base = `http://${base}`;
   }
   const source = customBaseUrl ? (appConfig.app.providerLock ? "env" : "user") : "env";
+  // Synchronous structural + private-IP check (pattern matching only).
+  // For user-supplied URLs, callers that need full DNS-resolution protection
+  // should additionally call assertSafeResolvedUrl (M9).
   assertSafeUrl(base, { source });
   const cleanPath = path.replace(/^\//, '');
   return `${base}/${cleanPath}`;
+};
+
+/**
+ * Validate a user-supplied Plex server base URL including post-DNS-resolution
+ * private-IP checks (SSRF defence, M9).  Call this once before using a URL
+ * that originated from untrusted input (e.g. at authentication time).
+ */
+export const assertSafePlexServerUrl = async (serverUrl: string): Promise<void> => {
+  const source = appConfig.app.providerLock ? "env" : "user";
+  if (source === "user") {
+    await assertSafeResolvedUrl(serverUrl, { source });
+  } else {
+    assertSafeUrl(serverUrl, { source });
+  }
 };
 
 export const getPlexHeaders = (token?: string, clientId?: string) => {

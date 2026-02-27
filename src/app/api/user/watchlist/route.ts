@@ -7,6 +7,7 @@ import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { handleApiError } from "@/lib/api-utils";
 import { ProviderType } from "@/lib/providers/types";
+import { watchlistSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -17,7 +18,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Guests cannot modify watchlist/favorites" }, { status: 403 });
   }
 
-    const { itemId, action, useWatchlist } = await request.json();
+    const bodyRaw = await request.json();
+  const validated = watchlistSchema.safeParse(bodyRaw);
+  if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  const { itemId, action, useWatchlist } = validated.data;
 
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
 

@@ -53,7 +53,7 @@ const ensureAuthSecret = async () => {
       return;
     }
 
-    const generated = crypto.randomUUID().repeat(2).slice(0, 32);
+    const generated = crypto.randomBytes(32).toString('hex');
     await db.insert(configTable).values({ key: 'auth_secret', value: generated });
     console.log('[Auth] Generated AUTH_SECRET and stored in database.');
   } finally {
