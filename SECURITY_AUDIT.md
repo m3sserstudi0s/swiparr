@@ -33,7 +33,7 @@
 
 **Finding**: The AES-256-GCM key used to encrypt host access tokens was derived from the `AUTH_SECRET` by simply hashing it with SHA-256 — no salt, no iterations. Any token stored in the database was effectively protected only by the raw secret.
 
-**Fix**: `deriveKey` now uses `crypto.scryptSync` with parameters N=32768, r=8, p=1 and a versioned salt (`swiparr-guest-lending-v2`). New ciphertexts are prefixed `v2:`. Legacy `v1:` ciphertexts cannot be decrypted with the new KDF; at startup, after migrations, all rows containing `v1:` tokens are wiped (`wipeLegacyCryptoTokens()` in `src/db/migrate.js`).
+**Fix**: `deriveKey` now uses `crypto.scryptSync` with parameters N=16384, r=8, p=1 and a versioned salt (`swiparr-guest-lending-v2`). New ciphertexts are prefixed `v2:`. Legacy `v1:` ciphertexts cannot be decrypted with the new KDF; at startup, after migrations, all rows containing `v1:` tokens are wiped (`wipeLegacyCryptoTokens()` in `src/db/migrate.js`).
 
 ---
 

@@ -3,9 +3,9 @@ import { getAuthSecret } from "@/lib/server/session-secret";
 
 const KEY_LENGTH = 32;
 const IV_LENGTH = 12;
-// Scrypt parameters – conservative but fast enough for a server-side KDF
-// (N=2^15 ≈ 32768, r=8, p=1 gives ~100ms on modest hardware; fine for key derivation, not login)
-const SCRYPT_N = 32768;
+// Scrypt parameters – N=2^14 (16384) keeps memory at 16 MB (128*N*r*p bytes),
+// safely within Node's default 32 MB scrypt limit while exceeding OWASP minimums.
+const SCRYPT_N = 16384;
 const SCRYPT_R = 8;
 const SCRYPT_P = 1;
 // Fixed salt: the secret itself provides uniqueness; this salt binds the key to its purpose
