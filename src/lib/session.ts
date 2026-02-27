@@ -14,6 +14,7 @@ export async function getSessionOptions(): Promise<SessionOptions> {
       httpOnly: true,
       sameSite: "lax",
       path: config.app.basePath || "/",
+      maxAge: 60 * 60 * 24 * 365, // 1 year
     },
   };
 }
