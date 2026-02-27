@@ -4,6 +4,22 @@ const PLEX_TV_API_URL = 'https://plex.tv/api/v2';
 const CLIENT_ID_KEY = 'swiparr_plex_client_id';
 
 /**
+ * Generates a UUID v4, with a fallback for non-secure contexts (plain HTTP)
+ * where crypto.randomUUID() is not available.
+ */
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback: manual UUID v4 using Math.random (acceptable for a client identifier)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
  * Get or create a stable client identifier for Plex
  */
 export function getPlexClientId(): string {
@@ -11,7 +27,7 @@ export function getPlexClientId(): string {
   
   let clientId = localStorage.getItem(CLIENT_ID_KEY);
   if (!clientId) {
-    clientId = crypto.randomUUID();
+    clientId = generateUUID();
     localStorage.setItem(CLIENT_ID_KEY, clientId);
   }
   return clientId;
