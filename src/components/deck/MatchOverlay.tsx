@@ -2,12 +2,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { MediaItem } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSession } from "@/hooks/api";
+import { useConfettiBurst } from "@/hooks/useConfettiBurst";
 
 interface MatchOverlayProps {
   item: MediaItem | null;
@@ -18,6 +18,7 @@ interface MatchOverlayProps {
 export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) {
   const { openMovie } = useMovieDetail();
   const { data: session } = useSession();
+  const { cardRef, fire } = useConfettiBurst();
   const likedBy = item?.likedBy ?? [];
   const otherUsers = session?.userId
     ? likedBy.filter((user) => user.userId !== session.userId)
@@ -44,16 +45,6 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
               transition={{ type: "spring", damping: 20, stiffness: 300 }}
               className="relative flex flex-col items-center text-center max-w-sm w-full outline-none mt-10"
             >
-              {/* Animated Heart Background */}
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: [1.2, 1.4, 1.2] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute -top-15 opacity-40 pointer-events-none"
-              >
-                <Heart className="w-80 h-80 fill-neutral-900 text-neutral-900" />
-              </motion.div>
-
               <h1 className="text-5xl font-black italic text-neutral-100 mb-2 drop-shadow-2xl tracking-tighter uppercase">
                 It's a match!
               </h1>
@@ -66,14 +57,16 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
               )}
 
               <motion.div
+                ref={cardRef}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="relative w-64 h-96 mb-7 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 cursor-pointer hover:scale-105 transition-transform"
+                onAnimationComplete={fire}
+                className="w-64 h-96 mb-7 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 cursor-pointer hover:scale-105 transition-transform"
                 onClick={() => { openMovie(item.Id, { sessionCode }); onClose(); }}
               >
                 <OptimizedImage
-                  src={item.ImageTags?.Primary 
+                  src={item.ImageTags?.Primary
                     ? `/api/media/image/${item.Id}?tag=${item.ImageTags?.Primary}`
                     : `/api/media/image/${item.Id}`
                   }

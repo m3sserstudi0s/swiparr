@@ -10,6 +10,15 @@ import { ConfigService } from "./config-service";
 import { deckCache } from "./deck-cache";
 import { logger } from "@/lib/logger";
 import { getRuntimeConfig } from "@/lib/runtime-config";
+import { config } from "@/lib/config";
+
+const GLOBAL_EXCLUDED_LANGUAGES: string[] = config.EXCLUDED_LANGUAGES
+  ? config.EXCLUDED_LANGUAGES.split(",").map(l => l.trim().toLowerCase()).filter(Boolean)
+  : [];
+
+const GLOBAL_ALLOWED_LANGUAGES: string[] = config.TMDB_LANGUAGES
+  ? config.TMDB_LANGUAGES.split(",").map(l => l.trim().toLowerCase()).filter(Boolean)
+  : [];
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
@@ -868,6 +877,18 @@ export class MediaService {
 
   private static applyClientFilters(items: MediaItem[], filters: Filters | null): MediaItem[] {
     let result = items;
+
+    if (GLOBAL_EXCLUDED_LANGUAGES.length > 0) {
+      result = result.filter(item =>
+        !item.Language || !GLOBAL_EXCLUDED_LANGUAGES.includes(item.Language.toLowerCase())
+      );
+    }
+
+    if (GLOBAL_ALLOWED_LANGUAGES.length > 0) {
+      result = result.filter(item =>
+        !item.Language || GLOBAL_ALLOWED_LANGUAGES.includes(item.Language.toLowerCase())
+      );
+    }
 
     if (!filters) return result;
 
