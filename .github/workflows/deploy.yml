@@ -1,0 +1,48 @@
+name: Deploy to homelab
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: SSH deploy to csdutraserver
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Deploy via SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 600 /dev/null /tmp/deploy_id
+          printf '%s' "$DEPLOY_KEY" > /tmp/deploy_id
+
+          mkdir -p ~/.ssh
+          echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          ssh \
+            -i /tmp/deploy_id \
+            -p "$SSH_PORT" \
+            -o UserKnownHostsFile=$HOME/.ssh/known_hosts \
+            -o ConnectTimeout=30 \
+            "$SSH_USER@$SSH_HOST" \
+            "/opt/deploy/swiparr.sh"
+
+          rm -f /tmp/deploy_id
