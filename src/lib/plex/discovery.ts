@@ -307,11 +307,67 @@ export async function resolveServerUrl(
       // Invalid URL, continue to discovery
     }
   }
-  
-  // Try to discover servers and find best connection
+
+   // If a URL is provided with an IP address, try to find the matching server via
+  // discovery so we can resolve its machineId and get a .plex.direct URL.
+  // We match by comparing the IP address and port of the provided URL against
+  // each server's connections — this prevents picking the wrong server when the
+  // user has multiple Plex servers linked to their account.
+  if (providedUrl) {
+    try {
+      const providedUrlObj = new URL(providedUrl);
+      const providedHost = providedUrlObj.hostname;
+      const providedPort = parseInt(providedUrlObj.port) || (providedUrlObj.protocol === 'https:' ? 443 : 80);
+
+      const servers = await getUserServers(userToken, clientId);
+      const accessibleServers = servers.filter(s => s.owned || s.accessToken);
+
+      // Find the server whose connections include the provided IP+port
+      const matchedServer = accessibleServers.find(server =>
+        server.connections.some(conn => {
+          try {
+            const connUrl = new URL(conn.uri);
+            const connHost = connUrl.hostname;
+            const connPort = parseInt(connUrl.port) || (connUrl.protocol === 'https:' ? 443 : 80);
+            // Match by IP address and port
+            return connHost === providedHost && connPort === providedPort;
+          } catch {
+            return false;
+          }
+        })
+      );
+
+      if (matchedServer) {
+        const bestConnection = findBestConnection(matchedServer);
+        const isSharedServer = !matchedServer.owned && !!matchedServer.accessToken;
+        const accessToken: string | null = isSharedServer && matchedServer.accessToken ? matchedServer.accessToken : null;
+
+        if (bestConnection) {
+          logger.info('[PlexDiscovery] Matched provided IP URL to server:', {
+            server: matchedServer.name,
+            machineId: matchedServer.clientIdentifier,
+            resolvedUri: bestConnection.uri,
+          });
+          return {
+            serverUrl: bestConnection.uri,
+            machineId: matchedServer.clientIdentifier,
+            accessToken,
+          };
+        }
+      }
+
+      // No matching server found — fall back to the provided URL as-is
+      logger.warn('[PlexDiscovery] Could not match provided IP URL to any discovered server, using it directly:', { url: providedUrl });
+      return { serverUrl: providedUrl, machineId: null, accessToken: null };
+    } catch (error) {
+      logger.warn('[PlexDiscovery] Discovery failed while matching IP URL, falling back to provided URL:', { url: providedUrl, error });
+      return { serverUrl: providedUrl, machineId: null, accessToken: null };
+    }
+  }
+
+  // No URL provided — discover and use the first accessible server
   const discovered = await findBestServerConnection(userToken, undefined, clientId);
 
-  
   if (discovered.serverUrl) {
     return {
       serverUrl: discovered.serverUrl,
@@ -319,12 +375,6 @@ export async function resolveServerUrl(
       accessToken: discovered.accessToken,
     };
   }
-  
-  // Fall back to provided URL if discovery fails
-  if (providedUrl) {
-    logger.warn('[PlexDiscovery] Discovery failed, falling back to provided URL:', { url: providedUrl });
-    return { serverUrl: providedUrl, machineId: null, accessToken: null };
-  }
-  
+
   return null;
 }

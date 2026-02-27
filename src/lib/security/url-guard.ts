@@ -1,5 +1,6 @@
 import { config } from "@/lib/config";
 import { ALLOWED_DEFAULT_PLEX_IMAGE_URL } from "../constants";
+import dns from "dns/promises";
 
 const PRIVATE_HOSTNAMES = new Set([
   "localhost",
@@ -131,6 +132,46 @@ export const assertSafeUrl = (
 
   if (!allowPrivate && (isPrivateHost(parsed.hostname) || isPrivateHostname(parsed.hostname)) && !isAllowedHost(parsed.hostname, allowlist)) {
     throw new Error("Private network URLs are not allowed");
+  }
+
+  return parsed;
+};
+
+/**
+ * Like assertSafeUrl, but also resolves the hostname via DNS and rejects any
+ * address that maps to a private/loopback IP (SSRF defence, M9).
+ *
+ * Only runs the DNS check when `source === "user"` (i.e. the URL came from
+ * untrusted input).  Env-configured URLs are trusted.
+ */
+export const assertSafeResolvedUrl = async (
+  input: string,
+  options?: { allowPrivate?: boolean; allowlist?: string[]; source?: "env" | "user" }
+): Promise<URL> => {
+  // Synchronous structural checks first.
+  const parsed = assertSafeUrl(input, options);
+
+  // Skip DNS check for env-trusted URLs.
+  if (options?.source !== "user") return parsed;
+
+  let addresses: string[] = [];
+  try {
+    const results = await dns.lookup(parsed.hostname, { all: true, family: 0 });
+    addresses = results.map((r) => r.address);
+  } catch {
+    // If DNS resolution fails outright, block the request.
+    throw new Error("Could not resolve host");
+  }
+
+  for (const addr of addresses) {
+    const isPrivate =
+      isPrivateIpv4(addr) ||
+      (addr.includes(":") && isPrivateIpv6(addr)) ||
+      PRIVATE_HOSTNAMES.has(addr.toLowerCase());
+
+    if (isPrivate && !isAllowedHost(addr, options?.allowlist)) {
+      throw new Error("Resolved address is in a private network range");
+    }
   }
 
   return parsed;
