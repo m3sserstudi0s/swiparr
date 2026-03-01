@@ -30,7 +30,7 @@ export class SessionService {
     const encryptionSecret = shouldEncrypt ? await getGuestLendingSecret() : null;
     const encryptedAccessToken = shouldEncrypt ? encryptValue(user.AccessToken!, encryptionSecret!) : null;
     const encryptedDeviceId = shouldEncrypt ? encryptValue(user.DeviceId || "", encryptionSecret!) : null;
-    
+
     await db.insert(sessions).values({
       id: uuidv4(),
       code,
@@ -61,19 +61,19 @@ export class SessionService {
     const existingSession = await db.select().from(sessions).where(eq(sessions.code, upperCode)).then((rows: any[]) => rows[0]);
 
     if (!existingSession) {
-      throw new Error("Session not found");
+      throw new Error("sessionNotFound");
     }
 
     if (!user.isGuest) {
       if (existingSession.provider !== user.provider) {
-        throw new Error(`Provider mismatch: Session is ${existingSession.provider}, you are ${user.provider}`);
+        throw new Error("providerMismatch");
       }
 
       if ([ProviderType.JELLYFIN, ProviderType.EMBY, ProviderType.PLEX].includes(existingSession.provider as any)) {
         const sessionConfig = existingSession.providerConfig ? JSON.parse(existingSession.providerConfig) : {};
         const userConfig = user.providerConfig || {};
         if (sessionConfig.serverUrl !== userConfig.serverUrl) {
-          throw new Error(`Server mismatch: Session is on ${sessionConfig.serverUrl}, you are on ${userConfig.serverUrl}`);
+          throw new Error("serverMismatch");
         }
       }
     }
@@ -133,17 +133,17 @@ export class SessionService {
     }
 
     if (!code) {
-      throw new Error("Session code is required");
+      throw new Error("sessionCodeRequired");
     }
 
     const existingSession = await db.select().from(sessions).where(eq(sessions.code, code)).then((rows: any[]) => rows[0]);
 
     if (!existingSession) {
-      throw new Error("Session not found");
+      throw new Error("sessionNotFound");
     }
 
     if (capabilities.hasAuth && !existingSession.hostAccessToken) {
-      throw new Error("This session does not allow guest lending");
+      throw new Error("guestLendingDisabled");
     }
 
     const isGuest = capabilities.hasAuth;
@@ -171,7 +171,7 @@ export class SessionService {
 
   static async leaveSession(user: SessionData["user"], sessionCode: string) {
     const userId = user.Id;
-    
+
     if (user.isGuest || user.provider === ProviderType.TMDB) {
       try {
         await db.delete(userProfiles).where(eq(userProfiles.userId, userId));
@@ -208,7 +208,7 @@ export class SessionService {
           where: eq(sessions.code, sessionCode)
         });
         const settings = currentSession?.settings ? JSON.parse(currentSession.settings) : {};
-        
+
         for (const itemId of likedItemIds) {
           await this.reEvaluateMatch(sessionCode, itemId, settings, remainingMembers);
         }
@@ -223,19 +223,19 @@ export class SessionService {
       where: eq(sessions.code, sessionCode)
     });
 
-    if (!currentSession) throw new Error("Session not found");
+    if (!currentSession) throw new Error("sessionNotFound");
 
     const updateData: any = {};
-    
+
     // Filters can be updated by any session member
     if (updates.filters !== undefined) {
       updateData.filters = JSON.stringify(updates.filters);
     }
-    
+
     // Settings and guest lending can only be updated by the host
     if (updates.settings !== undefined || updates.allowGuestLending !== undefined) {
       if (currentSession.hostUserId !== user.Id) {
-        throw new Error("Only the host can modify session settings");
+        throw new Error("hostOnlySettings");
       }
       if (updates.settings !== undefined) updateData.settings = JSON.stringify(updates.settings);
       if (updates.allowGuestLending !== undefined) {
@@ -258,7 +258,7 @@ export class SessionService {
     if (updates.settings !== undefined) {
       await EventService.emit(EVENT_TYPES.SETTINGS_UPDATED, { sessionCode, userId: user.Id, userName: user.Name, settings: updates.settings });
     }
-    
+
     await EventService.emit(EVENT_TYPES.SESSION_UPDATED, sessionCode);
   }
 
@@ -298,7 +298,7 @@ export class SessionService {
       if (sessionCode && settings?.maxRightSwipes && !existingLike) {
         const rightSwipeCount = await db.select({ value: count() }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, user.Id)));
         if (rightSwipeCount[0].value >= settings.maxRightSwipes) {
-          throw new Error("Right swipe limit reached");
+          throw new Error("rightSwipeLimit");
         }
       }
 
@@ -310,9 +310,9 @@ export class SessionService {
             hasCustomProfilePicture: sql<boolean>`CASE WHEN ${userProfiles.userId} IS NOT NULL THEN 1 ELSE 0 END`,
             profileUpdatedAt: userProfiles.updatedAt,
           })
-          .from(sessionMembers)
-          .leftJoin(userProfiles, eq(sessionMembers.externalUserId, userProfiles.userId))
-          .where(eq(sessionMembers.sessionCode, sessionCode)),
+            .from(sessionMembers)
+            .leftJoin(userProfiles, eq(sessionMembers.externalUserId, userProfiles.userId))
+            .where(eq(sessionMembers.sessionCode, sessionCode)),
           db.query.likes.findMany({
             where: and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId), ne(likes.externalUserId, user.Id))
           }),
@@ -336,7 +336,7 @@ export class SessionService {
         if (isMatch) {
           await db.update(likes).set({ isMatch: true }).where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId)));
           await EventService.emit(EVENT_TYPES.MATCH_FOUND, { sessionCode, itemId, swiperId: user.Id, itemName: item?.Name || "a movie" });
-          
+
           const allItemLikes = await db.query.likes.findMany({
             where: and(eq(likes.sessionCode, sessionCode), eq(likes.externalId, itemId))
           });
@@ -352,8 +352,8 @@ export class SessionService {
           // Add current user to likedBy since they are not in the DB yet (or might be an existing one we're updating)
           if (!likedBy.some(l => l.userId === user.Id)) {
             const currentUserProfile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, user.Id) });
-            likedBy.push({ 
-              userId: user.Id, 
+            likedBy.push({
+              userId: user.Id,
               userName: user.Name,
               hasCustomProfilePicture: !!currentUserProfile,
               profileUpdatedAt: currentUserProfile?.updatedAt,
@@ -364,7 +364,7 @@ export class SessionService {
 
       if (existingLike) {
         // Update existing like to move it to the top (fresh like)
-        await db.update(likes).set({ 
+        await db.update(likes).set({
           createdAt: sql`CURRENT_TIMESTAMP`,
           isMatch: isMatch
         }).where(eq(likes.id, existingLike.id));
@@ -392,7 +392,7 @@ export class SessionService {
       // If we are hiding something that was previously liked, remove it from likes
       if (existingLike) {
         await db.delete(likes).where(eq(likes.id, existingLike.id));
-        
+
         // If it was a match, we need to re-evaluate it for others
         if (sessionCode && existingLike.isMatch) {
           const [s, remainingLikes, members] = await Promise.all([
@@ -409,12 +409,12 @@ export class SessionService {
       if (sessionCode && settings?.maxLeftSwipes && !existingHidden) {
         const leftSwipeCount = await db.select({ value: count() }).from(hiddens).where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, user.Id)));
         if (leftSwipeCount[0].value >= settings.maxLeftSwipes) {
-          throw new Error("Left swipe limit reached");
+          throw new Error("leftSwipeLimit");
         }
       }
 
       if (existingHidden) {
-         // Just a no-op 
+        // Just a no-op 
       } else {
         try {
           await db.insert(hiddens).values({
@@ -437,12 +437,12 @@ export class SessionService {
   static async deleteSwipe(user: SessionData["user"], itemId: string, sessionCode?: string | null) {
     await db.delete(likes).where(
       and(
-        eq(likes.externalUserId, user.Id), 
+        eq(likes.externalUserId, user.Id),
         eq(likes.externalId, itemId),
         sessionCode ? eq(likes.sessionCode, sessionCode) : isNull(likes.sessionCode)
       )
     );
-    
+
     if (sessionCode) {
       const [s, remainingLikes, members] = await Promise.all([
         db.query.sessions.findFirst({ where: eq(sessions.code, sessionCode) }),
@@ -452,7 +452,7 @@ export class SessionService {
 
       const settings: SessionSettings | null = s?.settings ? JSON.parse(s.settings) : null;
       await this.reEvaluateMatch(sessionCode, itemId, settings, members, remainingLikes);
-      
+
       await EventService.emit(EVENT_TYPES.MATCH_REMOVED, { sessionCode, itemId, userId: user.Id });
     }
 

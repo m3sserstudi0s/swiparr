@@ -1,11 +1,13 @@
 import { GITHUB_URL, MESSER_STUDIOS_URL, SUPPORT_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
 
 interface FooterProps {
   className?: string;
 }
 
 export function Footer({ className }: FooterProps) {
+  const t = useTranslations('Footer');
   return (
     <div
       className={cn(
@@ -19,7 +21,7 @@ export function Footer({ className }: FooterProps) {
         rel="noreferrer"
         className="hover:text-primary transition-colors"
       >
-        Support
+        {t('support')}
       </a>
 
       <span className="mx-2">•</span>
@@ -30,7 +32,7 @@ export function Footer({ className }: FooterProps) {
         rel="noreferrer"
         className="hover:text-primary transition-colors"
       >
-        Open Source
+        {t('openSource')}
       </a>
 
       {/* Hide this bullet on small screens since Messer goes to a new line */}
@@ -42,7 +44,7 @@ export function Footer({ className }: FooterProps) {
         rel="noreferrer"
         className="hover:text-primary transition-colors w-full sm:w-auto mt-3 sm:mt-0"
       >
-        Messer Studios
+        {t('studio')}
       </a>
     </div>
   );

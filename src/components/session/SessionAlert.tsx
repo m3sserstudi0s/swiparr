@@ -22,8 +22,11 @@ import { useSettings } from "@/lib/settings"
 import { useSession } from "@/hooks/api"
 import { useRuntimeConfig } from "@/lib/runtime-config"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 
 export function SessionAlert() {
+    const t = useTranslations('Session');
+    const tGeneral = useTranslations('SettingsGeneral');
     const runtimeConfig = useRuntimeConfig();
     const { settings, updateSettings } = useSettings();
     const { data: sessionStatus } = useSession();
@@ -38,7 +41,7 @@ export function SessionAlert() {
                     <UserPlus className="size-4" />
                 </ItemMedia>
                 <ItemContent>
-                    <ItemTitle>Guest Session</ItemTitle>
+                    <ItemTitle>{t('guestSessionTitle')}</ItemTitle>
                 </ItemContent>
                 <ItemActions>
                     <AlertDialog>
@@ -47,13 +50,13 @@ export function SessionAlert() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Guest Session</AlertDialogTitle>
+                                <AlertDialogTitle>{t('guestSessionTitle')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    You are currently joined as a guest. Some features are unavailable due to you lending the session host's account.
+                                    {t('guestSessionDesc')}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Okay</AlertDialogCancel>
+                                <AlertDialogCancel>{tGeneral('okayBtn')}</AlertDialogCancel>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -67,9 +70,9 @@ export function SessionAlert() {
 
             <Item variant="outline" size='sm'>
                 <ItemContent>
-                    <ItemTitle><strong>Tip:</strong> Guest Lending</ItemTitle>
+                    <ItemTitle>{t.rich('guestLendingTipTitle', { bold: (chunks) => <strong>{chunks}</strong> })}</ItemTitle>
                     <ItemDescription className="text-xs">
-                        Allow others to join your session without an account by enabling Guest Lending in Settings.
+                        {t('guestLendingTipDesc')}
                     </ItemDescription>
                 </ItemContent>
                 <ItemActions>

@@ -15,18 +15,21 @@ import { getErrorMessage } from "@/lib/utils";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useSettings } from "@/lib/settings";
-import { 
-  useSession, 
-  useMembers, 
-  useMatches, 
-  useCreateSession, 
-  useJoinSession, 
-  useLeaveSession 
+import {
+    useSession,
+    useMembers,
+    useMatches,
+    useCreateSession,
+    useJoinSession,
+    useLeaveSession
 } from "@/hooks/api";
 import { apiClient } from "@/lib/api-client";
 import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
+import { useTranslations } from "next-intl";
 
 export default function SessionContent() {
+    const t = useTranslations('Session');
+    const tUI = useTranslations('UI');
     const [inputCode, setInputCode] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const [isFallbackOpen, setIsFallbackOpen] = useState(false);
@@ -54,10 +57,10 @@ export default function SessionContent() {
 
     const handleCreateSession = () => {
         toast.promise(createSession.mutateAsync({ allowGuestLending: settings.allowGuestLending }), {
-            loading: "Creating session...",
-            success: "Session created",
+            loading: t('creatingSession'),
+            success: t('sessionCreated'),
             error: (err) => ({
-                message: "Failed to create session",
+                message: t('failedCreateSession'),
                 description: getErrorMessage(err)
             }),
         });
@@ -65,10 +68,10 @@ export default function SessionContent() {
 
     const handleJoinSession = (code: string) => {
         toast.promise(joinSession.mutateAsync(code), {
-            loading: "Joining session...",
-            success: "Connected!",
+            loading: tUI('joiningSession'),
+            success: t('connected'),
             error: (err) => ({
-                message: "Invalid code",
+                message: t('invalidCode'),
                 description: getErrorMessage(err)
             }),
         });
@@ -77,10 +80,10 @@ export default function SessionContent() {
     const handleLeaveSession = async () => {
         try {
             await toast.promise(leaveSession.mutateAsync(), {
-                loading: "Leaving session...",
-                success: "Left session",
+                loading: t('leavingSession'),
+                success: t('leftSession'),
                 error: (err) => ({
-                    message: "Failed to leave session",
+                    message: t('failedLeaveSession'),
                     description: getErrorMessage(err)
                 }),
             });
@@ -121,13 +124,13 @@ export default function SessionContent() {
         if (!normalizedActive) {
             const joinPromise = joinSession.mutateAsync(normalizedJoin);
             toast.promise(joinPromise, {
-                loading: "Joining session...",
+                loading: tUI('joiningSession'),
                 success: () => {
                     removeJoinParam();
-                    return "Connected!";
+                    return t('connected');
                 },
                 error: (err) => ({
-                    message: "Invalid code",
+                    message: t('invalidCode'),
                     description: getErrorMessage(err)
                 }),
             });
@@ -144,13 +147,13 @@ export default function SessionContent() {
         toast.promise(
             switchPromise,
             {
-                loading: "Switching sessions...",
+                loading: t('switchingSessions'),
                 success: () => {
                     removeJoinParam();
-                    return "Connected!";
+                    return t('connected');
                 },
                 error: (err) => ({
-                    message: "Failed to switch sessions",
+                    message: t('failedSwitchSessions'),
                     description: getErrorMessage(err)
                 }),
             }
@@ -172,8 +175,8 @@ export default function SessionContent() {
         }
 
         const shareData = {
-            title: 'Swiparr session invite',
-            text: `Join with code: ${activeCode}`,
+            title: t('shareTitle'),
+            text: t('shareText', { code: activeCode }),
             url: shareUrl
         };
         if (navigator.share) {
@@ -184,7 +187,7 @@ export default function SessionContent() {
             }
         } else if (navigator.clipboard) {
             await navigator.clipboard.writeText(shareUrl);
-            toast.success("Link copied to clipboard");
+            toast.success(t('linkCopied'));
         } else {
             setFallbackValue(shareUrl);
             setIsFallbackOpen(true);
@@ -196,49 +199,49 @@ export default function SessionContent() {
             <SecureContextCopyFallback
                 open={isFallbackOpen}
                 onOpenChange={setIsFallbackOpen}
-                title="Share Session"
+                title={t('shareSession')}
                 value={fallbackValue}
             />
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="absolute left-6">
-                <Button variant="ghost" size="icon" className="text-foreground size-10 hover:bg-muted/30!">
-                    <Users className="size-5" />
-                </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="sm:max-w-md w-full px-4 gap-2">
-                <SessionHeader
-                    activeCode={activeCode}
-                    members={members}
-                    currentSettings={sessionStatus?.settings || undefined}
-                />
-                <div className="px-1 w-full h-20 items-center grid">
-                    <SessionAlert />
-                </div>
-                <div className="space-y-6 px-1">
-                    <SessionCodeSection
+                <SheetTrigger asChild className="absolute left-6">
+                    <Button variant="ghost" size="icon" className="text-foreground size-10 hover:bg-muted/30!">
+                        <Users className="size-5" />
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="sm:max-w-md w-full px-4 gap-2">
+                    <SessionHeader
                         activeCode={activeCode}
-                        inputCode={inputCode}
-                        setInputCode={setInputCode}
-                        handleJoinSession={handleJoinSession}
-                        handleCreateSession={handleCreateSession}
-                        handleShare={handleShare}
-                        handleLeaveSession={handleLeaveSession}
-                        isJoining={joinSession.isPending}
-                        isCreating={createSession.isPending}
-                        isLeaving={leaveSession.isPending}
+                        members={members}
+                        currentSettings={sessionStatus?.settings || undefined}
                     />
-                    <MatchesList
-                        activeCode={activeCode}
-                        matches={matches}
-                        openMovie={openMovie}
+                    <div className="px-1 w-full h-20 items-center grid">
+                        <SessionAlert />
+                    </div>
+                    <div className="space-y-6 px-1">
+                        <SessionCodeSection
+                            activeCode={activeCode}
+                            inputCode={inputCode}
+                            setInputCode={setInputCode}
+                            handleJoinSession={handleJoinSession}
+                            handleCreateSession={handleCreateSession}
+                            handleShare={handleShare}
+                            handleLeaveSession={handleLeaveSession}
+                            isJoining={joinSession.isPending}
+                            isCreating={createSession.isPending}
+                            isLeaving={leaveSession.isPending}
+                        />
+                        <MatchesList
+                            activeCode={activeCode}
+                            matches={matches}
+                            openMovie={openMovie}
+                        />
+                    </div>
+                    <RandomMovieButton
+                        items={matches}
+                        className="absolute bottom-10 right-10"
                     />
-                </div>
-                <RandomMovieButton
-                    items={matches}
-                    className="absolute bottom-10 right-10"
-                />
-            </SheetContent>
-        </Sheet>
+                </SheetContent>
+            </Sheet>
         </>
     );
 }

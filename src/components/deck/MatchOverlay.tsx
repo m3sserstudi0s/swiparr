@@ -8,6 +8,7 @@ import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSession } from "@/hooks/api";
+import { useTranslations } from "next-intl";
 
 interface MatchOverlayProps {
   item: MediaItem | null;
@@ -18,6 +19,8 @@ interface MatchOverlayProps {
 export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) {
   const { openMovie } = useMovieDetail();
   const { data: session } = useSession();
+  const t = useTranslations('Deck');
+  const tUI = useTranslations('UI');
   const likedBy = item?.likedBy ?? [];
   const otherUsers = session?.userId
     ? likedBy.filter((user) => user.userId !== session.userId)
@@ -28,8 +31,8 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
 
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && onClose()}>
-      <DialogTitle/>
-      <DialogContent 
+      <DialogTitle />
+      <DialogContent
         className="bg-transparent border-none shadow-none p-0 max-w-none w-auto outline-none h-svh md:h-auto"
         overlayClassName="bg-black/30 backdrop-blur-md"
         showCloseButton={false}
@@ -55,10 +58,14 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
               </motion.div>
 
               <h1 className="text-5xl font-black italic text-neutral-100 mb-2 drop-shadow-2xl tracking-tighter uppercase">
-                It's a match!
+                {t('matchTitle')}
               </h1>
               <p className="text-neutral-200 md:text-md text-lg mb-6 px-4 z-1">
-                You and {otherLabel} want to watch <span className="text-neutral-200 font-bold">{item.Name}</span>
+                {t.rich('matchDesc', {
+                  users: otherLabel,
+                  item: item.Name,
+                  bold: (children) => <span className="text-neutral-200 font-bold">{children}</span>
+                })}
               </p>
 
               {item.likedBy && item.likedBy.length > 0 && (
@@ -73,7 +80,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 onClick={() => { openMovie(item.Id, { sessionCode }); onClose(); }}
               >
                 <OptimizedImage
-                  src={item.ImageTags?.Primary 
+                  src={item.ImageTags?.Primary
                     ? `/api/media/image/${item.Id}?tag=${item.ImageTags?.Primary}`
                     : `/api/media/image/${item.Id}`
                   }
@@ -99,7 +106,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                   className="rounded-full text-lg h-12 w-48 font-bold shadow-lg"
                   onClick={onClose}
                 >
-                  Continue
+                  {tUI('continueBtn')}
                 </Button>
               </motion.div>
             </motion.div>

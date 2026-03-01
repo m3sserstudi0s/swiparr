@@ -10,7 +10,7 @@ import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export class GuestKickedError extends Error {
   constructor() {
-    super("Guest lending disabled");
+    super("guestLendingDisabled");
     this.name = "GuestKickedError";
   }
 }
@@ -36,13 +36,13 @@ export class AuthService {
     }
 
     if (!session.sessionCode) {
-      throw new Error("Guest without session code");
+      throw new Error("guestWithoutSession");
     }
 
     const currentSession = await db.select().from(sessions).where(eq(sessions.code, session.sessionCode)).then((rows: any[]) => rows[0]);
 
     if (!currentSession) {
-      throw new Error("Session not found");
+      throw new Error("sessionNotFound");
     }
 
     if (capabilities.hasAuth && !currentSession.hostAccessToken) {
@@ -86,7 +86,7 @@ export class AuthService {
 
     const activeProvider = (provider || await ConfigService.getActiveProvider()) as ProviderType;
     const capabilities = PROVIDER_CAPABILITIES[activeProvider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
-    
+
     if (!capabilities.hasAuth) return false;
 
     if (username) {

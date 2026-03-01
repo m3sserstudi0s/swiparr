@@ -3,6 +3,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { CardDescription } from "@/components/ui/card";
 import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
+import { useTranslations } from "next-intl";
 
 interface UniversalViewProps {
   providerLock: boolean;
@@ -27,6 +28,9 @@ export function UniversalView({
   isJoining,
   onProfilePictureChange,
 }: UniversalViewProps) {
+  const t = useTranslations('LoginUniversal');
+  const tUI = useTranslations('UI');
+
   return (
     <div className="space-y-2">
       <form onSubmit={handleLogin} className="space-y-2">
@@ -39,16 +43,16 @@ export function UniversalView({
 
         <CardDescription>
           {isJoining
-            ? "Enter a display name to join the session"
+            ? t('joinPrompt')
             : (providerLock
-              ? "Enter a name to start swiping"
-              : "Configure TMDB and enter a name")}
+              ? t('startPrompt')
+              : t('tmdbPrompt'))}
         </CardDescription>
 
         {!providerLock && !isJoining && (
 
           <PasswordInput
-            placeholder="TMDB API Read Access Token"
+            placeholder={t('tmdbTokenPlaceholder')}
             value={tmdbToken}
             onChange={(e) => setTmdbToken(e.target.value)}
             className="h-8"
@@ -57,14 +61,14 @@ export function UniversalView({
         )}
 
         <Input
-          placeholder="Display name"
+          placeholder={tUI('displayNamePlaceholder')}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="bg-muted border-input"
           autoFocus
         />
         <Button type="submit" className="w-full font-semibold mt-4" disabled={loading || !username}>
-          {loading ? (isJoining ? "Joining..." : "Starting...") : (isJoining ? "Join" : "Start")}
+          {loading ? (isJoining ? tUI('joining') : t('starting')) : (isJoining ? tUI('joinBtn') : t('start'))}
         </Button>
       </form>
     </div>

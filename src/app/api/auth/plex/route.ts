@@ -82,12 +82,12 @@ export async function POST(request: NextRequest) {
         : undefined,
     };
     session.isLoggedIn = true;
-    
+
     // Clear any temp data
     delete session.tempDeviceId;
     delete session.tempPinId;
     delete session.providerConfig;
-    
+
     await session.save();
 
     return NextResponse.json({ success: true, wasMadeAdmin });

@@ -23,6 +23,7 @@ import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 import { getLanguageLabel } from "@/lib/language";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
 import { ProviderType } from "@/lib/providers/types";
+import { useFormatter, useTranslations } from "next-intl";
 
 interface Props {
   movieId: string | null;
@@ -32,6 +33,8 @@ interface Props {
 }
 
 export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionCode }: Props) {
+  const t = useTranslations('Movie');
+  const tUI = useTranslations('UI');
   // 1. Create a manual motion value for scroll position
   const scrollY = useMotionValue(0);
 
@@ -93,7 +96,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
       <DrawerContent>
-        <DrawerTitle className="sr-only">Movie Details</DrawerTitle>
+        <DrawerTitle className="sr-only">{t('details')}</DrawerTitle>
         <div
           onScroll={handleScroll} // Update motion value here
           className={cn(
@@ -134,7 +137,6 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     }
                     externalId={movie.Id}
                     imageType="Backdrop"
-                    alt="Backdrop"
                     width={400}
                     height={225}
                     className={cn(
@@ -143,13 +145,14 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       'mask-[linear-gradient(to_bottom,transparent,black_12%,black_50%,transparent)]',
                       'mask-no-repeat'
                     )}
+                    alt={t('backdropAlt')}
                   />
                 </motion.div>
 
                 {/* Header Content */}
                 <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
                   <OptimizedImage
-                    src={movie.ImageTags?.Primary 
+                    src={movie.ImageTags?.Primary
                       ? `/api/media/image/${movie.Id}?tag=${movie.ImageTags?.Primary}`
                       : `/api/media/image/${movie.Id}?imageType=Primary`
                     }
@@ -158,7 +161,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     width={75}
                     height={125}
                     className="w-28 h-40 rounded-lg shadow-2xl shadow-background border border-foreground/10 object-cover z-10 shrink-0"
-                    alt="Poster"
+                    alt={t('posterAlt')}
                   />
                   <div className="flex-1 mb-1 z-10 overflow-hidden">
                     {movie.Genres && movie.Genres.length > 0 && (
@@ -186,7 +189,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       )}
                       {!!movie.OfficialRating && (
                         <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
-                          <ShieldCheck className="w-3 h-3"/>
+                          <ShieldCheck className="w-3 h-3" />
                           {movie.OfficialRating}
                         </Badge>
                       )}
@@ -218,18 +221,18 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   {capabilities.requiresServerUrl ? (
                     <Link href={detailsUrl} className="w-32" target="_blank">
                       <Button className="w-32" size="lg">
-                        <Play className="w-4 h-4 mr-2 fill-current" /> Play
+                        <Play className="w-4 h-4 mr-2 fill-current" /> {t('play')}
                       </Button>
                     </Link>
                   ) : (
-                    <Link 
-                      href={`${TMDB_MOVIE_BASE_URL}/${movie.Id}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <Link
+                      href={`${TMDB_MOVIE_BASE_URL}/${movie.Id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="w-32"
                     >
                       <Button className="w-32" size="lg">
-                        <ExternalLink className="w-4 h-4 mr-2" /> See more
+                        <ExternalLink className="w-4 h-4 mr-2" /> {tUI('seeMore')}
                       </Button>
                     </Link>
                   )}
@@ -245,7 +248,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         <Bookmark className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
                         : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
                       }
-                      {useWatchlist ? "Watchlist" : "Favorite"}
+                      {useWatchlist ? tUI('watchlist') : t('favorite')}
                     </Button>
                   )}
                   {isLikedByMe && <Button
@@ -265,7 +268,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 {/* LIKED BY */}
                 {showLikedBy && movie.likedBy && movie.likedBy.length > 0 && (movie as any).sessionCode && (
                   <div className="mb-8 bg-muted/20 p-4 rounded-xl border border-border/50">
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3" >Liked By</h3>
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3" >{t('likedBy')}</h3>
                     <UserAvatarList users={movie.likedBy} size="lg" />
                   </div>
                 )}
@@ -274,7 +277,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 {movie.WatchProviders && movie.WatchProviders.length > 0 && (
                   <div className="mb-8 bg-muted/20 p-4 rounded-xl border border-border/50">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-                      Available On
+                      {t('availableOn')}
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {movie.WatchProviders.map((provider: WatchProvider) => (
@@ -298,36 +301,36 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
 
                 {/* DETAILS ROW */}
-                  <div className="grid grid-cols-2 gap-8 mb-8">
+                <div className="grid grid-cols-2 gap-8 mb-8">
+                  <div>
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{t('director')}</h3>
+                    <div className="text-foreground font-medium">
+                      {movie.People?.find(p => p.Type === "Director")?.Name || t('unknown')}
+                    </div>
+                  </div>
+                  {!!languageLabel && (
                     <div>
-                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Director</h3>
-                      <div className="text-foreground font-medium">
-                        {movie.People?.find(p => p.Type === "Director")?.Name || "Unknown"}
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{tUI('language')}</h3>
+                      <div className="text-foreground font-medium truncate">
+                        {languageLabel}
                       </div>
                     </div>
-                    {!!languageLabel && (
-                      <div>
-                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Language</h3>
-                        <div className="text-foreground font-medium truncate">
-                          {languageLabel}
-                        </div>
+                  )}
+                  {movie.Studios && movie.Studios.length > 0 && (
+                    <div>
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{t('studio')}</h3>
+                      <div className="text-foreground font-medium truncate">
+                        {movie.Studios[0].Name}
                       </div>
-                    )}
-                    {movie.Studios && movie.Studios.length > 0 && (
-                      <div>
-                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Studio</h3>
-                        <div className="text-foreground font-medium truncate">
-                          {movie.Studios[0].Name}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* SYNOPSIS */}
                 <div className="mb-8">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Synopsis</h3>
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">{t('synopsis')}</h3>
                   <p className="text-foreground/90 text-base leading-relaxed">
-                    {movie.Overview || "No overview available."}
+                    {movie.Overview || t('noOverview')}
                   </p>
                 </div>
 
@@ -336,7 +339,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 {movie.People && movie.People.length > 0 && (
                   <div className="mb-8">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                      Cast
+                      {t('cast')}
                     </h3>
                     <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar -mx-6 px-6">
                       {movie.People.filter(p => p.Type === "Actor").slice(0, 12).map(person => (

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const myLikesCount = await db.select({ count: sql<number>`count(*)` })
         .from(likes)
         .where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, userId)));
-    
+
     const myHiddensCount = await db.select({ count: sql<number>`count(*)` })
         .from(hiddens)
         .where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, userId)));
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const totalLikesCount = await db.select({ count: sql<number>`count(*)` })
         .from(likes)
         .where(eq(likes.sessionCode, sessionCode));
-    
+
     const totalHiddensCount = await db.select({ count: sql<number>`count(*)` })
         .from(hiddens)
         .where(eq(hiddens.sessionCode, sessionCode));
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const membersCount = await db.select({ count: sql<number>`count(*)` })
         .from(sessionMembers)
         .where(eq(sessionMembers.sessionCode, sessionCode));
-    
+
     const numMembers = membersCount[0].count || 1;
 
     const avgRight = totalRight / numMembers;

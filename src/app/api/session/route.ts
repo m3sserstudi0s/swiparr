@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const validated = sessionActionSchema.safeParse(body);
   if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  
+
   const { action, code: bodyCode, allowGuestLending } = validated.data;
 
   try {
@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest) {
 export async function GET() {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
-  
+
   if (!session.isLoggedIn) return NextResponse.json(null);
 
   let effectiveUserId = null;
@@ -114,23 +114,23 @@ export async function GET() {
   if (session.sessionCode) {
     const members = await db.select().from(sessionMembers).where(eq(sessionMembers.sessionCode, session.sessionCode));
     const membersSettingsHash = members.map((m: any) => {
-        // Use the settings string length as a proxy for the hash
-        const len = m.settings?.length || 0;
-        // Also include a small "checksum" of the settings content to be safer
-        let sum = 0;
-        if (m.settings) {
-            for (let i = 0; i < Math.min(m.settings.length, 100); i++) {
-                sum += m.settings.charCodeAt(i);
-            }
+      // Use the settings string length as a proxy for the hash
+      const len = m.settings?.length || 0;
+      // Also include a small "checksum" of the settings content to be safer
+      let sum = 0;
+      if (m.settings) {
+        for (let i = 0; i < Math.min(m.settings.length, 100); i++) {
+          sum += m.settings.charCodeAt(i);
         }
-        return `${len.toString(16)}x${sum.toString(16)}`;
+      }
+      return `${len.toString(16)}x${sum.toString(16)}`;
     }).join('.');
     settingsHash += `-${membersSettingsHash}`;
   }
 
   const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, session.user.Id)).then((rows: any[]) => rows[0]);
 
-  return NextResponse.json({ 
+  return NextResponse.json({
     code: session.sessionCode || null,
     userId: session.user.Id,
     userName: session.user.Name,
@@ -153,7 +153,7 @@ export async function GET() {
 export async function DELETE() {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
-  
+
   if (session.isLoggedIn && session.user && session.sessionCode) {
     await SessionService.leaveSession(session.user, session.sessionCode);
   }

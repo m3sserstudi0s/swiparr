@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
     }
     const deviceId = crypto.randomUUID();
     const data = await initiateQuickConnect(deviceId, serverUrl);
-    
+
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
     session.tempDeviceId = deviceId;
     if (serverUrl) {
-        session.providerConfig = { serverUrl };
+      session.providerConfig = { serverUrl };
     }
     await session.save();
 
@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = quickConnectSchema.safeParse(body);
     if (!validated.success) return NextResponse.json({ success: false, message: "Invalid input" }, { status: 400 });
-    
+
     const { secret } = validated.data;
 
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
-    
+
     if (!session.tempDeviceId) {
       return NextResponse.json({ success: false, message: "No session found" }, { status: 400 });
     }
@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
     const existingAdmin = await ConfigService.getAdminUserId(ProviderType.JELLYFIN);
     let wasMadeAdmin = false;
     if (!existingAdmin) {
-        await ConfigService.setAdminUserId(authData.User.Id, ProviderType.JELLYFIN as any);
-        wasMadeAdmin = true;
-        logger.info(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
+      await ConfigService.setAdminUserId(authData.User.Id, ProviderType.JELLYFIN as any);
+      wasMadeAdmin = true;
+      logger.info(`[QuickConnect] User ${authData.User.Name} (${authData.User.Id}) set as initial admin.`);
     }
 
     session.user = {

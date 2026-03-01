@@ -41,12 +41,15 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from "@/components/ui/input-group";
+import { useTranslations } from "next-intl";
 
 export function StreamingSettings() {
     const { data: settings, isLoading: isLoadingSettings } = useUserSettings();
     const { data: regions = [] } = useRegions();
     const updateSettingsMutation = useUpdateUserSettings();
     const { tmdbDefaultRegion } = getRuntimeConfig();
+    const t = useTranslations('SettingsStreaming');
+    const tUI = useTranslations('UI');
 
     const [selectedRegion, setSelectedRegion] = useState<MediaRegion | null>(null);
     const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
@@ -143,7 +146,7 @@ export function StreamingSettings() {
 
     const saveSettings = async (region: MediaRegion | null = selectedRegion) => {
         if (selectedProviders.length === 0) {
-            toast.error("At least one streaming service must be selected");
+            toast.error(t('atLeastOneService'));
             return;
         }
 
@@ -151,10 +154,10 @@ export function StreamingSettings() {
             watchRegion: region?.Id || tmdbDefaultRegion,
             watchProviders: selectedProviders,
         }), {
-            loading: "Updating streaming settings...",
-            success: "Settings updated successfully",
+            loading: t('updatingSettings'),
+            success: t('settingsUpdated'),
             error: (err) => ({
-                message: "Failed to update settings",
+                message: tUI('failedUpdateSettings'),
                 description: getErrorMessage(err)
             })
         });
@@ -162,7 +165,7 @@ export function StreamingSettings() {
 
     if (isLoadingSettings) {
         return (
-            <SettingsSection title="Streaming">
+            <SettingsSection title={t('title')}>
                 <div className="flex items-center justify-center py-4">
                     <Loader2 className="size-6 animate-spin text-muted-foreground" />
                 </div>
@@ -177,15 +180,15 @@ export function StreamingSettings() {
     }
 
     return (
-        <SettingsSection title="Streaming">
+        <SettingsSection title={t('title')}>
             <div className="space-y-6">
                 <div className="flex flex-col items-end gap-4">
                     <div className="w-full space-y-0.5">
                         <div className="flex items-center gap-1.5">
-                            <div className="text-sm font-medium">Region</div>
+                            <div className="text-sm font-medium">{t('regionTitle')}</div>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                            Service availability depends on region
+                            {t('regionDesc')}
                         </div>
                     </div>
 
@@ -202,7 +205,7 @@ export function StreamingSettings() {
                                         <div className="w-4 h-3 overflow-hidden rounded-[2px] shrink-0 border border-border/50">
                                             <CountryFlag countryCode={selectedRegion.Id} />
                                         </div>
-                                        <span className="truncate text-left">{selectedRegion?.Name || "Select region"}</span>
+                                        <span className="truncate text-left">{selectedRegion?.Name || t('selectRegion')}</span>
                                     </>
                                 ) :
                                     <Skeleton className="w-30 h-7" />
@@ -210,8 +213,8 @@ export function StreamingSettings() {
                             </div>
                         </ComboboxTrigger>
                         <ComboboxContent container={container} className="min-w-44 z-1000">
-                            <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
-                            <ComboboxEmpty>No regions found</ComboboxEmpty>
+                            <ComboboxInput placeholder={t('searchRegion')} showTrigger={false} autoFocus />
+                            <ComboboxEmpty>{t('noRegion')}</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
                                     <ComboboxItem key={r.Id} value={r} className="cursor-pointer gap-2">
@@ -237,7 +240,7 @@ export function StreamingSettings() {
                         <button className="flex items-center justify-between w-full group cursor-pointer">
                             <div className="flex items-center gap-2 text-sm font-medium">
                                 <Tv className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                Streaming Services
+                                {tUI('streamingServices')}
                             </div>
                             {isExpanded ? (
                                 <ChevronDown className="size-4 text-muted-foreground" />
@@ -250,21 +253,23 @@ export function StreamingSettings() {
                     <CollapsibleContent className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-xs text-muted-foreground">
-                                Select which services you have access to
+                                {t('servicesDesc')}
                             </p>
                             <div className="flex gap-2">
                                 <button
                                     onClick={selectAll}
                                     className="text-xs font-medium text-primary hover:underline whitespace-nowrap cursor-pointer"
                                 >
-                                    Select all
+                                    {tUI('selectAll')}
                                 </button>
-                                <button
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={deselectAll}
-                                    className="text-xs font-medium text-muted-foreground hover:underline cursor-pointer"
+                                    className="h-8 max-[400px]:flex-1"
                                 >
-                                    Clear
-                                </button>
+                                    {tUI('clearBtn')}
+                                </Button>
                             </div>
                         </div>
 
@@ -273,7 +278,7 @@ export function StreamingSettings() {
                                 <Search className="size-4" />
                             </InputGroupAddon>
                             <InputGroupInput
-                                placeholder="Search services..."
+                                placeholder={tUI('searchServices')}
                                 value={providerSearch}
                                 onChange={(event) => setProviderSearch(event.target.value)}
                             />
@@ -282,7 +287,7 @@ export function StreamingSettings() {
                                     <InputGroupButton
                                         variant="ghost"
                                         size="icon-xs"
-                                        aria-label="Clear search"
+                                        aria-label={tUI('clearSearch')}
                                         onClick={clearSearch}
                                     >
                                         <X className="size-4" />
@@ -299,11 +304,11 @@ export function StreamingSettings() {
                             <ScrollArea className="flex-1 overflow-y-auto h-75" viewportRef={handleProvidersViewport}>
                                 {availableProviders.length === 0 ? (
                                     <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                                        No providers found for this region
+                                        {t('noServicesRegion')}
                                     </div>
                                 ) : filteredProviders.length === 0 ? (
                                     <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                                        No services match your search
+                                        {tUI('noServicesMatch')}
                                     </div>
                                 ) : (
                                     <VirtuosoGrid
@@ -352,7 +357,7 @@ export function StreamingSettings() {
                             disabled={updateSettingsMutation.isPending || isLoadingProviders}
                         >
                             {updateSettingsMutation.isPending && <Spinner />}
-                            Save
+                            {tUI('saveBtn')}
                         </Button>
                     </CollapsibleContent>
                 </Collapsible>

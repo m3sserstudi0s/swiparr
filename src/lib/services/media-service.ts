@@ -31,7 +31,7 @@ export class MediaService {
       db.select({ externalId: hiddens.externalId })
         .from(hiddens)
         .where(
-          session.sessionCode 
+          session.sessionCode
             ? and(eq(hiddens.externalUserId, session.user.Id), eq(hiddens.sessionCode, session.sessionCode))
             : and(eq(hiddens.externalUserId, session.user.Id), isNull(hiddens.sessionCode))
         )
@@ -51,11 +51,11 @@ export class MediaService {
     let sessionFilters: Filters | null = overrideFilters || null;
 
     if (!sessionFilters) {
-      sessionFilters = session.sessionCode 
+      sessionFilters = session.sessionCode
         ? await (async () => {
-            const currentSession = await db.select().from(sessions).where(eq(sessions.code, session.sessionCode!)).then((rows: any[]) => rows[0]);
-            return currentSession?.filters ? JSON.parse(currentSession.filters) : null;
-          })()
+          const currentSession = await db.select().from(sessions).where(eq(sessions.code, session.sessionCode!)).then((rows: any[]) => rows[0]);
+          return currentSession?.filters ? JSON.parse(currentSession.filters) : null;
+        })()
         : session.soloFilters;
     }
 
@@ -64,12 +64,12 @@ export class MediaService {
 
     // 3. Handle Search
     if (searchTerm) {
-      const results = await provider.getItems({ 
-        searchTerm, 
+      const results = await provider.getItems({
+        searchTerm,
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         watchProviders,
         watchRegion,
-        limit: 20 
+        limit: 20
       }, auth);
       return { items: results, hasMore: false };
     }
@@ -92,13 +92,13 @@ export class MediaService {
       const sessionMembersList = await db.query.sessionMembers.findMany({
         where: eq(sessionMembers.sessionCode, session.sessionCode)
       });
-      
+
       // Use the host's region as the default for the session if not explicitly set in filters
       const hostMember = sessionMembersList.find((m: any) => m.externalUserId === session.user.Id); // This might not be the host, but the current user
       // Actually, sessions table has hostUserId.
       const currentSession = await db.query.sessions.findFirst({ where: eq(sessions.code, session.sessionCode) });
       const hostId = currentSession?.hostUserId;
-      
+
       sessionMembersList.forEach((m: any) => {
         if (m.settings) {
           try {
@@ -106,9 +106,9 @@ export class MediaService {
             if (s.watchProviders) s.watchProviders.forEach((p: string) => accumulated.add(p));
             // Only take region from host to be deterministic, or keep current if host not found
             if (m.externalUserId === hostId && !sessionFilters?.watchRegion) {
-                watchRegion = s.watchRegion || watchRegion;
+              watchRegion = s.watchRegion || watchRegion;
             }
-          } catch(e) {}
+          } catch (e) { }
         }
       });
 
@@ -122,7 +122,7 @@ export class MediaService {
         if (settings.watchRegion) watchRegion = settings.watchRegion;
       }
     }
-    
+
     return { watchProviders, watchRegion };
   }
 
@@ -235,7 +235,7 @@ export class MediaService {
 
       attempts += 1;
     }
-    
+
     const slicedItems = items.slice(0, limit);
 
     if (slicedItems.length > 0) {
@@ -276,7 +276,7 @@ export class MediaService {
     });
 
     if (!session) {
-      throw new Error("Session not found");
+      throw new Error("sessionNotFound");
     }
 
     // Use session's random seed, fallback to code if not present (backwards compatibility)
@@ -379,7 +379,7 @@ export class MediaService {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}:${JSON.stringify(value)}`)
       .join('|');
-    
+
     let hash = 0;
     for (let i = 0; i < sorted.length; i++) {
       const char = sorted.charCodeAt(i);
@@ -599,13 +599,13 @@ export class MediaService {
 
   private static async getSoloItems(sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
     const soloYears = sessionFilters?.yearRange ? Array.from({ length: (sessionFilters.yearRange[1] ?? 2025) - (sessionFilters.yearRange[0] ?? 1900) + 1 }, (_, i) => (sessionFilters.yearRange?.[0] ?? 1900) + i) : undefined;
-    
+
     // If we have filters but the provider might not support them all (like Plex), 
     // we fetch more items to ensure we have enough after client-side filtering.
     const fetchLimit = (sessionFilters && (
-      sessionFilters.genres?.length || 
-      sessionFilters.yearRange || 
-      sessionFilters.themes?.length || 
+      sessionFilters.genres?.length ||
+      sessionFilters.yearRange ||
+      sessionFilters.themes?.length ||
       sessionFilters.runtimeRange ||
       sessionFilters.minCommunityRating ||
       sessionFilters.officialRatings?.length
@@ -657,7 +657,7 @@ export class MediaService {
         limit: requestLimit,
         offset: effectiveOffset + scanOffset
       }, auth);
-      
+
       if (fetchedItems.length === 0) {
         exhausted = true;
         if (hasExclusionFilters) {
@@ -701,7 +701,7 @@ export class MediaService {
 
       attempts += 1;
     }
-    
+
     const slicedItems = items.slice(0, limit);
 
     if (slicedItems.length > 0) {
@@ -739,38 +739,38 @@ export class MediaService {
   static async getRatings(session: SessionData, regionOverride?: string) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
-    
+
     if (regionOverride) {
       auth.watchRegion = regionOverride;
     }
-    
+
     try {
-        const ratings = await provider.getRatings(auth);
-        if (!ratings || ratings.length === 0) {
-            const { DEFAULT_RATINGS } = await import("@/lib/constants");
-            return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
-        }
-        return ratings;
-    } catch (e) {
+      const ratings = await provider.getRatings(auth);
+      if (!ratings || ratings.length === 0) {
         const { DEFAULT_RATINGS } = await import("@/lib/constants");
         return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
+      }
+      return ratings;
+    } catch (e) {
+      const { DEFAULT_RATINGS } = await import("@/lib/constants");
+      return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
     }
   }
 
   static async getGenres(session: SessionData) {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
-    
+
     try {
-        const genres = await provider.getGenres(auth);
-        if (!genres || genres.length === 0) {
-            const { DEFAULT_GENRES } = await import("@/lib/constants");
-            return DEFAULT_GENRES;
-        }
-        return genres;
-    } catch (e) {
+      const genres = await provider.getGenres(auth);
+      if (!genres || genres.length === 0) {
         const { DEFAULT_GENRES } = await import("@/lib/constants");
         return DEFAULT_GENRES;
+      }
+      return genres;
+    } catch (e) {
+      const { DEFAULT_GENRES } = await import("@/lib/constants");
+      return DEFAULT_GENRES;
     }
   }
 
@@ -796,7 +796,7 @@ export class MediaService {
     }
 
     if (!provider.getWatchProviders) return { providers: [] };
-    
+
     const allProviders = await provider.getWatchProviders(region, auth);
     const { POPULAR_TMDB_WATCH_PROVIDER_NAMES } = await import("@/lib/constants");
     const popularNames = POPULAR_TMDB_WATCH_PROVIDER_NAMES.map((name) => name.toLowerCase());
@@ -819,48 +819,48 @@ export class MediaService {
     let accumulatedProviderIds: string[] = [];
 
     if (sessionCode) {
-        const dbMembers = await db.query.sessionMembers.findMany({
-            where: eq(sessionMembers.sessionCode, sessionCode),
-        });
-        
-        members = dbMembers.map((m: any) => ({ 
-            externalUserId: m.externalUserId, 
-            externalUserName: m.externalUserName 
-        }));
+      const dbMembers = await db.query.sessionMembers.findMany({
+        where: eq(sessionMembers.sessionCode, sessionCode),
+      });
 
-        for (const m of dbMembers) {
-            if (m.settings) {
-                try {
-                    const settings = JSON.parse(m.settings);
-                    if (settings.watchProviders) {
-                        for (const pId of settings.watchProviders) {
-                            if (!memberSelections[pId]) memberSelections[pId] = [];
-                            memberSelections[pId].push(m.externalUserId);
-                        }
-                    }
-                } catch (e) {}
+      members = dbMembers.map((m: any) => ({
+        externalUserId: m.externalUserId,
+        externalUserName: m.externalUserName
+      }));
+
+      for (const m of dbMembers) {
+        if (m.settings) {
+          try {
+            const settings = JSON.parse(m.settings);
+            if (settings.watchProviders) {
+              for (const pId of settings.watchProviders) {
+                if (!memberSelections[pId]) memberSelections[pId] = [];
+                memberSelections[pId].push(m.externalUserId);
+              }
             }
+          } catch (e) { }
         }
-        accumulatedProviderIds = Object.keys(memberSelections);
+      }
+      accumulatedProviderIds = Object.keys(memberSelections);
     } else {
-        const settings = await ConfigService.getUserSettings(session.user.Id);
-        if (settings) {
-            if (settings.watchProviders) accumulatedProviderIds = settings.watchProviders;
-        }
+      const settings = await ConfigService.getUserSettings(session.user.Id);
+      if (settings) {
+        if (settings.watchProviders) accumulatedProviderIds = settings.watchProviders;
+      }
     }
 
     if (!wantAll && accumulatedProviderIds.length > 0) {
-        const filteredProviders = sortedProviders
-            .filter(p => accumulatedProviderIds.includes(p.Id))
-            .map((p: any) => ({
-                ...p,
-                MemberUserIds: memberSelections[p.Id] || []
-            }));
-        
-        return { 
-            providers: filteredProviders,
-            members 
-        };
+      const filteredProviders = sortedProviders
+        .filter(p => accumulatedProviderIds.includes(p.Id))
+        .map((p: any) => ({
+          ...p,
+          MemberUserIds: memberSelections[p.Id] || []
+        }));
+
+      return {
+        providers: filteredProviders,
+        members
+      };
     }
 
     return { providers: sortedProviders };
@@ -900,7 +900,7 @@ export class MediaService {
     };
 
     if (filters.genres && filters.genres.length > 0) {
-      result = result.filter(item => 
+      result = result.filter(item =>
         item.Genres?.some(g => filters.genres.includes(g))
       );
     }
@@ -928,7 +928,7 @@ export class MediaService {
     }
 
     if (filters.officialRatings && filters.officialRatings.length > 0) {
-      result = result.filter(item => 
+      result = result.filter(item =>
         item.OfficialRating && filters.officialRatings!.includes(item.OfficialRating)
       );
     }
@@ -943,7 +943,7 @@ export class MediaService {
     if (filters.runtimeRange) {
       const [min, max] = filters.runtimeRange;
       result = result.filter(item => {
-        if (!item.RunTimeTicks) return true; 
+        if (!item.RunTimeTicks) return true;
         const minutes = item.RunTimeTicks / 600000000;
         if (min && minutes < min) return false;
         if (max && max < 240 && minutes > max) return false;

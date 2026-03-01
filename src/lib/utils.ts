@@ -12,8 +12,8 @@ export function seededRandom(seed: string) {
     hash = ((hash << 5) - hash) + seed.charCodeAt(i);
     hash |= 0;
   }
-  
-  return function() {
+
+  return function () {
     hash = (hash * 16807) % 2147483647;
     return (hash - 1) / 2147483646;
   };
@@ -42,7 +42,7 @@ export function getErrorMessage(error: unknown, fallback: string = "An unexpecte
   if (isAxiosError(error)) {
     const serverMessage = error.response?.data?.message || error?.response?.data?.error;
     if (serverMessage) return serverMessage;
-    
+
     // Fallback for network errors (no response)
     if (error.code === 'ECONNABORTED') return "Request timed out";
     if (!error.response) return "Cannot connect to server";

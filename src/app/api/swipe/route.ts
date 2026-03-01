@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   const bodyRaw = await request.json();
   const validated = swipeSchema.safeParse(bodyRaw);
   if (!validated.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  
+
   const body = validated.data;
 
   try {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, ...result });
   } catch (error: any) {
     if (error.message.includes("limit reached")) {
-        return NextResponse.json({ error: error.message }, { status: 403 });
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
     // Duplicate swipes or other errors might just return success: true to avoid breaking the UI flow
     return NextResponse.json({ success: true, isMatch: false });

@@ -44,34 +44,34 @@ function isRateLimited(ip: string): boolean {
 }
 
 export async function GET(request: NextRequest) {
-    const ip = getClientIp(request);
-    if (isRateLimited(ip)) {
-        return NextResponse.json(
-            { error: "Too many requests" },
-            {
-                status: 429,
-                headers: { "Retry-After": String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)) },
-            }
-        );
+  const ip = getClientIp(request);
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)) },
+      }
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const code = searchParams.get("code")?.toUpperCase();
+
+  if (!code) {
+    return NextResponse.json({ error: "Code required" }, { status: 400 });
+  }
+
+  const session = await db.query.sessions.findFirst({
+    where: eq(sessions.code, code),
+    columns: {
+      provider: true,
     }
+  });
 
-    const { searchParams } = new URL(request.url);
-    const code = searchParams.get("code")?.toUpperCase();
+  if (!session) {
+    return NextResponse.json({ error: "sessionNotFound" }, { status: 404 });
+  }
 
-    if (!code) {
-        return NextResponse.json({ error: "Code required" }, { status: 400 });
-    }
-
-    const session = await db.query.sessions.findFirst({
-        where: eq(sessions.code, code),
-        columns: {
-            provider: true,
-        }
-    });
-
-    if (!session) {
-        return NextResponse.json({ error: "Session not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ provider: session.provider });
+  return NextResponse.json({ provider: session.provider });
 }

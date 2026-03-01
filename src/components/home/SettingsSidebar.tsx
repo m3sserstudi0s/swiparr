@@ -38,9 +38,11 @@ import { StreamingSettings } from "./settings/StreamingSettings";
 import { DangerZone } from "./settings/DangerZone";
 import { useSession } from "@/hooks/api";
 import { Footer } from "../Footer";
-
+import { useTranslations } from 'next-intl';
 
 export function SettingsSidebar() {
+    const t = useTranslations('Settings');
+    const tUI = useTranslations('UI');
     const router = useRouter();
     const [showClearDialog, setShowClearDialog] = useState(false);
     const [showUserGuide, setShowUserGuide] = useState(false);
@@ -58,7 +60,7 @@ export function SettingsSidebar() {
             router.push(`${basePath}/login`);
         } catch (error) {
             console.error("Logout failed:", error);
-            toast.error("Logout failed", {
+            toast.error(t('logoutFailed'), {
                 description: getErrorMessage(error)
             });
         }
@@ -69,17 +71,17 @@ export function SettingsSidebar() {
         const promise = apiClient.post("/api/user/clear");
 
         toast.promise(promise, {
-            loading: "Clearing all data...",
+            loading: t('clearingData'),
             success: () => {
                 setShowClearDialog(false);
                 router.refresh();
                 setIsClearing(false);
                 window.location.reload();
-                return "All data cleared successfully";
+                return t('dataCleared');
             },
             error: (err) => {
                 setIsClearing(false);
-                return { message: "Failed to clear data", description: getErrorMessage(err) };
+                return { message: t('failedClearData'), description: getErrorMessage(err) };
             },
         });
     };
@@ -95,7 +97,7 @@ export function SettingsSidebar() {
                 <SheetContent className="flex flex-col overflow-hidden">
                     <SheetHeader className="p-6 pb-0">
                         <div className="flex items-center gap-2">
-                            <SheetTitle>Settings</SheetTitle>
+                            <SheetTitle>{tUI('settingsTitle')}</SheetTitle>
                         </div>
                     </SheetHeader>
 
@@ -113,7 +115,7 @@ export function SettingsSidebar() {
                                 onClearData={() => setShowClearDialog(true)}
                                 onLogout={handleLogout}
                             />
-                            <Footer/>
+                            <Footer />
                         </div>
                     </ScrollArea>
                 </SheetContent>
@@ -125,10 +127,9 @@ export function SettingsSidebar() {
             <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('areYouSure')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your
-                            likes and any sessions you have created.
+                            {t('cannotUndo')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -137,14 +138,14 @@ export function SettingsSidebar() {
                             onClick={() => setShowClearDialog(false)}
                             disabled={isClearing}
                         >
-                            Cancel
+                            {tUI('cancelBtn')}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             variant="destructive"
                             onClick={handleClearData}
                             disabled={isClearing}
                         >
-                            {isClearing ? "Clearing..." : "Clear data"}
+                            {isClearing ? t('clearing') : tUI('clearData')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

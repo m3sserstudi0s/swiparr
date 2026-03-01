@@ -34,13 +34,8 @@ function renderFallbackImage(message: string) {
 }
 
 export async function GET(req: NextRequest) {
+  await connection();
   try {
-    try {
-      await connection()
-    } catch (error) {
-      console.warn('[og] connection() failed during prerender.')
-      return renderFallbackImage('Swiparr')
-    }
     const { searchParams } = new URL(req.url)
     const join = searchParams.get('join')
     const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();

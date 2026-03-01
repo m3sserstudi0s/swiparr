@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         const { username, sessionCode, profilePicture } = validated.data;
 
         const { user, code } = await SessionService.loginGuest(username, sessionCode, capabilities);
-        
+
         const cookieStore = await cookies();
         const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
@@ -45,17 +45,17 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, user: session.user });
 
-  } catch (error: any) {
-    const status = error.message === "Session not found" ? 404 : 
-                   error.message === "This session does not allow guest lending" ? 403 : 500;
-    
-    if (status === 500) {
-        return handleApiError(error, "Failed to join as guest");
-    }
+    } catch (error: any) {
+        const status = error.message === "sessionNotFound" ? 404 :
+            error.message === "guestLendingDisabled" ? 403 : 500;
 
-    return NextResponse.json(
-      { message: error.message || "Failed to join as guest" },
-      { status }
-    );
-  }
+        if (status === 500) {
+            return handleApiError(error, "Failed to join as guest");
+        }
+
+        return NextResponse.json(
+            { message: error.message || "failedJoinGuest" },
+            { status }
+        );
+    }
 }

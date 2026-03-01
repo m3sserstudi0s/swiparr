@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest) {
     try {
         const body = await request.json();
         const validated = libraryUpdateSchema.safeParse(body);
-        
+
         if (!validated.success) {
             return NextResponse.json({ error: "Invalid data" }, { status: 400 });
         }

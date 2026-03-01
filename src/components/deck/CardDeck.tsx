@@ -13,19 +13,21 @@ import { DeckError } from "./DeckError";
 import { DeckLoading } from "./DeckLoading";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
-import { 
-  useSession, 
-  useDeck, 
-  useStats, 
-  useMembers, 
-  useSwipe, 
-  useUndoSwipe, 
-  useUpdateSession 
+import {
+  useSession,
+  useDeck,
+  useStats,
+  useMembers,
+  useSwipe,
+  useUndoSwipe,
+  useUpdateSession
 } from "@/hooks/api";
 import { useBackgroundStore } from "@/lib/background-store";
 import { ProviderType } from "@/lib/providers/types";
+import { useTranslations } from "next-intl";
 
 export function CardDeck() {
+  const t = useTranslations('Deck');
 
   const { openMovie } = useMovieDetail();
 
@@ -35,11 +37,11 @@ export function CardDeck() {
   const sessionSettings = sessionStatus?.settings;
 
   const { data: stats } = useStats();
-  const { 
-    data: deckData, 
-    isLoading, 
-    isError, 
-    refetch, 
+  const {
+    data: deckData,
+    isLoading,
+    isError,
+    refetch,
     isFetching,
     fetchNextPage,
     hasNextPage,
@@ -51,7 +53,7 @@ export function CardDeck() {
     return deckData?.pages.flatMap(page => page.items) || [];
   }, [deckData]);
   const { data: members } = useMembers();
-  
+
   const swipeMutation = useSwipe();
   const undoSwipeMutation = useUndoSwipe();
   const updateSessionMutation = useUpdateSession();
@@ -71,9 +73,9 @@ export function CardDeck() {
   // Track session/filters to detect mode changes
   const filtersJson = JSON.stringify(sessionStatus?.filters);
   const settingsHash = sessionStatus?.settingsHash;
-  const currentModeRef = useRef<{ sessionCode: string | null; filtersJson: string }>({ 
-    sessionCode, 
-    filtersJson 
+  const currentModeRef = useRef<{ sessionCode: string | null; filtersJson: string }>({
+    sessionCode,
+    filtersJson
   });
 
   useEffect(() => {
@@ -81,7 +83,7 @@ export function CardDeck() {
     if (currentModeRef.current.sessionCode !== sessionCode || currentModeRef.current.filtersJson !== filtersJson) {
       setIsTransitioning(true);
       currentModeRef.current = { sessionCode, filtersJson };
-      
+
       // If we already have the deck data (it's cached in React Query),
       // we can apply it immediately instead of waiting for the next effect run
       if (deck && Array.isArray(deck) && !isLoading) {
@@ -94,7 +96,7 @@ export function CardDeck() {
     }
   }, [sessionCode, filtersJson, settingsHash, deck, isLoading]);
 
-   // Update displayDeck when new items are fetched or filters change
+  // Update displayDeck when new items are fetched or filters change
   useEffect(() => {
     if (deck && Array.isArray(deck) && !isLoading) {
       if (isTransitioning) {
@@ -112,7 +114,7 @@ export function CardDeck() {
           // We detect this by checking if there's any overlap in the first few items
           const currentFirstId = prev[0]?.Id;
           const newFirstId = deck[0]?.Id;
-          
+
           if (prev.length > 0 && newFirstId && !deck.some(item => item.Id === currentFirstId) && !prev.some(item => item.Id === newFirstId)) {
             // Deck seems entirely new, reset state
             // Use setTimeout to avoid state updates during render if needed, but here it's inside an effect
@@ -170,28 +172,28 @@ export function CardDeck() {
     } = sessionStatus.filters;
     const hasNonDefaultLanguages = !!(tmdbLanguages && tmdbLanguages.length > 0);
     const defaultSort = sessionStatus?.provider === ProviderType.TMDB ? "Popular" : "Trending";
-    return (genres && genres.length > 0) || 
-           (excludedGenres && excludedGenres.length > 0) ||
-           (minCommunityRating !== undefined && minCommunityRating > 0) || 
-           (yearRange !== undefined) || 
-           (officialRatings && officialRatings.length > 0) || 
-           (excludedOfficialRatings && excludedOfficialRatings.length > 0) ||
-           (runtimeRange !== undefined) ||
-           (themes && themes.length > 0) ||
-           (excludedThemes && excludedThemes.length > 0) ||
-           (sortBy !== undefined && sortBy !== defaultSort) ||
-           hasNonDefaultLanguages;
+    return (genres && genres.length > 0) ||
+      (excludedGenres && excludedGenres.length > 0) ||
+      (minCommunityRating !== undefined && minCommunityRating > 0) ||
+      (yearRange !== undefined) ||
+      (officialRatings && officialRatings.length > 0) ||
+      (excludedOfficialRatings && excludedOfficialRatings.length > 0) ||
+      (runtimeRange !== undefined) ||
+      (themes && themes.length > 0) ||
+      (excludedThemes && excludedThemes.length > 0) ||
+      (sortBy !== undefined && sortBy !== defaultSort) ||
+      hasNonDefaultLanguages;
   }, [sessionStatus?.filters]);
 
   const onSwipe = useCallback((id: string, direction: "left" | "right") => {
     // Check limits
     if (sessionSettings && stats) {
       if (direction === "right" && sessionSettings.maxRightSwipes && stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
-        toast.error("No likes left", { position: 'top-right', description: "Max number of likes reached" });
+        toast.error(t('noLikesLeft'), { position: 'top-right', description: t('maxLikesReached') });
         return;
       }
       if (direction === "left" && sessionSettings.maxLeftSwipes && stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
-        toast.error("No dislikes left", { position: 'top-right', description: "Max number of dislikes reached" });
+        toast.error(t('noDislikesLeft'), { position: 'top-right', description: t('maxDislikesReached') });
         return;
       }
     }
@@ -216,8 +218,8 @@ export function CardDeck() {
             likedBy: data.likedBy
           });
         } else if (data.matchBlockedByLimit) {
-          toast.error("Match not registered", {
-            description: "Max number of matches reached",
+          toast.error(t('matchNotRegistered'), {
+            description: t('maxMatchesReached'),
             position: "top-right"
           });
         }
@@ -225,7 +227,7 @@ export function CardDeck() {
       onError: (err) => {
         swipedIdsRef.current.delete(id);
         setRemovedIds(prev => prev.filter(rid => rid !== id));
-        toast.error("Swipe failed", { description: getErrorMessage(err) });
+        toast.error(t('swipeFailed'), { description: getErrorMessage(err) });
       }
     });
   }, [displayDeck, swipeMutation]);
@@ -234,7 +236,7 @@ export function CardDeck() {
     return displayDeck.filter((item: MediaItem) => !removedIds.includes(item.Id));
   }, [displayDeck, removedIds]);
 
-    const activeDeck = useMemo(() => {
+  const activeDeck = useMemo(() => {
     return filteredDeck.filter((item: MediaItem) => !swipedIdsRef.current.has(item.Id));
   }, [filteredDeck]);
 
@@ -267,7 +269,7 @@ export function CardDeck() {
   const rewind = async () => {
     if (!lastSwipe) return;
     const { id, direction } = lastSwipe;
-    
+
     try {
       await undoSwipeMutation.mutateAsync(id);
       setRewindingId({ id, direction });
@@ -275,7 +277,7 @@ export function CardDeck() {
       setRemovedIds(prev => prev.filter(rid => rid !== id));
       setLastSwipe(null);
     } catch (err) {
-      toast.error("Undo failed");
+      toast.error(t('undoFailed'));
     }
   };
 
@@ -314,8 +316,8 @@ export function CardDeck() {
       {sessionStatus?.code && members && members.length > 0 ? (
         <div className="h-8.75">
           <UserAvatarList
-            users={members.map((m) => ({ 
-              userId: m.externalUserId, 
+            users={members.map((m) => ({
+              userId: m.externalUserId,
               userName: m.externalUserName,
               hasCustomProfilePicture: !!m.hasCustomProfilePicture,
               profileUpdatedAt: m.profileUpdatedAt
@@ -346,11 +348,11 @@ export function CardDeck() {
                   ref={getCardRef(item.Id)}
                   item={item}
                   index={zIndex}
-                   onSwipe={onSwipe}
-                   onCardLeftScreen={onCardLeftScreen}
-                   onClick={() => openMovie(item.Id, { showLikedBy: false, sessionCode })}
-                   preventSwipe={prevent}
-                 />
+                  onSwipe={onSwipe}
+                  onCardLeftScreen={onCardLeftScreen}
+                  onClick={() => openMovie(item.Id, { showLikedBy: false, sessionCode })}
+                  preventSwipe={prevent}
+                />
               );
             })}
           </>

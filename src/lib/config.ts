@@ -5,7 +5,7 @@ import { ProviderType } from './providers/types';
 const envSchema = z.object({
   // Core
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  
+
   // Database
   DATABASE_URL: z.string().optional(),
   TURSO_DATABASE_URL: z.string().optional(),
@@ -52,6 +52,7 @@ const envSchema = z.object({
 
   USE_ANALYTICS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   ENABLE_DEBUG: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+  LOCALE: z.enum(['en', 'de']).default('en'),
 });
 
 const parsedEnv = envSchema.parse(process.env);
@@ -83,20 +84,20 @@ const getDefaultDbPath = () => {
 const DATABASE_URL = parsedEnv.DATABASE_URL || parsedEnv.TURSO_DATABASE_URL || getDefaultDbPath();
 const DATABASE_AUTH_TOKEN = parsedEnv.DATABASE_AUTH_TOKEN || parsedEnv.TURSO_AUTH_TOKEN;
 
-const SERVER_URL = parsedEnv.JELLYFIN_URL || parsedEnv.EMBY_URL || parsedEnv.PLEX_URL || 
-  (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? 'http://localhost:8096' : 
-   parsedEnv.PROVIDER === ProviderType.EMBY ? 'http://localhost:8096' : 
-   parsedEnv.PROVIDER === ProviderType.PLEX ? 'http://localhost:32400' : '');
+const SERVER_URL = parsedEnv.JELLYFIN_URL || parsedEnv.EMBY_URL || parsedEnv.PLEX_URL ||
+  (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? 'http://localhost:8096' :
+    parsedEnv.PROVIDER === ProviderType.EMBY ? 'http://localhost:8096' :
+      parsedEnv.PROVIDER === ProviderType.PLEX ? 'http://localhost:32400' : '');
 
 const SERVER_PUBLIC_URL = (parsedEnv.JELLYFIN_PUBLIC_URL || parsedEnv.EMBY_PUBLIC_URL || parsedEnv.PLEX_PUBLIC_URL || SERVER_URL || '').replace(/\/$/, '');
 
 const RAW_BASE_PATH = parsedEnv.URL_BASE_PATH.replace(/\/$/, '');
 const BASE_PATH = RAW_BASE_PATH && !RAW_BASE_PATH.startsWith('/') ? `/${RAW_BASE_PATH}` : RAW_BASE_PATH;
 
-const ADMIN_USERNAME = parsedEnv.ADMIN_USERNAME || 
+const ADMIN_USERNAME = parsedEnv.ADMIN_USERNAME ||
   (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? parsedEnv.JELLYFIN_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === ProviderType.EMBY ? parsedEnv.EMBY_ADMIN_USERNAME :
-   parsedEnv.PROVIDER === ProviderType.PLEX ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
+    parsedEnv.PROVIDER === ProviderType.EMBY ? parsedEnv.EMBY_ADMIN_USERNAME :
+      parsedEnv.PROVIDER === ProviderType.PLEX ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
 
 export const config = {
   ...parsedEnv,
@@ -116,6 +117,7 @@ export const config = {
     provider: parsedEnv.PROVIDER,
     providerLock: parsedEnv.PROVIDER_LOCK,
     useWatchlist: parsedEnv.JELLYFIN_USE_WATCHLIST,
+    locale: parsedEnv.LOCALE,
   },
   auth: {
     secret: parsedEnv.AUTH_SECRET,

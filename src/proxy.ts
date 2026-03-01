@@ -4,8 +4,12 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { config as appConfig } from "@/lib/config";
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
-export async function proxy(request: NextRequest) {
+const intlMiddleware = createMiddleware(routing);
+
+export default async function proxy(request: NextRequest) {
   const { search } = request.nextUrl;
   let pathname = request.nextUrl.pathname;
   const basePath = appConfig.app.basePath;
@@ -20,7 +24,7 @@ export async function proxy(request: NextRequest) {
 
   const response = isRewritten
     ? NextResponse.rewrite(new URL(pathname + search, request.url))
-    : NextResponse.next();
+    : intlMiddleware(request);
 
   // Define public paths
   const isPublicPath =
@@ -37,7 +41,7 @@ export async function proxy(request: NextRequest) {
     [".png", ".svg", ".ico"].some(ext => pathname.endsWith(ext));
 
   if (isPublicPath) {
-    return response;
+    return intlMiddleware(request);
   }
 
   const session = await getIronSession<SessionData>(request, response, await getSessionOptions());
@@ -70,12 +74,12 @@ export async function proxy(request: NextRequest) {
   // Safeguard: Log out if provider lock is enabled and provider mismatch
   if (appConfig.app.providerLock && session.user?.provider !== appConfig.app.provider && !session.user?.isGuest) {
     session.destroy();
-    
+
     if (pathname.includes("/api/")) {
-        return new NextResponse(JSON.stringify({ error: "provider_mismatch" }), {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        });
+      return new NextResponse(JSON.stringify({ error: "provider_mismatch" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const loginUrl = new URL(`${basePath}/login`, request.url);
@@ -97,5 +101,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };
