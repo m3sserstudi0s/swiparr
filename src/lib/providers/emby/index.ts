@@ -84,6 +84,7 @@ export class EmbyProvider implements MediaProvider {
       Limit: filters.limit || 20,
       StartIndex: filters.offset || 0,
       EnableUserData: true,
+      HasOverview: true,
     };
 
     if (filters.searchTerm) {
