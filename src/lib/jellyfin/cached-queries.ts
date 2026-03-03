@@ -13,6 +13,9 @@ export async function getCachedYears(accessToken: string, deviceId: string, user
             Recursive: true,
             IncludeItemTypes: "Movie",
             UserId: userId,
+            Limit: 500,
+            SortBy: "SortName",
+            SortOrder: "Descending",
         },
         headers: getAuthenticatedHeaders(accessToken, deviceId),
     });
@@ -29,6 +32,7 @@ export async function getCachedGenres(accessToken: string, deviceId: string, use
             Recursive: true,
             IncludeItemTypes: "Movie",
             UserId: userId,
+            Limit: 500,
         },
         headers: getAuthenticatedHeaders(accessToken, deviceId),
     });
@@ -55,21 +59,19 @@ export async function getCachedRatings(accessToken: string, deviceId: string, us
     cacheLife({ revalidate: 86400, stale: 3600, expire: 172800 });
     cacheTag(tagProvider(ProviderType.JELLYFIN, "ratings"));
 
-    // Official ratings from items
-    const res = await apiClient.get(getJellyfinUrl(`/Items`), {
+    // Use /Items/Filters2 to get all distinct ContentRatings in a single fast query.
+    // This is far more efficient than scanning /Items with a Limit and extracting
+    // OfficialRating in JS, which would miss ratings beyond the page size.
+    const res = await apiClient.get(getJellyfinUrl(`/Items/Filters2`), {
         params: {
-            Recursive: true,
-            IncludeItemTypes: "Movie",
-            Fields: "OfficialRating",
             UserId: userId,
+            IncludeItemTypes: "Movie",
+            Recursive: true,
         },
         headers: getAuthenticatedHeaders(accessToken, deviceId),
     });
 
-    const ratings = new Set<string>();
-    (res.data.Items || []).forEach((item: any) => {
-        if (item.OfficialRating) ratings.add(item.OfficialRating);
-    });
-
-    return Array.from(ratings).sort();
+    // Response shape: { Genres: [...], Tags: [...], OfficialRatings: [...], Years: [...] }
+    // OfficialRatings is an array of strings in Jellyfin 10.x
+    return (res.data.OfficialRatings || []).sort() as string[];
 }

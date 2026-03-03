@@ -25,6 +25,25 @@ const client = createClient({
 
 const db = drizzle(client);
 
+async function wipeLegacyCryptoTokens() {
+  // Security upgrade (C3/M8): v1 tokens were encrypted with a raw SHA-256-derived
+  // key. They must be wiped so hosts re-encrypt under the new scrypt KDF (v2).
+  try {
+    const result = await client.execute(
+      "UPDATE Session SET hostAccessToken = NULL, hostDeviceId = NULL WHERE hostAccessToken LIKE 'v1:%'"
+    );
+    if (result.rowsAffected > 0) {
+      console.log(
+        `[Security] Wiped ${result.rowsAffected} legacy v1-encrypted guest-lending token(s). ` +
+        'Hosts will need to re-enable guest lending to re-encrypt under the new KDF.'
+      );
+    }
+  } catch (error) {
+    // Non-fatal: table may not exist yet on a fresh install
+    console.warn('[Security] Could not wipe legacy tokens (safe to ignore on fresh install):', error.message);
+  }
+}
+
 async function main() {
   console.log('Running migrations...');
   try {
@@ -32,6 +51,7 @@ async function main() {
     console.log('Migrations folder:', migrationsFolder);
     await migrate(db, { migrationsFolder });
     console.log('Migrations complete!');
+    await wipeLegacyCryptoTokens();
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);

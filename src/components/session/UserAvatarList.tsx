@@ -39,15 +39,15 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
 
     const grays = [
     "bg-indigo-100 text-neutral-900",  // soft
-    "bg-emerald-500 text-white",       // bold
     "bg-amber-100 text-neutral-900",   // soft
-    "bg-cyan-500 text-white",          // bold
     "bg-pink-100 text-neutral-900",    // soft
-    "bg-indigo-500 text-white",        // bold
     "bg-teal-100 text-neutral-900",    // soft
-    "bg-rose-500 text-white",          // bold
     "bg-sky-100 text-neutral-900",     // soft
-    "bg-lime-500 text-neutral-900",    // bold
+    "bg-violet-100 text-neutral-900",  // soft
+    "bg-orange-100 text-neutral-900",   // soft
+    "bg-rose-100 text-neutral-900",    // soft
+    "bg-aqua-100 text-neutral-900",    // soft
+    "bg-indigo-100 text-neutral-900",     // soft
     ];
 
     const maxVisible = 5;
@@ -80,7 +80,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                                 updatedAt={user.profileUpdatedAt}
                                 className={cn("size-full", isHost && "bg-background")}
                                 fallbackClassName={cn(
-                                    size === "sm" ? "text-[10px]/0 font-normal" : "text-sm/0 font-semibold",
+                                    size === "sm" ? "text-[10px]/0 font-semibold" : "text-sm/0 font-semibold",
                                     isHost ? "bg-accent text-foreground" : grays[(index - 1) % grays.length]
                                 )}
                             />

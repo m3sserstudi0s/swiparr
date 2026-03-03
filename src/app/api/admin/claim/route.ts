@@ -3,8 +3,9 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { ConfigService } from "@/lib/services/config-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { db, config as configTable } from "@/lib/db";
+import { eq } from "drizzle-orm";
 
 export async function POST() {
     const cookieStore = await cookies();
@@ -23,13 +24,30 @@ export async function POST() {
         return NextResponse.json({ error: "This provider does not support admin capabilities" }, { status: 403 });
     }
 
-    const currentAdmin = await ConfigService.getAdminUserId(session.user.provider);
-    if (currentAdmin) {
-        return NextResponse.json({ error: "Admin already exists" }, { status: 400 });
-    }
-
     try {
-        await ConfigService.setAdminUserId(session.user.Id, session.user.provider as any);
+        // Wrap check+set in a transaction to prevent TOCTOU races (M1).
+        let claimed = false;
+        await db.transaction(async (tx: any) => {
+            const key = `admin_user_id:${(session.user.provider as string).toLowerCase()}`;
+            const existing = await tx
+                .select()
+                .from(configTable)
+                .where(eq(configTable.key, key))
+                .then((rows: any[]) => rows[0]);
+
+            if (existing) {
+                // Another request already set admin — abort the transaction.
+                return;
+            }
+
+            await tx.insert(configTable).values({ key, value: session.user.Id });
+            claimed = true;
+        });
+
+        if (!claimed) {
+            return NextResponse.json({ error: "Admin already exists" }, { status: 400 });
+        }
+
         session.user.isAdmin = true;
         await session.save();
         return NextResponse.json({ success: true });

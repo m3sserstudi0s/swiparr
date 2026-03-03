@@ -93,3 +93,19 @@ export const userProfiles = sqliteTable("UserProfile", {
 
 export type UserProfile = InferSelectModel<typeof userProfiles>;
 export type NewUserProfile = InferInsertModel<typeof userProfiles>;
+
+export const sessionEvents = sqliteTable("SessionEvent", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionCode: text("sessionCode").notNull(),
+  type: text("type").notNull(),
+  payload: text("payload").notNull(),
+  createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => {
+  return [
+    index("SessionEvent_sessionCode_idx").on(table.sessionCode),
+    index("SessionEvent_id_sessionCode_idx").on(table.id, table.sessionCode),
+  ];
+});
+
+export type SessionEvent = InferSelectModel<typeof sessionEvents>;
+export type NewSessionEvent = InferInsertModel<typeof sessionEvents>;

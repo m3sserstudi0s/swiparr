@@ -15,7 +15,7 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
   return (
     <div className="mt-4">
       <h3 className="font-bold mb-1 flex items-center justify-between text-muted-foreground uppercase tracking-wider text-xs">
-        Matches Found
+        Matches
         {(matches?.length ?? 0) > 0 && (
           <Badge variant="secondary">{matches?.length}</Badge>
         )}
