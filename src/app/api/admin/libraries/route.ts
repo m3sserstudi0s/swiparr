@@ -3,13 +3,13 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { events, EVENT_TYPES } from "@/lib/events";
+import { EventService } from "@/lib/services/event-service";
+import { EVENT_TYPES } from "@/lib/events";
 import { revalidateTag } from "next/cache";
 import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { libraryUpdateSchema } from "@/lib/validations";
 import { tagProvider } from "@/lib/cache-tags";
-import { ProviderType } from "@/lib/providers/types";
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -41,10 +41,11 @@ export async function PATCH(request: NextRequest) {
 
         const libraries = validated.data;
         await ConfigService.setIncludedLibraries(libraries);
-        
-        revalidateTag(tagProvider(ProviderType.JELLYFIN, "libraries"), "default");
 
-        events.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
+        const activeProvider = await ConfigService.getActiveProvider();
+        revalidateTag(tagProvider(activeProvider, "libraries"), "default");
+
+        await EventService.emit(EVENT_TYPES.ADMIN_CONFIG_UPDATED, {
             type: 'libraries',
             userId: session.user.Id
         });

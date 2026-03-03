@@ -17,13 +17,16 @@ import { useState, Suspense, lazy } from "react";
 import { UserGuide } from "./UserGuide";
 import { Changelog } from "./Changelog";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner";
 import { ScrollArea } from "../ui/scroll-area";
 
@@ -125,33 +128,33 @@ export function SettingsSidebar() {
             <UserGuide open={showUserGuide} onOpenChange={setShowUserGuide} />
             <Changelog open={showChangelog} onOpenChange={setShowChangelog} />
 
-            <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Are you absolutely sure?</DialogTitle>
-                        <DialogDescription>
+            <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete your
                             likes and any sessions you have created.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel
                             variant="outline"
                             onClick={() => setShowClearDialog(false)}
                             disabled={isClearing}
                         >
                             Cancel
-                        </Button>
-                        <Button
+                        </AlertDialogCancel>
+                        <AlertDialogAction
                             variant="destructive"
                             onClick={handleClearData}
                             disabled={isClearing}
                         >
                             {isClearing ? "Clearing..." : "Clear data"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

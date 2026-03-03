@@ -7,38 +7,49 @@ import { ConfigService } from "@/lib/services/config-service";
 import { AuthService } from "@/lib/services/auth-service";
 import { handleApiError } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
-import { getBestServerUrl, getPlexHeaders } from "@/lib/plex/api";
+import { getBestServerUrl, getPlexHeaders, assertSafePlexServerUrl } from "@/lib/plex/api";
 import axios from "axios";
 import { ProviderType } from "@/lib/providers/types";
+import { plexAuthSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { authToken, clientId, user } = body;
-
-    if (!authToken || !clientId) {
+    const bodyRaw = await request.json();
+    const parsed = plexAuthSchema.safeParse(bodyRaw);
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, message: "Missing authToken or clientId" },
+        { success: false, message: "Missing or invalid authToken / clientId" },
         { status: 400 }
       );
     }
+    const { authToken, clientId } = parsed.data;
 
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
 
-    // Use the provided user info or fetch it if missing
-    let userInfo = user;
-    if (!userInfo) {
+    // Always fetch user identity server-side from plex.tv — never trust client-supplied user data.
+    let userInfo;
+    try {
+      const response = await axios.get("https://plex.tv/api/v2/user", {
+        headers: getPlexHeaders(authToken, clientId),
+      });
+      userInfo = response.data;
+    } catch (err) {
+      logger.error("[PlexAuth] Failed to fetch user info:", err);
+      return NextResponse.json(
+        { success: false, message: "Failed to verify Plex token" },
+        { status: 401 }
+      );
+    }
+
+    // Validate the user-supplied server URL against DNS-resolved IPs (M9).
+    if (session.providerConfig?.serverUrl) {
       try {
-        const response = await axios.get("https://plex.tv/api/v2/user", {
-          headers: getPlexHeaders(authToken, clientId),
-        });
-        userInfo = response.data;
-      } catch (err) {
-        logger.error("[PlexAuth] Failed to fetch user info:", err);
+        await assertSafePlexServerUrl(session.providerConfig.serverUrl);
+      } catch {
         return NextResponse.json(
-          { success: false, message: "Failed to verify Plex token" },
-          { status: 401 }
+          { success: false, message: "Provided server URL is not allowed" },
+          { status: 400 }
         );
       }
     }

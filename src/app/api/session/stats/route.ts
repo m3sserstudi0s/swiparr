@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
-import { db, likes, hiddens, sessionMembers } from "@/lib/db";
+import { db, likes, hiddens, sessionMembers, sessions } from "@/lib/db";
 import { eq, and, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData, SessionStats } from "@/types";
@@ -74,13 +74,22 @@ export async function DELETE(request: NextRequest) {
 
     const sessionCode = session.sessionCode;
 
+    // Only the host may reset session stats (H4)
+    const currentSession = await db.query.sessions.findFirst({
+        where: eq(sessions.code, sessionCode),
+    });
+    if (!currentSession || currentSession.hostUserId !== session.user.Id) {
+        return NextResponse.json({ error: "Only the host can reset stats" }, { status: 403 });
+    }
+
     // Delete all likes and hiddens for this session
     await db.delete(likes).where(eq(likes.sessionCode, sessionCode));
     await db.delete(hiddens).where(eq(hiddens.sessionCode, sessionCode));
 
     // Emit event
-    const { events, EVENT_TYPES } = await import("@/lib/events");
-    events.emit(EVENT_TYPES.STATS_RESET, {
+    const { EventService } = await import("@/lib/services/event-service");
+    const { EVENT_TYPES } = await import("@/lib/events");
+    await EventService.emit(EVENT_TYPES.STATS_RESET, {
         sessionCode,
         userId: session.user.Id,
         userName: session.user.Name,

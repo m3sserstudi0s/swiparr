@@ -5,7 +5,8 @@ import { db, likes as likesTable, sessionMembers, userProfiles, type Like } from
 import { eq, and, isNotNull, isNull, desc, inArray, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SessionData, type MediaItem, type MergedLike } from "@/types";
-import { events, EVENT_TYPES } from "@/lib/events";
+import { EventService } from "@/lib/services/event-service";
+import { EVENT_TYPES } from "@/lib/events";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { handleApiError } from "@/lib/api-utils";
@@ -160,7 +161,7 @@ export async function DELETE(request: NextRequest) {
                 );
         }
 
-        events.emit(EVENT_TYPES.MATCH_REMOVED, {
+        await EventService.emit(EVENT_TYPES.MATCH_REMOVED, {
             sessionCode: targetSessionCode,
             itemId: itemId,
             userId: session.user.Id

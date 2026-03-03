@@ -19,6 +19,14 @@ RUN mkdir -p /app/data
 ARG APP_VERSION
 ENV APP_VERSION=$APP_VERSION
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# URL_BASE_PATH must be provided at BUILD TIME so that Next.js can bake the
+# correct prefix into asset URLs (/_next/static/...). Pass it via:
+#   docker build --build-arg URL_BASE_PATH=/swipe .
+# The default is empty (app served at the root path).
+ARG URL_BASE_PATH=""
+ENV URL_BASE_PATH=$URL_BASE_PATH
+
 RUN npm run build
 
 # ---- runtime ----
@@ -28,6 +36,11 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=4321
 ENV HOSTNAME="0.0.0.0"
+
+# Carry the base path into the runner so the healthcheck resolves correctly.
+# This is set at build time and baked into Next.js asset URLs.
+ARG URL_BASE_PATH=""
+ENV URL_BASE_PATH=$URL_BASE_PATH
 
 RUN apk add --no-cache libc6-compat curl su-exec
 

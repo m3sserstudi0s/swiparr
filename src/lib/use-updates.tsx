@@ -15,7 +15,7 @@ export function useUpdates() {
     const { openMovie } = useMovieDetail();
     const { basePath } = useRuntimeConfig();
     const pathname = usePathname();
-    const isLoginPage = pathname === '/login';
+    const isLoginPage = pathname === `${basePath}/login` || pathname === '/login';
     const { data: session, isError, error } = useSession({ enabled: !isLoginPage });
     const router = useRouter();
     
@@ -28,7 +28,7 @@ export function useUpdates() {
                     duration: 5000,
                 });
                 queryClient.setQueryData(QUERY_KEYS.session, null);
-                router.push('/login');
+                router.push(`${basePath}/login`);
             }
         }
     }, [isError, error, router, queryClient]);

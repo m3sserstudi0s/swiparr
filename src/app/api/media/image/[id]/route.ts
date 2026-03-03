@@ -44,7 +44,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
   }
 
-  const providerType = searchParams.get("provider") || auth?.provider;
+  // Always derive the provider from the authenticated session — never from a
+  // client-supplied query parameter — to prevent provider-confusion attacks (M4).
+  const providerType = auth?.provider;
   const provider = getMediaProvider(providerType);
 
   // If no tag is provided, some providers (like TMDB) might use the ID if it looks like a path

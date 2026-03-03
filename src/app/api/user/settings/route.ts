@@ -6,7 +6,8 @@ import { SessionData } from "@/types";
 import { db, sessionMembers } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { userSettingsSchema } from "@/lib/validations";
-import { events, EVENT_TYPES } from "@/lib/events";
+import { EventService } from "@/lib/services/event-service";
+import { EVENT_TYPES } from "@/lib/events";
 import { ConfigService } from "@/lib/services/config-service";
 import { handleApiError } from "@/lib/api-utils";
 import { getRuntimeConfig } from "@/lib/runtime-config";
@@ -62,13 +63,13 @@ export async function PATCH(request: NextRequest) {
                     eq(sessionMembers.externalUserId, userId)
                 ));
             
-            events.emit(EVENT_TYPES.SESSION_UPDATED, {
+            await EventService.emit(EVENT_TYPES.SESSION_UPDATED, {
                 sessionCode: session.sessionCode,
                 userId: session.user.Id,
                 userName: session.user.Name,
                 isSettingsUpdate: true
             });
-            events.emit(EVENT_TYPES.FILTERS_UPDATED, {
+            await EventService.emit(EVENT_TYPES.FILTERS_UPDATED, {
                 sessionCode: session.sessionCode,
                 userId: session.user.Id,
                 userName: session.user.Name,
