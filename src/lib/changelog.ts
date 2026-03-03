@@ -9,6 +9,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.4",
+    date: "2026-03-02",
+    changes: [
+      { type: "fix", description: "Fixed 'no items loaded' bug that could prevent the swipe deck from populating" },
+      { type: "fix", description: "Fixed Plex authentication bug" },
+      { type: "fix", description: "Fixed Plex IP address and URL matching for multi-server setups" },
+      { type: "fix", description: "Fixed slow filter loading on initial render" },
+      { type: "fix", description: "Fixed custom URL base path support for reverse proxy deployments" },
+      { type: "feature", description: "Animated heart background now appears behind match celebration" },
+      { type: "feature", description: "Proper real-time event handling via new SSE event service" },
+      { type: "improvement", description: "Security hardening across Plex auth, URL validation, and crypto utilities" },
+      { type: "improvement", description: "UUID generation now works in non-HTTPS (insecure) contexts as a fallback" },
+    ],
+  },
+  {
     version: "1.2.12",
     date: "2026-02-26",
     changes: [

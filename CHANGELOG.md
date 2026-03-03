@@ -16,6 +16,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -
 
+## [1.3.4] - 2026-03-02
+
+Upstream sync: merged upstream swiparr v1.2.13 through v1.3.4 into fork.
+
+### Added
+- Animated heart background on match overlay (upstream v1.2.13)
+- New `alert-dialog`, `item`, and `separator` UI primitives
+- SSE event service (`src/lib/services/event-service.ts`) for proper real-time event handling (upstream v1.3.0)
+- URL security guard (`src/lib/security/url-guard.ts`) for hardened URL validation (upstream v1.3.3)
+- New DB migration `0012_useful_omega_flight` (auto-applied on build)
+- `AI_USAGE_DECLARATION` and `SECURITY_AUDIT.md` documents (upstream v1.3.2/v1.3.3)
+- UUID generator fallback for insecure (non-HTTPS) contexts (upstream v1.3.2)
+
+### Changed
+- Plex discovery simplified — auto server URL discovery removed; explicit URL required (upstream v1.3.3)
+- Events API route (`/api/events`) refactored to use new event service
+- Security hardening across `crypto.ts`, Plex auth, and URL handling (upstream v1.3.3)
+- `MatchOverlay` now shows animated heart background alongside confetti burst on match
+
+### Fixed
+- Slow filter loading on initial render (upstream v1.2.14)
+- Custom URL base path support for reverse proxy deployments (upstream v1.2.14)
+- `maxDuration` Vercel serverless limit (upstream v1.3.1)
+- "No items loaded" bug when opening the deck (upstream v1.3.4)
+- Plex authentication bug (upstream v1.3.4)
+- Plex IP address and URL matching with multi-server setups (upstream v1.3.3)
+
 ## [1.0.3] - 2025-02-06
 
 Various bug fixes and improvements stemming from update to 1.0.0 on existing instances.
