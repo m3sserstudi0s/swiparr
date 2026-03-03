@@ -19,6 +19,7 @@ export interface RuntimeConfig {
   appPublicUrl: string;
   enableDebug: boolean;
   tmdbDefaultRegion: string;
+  useStaticFilters: boolean;
 }
 
 
@@ -48,6 +49,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     appPublicUrl: config.app.appPublicUrl,
     enableDebug: config.ENABLE_DEBUG,
     tmdbDefaultRegion: config.TMDB_DEFAULT_REGION || DEFAULT_TMDB_REGION,
+    useStaticFilters: config.USE_STATIC_FILTERS,
     ...overrides
   };
 }

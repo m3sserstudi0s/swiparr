@@ -28,7 +28,6 @@ const envSchema = z.object({
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters").optional(),
   USE_SECURE_COOKIES: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   ALLOW_PRIVATE_PROVIDER_URLS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
-  PLEX_ALLOW_SELF_SIGNED: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   PLEX_IMAGE_ALLOWED_HOSTS: z.string().optional(),
   ADMIN_USERNAME: z.string().optional(),
   JELLYFIN_ADMIN_USERNAME: z.string().optional(),
@@ -52,6 +51,7 @@ const envSchema = z.object({
 
   USE_ANALYTICS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   ENABLE_DEBUG: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+  USE_STATIC_FILTERS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 });
 
 const parsedEnv = envSchema.parse(process.env);
@@ -108,7 +108,6 @@ export const config = {
   },
   security: {
     allowPrivateProviderUrls: parsedEnv.ALLOW_PRIVATE_PROVIDER_URLS,
-    plexAllowSelfSigned: parsedEnv.PLEX_ALLOW_SELF_SIGNED,
     plexImageAllowedHosts: parsedEnv.PLEX_IMAGE_ALLOWED_HOSTS,
   },
   proxy: {

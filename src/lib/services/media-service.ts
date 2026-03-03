@@ -730,48 +730,65 @@ export class MediaService {
     return provider.getLibraries(auth);
   }
 
-  static async getYears(session: SessionData) {
-    const auth = await AuthService.getEffectiveCredentials(session);
-    const provider = getMediaProvider(auth.provider);
-    return provider.getYears(auth);
+  private static readonly FILTER_TIMEOUT_MS = 15_000;
+
+  /** Race a promise against a timeout. Returns `{ value, timedOut }`. */
+  private static withFilterTimeout<T>(promise: Promise<T>): Promise<{ value: T | null; timedOut: boolean }> {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve({ value: null, timedOut: true }), MediaService.FILTER_TIMEOUT_MS);
+      promise
+        .then((value) => { clearTimeout(timer); resolve({ value, timedOut: false }); })
+        .catch(() => { clearTimeout(timer); resolve({ value: null, timedOut: false }); });
+    });
   }
 
-  static async getRatings(session: SessionData, regionOverride?: string) {
+  static async getYears(session: SessionData): Promise<{ data: { Name: string; Value: number }[]; timedOut: boolean }> {
+    const currentYear = new Date().getFullYear();
+    const staticYears = Array.from({ length: currentYear - 1900 + 1 }, (_, i) => ({
+      Name: (1900 + i).toString(),
+      Value: 1900 + i,
+    })).reverse();
+
+    if (getRuntimeConfig().useStaticFilters) {
+      return { data: staticYears, timedOut: false };
+    }
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
-    
+    const { value, timedOut } = await MediaService.withFilterTimeout(provider.getYears(auth));
+    if (timedOut || !value || value.length === 0) return { data: staticYears, timedOut };
+    return { data: value, timedOut: false };
+  }
+
+  static async getRatings(session: SessionData, regionOverride?: string): Promise<{ data: { Name: string; Value: string }[]; timedOut: boolean }> {
+    const { DEFAULT_RATINGS } = await import("@/lib/constants");
+    const staticRatings = DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
+
+    if (getRuntimeConfig().useStaticFilters) {
+      return { data: staticRatings, timedOut: false };
+    }
+    const auth = await AuthService.getEffectiveCredentials(session);
+    const provider = getMediaProvider(auth.provider);
+
     if (regionOverride) {
       auth.watchRegion = regionOverride;
     }
-    
-    try {
-        const ratings = await provider.getRatings(auth);
-        if (!ratings || ratings.length === 0) {
-            const { DEFAULT_RATINGS } = await import("@/lib/constants");
-            return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
-        }
-        return ratings;
-    } catch (e) {
-        const { DEFAULT_RATINGS } = await import("@/lib/constants");
-        return DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
-    }
+
+    const { value, timedOut } = await MediaService.withFilterTimeout(provider.getRatings(auth));
+    if (timedOut || !value || value.length === 0) return { data: staticRatings, timedOut };
+    return { data: value as { Name: string; Value: string }[], timedOut: false };
   }
 
-  static async getGenres(session: SessionData) {
+  static async getGenres(session: SessionData): Promise<{ data: { Id: string; Name: string }[]; timedOut: boolean }> {
+    const { DEFAULT_GENRES } = await import("@/lib/constants");
+
+    if (getRuntimeConfig().useStaticFilters) {
+      return { data: DEFAULT_GENRES, timedOut: false };
+    }
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
-    
-    try {
-        const genres = await provider.getGenres(auth);
-        if (!genres || genres.length === 0) {
-            const { DEFAULT_GENRES } = await import("@/lib/constants");
-            return DEFAULT_GENRES;
-        }
-        return genres;
-    } catch (e) {
-        const { DEFAULT_GENRES } = await import("@/lib/constants");
-        return DEFAULT_GENRES;
-    }
+    const { value, timedOut } = await MediaService.withFilterTimeout(provider.getGenres(auth));
+    if (timedOut || !value || value.length === 0) return { data: DEFAULT_GENRES, timedOut };
+    return { data: value, timedOut: false };
   }
 
   static async getThemes(session: SessionData) {

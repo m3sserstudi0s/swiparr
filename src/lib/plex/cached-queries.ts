@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { tagProvider } from "@/lib/cache-tags";
-import { plexClient, getPlexUrl, getPlexHeaders } from "./api";
+import { plexRequest, getPlexUrl, getPlexHeaders } from "./api";
 import { ProviderType } from "../providers/types";
 
 export async function getCachedYears(accessToken: string, deviceId: string, userId: string, serverUrl?: string) {
@@ -18,7 +18,7 @@ export async function getCachedYears(accessToken: string, deviceId: string, user
     
     for (const section of movieSections) {
         const url = getPlexUrl(`/library/sections/${section.key}/year`, serverUrl);
-        const res = await plexClient.get(url, { headers });
+        const res = await plexRequest<any>({ method: 'get', url, headers });
         const years = res.data.MediaContainer?.Directory || [];
         years.forEach((y: any) => {
             const val = parseInt(y.title);
@@ -46,7 +46,7 @@ export async function getCachedGenres(accessToken: string, deviceId: string, use
     
     for (const section of movieSections) {
         const url = getPlexUrl(`/library/sections/${section.key}/genre`, serverUrl);
-        const res = await plexClient.get(url, { headers });
+        const res = await plexRequest<any>({ method: 'get', url, headers });
         const genres = res.data.MediaContainer?.Directory || [];
         genres.forEach((g: any) => {
             const rawKey = g.fastKey || g.key;
@@ -75,7 +75,7 @@ export async function getCachedLibraries(accessToken: string, deviceId: string, 
 
     const token = accessToken;
     const url = getPlexUrl("/library/sections", serverUrl);
-    const res = await plexClient.get(url, { headers: getPlexHeaders(token) });
+    const res = await plexRequest<any>({ method: 'get', url, headers: getPlexHeaders(token) });
     return res.data.MediaContainer?.Directory || [];
 }
 
@@ -94,7 +94,7 @@ export async function getCachedRatings(accessToken: string, deviceId: string, us
     
     for (const section of movieSections) {
         const url = getPlexUrl(`/library/sections/${section.key}/contentRating`, serverUrl);
-        const res = await plexClient.get(url, { headers });
+        const res = await plexRequest<any>({ method: 'get', url, headers });
         const ratings = res.data.MediaContainer?.Directory || [];
         ratings.forEach((r: any) => {
             if (r.title) allRatings.add(r.title);

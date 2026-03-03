@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const region = searchParams.get("region") || undefined;
-        const ratings = await MediaService.getRatings(session, region);
-        return NextResponse.json(ratings);
+        const { data, timedOut } = await MediaService.getRatings(session, region);
+        return NextResponse.json({ data, timedOut });
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch ratings" }, { status: 500 });
     }
