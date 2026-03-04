@@ -18,13 +18,17 @@ import { Spinner } from "@/components/ui/spinner"
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useSession, useAdminStatus, useMediaLibraries, useAdminLibraries, useUpdateAdminLibraries, useClaimAdmin } from "@/hooks/api";
 import { MediaLibrary } from "@/types/media";
+import { useTranslations } from "next-intl";
 
 export function AdminSettings() {
     const { data: sessionStatus } = useSession();
     const runtimeConfig = useRuntimeConfig();
     const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
+    const t = useTranslations('SettingsAdmin');
+    const tUI = useTranslations('UI');
 
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
+    const [baseUrl, setBaseUrl] = useState<string>('');
     const [isExpanded, setIsExpanded] = useState(false);
 
     const { data: adminStatus } = useAdminStatus();
@@ -42,10 +46,10 @@ export function AdminSettings() {
 
     const handleClaimAdmin = () => {
         toast.promise(claimMutation.mutateAsync(), {
-            loading: "Claiming admin role...",
-            success: "You are now the admin",
+            loading: t('claimingAdmin'),
+            success: t('claimedAdmin'),
             error: (err) => ({
-                message: "Failed to claim admin role",
+                message: t('failedClaimAdmin'),
                 description: getErrorMessage(err)
             })
         });
@@ -63,12 +67,12 @@ export function AdminSettings() {
 
     const saveLibraries = async () => {
         toast.promise(updateLibrariesMutation.mutateAsync(includedLibraries), {
-            loading: "Updating libraries...",
+            loading: t('updatingLibraries'),
             success: () => {
-                return "Libraries updated successfully";
+                return t('librariesUpdated');
             },
             error: (err) => ({
-                message: "Failed to update libraries",
+                message: t('failedUpdateLibraries'),
                 description: getErrorMessage(err)
             })
         });
@@ -79,16 +83,17 @@ export function AdminSettings() {
     }
 
     return (
-        <SettingsSection title="Admin">
+        <SettingsSection title={tUI('admin')}>
             {!adminStatus?.hasAdmin ? (
                 <div className="space-y-4">
                     <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
                         <Shield className="size-5 text-warning shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                            <div className="text-sm font-medium">No admin appointed</div>
+                            <div className="text-sm font-medium">{t('noAdminTitle')}</div>
                             <div className="text-xs text-muted-foreground">
-                                Claim the admin role to manage global application settings.
-                                Only one user can be admin.
+                                {t('noAdminDesc1')}
+                                <br />
+                                {t('noAdminDesc2')}
                             </div>
                         </div>
                     </div>
@@ -99,7 +104,7 @@ export function AdminSettings() {
                         onClick={handleClaimAdmin}
                         disabled={claimMutation.isPending}
                     >
-                        {claimMutation.isPending ? "Claiming..." : "Claim admin"}
+                        {claimMutation.isPending ? t('claimingBtn') : t('claimBtn')}
                     </Button>
                 </div>
             ) : (
@@ -115,7 +120,7 @@ export function AdminSettings() {
                                     <button className="flex items-center justify-between w-full group cursor-pointer">
                                         <div className="flex items-center gap-2 text-sm font-medium">
                                             <Library className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                            Libraries
+                                            {t('librariesTitle')}
                                         </div>
                                         {isExpanded ? (
                                             <ChevronDown className="size-4 text-muted-foreground" />
@@ -128,12 +133,12 @@ export function AdminSettings() {
                                 <CollapsibleContent className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <div className="flex flex-row justify-between items-center gap-2">
                                         <p className="text-xs text-muted-foreground">
-                                            Select which libraries to include
+                                            {t('librariesDesc')}
                                         </p>
                                         {!isLoadingLibs && (
                                             <div className="flex items-center space-x-2 ml-auto">
                                                 <Label htmlFor="all-libraries" className="text-sm font-medium">
-                                                    All
+                                                    {t('allLbl')}
                                                 </Label>
                                                 <Switch
                                                     id="all-libraries"
@@ -152,7 +157,7 @@ export function AdminSettings() {
                                         <div className="grid gap-2">
                                             {availableLibraries.length === 0 ? (
                                                 <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                                                    No movie libraries found
+                                                    {t('noMoviesFound')}
                                                 </div>
                                             ) : (
                                                 availableLibraries.map((lib: MediaLibrary) => {
@@ -190,7 +195,7 @@ export function AdminSettings() {
                                         disabled={updateLibrariesMutation.isPending || isLoadingLibs}
                                     >
                                         {updateLibrariesMutation.isPending && <Spinner />}
-                                        Save
+                                        {tUI('saveBtn')}
                                     </Button>
                                 </CollapsibleContent>
                             </Collapsible>

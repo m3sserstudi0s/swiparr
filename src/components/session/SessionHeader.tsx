@@ -7,6 +7,7 @@ import { SessionSettingsSheet } from "./SessionSettingsSheet";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { useUpdateSession } from "@/hooks/api";
+import { useTranslations } from "next-intl";
 
 interface SessionHeaderProps {
   activeCode?: string;
@@ -15,6 +16,8 @@ interface SessionHeaderProps {
 }
 
 export function SessionHeader({ activeCode, members, currentSettings }: SessionHeaderProps) {
+  const t = useTranslations('Session');
+  const tUI = useTranslations('UI');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const updateSession = useUpdateSession();
 
@@ -30,10 +33,10 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
     if (!hasChanged) return;
 
     toast.promise(updateSession.mutateAsync({ settings }), {
-      loading: "Updating session settings...",
-      success: "Session settings updated",
+      loading: t('updatingSettings'),
+      success: t('settingsUpdated'),
       error: (err) => ({
-        message: "Failed to update settings",
+        message: tUI('failedUpdateSettings'),
         description: getErrorMessage(err)
       })
     });
@@ -51,7 +54,7 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
           >
             <Settings className="size-5" />
           </Button>
-            : <p className="ml-2">Session</p>
+            : <p className="ml-2">{t('sessionTitle')}</p>
           }
           {activeCode && members && members.length > 0 && (
             <div className="mx-auto">

@@ -51,6 +51,7 @@ const envSchema = z.object({
 
   USE_ANALYTICS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   ENABLE_DEBUG: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+  LOCALE: z.enum(['en', 'de']).default('en'),
   USE_STATIC_FILTERS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 });
 
@@ -100,6 +101,7 @@ export const config = {
     provider: parsedEnv.PROVIDER,
     providerLock: parsedEnv.PROVIDER_LOCK,
     useWatchlist: parsedEnv.JELLYFIN_USE_WATCHLIST,
+    locale: parsedEnv.LOCALE,
   },
   auth: {
     secret: parsedEnv.AUTH_SECRET,

@@ -12,6 +12,7 @@ import { ProviderType } from "@/lib/providers/types";
 import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
 import { ExternalLink, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface AuthCodeViewProps {
   code: string;
@@ -31,6 +32,8 @@ const truncatePlexPin = (pin: string): string => {
 };
 
 function AuthCodeView({ code, copied, onCopy, onCancel, variant, authUrl }: AuthCodeViewProps) {
+  const t = useTranslations('AuthSession');
+  const tUI = useTranslations('UI');
   const isPlex = variant === "plex-pin";
   const displayCode = isPlex ? truncatePlexPin(code) : code;
 
@@ -44,7 +47,7 @@ function AuthCodeView({ code, copied, onCopy, onCancel, variant, authUrl }: Auth
             size="icon"
             className="ml-2"
             onClick={onCopy}
-            title="Copy to clipboard"
+            title={tUI('copyToClip')}
           >
             {copied ? (
               <Check className="h-4 w-4 " />
@@ -62,27 +65,27 @@ function AuthCodeView({ code, copied, onCopy, onCancel, variant, authUrl }: Auth
           className="gap-2"
         >
           <ExternalLink className="h-4 w-4" />
-          Open Plex
+          {t('openPlex')}
         </Button>
       )}
       <p className="text-xs text-center text-muted-foreground max-w-[280px]">
         {isPlex ? (
-          <>
-            Enter this code in the{" "}
+          t.rich('plexPinMsg', {
+            link: (children) => (
             <a
               href={authUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground font-semibold hover:underline"
             >
-              Plex app
+              {children}
             </a>
-            {" "}or click the button to open Plex directly.
-          </>
+            )
+          })
         ) : (
-          <>
-            Go to <span className="text-foreground font-semibold">Settings → Quick Connect</span> on your logged-in device to authorize.
-          </>
+          t.rich('quickConnectMsg', {
+            bold: (children) => <span className="text-foreground font-semibold">{children}</span>
+          })
         )}
       </p>
       <Button
@@ -91,7 +94,7 @@ function AuthCodeView({ code, copied, onCopy, onCancel, variant, authUrl }: Auth
         onClick={onCancel}
         className="text-muted-foreground hover:text-foreground"
       >
-        Cancel
+        {tUI('cancelBtn')}
       </Button>
     </div>
   );
@@ -167,6 +170,8 @@ export function AuthView({
   const providerName = provider[0].toUpperCase() + provider.substring(1);
   const isPlex = provider === ProviderType.PLEX;
   const [pinCopied, setPinCopied] = useState(false);
+  const t = useTranslations('AuthSession');
+  const tUI = useTranslations('UI');
 
   const handlePinCopy = () => {
     if (plexPinCode) {
@@ -179,8 +184,8 @@ export function AuthView({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-4">
-        <TabsTrigger value="login">Log in</TabsTrigger>
-        <TabsTrigger value="join">Guest</TabsTrigger>
+        <TabsTrigger value="login">{t('tabLogin')}</TabsTrigger>
+        <TabsTrigger value="join">{tUI('guestTab')}</TabsTrigger>
       </TabsList>
       <TabsContent value="login" className="space-y-4">
         {qcCode ? (
@@ -204,8 +209,8 @@ export function AuthView({
           <form onSubmit={handleLogin} className="space-y-3">
             <CardDescription>
               {isPlex 
-                ? 'Sign in to link with your Plex account'
-                : `Enter your ${providerName} credentials`
+                ? t('plexProviderPrompt')
+                : t('genericProviderPrompt', { provider: providerName })
               }
             </CardDescription>
 
@@ -213,10 +218,10 @@ export function AuthView({
               <Input
                 placeholder={
                   provider === ProviderType.JELLYFIN
-                    ? "Jellyfin Server URL"
+                    ? t('jellyfinUrl')
                     : provider === ProviderType.EMBY
-                    ? "Emby Server URL"
-                    : "Plex Server URL (optional)"
+                    ? t('embyUrl')
+                    : t('plexUrl')
                 }
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
@@ -232,25 +237,25 @@ export function AuthView({
                   onClick={startPlexPinAuth}
                   disabled={loading}
                 >
-                  {loading ? "Creating PIN..." : "Sign in with PIN"}
+                  {loading ? t('creatingPin') : t('signInPin')}
                 </Button>
               </>
             ) : (
               <>
                 <Input
-                  placeholder="Username"
+                  placeholder={t('username')}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="bg-muted border-input"
                 />
                 <PasswordInput
-                  placeholder="Password"
+                  placeholder={t('password')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
 
                 <Button type="submit" className="w-full mt-2 font-semibold" disabled={loading}>
-                  {loading ? "Connecting..." : "Log in"}
+                  {loading ? t('connecting') : t('tabLogin')}
                 </Button>
               </>
             )}
@@ -262,7 +267,7 @@ export function AuthView({
                     <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-[10px] uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or</span>
+                    <span className="bg-card px-2 text-muted-foreground">{t('or')}</span>
                   </div>
                 </div>
                 <Button
@@ -272,16 +277,16 @@ export function AuthView({
                   onClick={startQuickConnect}
                   disabled={loading}
                 >
-                  Quick Connect
+                  {t('quickConnect')}
                 </Button>
               </>
             )}
             {isExperimental && (
               <Alert className="max-w-full mt-2 ">
                 <AlertTriangleIcon className="text-amber-600!"/>
-                <AlertTitle className="whitespace-nowrap">Experimental provider integration</AlertTitle>
+                <AlertTitle className="whitespace-nowrap">{t('experimentalTitle')}</AlertTitle>
                 <AlertDescription className="text-xs">
-                  Certain features may not work as expected.
+                  {t('experimentalDesc')}
                 </AlertDescription>
               </Alert>
             )}
@@ -296,10 +301,10 @@ export function AuthView({
                 onImageSelected={onProfilePictureChange}
             />
           </div>
-          <CardDescription>Enter a display name {!sessionCodeParam ? 'and code' : ''} to continue</CardDescription>
+          <CardDescription>{!sessionCodeParam ? t('guestPromptWithCode') : t('guestPromptNoCode')}</CardDescription>
           <Input
 
-            placeholder="Display name"
+            placeholder={tUI('displayNamePlaceholder')}
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
             className="bg-muted border-input"
@@ -309,12 +314,12 @@ export function AuthView({
             <>
               <Label htmlFor="session-code" className="mt-1 mb-2 text-muted-foreground">
                 {" "}
-                Session code
+                {tUI('sessionCode')}
               </Label>
               <Input
                 id="session-code"
                 value={guestSessionCode}
-                placeholder="1234"
+                placeholder={t('sessionCodePlaceholder')}
                 onChange={(e) => setGuestSessionCode(e.target.value.toUpperCase())}
                 className="bg-muted border-input font-mono tracking-widest uppercase"
                 maxLength={4}
@@ -327,11 +332,11 @@ export function AuthView({
               className="w-full font-semibold"
               disabled={loading || !guestName || !guestSessionCode}
             >
-              {loading ? "Joining..." : "Join"}
+              {loading ? tUI('joining') : tUI('joinBtn')}
             </Button>
           </div>
           <p className="text-xs text-center text-muted-foreground pt-1">
-            Joining as a guest lets you join a session without an account.
+            {t('guestJoinLogMode')}
           </p>
         </form>
       </TabsContent>

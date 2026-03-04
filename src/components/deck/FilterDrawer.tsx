@@ -33,6 +33,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useTranslations } from "next-intl";
 
 interface FilterDrawerProps {
   open: boolean;
@@ -43,6 +44,8 @@ interface FilterDrawerProps {
 
 
 export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: FilterDrawerProps) {
+  const t = useTranslations('Deck');
+  const tUI = useTranslations('UI');
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
   const [genreFilterMode, setGenreFilterMode] = useState<"include" | "exclude">("include");
@@ -349,7 +352,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       <DrawerContent className="h-[66vh] flex flex-col">
         <DrawerHeader className="border-b pb-4 shrink-0 relative">
           <DrawerTitle className="text-center w-full">
-            Filters
+            {tUI('filtersTitle')}
           </DrawerTitle>
           <Button
             variant="ghost"
@@ -358,7 +361,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             onClick={resetAll}
           >
             <RotateCcw className="size-3" />
-            Reset
+            {tUI('resetBtn')}
           </Button>
         </DrawerHeader>
 
@@ -385,7 +388,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         className="cursor-pointer text-sm py-1.5 px-4 rounded-full transition-colors"
                         onClick={() => setSortBy(option)}
                       >
-                        {option}
+                        {t(`sort${option.replace(/\s+/g, '')}` as any)}
                       </Badge>
                     ))}
                   </div>
@@ -395,8 +398,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {capabilities.hasAuth && (
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
                     <div className="space-y-0.5">
-                      <Label className="text-sm font-semibold tracking-tight">Hide Watched</Label>
-                      <p className="text-xs text-muted-foreground font-medium">Only show items you haven't seen yet</p>
+                      <Label className="text-sm font-semibold tracking-tight">{t('hideWatchedTitle')}</Label>
+                      <p className="text-xs text-muted-foreground font-medium">{t('hideWatchedDesc')}</p>
                     </div>
                     <Switch
                       checked={unplayedOnly}
@@ -408,9 +411,9 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {/* Rating Section */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Community Rating</Label>
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('communityRating')}</Label>
                     <span className="text-sm font-medium text-primary">
-                      {minRating > 0 ? `${minRating}+ Stars` : "Any"}
+                      {minRating > 0 ? t('starsPlus', { stars: minRating }) : t('anyRating')}
                     </span>
                   </div>
                   <div className="flex gap-1 justify-between">
@@ -434,7 +437,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {/* Release Section */}
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Release Year</Label>
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('releaseYear')}</Label>
                     <Badge variant="secondary" className="font-mono">
                       {yearRange[0]} — {yearRange[1]}
                     </Badge>
@@ -453,7 +456,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {/* Runtime Section */}
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Runtime</Label>
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('runtime')}</Label>
                     <Badge variant="secondary" className="font-mono">
                       {formatRuntime(runtimeRange[0])} — {runtimeRange[1] === 240 ? "4:00+" : formatRuntime(runtimeRange[1])}
                     </Badge>
@@ -473,7 +476,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 <div className="space-y-4">
                   <div className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Genres</Label>
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('genres')}</Label>
                     <ToggleGroup
                       type="single"
                       variant="outline"
@@ -482,8 +485,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       onValueChange={handleGenreModeChange}
                       className="flex mr-auto"
                     >
-                      <ToggleGroupItem value="include" aria-label="Include genres">Include</ToggleGroupItem>
-                      <ToggleGroupItem value="exclude" aria-label="Exclude genres">Exclude</ToggleGroupItem>
+                      <ToggleGroupItem value="include" aria-label={t('include')}>{t('include')}</ToggleGroupItem>
+                      <ToggleGroupItem value="exclude" aria-label={t('exclude')}>{t('exclude')}</ToggleGroupItem>
                     </ToggleGroup>
                     <div className="flex gap-3">
                       <button
@@ -498,7 +501,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         }}
                         className="text-xs font-semibold cursor-pointer text-primary hover:underline"
                       >
-                        Select all
+                        {tUI('selectAll')}
                       </button>
                       <button
                         onClick={() => {
@@ -510,7 +513,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         }}
                         className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
                       >
-                        Clear
+                        {tUI('clearBtn')}
                       </button>
                     </div>
                   </div>
@@ -542,7 +545,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center justify-between gap-3">
-                        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Themes</Label>
+                        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('themes')}</Label>
                         <ToggleGroup
                           type="single"
                           variant="outline"
@@ -551,8 +554,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           onValueChange={handleThemeModeChange}
                           className="flex mr-auto"
                         >
-                          <ToggleGroupItem value="include" aria-label="Include themes">Include</ToggleGroupItem>
-                          <ToggleGroupItem value="exclude" aria-label="Exclude themes">Exclude</ToggleGroupItem>
+                          <ToggleGroupItem value="include" aria-label={t('include')}>{t('include')}</ToggleGroupItem>
+                          <ToggleGroupItem value="exclude" aria-label={t('exclude')}>{t('exclude')}</ToggleGroupItem>
                         </ToggleGroup>
                         <div className="flex gap-3">
                           <button
@@ -567,7 +570,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             }}
                             className="text-xs font-semibold cursor-pointer text-primary hover:underline"
                           >
-                            Select all
+                            {tUI('selectAll')}
                           </button>
                           <button
                             onClick={() => {
@@ -579,7 +582,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             }}
                             className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
                           >
-                            Clear
+                            {tUI('clearBtn')}
                           </button>
                         </div>
                       </div>
@@ -599,7 +602,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             )}
                             onClick={() => toggleTheme(theme)}
                           >
-                            {theme}
+                            {t(`theme${theme}` as any)}
                           </Badge>
                         );
                       })}
@@ -614,7 +617,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                            Maturity rating
+                            {t('maturityRating')}
                           </Label>
                           {watchRegion && (
                             <Badge variant="outline" className="gap-1.5 py-0.5 px-2 h-5 font-bold opacity-80 bg-muted/30">
@@ -632,8 +635,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           onValueChange={handleRatingModeChange}
                           className="flex mr-auto"
                         >
-                          <ToggleGroupItem value="include" aria-label="Include ratings">Include</ToggleGroupItem>
-                          <ToggleGroupItem value="exclude" aria-label="Exclude ratings">Exclude</ToggleGroupItem>
+                          <ToggleGroupItem value="include" aria-label={t('include')}>{t('include')}</ToggleGroupItem>
+                          <ToggleGroupItem value="exclude" aria-label={t('exclude')}>{t('exclude')}</ToggleGroupItem>
                         </ToggleGroup>
                         <div className="flex gap-3">
                           <button
@@ -648,7 +651,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             }}
                             className="text-xs font-semibold cursor-pointer text-primary hover:underline"
                           >
-                            Select all
+                            {tUI('selectAll')}
                           </button>
                           <button
                             onClick={() => {
@@ -660,7 +663,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             }}
                             className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
                           >
-                            Clear
+                            {tUI('clearBtn')}
                           </button>
                         </div>
                       </div>
@@ -692,12 +695,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 {isTmdb && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Language</Label>
+                      <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{tUI('language')}</Label>
                       <button
                         onClick={() => setSelectedLanguages([])}
                         className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline"
                       >
-                        Any language
+                        {t('anyLanguage')}
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -738,7 +741,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       className="h-8 px-2 text-xs"
                       onClick={() => setShowAllLanguages((prev) => !prev)}
                     >
-                      {showAllLanguages ? "Show less" : "See more"}
+                      {showAllLanguages ? t('showLess') : tUI('seeMore')}
                     </Button>
                   </div>
                 )}
@@ -749,7 +752,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                          Streaming Services
+                          {tUI('streamingServices')}
                         </Label>
                         {watchRegion && (
                           <Badge variant="outline" className="gap-1.5 py-0.5 px-2 h-5 font-bold opacity-80 bg-muted/30">
@@ -760,8 +763,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         )}
                       </div>
                         <div className="flex gap-3">
-                          <button onClick={() => setSelectedWatchProviders(availableWatchProviderIds)} className="text-xs font-semibold cursor-pointer text-primary hover:underline">Select all</button>
-                          <button onClick={() => setSelectedWatchProviders([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">Clear</button>
+                          <button onClick={() => setSelectedWatchProviders(availableWatchProviderIds)} className="text-xs font-semibold cursor-pointer text-primary hover:underline">{tUI('selectAll')}</button>
+                          <button onClick={() => setSelectedWatchProviders([])} className="text-xs font-semibold cursor-pointer text-muted-foreground hover:underline">{tUI('clearBtn')}</button>
                         </div>
                       </div>
                       <InputGroup className="bg-muted/30 border-input">
@@ -769,7 +772,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           <Search className="size-4" />
                         </InputGroupAddon>
                         <InputGroupInput
-                          placeholder="Search services..."
+                          placeholder={tUI('searchServices')}
                           value={providerSearch}
                           onChange={(event) => setProviderSearch(event.target.value)}
                         />
@@ -778,7 +781,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             <InputGroupButton
                               variant="ghost"
                               size="icon-xs"
-                              aria-label="Clear search"
+                              aria-label={tUI('clearSearch')}
                               onClick={() => setProviderSearch("")}
                             >
                               <X className="size-4" />
@@ -788,7 +791,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       </InputGroup>
                       {filteredWatchProviders.length === 0 ? (
                         <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                          No services match your search
+                          {tUI('noServicesMatch')}
                         </div>
                       ) : (
                         <VirtuosoGrid

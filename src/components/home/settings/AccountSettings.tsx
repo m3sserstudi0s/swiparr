@@ -12,17 +12,20 @@ import { apiClient } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserStore } from "@/lib/user-store";
 import { ProviderType } from "@/lib/providers/types";
+import { useTranslations } from "next-intl";
 
 export function AccountSettings() {
     const { data: sessionStatus, isLoading } = useSession();
     const runtimeConfig = useRuntimeConfig();
     const queryClient = useQueryClient();
     const { notifyProfileUpdate, profileUpdateTicket } = useUserStore();
+    const t = useTranslations('SettingsAccount');
+    const tUI = useTranslations('UI');
 
 
     if (isLoading || !sessionStatus) {
         return (
-            <SettingsSection title="Account">
+            <SettingsSection title={t('title')}>
                 <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
                     <Skeleton className="size-10 rounded-full" />
                     <div className="space-y-2">
@@ -57,7 +60,7 @@ export function AccountSettings() {
     const profileImageUrl = `/api/user/profile-picture/${userId}?v=${profileUpdateTicket}`;
 
     return (
-        <SettingsSection title="Profile">
+        <SettingsSection title={t('profile')}>
             <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/50">
                 <ProfilePicturePicker 
                     currentImage={profileImageUrl}
@@ -73,7 +76,7 @@ export function AccountSettings() {
                         <span className="text-base font-medium truncate">{userName}</span>
                         {isAdmin && (
                             <Badge variant='outline' className="text-[10px] h-4 px-1.5 uppercase tracking-wider">
-                                Admin
+                                {tUI('admin')}
                             </Badge>
                         )}
                     </div>
@@ -81,17 +84,19 @@ export function AccountSettings() {
                         {isGuest ? (
                             <>
                                 <UserPlus className="size-3" />
-                                Guest Account
+                                {t('guestAccount')}
                             </>
                         ) : !capabilities.hasAuth ? (
                             <>
                                 <Globe className="size-3" />
-                                Universal Profile
+                                {t('univProfile')}
                             </>
                         ) : (
                             <>
                                 <Shield className="size-3" />
-                                {activeProvider === ProviderType.TMDB ? activeProvider.toUpperCase() + ' Profile' : activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1) + ' Account'}
+                                {activeProvider === ProviderType.TMDB
+                                    ? t('tmdbProfile')
+                                    : t('providerAccount', { provider: activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1) })}
                             </>
                         )}
                     </div>

@@ -12,6 +12,7 @@ import { useSession, useUpdateSession } from "@/hooks/api";
 import { toast } from "sonner";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { ProviderType } from "@/lib/providers/types";
+import { useTranslations } from "next-intl";
 
 export function GeneralSettings() {
     const { setTheme, resolvedTheme: theme } = useTheme();
@@ -19,6 +20,8 @@ export function GeneralSettings() {
     const { data: sessionStatus, isLoading } = useSession();
     const runtimeConfig = useRuntimeConfig();
     const updateSession = useUpdateSession();
+    const t = useTranslations('SettingsGeneral');
+  const tUI = useTranslations('UI');
 
     const capabilities = sessionStatus?.capabilities || runtimeConfig.capabilities;
     const provider = sessionStatus?.provider || runtimeConfig.provider;
@@ -30,21 +33,21 @@ export function GeneralSettings() {
         updateSettings({ allowGuestLending: pressed });
         if (isHost) {
             toast.promise(updateSession.mutateAsync({ allowGuestLending: pressed }), {
-                loading: "Updating session...",
-                success: "Guest lending updated for current session",
-                error: "Failed to update session"
+                loading: t('updatingSession'),
+                success: t('sessionUpdated'),
+                error: t('failedUpdateSession')
             });
         }
     };
 
     return (
-        <SettingsSection title="General">
+        <SettingsSection title={t('title')}>
             <div className="grid grid-flow-col items-center justify-between gap-2">
                 <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
-                        <div className="text-sm font-medium">Theme</div>
+                        <div className="text-sm font-medium">{t('themeTitle')}</div>
                     </div>
-                    <div className="text-xs text-muted-foreground text-pretty">Switch between light and dark mode</div>
+                    <div className="text-xs text-muted-foreground text-pretty">{t('themeDesc')}</div>
                 </div>
                 <Button
                     variant="outline"
@@ -53,9 +56,9 @@ export function GeneralSettings() {
                     className="w-26"
                 >
                     {theme === "light" ? (
-                        <><Sun className="size-4" /> Light</>
+                        <><Sun className="size-4" /> {t('lightMode')}</>
                     ) : (
-                        <><Moon className="size-4" /> Dark</>
+                        <><Moon className="size-4" /> {t('darkMode')}</>
                     )}
                 </Button>
             </div>
@@ -77,8 +80,8 @@ export function GeneralSettings() {
                     {showCollectionToggle && (
                         <div className="grid grid-flow-col items-center justify-between gap-2">
                             <div className="space-y-0.5">
-                                <div className="text-sm font-medium">Collection Type</div>
-                                <div className="text-xs text-muted-foreground text-pretty">Toggle between Watchlist and Favorites</div>
+                                <div className="text-sm font-medium">{t('collectionTitle')}</div>
+                                <div className="text-xs text-muted-foreground text-pretty">{t('collectionDesc')}</div>
                             </div>
                             <Toggle
                                 pressed={settings.useWatchlist}
@@ -88,7 +91,7 @@ export function GeneralSettings() {
                                 className="w-26"
                             >
                                 {settings.useWatchlist ? <Bookmark className="size-4" /> : <Star className="size-4" />}
-                                {settings.useWatchlist ? "Watchlist" : "Favorites"}
+                                {settings.useWatchlist ? tUI('watchlist') : t('favoritesBtn')}
                             </Toggle>
                         </div>
                     )}
@@ -97,7 +100,7 @@ export function GeneralSettings() {
                         <div className="grid grid-flow-col items-center justify-between gap-2">
                             <div className="space-y-0.5">
                                 <div className="flex items-center gap-1.5">
-                                    <div className="text-sm font-medium">Guest Lending</div>
+                                    <div className="text-sm font-medium">{t('guestLendingTitle')}</div>
                                     <Dialog>
                                         <DialogTrigger asChild>
                                             <Button variant="ghost" size="icon" className="size-4 p-0 hover:bg-transparent">
@@ -106,23 +109,24 @@ export function GeneralSettings() {
                                         </DialogTrigger>
                                         <DialogContent>
                                             <DialogHeader>
-                                                <DialogTitle>Guest Lending</DialogTitle>
+                                                <DialogTitle>{t('guestLendingTitle')}</DialogTitle>
                                                 <DialogDescription className="pt-2">
-                                                    Allows people to join your session as guests without needing their own account.
-                                                    They will use your connection to fetch movies and images for the duration of the session.
+                                                    {t('guestLendingDialogDesc1')}
+                                                    <br />
+                                                    {t('guestLendingDialogDesc2')}
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <DialogFooter>
                                                 <DialogClose asChild>
                                                     <Button type="button" variant="secondary">
-                                                        Okay
+                                                        {t('okayBtn')}
                                                     </Button>
                                                 </DialogClose>
                                             </DialogFooter>
                                         </DialogContent>
                                     </Dialog>
                                 </div>
-                                <div className="text-xs text-muted-foreground text-pretty">Let others join without an account</div>
+                                <div className="text-xs text-muted-foreground text-pretty">{t('guestLendingDesc')}</div>
                             </div>
                             <Toggle
                                 pressed={settings.allowGuestLending}
@@ -132,7 +136,7 @@ export function GeneralSettings() {
                                 className="w-26"
                             >
                                 {settings.allowGuestLending ? <Users className="size-4" /> : <UserX className="size-4" />}
-                                {settings.allowGuestLending ? "Enabled" : "Disabled"}
+                                {settings.allowGuestLending ? t('enabled') : t('disabled')}
                             </Toggle>
                         </div>
                     )}

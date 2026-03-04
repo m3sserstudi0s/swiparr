@@ -9,6 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { useTranslations } from "next-intl";
 
 interface DeckEmptyProps {
   onRefresh: () => void;
@@ -16,6 +17,9 @@ interface DeckEmptyProps {
 }
 
 export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
+  const t = useTranslations('Deck');
+  const tUI = useTranslations('UI');
+
   return (
     <div className="flex flex-col items-center justify-top text-center h-full text-muted-foreground ">
       <Empty className="w-full h-full mt-10">
@@ -23,9 +27,9 @@ export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
           <EmptyMedia variant="icon">
             <GalleryHorizontalEnd />
           </EmptyMedia>
-          <EmptyTitle className="text-foreground">Nothing left to swipe.</EmptyTitle>
+          <EmptyTitle className="text-foreground">{t('emptyTitle')}</EmptyTitle>
           <EmptyDescription>
-            You&apos;re all swiped up. Refresh to fetch more, or adjust the filters.
+            {t('emptyDesc')}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="flex flex-row justify-center">
@@ -36,7 +40,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
             onClick={onRefresh}
           >
             <RefreshCcw />
-            Refresh
+            {t('refreshBtn')}
           </Button>
           <Button
             variant="outline"
@@ -45,7 +49,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
             onClick={onOpenFilter}
           >
             <SlidersHorizontal />
-            Filter
+            {tUI('filterBtn')}
           </Button>
         </EmptyContent>
       </Empty>

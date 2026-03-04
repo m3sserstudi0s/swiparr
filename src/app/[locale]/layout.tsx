@@ -1,4 +1,8 @@
-import './globals.css'
+import '../globals.css'
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
+import { routing } from '@/i18n/routing';
+import { connection } from 'next/server';
 import type { Metadata, Viewport } from 'next'
 import { JetBrains_Mono, Zalando_Sans } from 'next/font/google'
 import { Providers } from '@/components/providers'
@@ -35,11 +39,17 @@ export const viewport: Viewport = {
   ],
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations('Metadata');
   const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
   const url = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
-  const tagline = "Swipe on what to watch next, by yourself or together.";
-  
+  const tagline = t('tagline');
+
   return {
     metadataBase: new URL(url),
     title: {
@@ -49,21 +59,21 @@ export async function generateMetadata(): Promise<Metadata> {
     description: tagline,
     appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
     icons: {
-      icon: `${basePath}/favicon.ico`,     
-      shortcut: `${basePath}/icon1.png`,   
+      icon: `${basePath}/favicon.ico`,
+      shortcut: `${basePath}/icon1.png`,
       apple: `${basePath}/apple-icon.png`,
     },
     openGraph: {
-      title: "Swiparr – Discover what to watch next",
+      title: t('title'),
       description: tagline,
       url: url,
       siteName: "Swiparr",
-      locale: "en_US",
+      locale: locale === 'de' ? "de_DE" : "en_US",
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: "Swiparr – Discover what to watch next",
+      title: t('title'),
       description: tagline,
     },
   };
@@ -72,31 +82,38 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({
   children,
+  params
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const messages = await getMessages();
   const useAnalytics = appConfig.USE_ANALYTICS
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <Suspense>
           <RuntimeConfigScript />
         </Suspense>
       </head>
       <body className={`${sansFlex.variable} ${jetbrainsMono.variable} overflow-y-hidden`}>
-        {useAnalytics && <Analytics/>}
+        {useAnalytics && <Analytics />}
 
-        <Providers
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TouchProvider>
-            {children}
-          </TouchProvider>
-        </Providers>
+        <NextIntlClientProvider messages={messages}>
+          <Providers
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <TouchProvider>
+              {children}
+            </TouchProvider>
+          </Providers>
+        </NextIntlClientProvider>
 
       </body>
     </html>

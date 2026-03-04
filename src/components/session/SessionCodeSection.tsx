@@ -4,6 +4,7 @@ import { UserPlus, Plus, Share2, LogOut, Info, X, Check, Copy } from "lucide-rea
 import { useState } from "react";
 import { toast } from "sonner";
 import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
+import { useTranslations } from "next-intl";
 
 interface SessionCodeSectionProps {
 
@@ -31,6 +32,8 @@ export function SessionCodeSection({
   isCreating,
   isLeaving,
 }: SessionCodeSectionProps) {
+  const t = useTranslations('Session');
+  const tUI = useTranslations('UI');
 
   const [copied, setCopied] = useState(false);
   const [isFallbackOpen, setIsFallbackOpen] = useState(false);
@@ -43,7 +46,7 @@ export function SessionCodeSection({
       }
       await navigator.clipboard.writeText(activeCode);
       setCopied(true);
-      toast.success("Code copied to clipboard");
+      toast.success(tUI('codeCopied'));
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -53,7 +56,7 @@ export function SessionCodeSection({
       <SecureContextCopyFallback
         open={isFallbackOpen}
         onOpenChange={setIsFallbackOpen}
-        title="Copy Session Code"
+        title={t('copySessionCode')}
         value={activeCode || ""}
       />
       <div className="space-y-4">
@@ -62,18 +65,18 @@ export function SessionCodeSection({
         <div className="h-6 flex items-center justify-center mb-2">
           {!activeCode ? (
             <span className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold">
-              Enter code or create session
+              {t('enterCodeOrCreate')}
             </span>
           ) : (
             <span className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold">
-              Session code
+              {tUI('sessionCode')}
             </span>
           )}
         </div>
         <div className="flex items-center justify-center mb-4 h-12">
           {!activeCode ? (
             <Input
-              placeholder="Code"
+              placeholder={t('codePlaceholder')}
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value.toUpperCase())}
               className="bg-background border-input font-mono tracking-widest text-center uppercase h-10 w-full"
@@ -89,7 +92,7 @@ export function SessionCodeSection({
                 size="icon"
                 className="ml-2"
                 onClick={copyToClipboard}
-                title="Copy to clipboard"
+                title={tUI('copyToClip')}
               >
                 {copied ? (
                   <Check className="h-4 w-4 " />
@@ -110,7 +113,7 @@ export function SessionCodeSection({
                 disabled={inputCode.length !== 4 || isJoining}
               >
                 <UserPlus className="w-4 h-4 mr-2" />
-                Join
+                {tUI('joinBtn')}
               </Button>
               <Button
                 onClick={handleCreateSession}
@@ -119,14 +122,14 @@ export function SessionCodeSection({
                 disabled={isCreating}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create
+                {t('createBtn')}
               </Button>
             </>
           ) : (
             <>
               <Button onClick={handleShare} className="flex-1 h-10" variant="default">
                 <Share2 className="w-4 h-4 mr-2" />
-                Share
+                {t('shareBtn')}
               </Button>
               <Button
                 onClick={handleLeaveSession}
@@ -135,7 +138,7 @@ export function SessionCodeSection({
                 disabled={isLeaving}
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Leave
+                {t('leaveBtn')}
               </Button>
             </>
           )}

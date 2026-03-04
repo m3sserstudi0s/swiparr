@@ -4,6 +4,7 @@ import { UserPlus, Sparkles } from "lucide-react";
 import { MovieListItem } from "../movie/MovieListItem";
 import { MediaItem } from "@/types";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
+import { useTranslations } from "next-intl";
 
 interface MatchesListProps {
   activeCode?: string;
@@ -12,10 +13,12 @@ interface MatchesListProps {
 }
 
 export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps) {
+  const t = useTranslations('Session');
+  const tUI = useTranslations('UI');
   return (
     <div className="mt-4">
       <h3 className="font-bold mb-1 flex items-center justify-between text-muted-foreground uppercase tracking-wider text-xs">
-        Matches
+        {tUI('matches')}
         {(matches?.length ?? 0) > 0 && (
           <Badge variant="secondary">{matches?.length}</Badge>
         )}
@@ -29,10 +32,10 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
                   <UserPlus />
                 </EmptyMedia>
                 <EmptyTitle className="text-foreground">
-                  Not in a session
+                  {t('notInSessionTitle')}
                 </EmptyTitle>
                 <EmptyDescription>
-                  Create or join a session get started.
+                  {t('notInSessionDesc')}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -47,10 +50,10 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
                       <Sparkles />
                     </EmptyMedia>
                     <EmptyTitle className="text-foreground">
-                      No matches made yet
+                      {t('noMatchesTitle')}
                     </EmptyTitle>
                     <EmptyDescription>
-                      Start swiping together and see matches here.
+                      {t('noMatchesDesc')}
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>

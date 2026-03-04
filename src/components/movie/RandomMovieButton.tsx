@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useMovieDetail } from "./MovieDetailProvider";
 import { MediaItem } from "@/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface RandomMovieButtonProps {
     items: MediaItem[] | undefined;
@@ -13,20 +14,22 @@ interface RandomMovieButtonProps {
 }
 
 export function RandomMovieButton({ items, className }: RandomMovieButtonProps) {
+    const t = useTranslations('Movie');
     const { openMovie } = useMovieDetail();
 
     const handleRandomMovie = () => {
         if (!items || items.length === 0) {
-            toast.error("No items found");
+            toast.error(t('noItemsFound'));
             return;
         }
         const randomIndex = Math.floor(Math.random() * items.length);
         const randomMovie = items[randomIndex];
         openMovie(randomMovie.Id);
         toast.success(
-            <p>
-                Randomly picked <span className="font-semibold italic">{randomMovie.Name}</span>
-            </p>
+            t.rich('randomlyPicked', {
+                name: randomMovie.Name,
+                bold: (chunks) => <span className="font-semibold italic">{chunks}</span>
+            })
         );
     };
 
