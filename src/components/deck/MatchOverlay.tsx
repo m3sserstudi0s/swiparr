@@ -9,6 +9,7 @@ import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSession } from "@/hooks/api";
 import { useConfettiBurst } from "@/hooks/useConfettiBurst";
+import { useRequestMedia } from "@/hooks/useRequestMedia";
 
 interface MatchOverlayProps {
   item: MediaItem | null;
@@ -20,6 +21,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
   const { openMovie } = useMovieDetail();
   const { data: session } = useSession();
   const { cardRef, fire } = useConfettiBurst();
+  const { request, requesting, requested } = useRequestMedia();
   const likedBy = item?.likedBy ?? [];
   const otherUsers = session?.userId
     ? likedBy.filter((user) => user.userId !== session.userId)
@@ -97,6 +99,15 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 transition={{ delay: 0.4 }}
                 className="flex flex-col gap-3 w-full items-center"
               >
+                <Button
+                  size="lg"
+                  variant="default"
+                  className="rounded-full text-lg h-12 w-48 font-bold shadow-lg"
+                  onClick={() => request(item.Id, item.Name)}
+                  disabled={!!requesting || requested.has(item.Id)}
+                >
+                  {requested.has(item.Id) ? "Requested ✓" : requesting === item.Id ? "Requesting…" : "Request"}
+                </Button>
                 <Button
                   size="lg"
                   variant={'secondary'}

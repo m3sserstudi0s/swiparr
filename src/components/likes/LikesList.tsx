@@ -17,12 +17,14 @@ import {
     EmptyTitle,
     EmptyDescription,
 } from "@/components/ui/empty"
-import { Heart } from "lucide-react";
+import { Heart, Download, Check } from "lucide-react";
+import { useRequestMedia } from "@/hooks/useRequestMedia";
 
 export function LikesList() {
     const [sortBy, setSortBy] = useState("date");
     const [filterMode, setFilterMode] = useState("all");
     const { openMovie } = useMovieDetail();
+    const { request, requesting, requested } = useRequestMedia();
 
     const { data: likes, isLoading } = useLikes(sortBy, filterMode);
 
@@ -61,12 +63,26 @@ export function LikesList() {
                 )}
                 <div className="mt-7 mb-14">
                 {likes?.map((movie: MergedLike) => (
-                    <MovieListItem
-                        key={`${movie.Id}-${movie.sessionCode ?? 'solo'}`}
-                        movie={movie}
-                        onClick={() => openMovie(movie.Id, { sessionCode: movie.sessionCode })}
-                        isLiked={true}
-                    />
+                    <div key={`${movie.Id}-${movie.sessionCode ?? 'solo'}`} className="relative">
+                        <MovieListItem
+                            movie={movie}
+                            onClick={() => openMovie(movie.Id, { sessionCode: movie.sessionCode })}
+                            isLiked={true}
+                        />
+                        {movie.isMatch && (
+                            <button
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 hover:bg-background transition-colors disabled:opacity-50"
+                                onClick={(e) => { e.stopPropagation(); request(movie.Id, movie.Name); }}
+                                disabled={requested.has(movie.Id) || requesting === movie.Id}
+                                title={requested.has(movie.Id) ? "Requested" : "Request via Seerr"}
+                            >
+                                {requested.has(movie.Id)
+                                    ? <Check className="w-4 h-4 text-green-500" />
+                                    : <Download className="w-4 h-4 text-muted-foreground" />
+                                }
+                            </button>
+                        )}
+                    </div>
                 ))}
                 </div>
             </ScrollArea>

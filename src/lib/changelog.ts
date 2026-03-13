@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.5",
+    date: "2026-03-13",
+    changes: [
+      { type: "feature", description: "Request matched movies and shows directly via Seerr — click the download icon on any match to send it for admin approval" },
+    ],
+  },
+  {
     version: "1.3.4",
     date: "2026-03-02",
     changes: [
