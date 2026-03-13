@@ -72,7 +72,7 @@ export function useUpdates() {
                         description: "Check it out.",
                         action: {
                             label: "View",
-                            onClick: () => openMovie(data.itemId)
+                            onClick: () => openMovie(data.itemId, { sessionCode, isMatch: true })
                         },
                         position: 'top-right'
                     });

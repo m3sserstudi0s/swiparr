@@ -58,6 +58,7 @@ const envSchema = z.object({
   // Seerr integration
   SEERR_URL: z.string().optional(),
   SEERR_API_KEY: z.string().optional(),
+  NEXT_PUBLIC_SEERR_ENABLED: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 });
 
 const parsedEnv = envSchema.parse(process.env);

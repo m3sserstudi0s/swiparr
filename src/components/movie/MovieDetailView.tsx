@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink, Percent } from "lucide-react";
+import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink, Percent, Download, Check } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, WatchProvider } from "@/types";
@@ -18,6 +18,7 @@ import { useSession } from "@/hooks/api";
 import { ticksToTime, cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 import { useMovieActions } from "@/hooks/use-movie-actions";
+import { useRequestMedia } from "@/hooks/useRequestMedia";
 import { QUERY_KEYS } from "@/hooks/api/query-keys";
 import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 import { getLanguageLabel } from "@/lib/language";
@@ -29,9 +30,10 @@ interface Props {
   onClose: () => void;
   showLikedBy?: boolean;
   sessionCode?: string | null;
+  isMatch?: boolean;
 }
 
-export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionCode }: Props) {
+export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionCode, isMatch }: Props) {
   // 1. Create a manual motion value for scroll position
   const scrollY = useMotionValue(0);
 
@@ -55,6 +57,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     },
     enabled: !!movieId,
   });
+
+  const { request, requesting, requested } = useRequestMedia();
 
   const {
     isInList,
@@ -246,6 +250,20 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
                       }
                       {useWatchlist ? "Watchlist" : "Favorite"}
+                    </Button>
+                  )}
+                  {isMatch && process.env.NEXT_PUBLIC_SEERR_ENABLED === "true" && (
+                    <Button
+                      className="w-32"
+                      size="lg"
+                      variant="secondary"
+                      onClick={() => request(movie.Id, movie.Name)}
+                      disabled={requesting === movie.Id || requested.has(movie.Id)}
+                    >
+                      {requested.has(movie.Id)
+                        ? <><Check className="w-4 h-4 mr-2 text-green-500" /> Requested</>
+                        : <><Download className="w-4 h-4 mr-2" /> Request</>
+                      }
                     </Button>
                   )}
                   {isLikedByMe && <Button

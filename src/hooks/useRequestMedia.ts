@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function useRequestMedia() {
   const [requesting, setRequesting] = useState<string | null>(null);
@@ -16,7 +17,13 @@ export function useRequestMedia() {
       });
       if (res.ok) {
         setRequested((prev) => new Set(prev).add(itemId));
+        toast.success(`"${itemName}" requested successfully`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Failed to send request");
       }
+    } catch {
+      toast.error("Failed to contact server");
     } finally {
       setRequesting(null);
     }

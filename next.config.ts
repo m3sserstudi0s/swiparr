@@ -10,6 +10,12 @@ const BASE_PATH = (() => {
   return stripped && !stripped.startsWith("/") ? `/${stripped}` : stripped;
 })();
 
+// Automatically expose whether Seerr is configured to the client.
+// This avoids needing users to set NEXT_PUBLIC_SEERR_ENABLED manually.
+if (process.env.SEERR_URL) {
+  process.env.NEXT_PUBLIC_SEERR_ENABLED = "true";
+}
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   cacheComponents: true,

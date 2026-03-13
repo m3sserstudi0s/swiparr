@@ -76,7 +76,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 transition={{ delay: 0.2 }}
                 onAnimationComplete={fire}
                 className="relative md:w-64 md:h-96 mb-8 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => { openMovie(item.Id, { sessionCode }); onClose(); }}
+                onClick={() => { openMovie(item.Id, { sessionCode, isMatch: true }); onClose(); }}
               >
                 <OptimizedImage
                   src={item.ImageTags?.Primary
@@ -99,15 +99,17 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 transition={{ delay: 0.4 }}
                 className="flex flex-col gap-3 w-full items-center"
               >
-                <Button
-                  size="lg"
-                  variant="default"
-                  className="rounded-full text-lg h-12 w-48 font-bold shadow-lg"
-                  onClick={() => request(item.Id, item.Name)}
-                  disabled={!!requesting || requested.has(item.Id)}
-                >
-                  {requested.has(item.Id) ? "Requested ✓" : requesting === item.Id ? "Requesting…" : "Request"}
-                </Button>
+                {process.env.NEXT_PUBLIC_SEERR_ENABLED === "true" && (
+                  <Button
+                    size="lg"
+                    variant="default"
+                    className="rounded-full text-lg h-12 w-48 font-bold shadow-lg"
+                    onClick={() => request(item.Id, item.Name)}
+                    disabled={requesting === item.Id || requested.has(item.Id)}
+                  >
+                    {requested.has(item.Id) ? "Requested ✓" : requesting === item.Id ? "Requesting…" : "Request"}
+                  </Button>
+                )}
                 <Button
                   size="lg"
                   variant={'secondary'}

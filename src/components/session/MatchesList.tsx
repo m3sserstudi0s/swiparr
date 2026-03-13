@@ -1,19 +1,17 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Sparkles, Download, Check } from "lucide-react";
+import { UserPlus, Sparkles } from "lucide-react";
 import { MovieListItem } from "../movie/MovieListItem";
 import { MediaItem } from "@/types";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
-import { useRequestMedia } from "@/hooks/useRequestMedia";
 
 interface MatchesListProps {
   activeCode?: string;
   matches?: MediaItem[];
-  openMovie: (id: string, options?: { showLikedBy?: boolean; sessionCode?: string | null }) => void;
+  openMovie: (id: string, options?: { showLikedBy?: boolean; sessionCode?: string | null; isMatch?: boolean }) => void;
 }
 
 export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps) {
-  const { request, requesting, requested } = useRequestMedia();
   return (
     <div className="mt-4">
       <h3 className="font-bold mb-1 flex items-center justify-between text-muted-foreground uppercase tracking-wider text-xs">
@@ -63,20 +61,9 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
                 <div key={`${movie.Id}-${activeCode}`} className="relative">
                   <MovieListItem
                     movie={{ ...movie, isMatch: true, sessionCode: activeCode } as any}
-                    onClick={() => openMovie(movie.Id, { sessionCode: activeCode })}
+                    onClick={() => openMovie(movie.Id, { sessionCode: activeCode, isMatch: true })}
                     variant="condensed"
                   />
-                  <button
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 hover:bg-background transition-colors disabled:opacity-50"
-                    onClick={(e) => { e.stopPropagation(); request(movie.Id, movie.Name); }}
-                    disabled={requested.has(movie.Id) || requesting === movie.Id}
-                    title={requested.has(movie.Id) ? "Requested" : "Request via Seerr"}
-                  >
-                    {requested.has(movie.Id)
-                      ? <Check className="w-4 h-4 text-green-500" />
-                      : <Download className="w-4 h-4 text-muted-foreground" />
-                    }
-                  </button>
                 </div>
               ))}
             </div>

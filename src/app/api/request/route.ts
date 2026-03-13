@@ -4,6 +4,12 @@ import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { config } from "@/lib/config";
+import { z } from "zod";
+
+const requestBodySchema = z.object({
+  itemId: z.string().min(1),
+  itemName: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -14,22 +20,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Seerr not configured" }, { status: 503 });
   }
 
-  const body = await request.json();
-  const { itemId, itemName } = body as { itemId: string; itemName: string };
-
-  if (!itemId) {
-    return NextResponse.json({ error: "itemId is required" }, { status: 400 });
-  }
-
-  const isTv = itemId.startsWith("tv-");
-  const tmdbId = isTv ? parseInt(itemId.replace("tv-", ""), 10) : parseInt(itemId, 10);
-  const mediaType = isTv ? "tv" : "movie";
-
-  if (isNaN(tmdbId)) {
-    return NextResponse.json({ error: "Non-TMDB items cannot be requested" }, { status: 400 });
-  }
-
   try {
+    const rawBody = await request.json();
+    const parsed = requestBodySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "itemId is required" }, { status: 400 });
+    }
+    const { itemId, itemName } = parsed.data;
+
+    const isTv = itemId.startsWith("tv-");
+    const tmdbId = isTv ? parseInt(itemId.replace("tv-", ""), 10) : parseInt(itemId, 10);
+    const mediaType = isTv ? "tv" : "movie";
+
+    if (isNaN(tmdbId)) {
+      return NextResponse.json({ error: "Non-TMDB items cannot be requested" }, { status: 400 });
+    }
+
     const res = await fetch(`${config.SEERR_URL}/api/v1/request`, {
       method: "POST",
       headers: {
@@ -51,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error(`[SeerrRequest] Error requesting "${itemName}":`, err);
+    console.error(`[SeerrRequest] Error:`, err);
     return NextResponse.json({ error: "Failed to contact Seerr" }, { status: 502 });
   }
 }

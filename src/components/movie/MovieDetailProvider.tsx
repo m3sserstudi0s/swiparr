@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState } from "react";
 import { MovieDetailView } from "./MovieDetailView";
 
 interface MovieDetailContextType {
-  openMovie: (id: string, options?: { showLikedBy?: boolean; sessionCode?: string | null }) => void;
+  openMovie: (id: string, options?: { showLikedBy?: boolean; sessionCode?: string | null; isMatch?: boolean }) => void;
   closeMovie: () => void;
 }
 
@@ -14,26 +14,30 @@ export function MovieDetailProvider({ children }: { children: React.ReactNode })
   const [selectedMovieId, setSelectedMovieId] = useState<string | null>(null);
   const [showLikedBy, setShowLikedBy] = useState<boolean | undefined>();
   const [sessionCode, setSessionCode] = useState<string | null | undefined>();
+  const [isMatch, setIsMatch] = useState<boolean | undefined>();
 
-  const openMovie = (id: string, options?: { showLikedBy?: boolean; sessionCode?: string | null }) => { 
-    setSelectedMovieId(id); 
+  const openMovie = (id: string, options?: { showLikedBy?: boolean; sessionCode?: string | null; isMatch?: boolean }) => {
+    setSelectedMovieId(id);
     setShowLikedBy(options?.showLikedBy);
     setSessionCode(options?.sessionCode);
+    setIsMatch(options?.isMatch);
   }
-  const closeMovie = () => { 
-    setSelectedMovieId(null); 
+  const closeMovie = () => {
+    setSelectedMovieId(null);
     setShowLikedBy(undefined);
     setSessionCode(undefined);
+    setIsMatch(undefined);
   }
 
   return (
     <MovieDetailContext.Provider value={{ openMovie, closeMovie }}>
       {children}
-      <MovieDetailView 
-        movieId={selectedMovieId} 
-        onClose={closeMovie} 
-        showLikedBy={showLikedBy} 
+      <MovieDetailView
+        movieId={selectedMovieId}
+        onClose={closeMovie}
+        showLikedBy={showLikedBy}
         sessionCode={sessionCode}
+        isMatch={isMatch}
       />
     </MovieDetailContext.Provider>
   );
