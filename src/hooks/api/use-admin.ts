@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { QUERY_KEYS } from "./query-keys";
 import { MediaLibrary } from "@/types/media";
+import { PendingRequest } from "@/db/schema";
+
+export type PendingRequestItem = PendingRequest;
 
 export function useAdminStatus() {
   return useQuery({
@@ -86,6 +89,43 @@ export function useClaimAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.status });
+    },
+  });
+}
+
+export function usePendingRequests() {
+  const { data: adminStatus } = useAdminStatus();
+  return useQuery<PendingRequestItem[]>({
+    queryKey: QUERY_KEYS.admin.pendingRequests,
+    queryFn: async () => {
+      const res = await apiClient.get<PendingRequestItem[]>("/api/admin/requests?status=pending");
+      return res.data;
+    },
+    enabled: !!adminStatus?.isAdmin,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useApproveRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.post(`/api/admin/requests/${id}/approve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.pendingRequests });
+    },
+  });
+}
+
+export function useDenyRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.post(`/api/admin/requests/${id}/deny`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.admin.pendingRequests });
     },
   });
 }

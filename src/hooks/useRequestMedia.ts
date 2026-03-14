@@ -17,7 +17,7 @@ export function useRequestMedia() {
       });
       if (res.ok) {
         setRequested((prev) => new Set(prev).add(itemId));
-        toast.success(`"${itemName}" requested successfully`);
+        toast.success(`"${itemName}" submitted — pending admin approval`);
       } else {
         const data = await res.json().catch(() => ({}));
         toast.error(data.error ?? "Failed to send request");

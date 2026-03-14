@@ -109,3 +109,19 @@ export const sessionEvents = sqliteTable("SessionEvent", {
 
 export type SessionEvent = InferSelectModel<typeof sessionEvents>;
 export type NewSessionEvent = InferInsertModel<typeof sessionEvents>;
+
+export const pendingRequests = sqliteTable("PendingRequest", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  itemId: text("itemId").notNull(),
+  itemName: text("itemName"),
+  mediaType: text("mediaType").notNull(),
+  tmdbId: integer("tmdbId").notNull(),
+  requestedBy: text("requestedBy").notNull(),
+  requestedByName: text("requestedByName"),
+  status: text("status").notNull().default("pending"),
+  resolvedAt: text("resolvedAt"),
+  createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type PendingRequest = InferSelectModel<typeof pendingRequests>;
+export type NewPendingRequest = InferInsertModel<typeof pendingRequests>;

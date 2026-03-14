@@ -3,8 +3,10 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
-import { config } from "@/lib/config";
 import { z } from "zod";
+import { db } from "@/lib/db";
+import { pendingRequests, PendingRequest } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 
 const requestBodySchema = z.object({
   itemId: z.string().min(1),
@@ -16,11 +18,8 @@ export async function POST(request: NextRequest) {
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!config.SEERR_URL || !config.SEERR_API_KEY) {
-    return NextResponse.json({ error: "Seerr not configured" }, { status: 503 });
-  }
-
   try {
+    // Note: Seerr config is checked at approval time, not here
     const rawBody = await request.json();
     const parsed = requestBodySchema.safeParse(rawBody);
     if (!parsed.success) {
@@ -36,28 +35,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non-TMDB items cannot be requested" }, { status: 400 });
     }
 
-    const res = await fetch(`${config.SEERR_URL}/api/v1/request`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Api-Key": config.SEERR_API_KEY,
-      },
-      body: JSON.stringify({ mediaType, mediaId: tmdbId }),
-    });
+    // Check for existing pending request from this user for this item
+    const existingRows: PendingRequest[] = await db
+      .select()
+      .from(pendingRequests)
+      .where(
+        and(
+          eq(pendingRequests.itemId, itemId),
+          eq(pendingRequests.requestedBy, session.user.Id),
+          eq(pendingRequests.status, "pending")
+        )
+      );
+    const existing = existingRows[0];
 
-    if (!res.ok) {
-      const text = await res.text();
-      // 409 means already requested — treat as success
-      if (res.status === 409) {
-        return NextResponse.json({ success: true, alreadyRequested: true });
-      }
-      console.warn(`[SeerrRequest] Failed for "${itemName}" (${itemId}): ${res.status} ${text}`);
-      return NextResponse.json({ error: `Seerr returned ${res.status}` }, { status: 502 });
+    if (existing) {
+      return NextResponse.json({ success: true, alreadyQueued: true });
     }
 
-    return NextResponse.json({ success: true });
+    await db.insert(pendingRequests).values({
+      itemId,
+      itemName: itemName ?? null,
+      mediaType,
+      tmdbId,
+      requestedBy: session.user.Id,
+      requestedByName: session.user.Name ?? null,
+      status: "pending",
+    });
+
+    return NextResponse.json({ success: true, queued: true });
   } catch (err) {
-    console.error(`[SeerrRequest] Error:`, err);
-    return NextResponse.json({ error: "Failed to contact Seerr" }, { status: 502 });
+    console.error(`[Request] Error:`, err);
+    return NextResponse.json({ error: "Failed to queue request" }, { status: 500 });
   }
 }

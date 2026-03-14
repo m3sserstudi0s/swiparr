@@ -84,10 +84,15 @@ const SERVER_PUBLIC_URL = (parsedEnv.JELLYFIN_PUBLIC_URL || parsedEnv.EMBY_PUBLI
 const RAW_BASE_PATH = parsedEnv.URL_BASE_PATH.replace(/\/$/, '');
 const BASE_PATH = RAW_BASE_PATH && !RAW_BASE_PATH.startsWith('/') ? `/${RAW_BASE_PATH}` : RAW_BASE_PATH;
 
-const ADMIN_USERNAME = parsedEnv.ADMIN_USERNAME || 
+const ADMIN_USERNAME_RAW = parsedEnv.ADMIN_USERNAME ||
   (parsedEnv.PROVIDER === ProviderType.JELLYFIN ? parsedEnv.JELLYFIN_ADMIN_USERNAME :
    parsedEnv.PROVIDER === ProviderType.EMBY ? parsedEnv.EMBY_ADMIN_USERNAME :
    parsedEnv.PROVIDER === ProviderType.PLEX ? parsedEnv.PLEX_ADMIN_USERNAME : undefined);
+
+const ADMIN_USERNAME = ADMIN_USERNAME_RAW;
+const ADMIN_USERNAMES: string[] = ADMIN_USERNAME_RAW
+  ? ADMIN_USERNAME_RAW.split(',').map(u => u.trim().toLowerCase()).filter(Boolean)
+  : [];
 
 export const config = {
   ...parsedEnv,
@@ -112,6 +117,7 @@ export const config = {
     secret: parsedEnv.AUTH_SECRET,
     secureCookies: parsedEnv.USE_SECURE_COOKIES,
     adminUsername: ADMIN_USERNAME,
+    adminUsernames: ADMIN_USERNAMES,
   },
   security: {
     allowPrivateProviderUrls: parsedEnv.ALLOW_PRIVATE_PROVIDER_URLS,
