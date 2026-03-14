@@ -23,7 +23,6 @@ export function LikesList() {
     const [sortBy, setSortBy] = useState("date");
     const [filterMode, setFilterMode] = useState("all");
     const { openMovie } = useMovieDetail();
-
     const { data: likes, isLoading } = useLikes(sortBy, filterMode);
 
     return (
@@ -61,12 +60,13 @@ export function LikesList() {
                 )}
                 <div className="mt-7 mb-14">
                 {likes?.map((movie: MergedLike) => (
-                    <MovieListItem
-                        key={`${movie.Id}-${movie.sessionCode ?? 'solo'}`}
-                        movie={movie}
-                        onClick={() => openMovie(movie.Id, { sessionCode: movie.sessionCode })}
-                        isLiked={true}
-                    />
+                    <div key={`${movie.Id}-${movie.sessionCode ?? 'solo'}`} className="relative">
+                        <MovieListItem
+                            movie={movie}
+                            onClick={() => openMovie(movie.Id, { sessionCode: movie.sessionCode, isMatch: movie.isMatch })}
+                            isLiked={true}
+                        />
+                    </div>
                 ))}
                 </div>
             </ScrollArea>

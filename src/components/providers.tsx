@@ -5,6 +5,7 @@ import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HybridTooltipProvider } from "./ui/hybrid-tooltip";
 import { MovieDetailProvider } from "./movie/MovieDetailProvider";
+import { RequestedMediaProvider } from "./RequestedMediaProvider";
 
 import { Toaster } from "@/components/ui/sonner"
 import { useUpdates } from "@/lib/use-updates";
@@ -24,11 +25,13 @@ export function Providers({
     <QueryClientProvider client={queryClient}>
       <NextThemesProvider {...props}>
         <HybridTooltipProvider>
-          <MovieDetailProvider>
-            <Toaster position='bottom-right' toastOptions={{className: "mt-[env(safe-area-inset-top)] mb-[env(safe-area-inset-bottom)]"}}/>
-            <UpdatesSubscriber />
-            {children}
-          </MovieDetailProvider>
+          <RequestedMediaProvider>
+            <MovieDetailProvider>
+              <Toaster position='bottom-right' toastOptions={{className: "mt-[env(safe-area-inset-top)] mb-[env(safe-area-inset-bottom)]"}}/>
+              <UpdatesSubscriber />
+              {children}
+            </MovieDetailProvider>
+          </RequestedMediaProvider>
         </HybridTooltipProvider>
       </NextThemesProvider>
 

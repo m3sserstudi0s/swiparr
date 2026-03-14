@@ -37,7 +37,7 @@ import { AdminSettings } from "./settings/AdminSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
 import { StreamingSettings } from "./settings/StreamingSettings";
 import { DangerZone } from "./settings/DangerZone";
-import { useSession } from "@/hooks/api";
+import { useSession, useAdminStatus } from "@/hooks/api";
 import { Footer } from "../Footer";
 
 
@@ -53,6 +53,7 @@ export function SettingsSidebar() {
 
     const { basePath, provider: runtimeProvider, capabilities } = useRuntimeConfig();
     const { data: sessionStatus } = useSession();
+    const { data: adminStatus } = useAdminStatus();
 
     const handleLogout = async () => {
         try {
@@ -106,7 +107,7 @@ export function SettingsSidebar() {
                             <AccountSettings />
                             <GeneralSettings />
                             {capabilities.hasStreamingSettings && <StreamingSettings />}
-                            {capabilities.isAdminPanel && <AdminSettings />}
+                            {(capabilities.isAdminPanel || adminStatus?.isAdmin) && <AdminSettings />}
                             <AboutSettings onShowUserGuide={() => {
                                 setShowUserGuide(true);
                                 setOpen(false);

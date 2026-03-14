@@ -87,6 +87,8 @@ export class AuthService {
     const activeProvider = (provider || await ConfigService.getActiveProvider()) as ProviderType;
     const capabilities = PROVIDER_CAPABILITIES[activeProvider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
     
+    if (username && appConfig.auth.adminUsernames.includes(username.toLowerCase())) return true;
+
     if (!capabilities.hasAuth) return false;
 
     if (username) {

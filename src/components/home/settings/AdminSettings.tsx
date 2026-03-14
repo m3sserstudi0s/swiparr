@@ -10,14 +10,15 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 import { useRuntimeConfig } from "@/lib/runtime-config";
-import { useSession, useAdminStatus, useMediaLibraries, useAdminLibraries, useUpdateAdminLibraries, useClaimAdmin } from "@/hooks/api";
+import { useSession, useAdminStatus, useMediaLibraries, useAdminLibraries, useUpdateAdminLibraries, useClaimAdmin, usePendingRequests } from "@/hooks/api";
 import { MediaLibrary } from "@/types/media";
+import { PendingRequestQueue } from "./PendingRequestQueue";
 
 export function AdminSettings() {
     const { data: sessionStatus } = useSession();
@@ -26,10 +27,12 @@ export function AdminSettings() {
 
     const [includedLibraries, setIncludedLibraries] = useState<string[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isQueueOpen, setIsQueueOpen] = useState(false);
 
     const { data: adminStatus } = useAdminStatus();
     const { data: availableLibraries = [], isLoading: isLoadingLibs } = useMediaLibraries();
     const { data: adminLibraries } = useAdminLibraries();
+    const { data: pendingRequests = [] } = usePendingRequests();
 
     const updateLibrariesMutation = useUpdateAdminLibraries();
     const claimMutation = useClaimAdmin();
@@ -80,7 +83,7 @@ export function AdminSettings() {
 
     return (
         <SettingsSection title="Admin">
-            {!adminStatus?.hasAdmin ? (
+            {!adminStatus?.hasAdmin && !adminStatus?.isAdmin ? (
                 <div className="space-y-4">
                     <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
                         <Shield className="size-5 text-warning shrink-0 mt-0.5" />
@@ -195,6 +198,34 @@ export function AdminSettings() {
                                 </CollapsibleContent>
                             </Collapsible>
                         )}
+
+                        <Collapsible
+                            open={isQueueOpen}
+                            onOpenChange={setIsQueueOpen}
+                            className="space-y-3"
+                        >
+                            <CollapsibleTrigger asChild>
+                                <button className="flex items-center justify-between w-full group cursor-pointer">
+                                    <div className="flex items-center gap-2 text-sm font-medium">
+                                        <Inbox className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                        Approval Queue
+                                        {pendingRequests.length > 0 && (
+                                            <span className="inline-flex items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground min-w-[18px]">
+                                                {pendingRequests.length}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {isQueueOpen ? (
+                                        <ChevronDown className="size-4 text-muted-foreground" />
+                                    ) : (
+                                        <ChevronRight className="size-4 text-muted-foreground" />
+                                    )}
+                                </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <PendingRequestQueue />
+                            </CollapsibleContent>
+                        </Collapsible>
                     </div>
                 </div>
             )}
