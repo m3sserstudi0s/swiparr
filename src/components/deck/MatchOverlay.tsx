@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSession } from "@/hooks/api";
 import { useConfettiBurst } from "@/hooks/useConfettiBurst";
 import { useRequestMedia } from "@/hooks/useRequestMedia";
+import { useRuntimeConfig } from "@/lib/runtime-config";
 
 interface MatchOverlayProps {
   item: MediaItem | null;
@@ -22,6 +23,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
   const { data: session } = useSession();
   const { cardRef, fire } = useConfettiBurst();
   const { request, requesting, requested } = useRequestMedia();
+  const { seerrEnabled } = useRuntimeConfig();
   const likedBy = item?.likedBy ?? [];
   const otherUsers = session?.userId
     ? likedBy.filter((user) => user.userId !== session.userId)
@@ -99,7 +101,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 transition={{ delay: 0.4 }}
                 className="flex flex-col gap-3 w-full items-center"
               >
-                {process.env.NEXT_PUBLIC_SEERR_ENABLED === "true" && (
+                {seerrEnabled && (
                   <Button
                     size="lg"
                     variant="default"

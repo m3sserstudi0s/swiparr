@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,9 +13,11 @@ export function PendingRequestQueue() {
   const { data: requests = [], isLoading } = usePendingRequests();
   const approveMutation = useApproveRequest();
   const denyMutation = useDenyRequest();
+  const [loadingId, setLoadingId] = useState<number | null>(null);
 
   const handleApprove = (id: number, name: string | null) => {
-    toast.promise(approveMutation.mutateAsync(id), {
+    setLoadingId(id);
+    toast.promise(approveMutation.mutateAsync(id).finally(() => setLoadingId(null)), {
       loading: "Approving request...",
       success: `"${name ?? "Item"}" approved`,
       error: (err) => ({
@@ -25,7 +28,8 @@ export function PendingRequestQueue() {
   };
 
   const handleDeny = (id: number, name: string | null) => {
-    toast.promise(denyMutation.mutateAsync(id), {
+    setLoadingId(id);
+    toast.promise(denyMutation.mutateAsync(id).finally(() => setLoadingId(null)), {
       loading: "Denying request...",
       success: `"${name ?? "Item"}" denied`,
       error: (err) => ({
@@ -80,7 +84,7 @@ export function PendingRequestQueue() {
               size="sm"
               className="flex-1"
               onClick={() => handleApprove(req.id, req.itemName ?? null)}
-              disabled={approveMutation.isPending || denyMutation.isPending}
+              disabled={loadingId === req.id}
             >
               Approve
             </Button>
@@ -89,7 +93,7 @@ export function PendingRequestQueue() {
               size="sm"
               className="flex-1"
               onClick={() => handleDeny(req.id, req.itemName ?? null)}
-              disabled={approveMutation.isPending || denyMutation.isPending}
+              disabled={loadingId === req.id}
             >
               Deny
             </Button>

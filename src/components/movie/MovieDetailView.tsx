@@ -75,7 +75,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     includeUserState: true
   });
 
-  const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities, provider: runtimeProvider } = useRuntimeConfig();
+  const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities, provider: runtimeProvider, seerrEnabled } = useRuntimeConfig();
   const { data: sessionStatus } = useSession({ enabled: !!movieId });
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
   const activeProvider = sessionStatus?.provider || runtimeProvider;
@@ -252,7 +252,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       {useWatchlist ? "Watchlist" : "Favorite"}
                     </Button>
                   )}
-                  {isMatch && process.env.NEXT_PUBLIC_SEERR_ENABLED === "true" && (
+                  {isMatch && seerrEnabled && (
                     <Button
                       className="w-32"
                       size="lg"

@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRequestedMedia } from "@/components/RequestedMediaProvider";
 
 export function useRequestMedia() {
   const [requesting, setRequesting] = useState<string | null>(null);
-  const [requested, setRequested] = useState<Set<string>>(new Set());
+  const { requested, markRequested } = useRequestedMedia();
 
   const request = async (itemId: string, itemName: string) => {
     if (requested.has(itemId) || requesting === itemId) return;
@@ -16,7 +17,7 @@ export function useRequestMedia() {
         body: JSON.stringify({ itemId, itemName }),
       });
       if (res.ok) {
-        setRequested((prev) => new Set(prev).add(itemId));
+        markRequested(itemId);
         toast.success(`"${itemName}" submitted — pending admin approval`);
       } else {
         const data = await res.json().catch(() => ({}));

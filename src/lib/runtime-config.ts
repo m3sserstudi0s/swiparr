@@ -19,6 +19,7 @@ export interface RuntimeConfig {
   appPublicUrl: string;
   enableDebug: boolean;
   tmdbDefaultRegion: string;
+  seerrEnabled: boolean;
 }
 
 
@@ -48,6 +49,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     appPublicUrl: config.app.appPublicUrl,
     enableDebug: config.ENABLE_DEBUG,
     tmdbDefaultRegion: config.TMDB_DEFAULT_REGION || DEFAULT_TMDB_REGION,
+    seerrEnabled: !!(config.SEERR_URL && config.SEERR_API_KEY),
     ...overrides
   };
 }

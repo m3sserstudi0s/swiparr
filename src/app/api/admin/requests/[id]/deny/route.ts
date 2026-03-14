@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { pendingRequests, PendingRequest } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const cookieStore = await cookies();
   const session = await getIronSession<SessionData>(cookieStore, await getSessionOptions());
   if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
