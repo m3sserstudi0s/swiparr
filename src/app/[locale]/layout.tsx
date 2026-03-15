@@ -59,8 +59,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     description: tagline,
     appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
     icons: {
-      icon: `${basePath}/favicon.ico`,
-      shortcut: `${basePath}/icon1.png`,
+      icon: `${basePath}/favicon.ico`,     
+      shortcut: `${basePath}/icon1.png`,   
       apple: `${basePath}/apple-icon.png`,
     },
     openGraph: {
@@ -100,7 +100,7 @@ export default async function RootLayout({
         </Suspense>
       </head>
       <body className={`${sansFlex.variable} ${jetbrainsMono.variable} overflow-y-hidden`}>
-        {useAnalytics && <Analytics />}
+        {useAnalytics && <Analytics/>}
 
         <NextIntlClientProvider messages={messages}>
           <Providers
