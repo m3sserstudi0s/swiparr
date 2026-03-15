@@ -56,9 +56,9 @@ export default async function Image() {
         }}>
           {/* Header with Logo and Emoji */}
           <div tw="flex items-center mb-4">
-            <img
-              src={logoUrl}
-              alt="Swiparr Logo"
+            <img 
+              src={logoUrl} 
+              alt="Swiparr Logo" 
               tw="w-32 h-32 rounded-[30px]"
             />
             <span tw="text-8xl ml-8 flex">🍿</span>
