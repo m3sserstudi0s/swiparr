@@ -186,6 +186,9 @@ DATABASE_AUTH_TOKEN=your-token            # Required for Turso/Remote DB
 # Base path (build-time only — see Custom Base Path section)
 # URL_BASE_PATH=/swipe
 
+# Localization
+LOCALE=en                                 # Set the app language
+
 # Admin
 ADMIN_USERNAME=your-username                      # Global auto-grant admin privileges
 JELLYFIN_ADMIN_USERNAME=jelly-admin               # Provider-specific admin (overrides global)
@@ -231,6 +234,7 @@ USE_STATIC_FILTERS=false                     # Skip dynamic filter fetching; use
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
 | `APP_PUBLIC_URL` | ❌ | `swiparr.com` | The public domain where the app is hosted |
 | `URL_BASE_PATH` | ❌ | - | Base path for subpath deployments (e.g. `/swipe`). **Must be set at image build time** — see [Custom Base Path](#custom-base-path). |
+| `LOCALE` | ❌ | `en` | Sets the application language. See [Languages & Translation](#-languages--translation) |
 | `ADMIN_USERNAME` | ❌ | - | Global admin username (overrides provider-specific) [^2] |
 | `JELLYFIN_ADMIN_USERNAME` | ❌ | - | Jellyfin-specific admin username [^2] |
 | `EMBY_ADMIN_USERNAME` | ❌ | - | Emby-specific admin username [^2] |
@@ -316,6 +320,22 @@ When you create a session, customize it for your group:
 - Manage global provider settings
 - Override session restrictions
 - Access admin dashboard (only for providers with authentication)
+</details>
+
+<details>
+<summary><strong>🌍 Languages & Translation</strong></summary>
+
+Swiparr is available globally!
+
+**Currently supported languages:**
+- English (`en`) - Default
+- German (`de`)
+
+To change the language of your Swiparr instance, simply set the `LOCALE` environment variable:
+> LOCALE=de
+
+**Want to add your language?** 
+We'd love your help! Check out our [Translation Guide](TRANSLATION.md) for a simple, step-by-step tutorial on how to localize Swiparr and contribute your translation!
 </details>
 
 ---
