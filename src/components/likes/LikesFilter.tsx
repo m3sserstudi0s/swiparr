@@ -17,6 +17,7 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 import { useSession } from "@/hooks/api";
+import { useTranslations } from "next-intl";
 
 interface FilterProps {
   sortBy: string;
@@ -26,7 +27,8 @@ interface FilterProps {
 }
 
 export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: FilterProps) {
-  
+  const t = useTranslations('LikesFilter');
+  const tUI = useTranslations('UI');
   const { data: sessionStatus} = useSession();
     
   const isSoloMode = !sessionStatus?.code
@@ -53,13 +55,13 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
           <DrawerHeader>
-            <DrawerTitle>Filter & Sort</DrawerTitle>
+            <DrawerTitle>{t('title')}</DrawerTitle>
           </DrawerHeader>
           <div className="p-4 pb-20 space-y-6">
 
             {/* SORTING */}
             <div className="space-y-3">
-              <Label className="text-muted-foreground uppercase text-xs tracking-wider">Sort By</Label>
+              <Label className="text-muted-foreground uppercase text-xs tracking-wider">{t('sortBy')}</Label>
               <ToggleGroup 
                 type="single" 
                 variant="outline"
@@ -67,24 +69,24 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
                 onValueChange={handleSortChange} 
                 className="grid grid-cols-4 w-full"
               >
-                <ToggleGroupItem value="date" aria-label="Toggle date">
-                  Added
+                <ToggleGroupItem value="date" aria-label={tUI('toggleDate')}>
+                  {t('added')}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="year" aria-label="Toggle year">
-                  Year
+                <ToggleGroupItem value="year" aria-label={tUI('toggleYear')}>
+                  {t('year')}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="rating" aria-label="Toggle rating">
-                  Rating
+                <ToggleGroupItem value="rating" aria-label={tUI('toggleRating')}>
+                  {t('rating')}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="likes" aria-label="Toggle likes" disabled={isSoloMode}>
-                  Likes
+                <ToggleGroupItem value="likes" aria-label={tUI('toggleLikes')} disabled={isSoloMode}>
+                  {tUI('likes')}
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
             {/* FILTERING */}
             <div className="space-y-3">
-              <Label className="text-muted-foreground uppercase text-xs tracking-wider">Filter</Label>
+              <Label className="text-muted-foreground uppercase text-xs tracking-wider">{tUI('filterBtn')}</Label>
               <ToggleGroup 
                 type="single" 
                 variant="outline"
@@ -92,14 +94,14 @@ export function LikesFilter({ sortBy, setSortBy, filterMode, setFilterMode }: Fi
                 onValueChange={(v) => v && setFilterMode(v)} 
                 className="grid grid-cols-3 w-full"
               >
-                <ToggleGroupItem value="all" aria-label="Everything">
-                  Everything
+                <ToggleGroupItem value="all" aria-label={tUI('everything')}>
+                  {tUI('everything')}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="session" aria-label="Sessions">
-                  Sessions
+                <ToggleGroupItem value="session" aria-label={tUI('sessions')}>
+                  {tUI('sessions')}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="solo" aria-label="Solo">
-                  Solo
+                <ToggleGroupItem value="solo" aria-label={tUI('solo')}>
+                  {tUI('solo')}
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>

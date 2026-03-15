@@ -24,8 +24,10 @@ import {
 } from "@/hooks/api";
 import { useBackgroundStore } from "@/lib/background-store";
 import { ProviderType } from "@/lib/providers/types";
+import { useTranslations } from "next-intl";
 
 export function CardDeck() {
+  const t = useTranslations('Deck');
 
   const { openMovie } = useMovieDetail();
 
@@ -187,11 +189,11 @@ export function CardDeck() {
     // Check limits
     if (sessionSettings && stats) {
       if (direction === "right" && sessionSettings.maxRightSwipes && stats.mySwipes.right >= sessionSettings.maxRightSwipes) {
-        toast.error("No likes left", { position: 'top-right', description: "Max number of likes reached" });
+        toast.error(t('noLikesLeft'), { position: 'top-right', description: t('maxLikesReached') });
         return;
       }
       if (direction === "left" && sessionSettings.maxLeftSwipes && stats.mySwipes.left >= sessionSettings.maxLeftSwipes) {
-        toast.error("No dislikes left", { position: 'top-right', description: "Max number of dislikes reached" });
+        toast.error(t('noDislikesLeft'), { position: 'top-right', description: t('maxDislikesReached') });
         return;
       }
     }
@@ -216,8 +218,8 @@ export function CardDeck() {
             likedBy: data.likedBy
           });
         } else if (data.matchBlockedByLimit) {
-          toast.error("Match not registered", {
-            description: "Max number of matches reached",
+          toast.error(t('matchNotRegistered'), {
+            description: t('maxMatchesReached'),
             position: "top-right"
           });
         }
@@ -225,7 +227,7 @@ export function CardDeck() {
       onError: (err) => {
         swipedIdsRef.current.delete(id);
         setRemovedIds(prev => prev.filter(rid => rid !== id));
-        toast.error("Swipe failed", { description: getErrorMessage(err) });
+        toast.error(t('swipeFailed'), { description: getErrorMessage(err) });
       }
     });
   }, [displayDeck, swipeMutation]);
@@ -275,7 +277,7 @@ export function CardDeck() {
       setRemovedIds(prev => prev.filter(rid => rid !== id));
       setLastSwipe(null);
     } catch (err) {
-      toast.error("Undo failed");
+      toast.error(t('undoFailed'));
     }
   };
 

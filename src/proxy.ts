@@ -1,28 +1,26 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { config as appConfig } from "@/lib/config";
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
-export async function proxy(request: NextRequest) {
-  const { search } = request.nextUrl;
-  let pathname = request.nextUrl.pathname;
+const intlMiddleware = createMiddleware(routing);
+
+export default async function proxy(request: NextRequest) {
+  let { pathname, search } = request.nextUrl;
   const basePath = appConfig.app.basePath;
+
+  // 1. Handle base path stripping
+  // If the request has the basePath, strip it so the rest of the proxy/routing sees the clean path.
   let isRewritten = false;
-
-
-  // Handle base path stripping for routing
   if (basePath && (pathname === basePath || pathname.startsWith(basePath + "/"))) {
     pathname = pathname.substring(basePath.length) || "/";
     isRewritten = true;
   }
 
-  const response = isRewritten
-    ? NextResponse.rewrite(new URL(pathname + search, request.url))
-    : NextResponse.next();
-
-  // Define public paths
+  // Define public paths (after basePath stripping)
   const isPublicPath =
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
@@ -36,10 +34,34 @@ export async function proxy(request: NextRequest) {
     pathname.endsWith("/sw.js") ||
     [".png", ".svg", ".ico"].some(ext => pathname.endsWith(ext));
 
+  // 2. Prepare request for next-intl
+  // We cannot easily clone NextRequest while retaining its type, but we can override the nextUrl
+  // for the purpose of the intl middleware.
+  const requestForIntl = new NextRequest(
+    isRewritten ? new URL(pathname + search, request.url) : request.url,
+    request
+  );
+
+  // 3. Apply next-intl middleware for NON-API routes
+  // API routes should not be localized by next-intl
+  let response: NextResponse;
+  const isApiRoute = pathname.startsWith("/api/");
+  
+  if (!isApiRoute) {
+    response = intlMiddleware(requestForIntl);
+  } else {
+    // For API routes, if we stripped the basePath, rewrite to the clean path. Otherwise, continue.
+    response = isRewritten 
+      ? NextResponse.rewrite(new URL(pathname + search, request.url))
+      : NextResponse.next();
+  }
+
+  // 4. Handle Public Paths (skip auth)
   if (isPublicPath) {
     return response;
   }
 
+  // 5. Authentication check
   const session = await getIronSession<SessionData>(request, response, await getSessionOptions());
 
 
@@ -97,5 +119,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  // Skip all internal paths (_next, _vercel), match everything else including /api
+  matcher: ["/((?!_next|_vercel|.*\\..*).*)"],
 };

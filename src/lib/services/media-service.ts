@@ -276,7 +276,7 @@ export class MediaService {
     });
 
     if (!session) {
-      throw new Error("Session not found");
+      throw new Error("sessionNotFound");
     }
 
     // Use session's random seed, fallback to code if not present (backwards compatibility)

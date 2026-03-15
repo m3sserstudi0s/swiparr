@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface SecureContextCopyFallbackProps {
   open: boolean;
@@ -26,6 +27,8 @@ export function SecureContextCopyFallback({
   title,
   value,
 }: SecureContextCopyFallbackProps) {
+  const t = useTranslations('SecureCopy');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -35,13 +38,13 @@ export function SecureContextCopyFallback({
         <div className="space-y-4 py-4">
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Manual copy required</AlertTitle>
+            <AlertTitle>{t('title')}</AlertTitle>
             <AlertDescription className="text-xs">
-              Automatic copy and sharing is disabled because Swiparr is not running in a secure context (HTTPS).
+              {t('description')}
             </AlertDescription>
           </Alert>
           <div className="space-y-2">
-            <Label htmlFor="manual-copy">Copy this text</Label>
+            <Label htmlFor="manual-copy">{t('copyText')}</Label>
             <Input
               id="manual-copy"
               value={value}

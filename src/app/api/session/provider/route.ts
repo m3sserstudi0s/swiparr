@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const ip = getClientIp(request);
     if (isRateLimited(ip)) {
         return NextResponse.json(
-            { error: "Too many requests" },
+            { error: "tooManyRequests" },
             {
                 status: 429,
                 headers: { "Retry-After": String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)) },
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get("code")?.toUpperCase();
 
     if (!code) {
-        return NextResponse.json({ error: "Code required" }, { status: 400 });
+        return NextResponse.json({ error: "codeRequired" }, { status: 400 });
     }
 
     const session = await db.query.sessions.findFirst({
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!session) {
-        return NextResponse.json({ error: "Session not found" }, { status: 404 });
+        return NextResponse.json({ error: "sessionNotFound" }, { status: 404 });
     }
 
     return NextResponse.json({ provider: session.provider });

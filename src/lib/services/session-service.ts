@@ -61,19 +61,19 @@ export class SessionService {
     const existingSession = await db.select().from(sessions).where(eq(sessions.code, upperCode)).then((rows: any[]) => rows[0]);
 
     if (!existingSession) {
-      throw new Error("Session not found");
+      throw new Error("sessionNotFound");
     }
 
     if (!user.isGuest) {
       if (existingSession.provider !== user.provider) {
-        throw new Error(`Provider mismatch: Session is ${existingSession.provider}, you are ${user.provider}`);
+        throw new Error("providerMismatch");
       }
 
       if ([ProviderType.JELLYFIN, ProviderType.EMBY, ProviderType.PLEX].includes(existingSession.provider as any)) {
         const sessionConfig = existingSession.providerConfig ? JSON.parse(existingSession.providerConfig) : {};
         const userConfig = user.providerConfig || {};
         if (sessionConfig.serverUrl !== userConfig.serverUrl) {
-          throw new Error(`Server mismatch: Session is on ${sessionConfig.serverUrl}, you are on ${userConfig.serverUrl}`);
+          throw new Error("serverMismatch");
         }
       }
     }
@@ -133,17 +133,17 @@ export class SessionService {
     }
 
     if (!code) {
-      throw new Error("Session code is required");
+      throw new Error("sessionCodeRequired");
     }
 
     const existingSession = await db.select().from(sessions).where(eq(sessions.code, code)).then((rows: any[]) => rows[0]);
 
     if (!existingSession) {
-      throw new Error("Session not found");
+      throw new Error("sessionNotFound");
     }
 
     if (capabilities.hasAuth && !existingSession.hostAccessToken) {
-      throw new Error("This session does not allow guest lending");
+      throw new Error("guestLendingDisabled");
     }
 
     const isGuest = capabilities.hasAuth;
@@ -223,7 +223,7 @@ export class SessionService {
       where: eq(sessions.code, sessionCode)
     });
 
-    if (!currentSession) throw new Error("Session not found");
+    if (!currentSession) throw new Error("sessionNotFound");
 
     const updateData: any = {};
     
@@ -235,7 +235,7 @@ export class SessionService {
     // Settings and guest lending can only be updated by the host
     if (updates.settings !== undefined || updates.allowGuestLending !== undefined) {
       if (currentSession.hostUserId !== user.Id) {
-        throw new Error("Only the host can modify session settings");
+        throw new Error("hostOnlySettings");
       }
       if (updates.settings !== undefined) updateData.settings = JSON.stringify(updates.settings);
       if (updates.allowGuestLending !== undefined) {
@@ -298,7 +298,7 @@ export class SessionService {
       if (sessionCode && settings?.maxRightSwipes && !existingLike) {
         const rightSwipeCount = await db.select({ value: count() }).from(likes).where(and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, user.Id)));
         if (rightSwipeCount[0].value >= settings.maxRightSwipes) {
-          throw new Error("Right swipe limit reached");
+          throw new Error("rightSwipeLimit");
         }
       }
 
@@ -409,7 +409,7 @@ export class SessionService {
       if (sessionCode && settings?.maxLeftSwipes && !existingHidden) {
         const leftSwipeCount = await db.select({ value: count() }).from(hiddens).where(and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, user.Id)));
         if (leftSwipeCount[0].value >= settings.maxLeftSwipes) {
-          throw new Error("Left swipe limit reached");
+          throw new Error("leftSwipeLimit");
         }
       }
 

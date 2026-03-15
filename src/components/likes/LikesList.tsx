@@ -18,11 +18,14 @@ import {
     EmptyDescription,
 } from "@/components/ui/empty"
 import { Heart } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function LikesList() {
     const [sortBy, setSortBy] = useState("date");
     const [filterMode, setFilterMode] = useState("all");
     const { openMovie } = useMovieDetail();
+    const t = useTranslations('Likes');
+  const tUI = useTranslations('UI');
 
     const { data: likes, isLoading } = useLikes(sortBy, filterMode);
 
@@ -30,7 +33,13 @@ export function LikesList() {
         <div className="relative w-full mx-auto h-[calc(100svh-115px)] flex flex-col">
             {/* Header w/ Filter */}
             <div className="flex items-center justify-between">
-                <h2 className="text-sm text-muted-foreground font-medium">Showing <span className="font-mono">{isLoading ? '_' : likes?.length || 0}</span> {likes?.length == 1 ? 'like' : 'likes'}</h2>
+                <h2 className="text-sm text-muted-foreground font-medium">
+                    {t.rich('showingCount', {
+                        count: isLoading ? '_' : (likes?.length || 0),
+                        label: likes?.length === 1 ? tUI('like') : tUI('likes'),
+                        mono: (chunks) => <span className="font-mono">{chunks}</span>
+                    })}
+                </h2>
                 <LikesFilter
                     sortBy={sortBy}
                     setSortBy={setSortBy}
@@ -50,10 +59,9 @@ export function LikesList() {
                                 <EmptyMedia variant="icon">
                                     <Heart />
                                 </EmptyMedia>
-                                <EmptyTitle className="text-foreground">No likes yet</EmptyTitle>
+                                <EmptyTitle className="text-foreground">{t('noLikesTitle')}</EmptyTitle>
                                 <EmptyDescription>
-                                    You haven&apos;t liked any movies yet. Get started by swiping
-                                    your first movie.
+                                    {t('noLikesDesc')}
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>

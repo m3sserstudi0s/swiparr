@@ -5,12 +5,16 @@ import { Loader2 } from "lucide-react";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getAsyncRuntimeConfig } from "@/lib/server/runtime-config";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: Promise<{ locale: string }>;
 };
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ searchParams, params: localeParams }: Props): Promise<Metadata> {
+  const { locale } = await localeParams;
+  const t = await getTranslations('Metadata');
   const params = await searchParams;
   const join = params.join;
   const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
@@ -19,8 +23,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   if (join && typeof join === 'string') {
     const ogUrl = new URL(`${basePath}/api/og`, origin);
     ogUrl.searchParams.set('join', join);
-    const title = "Swiparr – Join session";
-    const description = `You've been invited to join a session with code: ${join}.`;
+    const title = t('joinTitle');
+    const description = t('joinDescription', { join });
     return {
       title,
       description,
@@ -45,12 +49,14 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   }
 
   return {
-    title: "Login",
-    description: "Login to Swiparr to start swiping on what to watch next, by yourself or together.",
+    title: t('loginTitle'),
+    description: t('loginDescription'),
   };
 }
 
-export default function LoginPage() {
+export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return (
     <main className="flex items-center justify-center overflow-hidden h-svh pt-[env(safe-area-inset-top)] font-sans">
       <Suspense fallback={

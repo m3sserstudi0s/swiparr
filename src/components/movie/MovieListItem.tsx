@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Play, Star, Calendar, HeartOff, Clock, Bookmark, Percent } from "lucide-react";
 import { cn, ticksToTime } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
@@ -12,6 +11,7 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useMovieActions } from "@/hooks/use-movie-actions";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
 import { useSession } from "@/hooks/api";
+import { useFormatter, useTranslations } from "next-intl";
 
 
 interface MovieListItemProps {
@@ -23,6 +23,8 @@ interface MovieListItemProps {
 
 
 export function MovieListItem({ movie, onClick, variant = "full", isLiked }: MovieListItemProps) {
+  const t = useTranslations('Movie');
+  const format = useFormatter();
   const { capabilities, serverPublicUrl, provider: runtimeProvider } = useRuntimeConfig();
 
   const { data: sessionStatus } = useSession();
@@ -56,7 +58,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
     const parsed = new Date(withZone);
     return Number.isNaN(parsed.getTime()) ? new Date(raw) : parsed;
   })();
-  const formattedDate = swipeDate ? formatDistanceToNow(swipeDate, { addSuffix: true }) : "";
+  const formattedDate = swipeDate ? format.relativeTime(swipeDate) : "";
   const formattedDateText = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
 
   const isCondensed = variant === "condensed";
@@ -82,7 +84,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
             ? `/api/media/image/${currentMovie.Id}?tag=${currentMovie.ImageTags?.Primary}`
             : `/api/media/image/${currentMovie.Id}`
           }
-          alt={currentMovie.Name}
+          alt={currentMovie.Name || t('posterAlt')}
           externalId={currentMovie.Id}
           height={100}
           width={50}
@@ -93,7 +95,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
         {/* Match Indicator */}
         {!isCondensed && currentMovie.isMatch && (
           <Badge className="absolute -top-2 -right-2 h-5 px-1.5 text-[10px]">
-            MATCH
+            {t('match')}
           </Badge>
         )}
       </div>
@@ -153,7 +155,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 )}
               >
                 <Play className={cn("mr-2 w-2 h-2")} />
-                Play
+                {t('play')}
               </Button>
             </Link>
             }

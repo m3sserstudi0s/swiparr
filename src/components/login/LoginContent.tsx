@@ -20,10 +20,11 @@ import { UniversalView } from "./UniversalView";
 import { SiPlex, SiJellyfin, SiThemoviedatabase, SiEmby } from "react-icons/si";
 import GradientText from "../ui/gradient-text";
 import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
-
-
+import { useTranslations } from 'next-intl';
 
 export default function LoginContent() {
+  const t = useTranslations('Login');
+  const tUI = useTranslations('UI');
   const { capabilities: initialCapabilities, basePath, provider, providerLock } = useRuntimeConfig();
 
   const [selectedProvider, setSelectedProvider] = useState<string>(provider);
@@ -57,8 +58,8 @@ export default function LoginContent() {
     const reason = searchParams.get("reason");
 
     if (reason === "provider_mismatch") {
-      toast.error("Provider mismatch", {
-        description: "The server provider configuration has changed. You have been logged out.",
+      toast.error(t('providerMismatch'), {
+        description: t('providerMismatchDesc'),
         duration: 5000,
       });
 
@@ -119,7 +120,7 @@ export default function LoginContent() {
       }
       await navigator.clipboard.writeText(qcCode);
       setCopied(true);
-      toast.success("Code copied to clipboard", { position: 'top-right' });
+      toast.success(tUI('codeCopied'), { position: 'top-right' });
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -179,12 +180,12 @@ export default function LoginContent() {
     };
 
     toast.promise(promise(), {
-      loading: isTmdbJoin ? "Joining session..." : (selectedProvider !== ProviderType.TMDB ? "Logging in..." : "Initializing..."),
+      loading: isTmdbJoin ? tUI('joiningSession') : (selectedProvider !== ProviderType.TMDB ? t('loggingIn') : t('initializing')),
       success: (data) => {
         if (data.wasMadeAdmin) {
           setWasMadeAdmin(true);
           setLoading(false);
-          return "Admin account initialized";
+          return t('adminInitialized');
         }
         let callbackUrl = searchParams.get("callbackUrl");
         if (!callbackUrl) {
@@ -195,12 +196,14 @@ export default function LoginContent() {
         }
         window.location.href = callbackUrl;
         setLoading(false);
-        if (isTmdbJoin) return `Joined as ${data.user.Name}`;
-        return selectedProvider !== ProviderType.TMDB ? "Logged in successfully" : "Profile created";
+        if (isTmdbJoin) return t('joinedAs', { name: data.user.Name });
+        return selectedProvider !== ProviderType.TMDB ? t('loggedInSuccess') : t('profileCreated');
       },
       error: (err) => {
         setLoading(false);
-        return { message: isTmdbJoin ? "Failed to join session" : "Login failed", description: getErrorMessage(err, isTmdbJoin ? undefined : "Check your credentials") };
+        const msg = getErrorMessage(err, isTmdbJoin ? undefined : t('checkCredentials'));
+        const translatedDesc = t.has(msg as any) ? t(msg as any) : msg;
+        return { message: isTmdbJoin ? t('failedJoinSession') : t('loginFailed'), description: translatedDesc };
       },
       position: 'top-right'
     });
@@ -223,14 +226,16 @@ export default function LoginContent() {
 
 
     toast.promise(promise(), {
-      loading: "Joining as guest...",
+      loading: t('joiningGuest'),
       success: (data) => {
         window.location.href = `${basePath}/`;
-        return `Joined as ${data.user.Name}`;
+        return t('joinedAs', { name: data.user.Name });
       },
       error: (err) => {
         setLoading(false);
-        return { message: "Failed to join as guest", description: getErrorMessage(err) };
+        const msg = getErrorMessage(err);
+        const translatedDesc = t.has(msg as any) ? t(msg as any) : msg;
+        return { message: t('failedJoinGuest'), description: translatedDesc };
       },
       position: 'top-right'
     });
@@ -249,16 +254,16 @@ export default function LoginContent() {
     };
 
     toast.promise(promise(), {
-      loading: "Starting quick connect...",
+      loading: t('startingQuickConnect'),
       success: (data) => {
         setQcCode(data.Code);
         setQcSecret(data.Secret);
         setLoading(false);
-        return "Quick connect started";
+        return t('quickConnectStarted');
       },
       error: (err) => {
         setLoading(false);
-        return { message: "Quick connect failed to initialize", description: getErrorMessage(err) };
+        return { message: t('quickConnectFailed'), description: getErrorMessage(err) };
       },
       position: 'top-right'
     });
@@ -278,17 +283,17 @@ export default function LoginContent() {
     };
 
     toast.promise(promise(), {
-      loading: "Creating Plex PIN...",
+      loading: t('creatingPlexPin'),
       success: (data) => {
         setPlexPinId(data.id);
         setPlexPinCode(data.code);
         setPlexAuthUrl(data.authUrl);
         setLoading(false);
-        return "Plex PIN created";
+        return t('plexPinCreated');
       },
       error: (err) => {
         setLoading(false);
-        return { message: "Failed to create Plex PIN", description: getErrorMessage(err) };
+        return { message: t('failedCreatePlexPin'), description: getErrorMessage(err) };
       },
       position: 'top-right'
     });
@@ -299,7 +304,7 @@ export default function LoginContent() {
       <SecureContextCopyFallback
         open={isFallbackOpen}
         onOpenChange={setIsFallbackOpen}
-        title="Quick Connect Code"
+        title={t('quickConnectCodeLabel')}
         value={qcCode || ""}
       />
       <Image src={logo} alt="Logo" className="size-16 dark:invert dark:opacity-90 opacity-75 absolute top-16" loading="eager" />

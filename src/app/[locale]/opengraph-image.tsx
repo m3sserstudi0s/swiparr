@@ -40,13 +40,8 @@ function renderFallbackImage(message: string) {
 }
 
 export default async function Image() {
+  await connection();
   try {
-    try {
-      await connection()
-    } catch (error) {
-      console.warn('[opengraph-image] connection() failed during prerender.')
-      return renderFallbackImage('Swiparr')
-    }
     const { basePath, appPublicUrl } = getRuntimeConfig();
     const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
     const logoUrl = `${origin}${basePath}/icon1.png`;
