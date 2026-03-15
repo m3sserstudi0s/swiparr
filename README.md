@@ -234,7 +234,7 @@ USE_STATIC_FILTERS=false                     # Skip dynamic filter fetching; use
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
 | `APP_PUBLIC_URL` | ❌ | `swiparr.com` | The public domain where the app is hosted |
 | `URL_BASE_PATH` | ❌ | - | Base path for subpath deployments (e.g. `/swipe`). **Must be set at image build time** — see [Custom Base Path](#custom-base-path). |
-| `LOCALE` | ❌ | `en` | Sets the application language. See [Languages & Translation](#-languages--translation) |
+| `LOCALE` | ❌ | `en` | Sets the application language. See [Languages & Translation](#languages-translation) |
 | `ADMIN_USERNAME` | ❌ | - | Global admin username (overrides provider-specific) [^2] |
 | `JELLYFIN_ADMIN_USERNAME` | ❌ | - | Jellyfin-specific admin username [^2] |
 | `EMBY_ADMIN_USERNAME` | ❌ | - | Emby-specific admin username [^2] |
@@ -323,7 +323,7 @@ When you create a session, customize it for your group:
 </details>
 
 <details>
-<summary><strong>🌍 Languages & Translation</strong></summary>
+<summary><a id="languages-translation"></a><strong>🌍 Languages & Translation</strong></summary>
 
 Swiparr is available globally!
 
