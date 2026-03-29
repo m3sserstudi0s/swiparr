@@ -44,3 +44,6 @@ next-env.d.ts
 swiparr.db
 docs/*
 .env.production.local
+
+# Claude Code
+.claude/settings.local.json
