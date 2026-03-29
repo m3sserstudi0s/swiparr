@@ -8,13 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
--
-
-### Changed
--
-
-### Fixed
--
+- Session hosts can now kick individual members from an active session via the Party section in the session sheet
+- Kicked members receive a real-time notification and are redirected to the login screen
+- Kick confirmation dialog with a persistent "don't ask again" option
 
 ## [1.3.4] - 2026-03-02
 

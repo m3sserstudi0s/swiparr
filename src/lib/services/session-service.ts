@@ -233,10 +233,12 @@ export class SessionService {
 
     if (!targetMember) throw new Error("Member not found");
 
-    try {
-      await db.delete(userProfiles).where(eq(userProfiles.userId, targetUserId));
-    } catch (e) {
-      logger.error("Failed to cleanup profile picture for kicked user", e);
+    if (targetUserId.startsWith("guest-") || targetUserId.startsWith("user-")) {
+      try {
+        await db.delete(userProfiles).where(eq(userProfiles.userId, targetUserId));
+      } catch (e) {
+        logger.error("Failed to cleanup profile picture for kicked user", e);
+      }
     }
 
     const userLikes = await db.query.likes.findMany({

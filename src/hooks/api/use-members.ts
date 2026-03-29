@@ -29,6 +29,8 @@ export function useKickMember() {
     onSuccess: () => {
       if (session?.code) {
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(session.code) });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(session.code) });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(session.code) });
       }
     },
   });
