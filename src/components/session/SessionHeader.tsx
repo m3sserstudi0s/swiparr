@@ -1,5 +1,4 @@
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { UserAvatarList } from "./UserAvatarList";
 import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
 import { useState } from "react";
@@ -10,11 +9,10 @@ import { useUpdateSession } from "@/hooks/api";
 
 interface SessionHeaderProps {
   activeCode?: string;
-  members?: any[];
   currentSettings?: any;
 }
 
-export function SessionHeader({ activeCode, members, currentSettings }: SessionHeaderProps) {
+export function SessionHeader({ activeCode, currentSettings }: SessionHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const updateSession = useUpdateSession();
 
@@ -53,19 +51,6 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
           </Button>
             : <p className="ml-2">Session</p>
           }
-          {activeCode && members && members.length > 0 && (
-            <div className="mx-auto">
-              <UserAvatarList
-                size="md"
-                users={members.map((m: any) => ({
-                  userId: m.externalUserId,
-                  userName: m.externalUserName,
-                  hasCustomProfilePicture: !!m.hasCustomProfilePicture,
-                  profileUpdatedAt: m.profileUpdatedAt,
-                }))}
-              />
-            </div>
-          )}
         </SheetTitle>
       </SheetHeader>
 

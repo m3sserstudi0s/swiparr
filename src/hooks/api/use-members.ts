@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { SessionMember } from "@/types";
 import { QUERY_KEYS } from "./query-keys";
@@ -15,5 +15,21 @@ export function useMembers() {
       return res.data;
     },
     enabled: !!sessionCode,
+  });
+}
+
+export function useKickMember() {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+
+  return useMutation({
+    mutationFn: async (targetUserId: string) => {
+      await apiClient.delete(`/api/session/members?userId=${encodeURIComponent(targetUserId)}`);
+    },
+    onSuccess: () => {
+      if (session?.code) {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(session.code) });
+      }
+    },
   });
 }

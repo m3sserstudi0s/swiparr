@@ -84,7 +84,7 @@ export default async function RootLayout({
           <RuntimeConfigScript />
         </Suspense>
       </head>
-      <body className={`${sansFlex.variable} ${jetbrainsMono.variable} overflow-y-hidden`}>
+      <body className={`${sansFlex.variable} ${jetbrainsMono.variable} overflow-y-hidden`} suppressHydrationWarning>
         {useAnalytics && <Analytics/>}
 
         <Providers

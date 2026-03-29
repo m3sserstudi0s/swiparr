@@ -168,6 +168,35 @@ export function useUpdates() {
             }
         };
 
+        const handleUserKicked = async (event: MessageEvent) => {
+            const data = JSON.parse(event.data);
+            if (data.sessionCode !== sessionCode) return;
+
+            if (data.userId === userId) {
+                toast.error("Removed from session", {
+                    description: "The host has removed you from this session.",
+                    duration: 5000,
+                });
+                try {
+                    await apiClient.delete('/api/session');
+                } catch (e) {
+                    // best-effort: clear the server-side session cookie
+                }
+                queryClient.setQueryData(QUERY_KEYS.session, null);
+                router.push(`${basePath}/login`);
+            } else {
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.members(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.matches(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.likes });
+                queryClient.invalidateQueries({ queryKey: ["movie"] });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+                queryClient.invalidateQueries({ queryKey: ["media", "watchProviders"] });
+                toast.info(`${data.userName} was removed from the session`, {
+                    position: 'top-right'
+                });
+            }
+        };
+
         const handleUserLeft = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if (data.sessionCode === sessionCode) {
@@ -227,6 +256,7 @@ export function useUpdates() {
         eventSource.addEventListener(EVENT_TYPES.SETTINGS_UPDATED, handleSettingsUpdated as any);
         eventSource.addEventListener(EVENT_TYPES.STATS_RESET, handleStatsReset as any);
         eventSource.addEventListener(EVENT_TYPES.USER_JOINED, handleUserJoined as any);
+        eventSource.addEventListener(EVENT_TYPES.USER_KICKED, handleUserKicked as any);
         eventSource.addEventListener(EVENT_TYPES.USER_LEFT, handleUserLeft as any);
         eventSource.addEventListener(EVENT_TYPES.LIKE_UPDATED, handleLikeUpdated as any);
         eventSource.addEventListener(EVENT_TYPES.ADMIN_CONFIG_UPDATED, handleAdminConfigUpdated as any);

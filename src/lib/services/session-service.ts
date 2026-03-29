@@ -218,6 +218,61 @@ export class SessionService {
     }
   }
 
+  static async kickMember(callerUser: SessionData["user"], sessionCode: string, targetUserId: string): Promise<void> {
+    const currentSession = await db.query.sessions.findFirst({
+      where: eq(sessions.code, sessionCode)
+    });
+
+    if (!currentSession) throw new Error("Session not found");
+    if (callerUser.Id !== currentSession.hostUserId) throw new Error("Only the host can kick members");
+    if (targetUserId === callerUser.Id) throw new Error("Cannot kick yourself");
+
+    const targetMember = await db.query.sessionMembers.findFirst({
+      where: and(eq(sessionMembers.sessionCode, sessionCode), eq(sessionMembers.externalUserId, targetUserId))
+    });
+
+    if (!targetMember) throw new Error("Member not found");
+
+    try {
+      await db.delete(userProfiles).where(eq(userProfiles.userId, targetUserId));
+    } catch (e) {
+      logger.error("Failed to cleanup profile picture for kicked user", e);
+    }
+
+    const userLikes = await db.query.likes.findMany({
+      where: and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, targetUserId))
+    });
+    const likedItemIds = userLikes.map((l: any) => l.externalId);
+
+    await db.delete(sessionMembers).where(
+      and(eq(sessionMembers.sessionCode, sessionCode), eq(sessionMembers.externalUserId, targetUserId))
+    );
+
+    await db.delete(likes).where(
+      and(eq(likes.sessionCode, sessionCode), eq(likes.externalUserId, targetUserId))
+    );
+    await db.delete(hiddens).where(
+      and(eq(hiddens.sessionCode, sessionCode), eq(hiddens.externalUserId, targetUserId))
+    );
+
+    const remainingMembers = await db.query.sessionMembers.findMany({
+      where: eq(sessionMembers.sessionCode, sessionCode),
+    });
+
+    if (remainingMembers.length === 0) {
+      await db.delete(sessions).where(eq(sessions.code, sessionCode));
+    } else {
+      if (likedItemIds.length > 0) {
+        const settings = currentSession?.settings ? JSON.parse(currentSession.settings) : {};
+        for (const itemId of likedItemIds) {
+          await this.reEvaluateMatch(sessionCode, itemId, settings, remainingMembers);
+        }
+      }
+      await EventService.emit(EVENT_TYPES.USER_KICKED, { sessionCode, userName: targetMember.externalUserName, userId: targetUserId });
+      await EventService.emit(EVENT_TYPES.SESSION_UPDATED, sessionCode);
+    }
+  }
+
   static async updateSession(sessionCode: string, user: SessionData["user"], updates: { filters?: Filters, settings?: SessionSettings, allowGuestLending?: boolean }) {
     const currentSession = await db.query.sessions.findFirst({
       where: eq(sessions.code, sessionCode)
