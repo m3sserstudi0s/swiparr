@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.6",
+    date: "2026-03-28",
+    changes: [
+      { type: "feature", description: "Session hosts can now kick individual members from the Party section in the session sheet" },
+      { type: "improvement", description: "Kick confirmation dialog with a persistent 'don't ask again' option" },
+    ],
+  },
+  {
     version: "1.3.5",
     date: "2026-03-13",
     changes: [

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { SessionHeader } from "./SessionHeader";
 import { SessionCodeSection } from "./SessionCodeSection";
+import { MembersList } from "./MembersList";
 import { MatchesList } from "./MatchesList";
 import { SessionAlert } from "./SessionAlert";
 import { getErrorMessage } from "@/lib/utils";
@@ -16,12 +17,13 @@ import { getRuntimeConfig } from "@/lib/runtime-config";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useSettings } from "@/lib/settings";
 import { 
-  useSession, 
-  useMembers, 
-  useMatches, 
-  useCreateSession, 
-  useJoinSession, 
-  useLeaveSession 
+  useSession,
+  useMembers,
+  useMatches,
+  useCreateSession,
+  useJoinSession,
+  useLeaveSession,
+  useKickMember,
 } from "@/hooks/api";
 import { apiClient } from "@/lib/api-client";
 import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
@@ -47,6 +49,19 @@ export default function SessionContent() {
 
     const { data: members } = useMembers();
     const { data: matches } = useMatches();
+
+    const kickMember = useKickMember();
+
+    const handleKick = (userId: string) => {
+        toast.promise(kickMember.mutateAsync(userId), {
+            loading: "Removing user...",
+            success: "User removed from session",
+            error: (err) => ({
+                message: "Failed to remove user",
+                description: getErrorMessage(err)
+            }),
+        });
+    };
 
     const createSession = useCreateSession();
     const joinSession = useJoinSession();
@@ -208,7 +223,6 @@ export default function SessionContent() {
             <SheetContent side="left" className="sm:max-w-md w-full px-4 gap-2">
                 <SessionHeader
                     activeCode={activeCode}
-                    members={members}
                     currentSettings={sessionStatus?.settings || undefined}
                 />
                 <div className="px-1 w-full min-h-20 items-center grid">
@@ -226,6 +240,11 @@ export default function SessionContent() {
                         isJoining={joinSession.isPending}
                         isCreating={createSession.isPending}
                         isLeaving={leaveSession.isPending}
+                    />
+                    <MembersList
+                        activeCode={activeCode}
+                        members={members}
+                        onKick={handleKick}
                     />
                     <MatchesList
                         activeCode={activeCode}

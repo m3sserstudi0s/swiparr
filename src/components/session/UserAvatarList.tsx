@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SmoothAvatar } from "@/components/ui/smooth-avatar";
 import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "@/components/ui/hybrid-tooltip";
 import { cn } from "@/lib/utils";
@@ -57,7 +57,7 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
             ...users.filter((user) => user.userId !== hostUserId),
         ]
         : users;
-    
+
     // const testUsers = [...orderedUsers, ...orderedUsers, ...orderedUsers, ...orderedUsers]
     // const displayUsers = testUsers.slice(0, maxVisible);
     // const remainingCount = testUsers.length - maxVisible;
@@ -73,9 +73,9 @@ export function UserAvatarList({ users, size = "md", className }: UserAvatarList
                 <HybridTooltip key={user.userId}>
                     <HybridTooltipTrigger asChild>
                         <div className={cn("inline-block border-2 border-background/20 rounded-full", sizeClasses[size])}>
-                            <SmoothAvatar 
-                                userId={user.userId} 
-                                userName={user.userName} 
+                            <SmoothAvatar
+                                userId={user.userId}
+                                userName={user.userName}
                                 hasImage={user.hasCustomProfilePicture}
                                 updatedAt={user.profileUpdatedAt}
                                 className={cn("size-full", isHost && "bg-background")}

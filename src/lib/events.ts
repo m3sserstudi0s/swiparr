@@ -38,6 +38,7 @@ export const EVENT_TYPES = {
     STATS_RESET: 'stats_reset',
     USER_JOINED: 'user_joined',
     USER_LEFT: 'user_left',
+    USER_KICKED: 'user_kicked',
     LIKE_UPDATED: 'like_updated',
     ADMIN_CONFIG_UPDATED: 'admin_config_updated',
 };
