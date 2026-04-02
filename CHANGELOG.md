@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kicked members receive a real-time notification and are redirected to the login screen
 - Kick confirmation dialog with a persistent "don't ask again" option
 
+### Fixed
+- Content type filter (Movies / TV Shows) was not being applied to the swipe deck — mixed results no longer appear when a filter is active
+
 ## [1.3.4] - 2026-03-02
 
 Upstream sync: merged upstream swiparr v1.2.13 through v1.3.4 into fork.

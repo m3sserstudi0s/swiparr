@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.7",
+    date: "2026-04-01",
+    changes: [
+      { type: "fix", description: "Content type filter (Movies / TV Shows) now correctly filters the swipe deck" },
+    ],
+  },
+  {
     version: "1.3.6",
     date: "2026-03-28",
     changes: [

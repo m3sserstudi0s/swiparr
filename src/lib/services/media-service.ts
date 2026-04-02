@@ -73,12 +73,13 @@ export class MediaService {
 
     // 3. Handle Search
     if (searchTerm) {
-      const results = await provider.getItems({ 
-        searchTerm, 
+      const results = await provider.getItems({
+        searchTerm,
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         watchProviders,
         watchRegion,
-        limit: 20 
+        mediaType: sessionFilters?.mediaType,
+        limit: 20
       }, auth);
       return { items: results, hasMore: false };
     }
@@ -197,6 +198,7 @@ export class MediaService {
         excludedThemes: sessionFilters?.excludedThemes,
         tmdbLanguages: sessionFilters?.tmdbLanguages,
         unplayedOnly: sessionFilters?.unplayedOnly,
+        mediaType: sessionFilters?.mediaType,
         limit: requestLimit,
         offset: effectiveOffset + scanOffset,
       }, auth);
@@ -307,6 +309,7 @@ export class MediaService {
       excludedThemes: sessionFilters?.excludedThemes,
       tmdbLanguages: sessionFilters?.tmdbLanguages,
       unplayedOnly: sessionFilters?.unplayedOnly,
+      mediaType: sessionFilters?.mediaType,
     };
 
     // Check cache first
@@ -465,6 +468,7 @@ export class MediaService {
             excludedThemes: sessionFilters?.excludedThemes,
             tmdbLanguages: sessionFilters?.tmdbLanguages,
             unplayedOnly: sessionFilters?.unplayedOnly,
+            mediaType: sessionFilters?.mediaType,
             sortBy: "SortName", // Use consistent sort for fetching
             limit: batchSize,
             offset,
@@ -663,6 +667,7 @@ export class MediaService {
         excludedThemes: sessionFilters?.excludedThemes,
         tmdbLanguages: sessionFilters?.tmdbLanguages,
         unplayedOnly: sessionFilters?.unplayedOnly !== undefined ? sessionFilters.unplayedOnly : true,
+        mediaType: sessionFilters?.mediaType,
         limit: requestLimit,
         offset: effectiveOffset + scanOffset
       }, auth);
