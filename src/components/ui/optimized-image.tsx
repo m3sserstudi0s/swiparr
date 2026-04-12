@@ -9,6 +9,15 @@ import { ImageOff } from "lucide-react";
 
 import { Skeleton } from "./skeleton";
 
+const WIDTH_BUCKETS = [320, 480, 640, 768, 960, 1200, 1600];
+
+function normalizeRequestedWidth(width: number): number {
+  for (const bucket of WIDTH_BUCKETS) {
+    if (width <= bucket) return bucket;
+  }
+  return WIDTH_BUCKETS[WIDTH_BUCKETS.length - 1];
+}
+
 // 1. Create a global set to track loaded images outside the component
 const loadedImageCache = new Set<string>();
 
@@ -60,7 +69,8 @@ export function OptimizedImage({
   const blurDataURL = useBlurData(externalId, initialBlurDataURL, imageType);
 
   const imageLoader = ({ src, width, quality }: ImageLoaderProps) => {
-    return `${src}${src.includes("?") ? "&" : "?"}width=${width}&quality=${quality || 75}`;
+    const normalizedWidth = normalizeRequestedWidth(width);
+    return `${src}${src.includes("?") ? "&" : "?"}width=${normalizedWidth}&quality=${quality || 75}`;
   };
 
   const handleLoad = (e: any) => {

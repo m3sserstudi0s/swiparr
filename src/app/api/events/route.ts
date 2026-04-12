@@ -12,7 +12,10 @@ import { GLOBAL_SESSION_CODE } from "@/lib/services/event-service";
 export const maxDuration = 60;
 
 /** How long (ms) the server-side loop waits between DB polls when idle. */
-const POLL_INTERVAL_MS = 500;
+const POLL_INTERVAL_MS = 1000;
+
+/** Upper bound for adaptive idle backoff. */
+const MAX_POLL_INTERVAL_MS = 5000;
 
 /** How often (ms) a keepalive comment is sent to prevent proxy timeouts. */
 const KEEPALIVE_INTERVAL_MS = 25_000;
@@ -58,6 +61,7 @@ export async function GET(request: NextRequest) {
 
             // Main event-delivery loop.
             // Runs until the client disconnects (abort signal fires).
+            let currentPollIntervalMs = POLL_INTERVAL_MS;
             while (!request.signal.aborted) {
                 try {
                     // Fetch all new events for this session (or global) since
@@ -92,17 +96,21 @@ export async function GET(request: NextRequest) {
 
                     if (newEvents.length > 0) {
                         lastSeenId = newEvents[newEvents.length - 1].id;
+                        currentPollIntervalMs = POLL_INTERVAL_MS;
+                    } else {
+                        currentPollIntervalMs = Math.min(currentPollIntervalMs + 500, MAX_POLL_INTERVAL_MS);
                     }
                 } catch {
                     // DB error — log and continue; the loop will retry after
                     // the sleep below rather than crashing the stream.
+                    currentPollIntervalMs = Math.min(currentPollIntervalMs + 500, MAX_POLL_INTERVAL_MS);
                 }
 
                 // Yield to the event loop and wait before the next poll.
                 // This is the only "polling" — it happens server-side and is
                 // invisible to the browser client.
                 await new Promise<void>((resolve) => {
-                    const t = setTimeout(resolve, POLL_INTERVAL_MS);
+                    const t = setTimeout(resolve, currentPollIntervalMs);
                     // If the client disconnects while we're sleeping, wake up
                     // immediately so we can exit the loop cleanly.
                     request.signal.addEventListener("abort", () => {

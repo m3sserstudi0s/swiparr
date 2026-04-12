@@ -105,10 +105,13 @@ export function useSwipe() {
     },
 
     // Always refetch after error or success:
-    onSettled: () => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.stats(sessionCode!) });
-      // Invalidate movie details to ensure fresh image data
-      queryClient.invalidateQueries({ queryKey: ["movie"] });
+      const targetSessionCode = variables?.sessionCode ?? sessionCode;
+      if (variables?.itemId) {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(variables.itemId, targetSessionCode, true) });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.movie(variables.itemId, targetSessionCode, false) });
+      }
     },
     onSuccess: (data) => {
       if (data.isMatch) {
