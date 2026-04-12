@@ -18,7 +18,18 @@ export function Providers({
   children,
   ...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
-  const [queryClient] = React.useState(() => new QueryClient());
+  const [queryClient] = React.useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Reduce accidental refetch churn from focus/mount while keeping
+        // explicit invalidations and SSE-driven updates responsive.
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
+        retry: 1,
+      },
+    },
+  }));
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -97,5 +97,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: [
+    // App pages except Next internals and static assets.
+    "/((?!_next/static|_next/image|favicon.ico|manifest.json|manifest.webmanifest|sw.js|.*\\.(?:png|svg|ico|jpg|jpeg|gif|webp|avif|css|js|map|txt|xml)$).*)",
+    // API routes except explicitly public auth/health/og endpoints.
+    "/api/:path((?!auth|health|og).*)",
+  ],
 };

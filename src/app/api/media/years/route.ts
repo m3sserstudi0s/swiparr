@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     if (!session.isLoggedIn) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const years = await MediaService.getYears(session);
-        return NextResponse.json(years);
+        const { data, timedOut } = await MediaService.getYears(session);
+        return NextResponse.json({ data, timedOut });
     } catch (error) {
         return handleApiError(error, "Failed to fetch years");
     }

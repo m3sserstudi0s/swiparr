@@ -15,7 +15,7 @@ import {
   MediaYear, 
   MediaRating 
 } from "@/types/media";
-import { plexClient, getPlexUrl, getPlexHeaders, getBestServerUrl } from "@/lib/plex/api";
+import { plexRequest, getPlexUrl, getPlexHeaders, getBestServerUrl } from "@/lib/plex/api";
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/plex/cached-queries";
 import { PlexContainerSchema } from "../schemas";
 import { logger } from "@/lib/logger";
@@ -145,7 +145,7 @@ export class PlexProvider implements MediaProvider {
         }
 
         const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
-        const res = await plexClient.get(url, { headers, params });
+        const res = await plexRequest<any>({ method: 'get', url, headers, params });
         const data = PlexContainerSchema.parse(res.data);
         let items = data.MediaContainer.Metadata || [];
         allItems = [...allItems, ...items];
@@ -161,7 +161,9 @@ export class PlexProvider implements MediaProvider {
     const includeUserState = options?.includeUserState ?? false;
     const path = id.includes("/") ? id : `/library/metadata/${id}`;
     const url = getPlexUrl(path, auth?.serverUrl);
-    const res = await plexClient.get(url, {
+    const res = await plexRequest<any>({
+      method: 'get',
+      url,
       headers: getPlexHeaders(token),
       params: {
         includeGuids: 1,
@@ -204,7 +206,7 @@ export class PlexProvider implements MediaProvider {
         
         for (const section of sections) {
             const url = getPlexUrl(`/library/sections/${section.Id}/label`, auth.serverUrl);
-            const res = await plexClient.get(url, { headers });
+            const res = await plexRequest({ method: 'get', url, headers });
             const data = res.data.MediaContainer?.Directory || [];
             data.forEach((d: any) => allLabels.add(d.title));
             if (allLabels.size >= 15) break;
@@ -276,7 +278,9 @@ export class PlexProvider implements MediaProvider {
     try {
         const path = itemId.includes("/") ? itemId : `/library/metadata/${itemId}`;
         const url = getPlexUrl(path, auth?.serverUrl);
-        const res = await plexClient.get(url, {
+        const res = await plexRequest<any>({
+          method: 'get',
+          url,
           headers: getPlexHeaders(token),
           params: {
             includeMeta: 1,
@@ -301,7 +305,9 @@ export class PlexProvider implements MediaProvider {
     }
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;
     const headers = url.startsWith('http') ? {} : getPlexHeaders(token);
-    const res = await plexClient.get(url, {
+    const res = await plexRequest<any>({
+      method: 'get',
+      url,
       responseType: "arraybuffer",
       headers,
       params: options
@@ -323,7 +329,7 @@ export class PlexProvider implements MediaProvider {
     
     const headers = getPlexHeaders(token);
     const url = getPlexUrl("/myplex/account", effectiveServerUrl);
-    const res = await plexClient.get(url, { headers });
+    const res = await plexRequest<any>({ method: 'get', url, headers });
     const user = res.data.MyPlex;
     return {
       User: {
@@ -454,7 +460,10 @@ export class PlexProvider implements MediaProvider {
 
     for (const base of watchlistBases) {
       try {
-        await plexClient.put(`${base}${endpoint}`, null, {
+        await plexRequest<any>({
+          method: 'put',
+          url: `${base}${endpoint}`,
+          data: null,
           headers: {
             ...getPlexHeaders(token),
           },
@@ -492,7 +501,9 @@ export class PlexProvider implements MediaProvider {
 
         for (const base of userStateBases) {
           try {
-            const res = await plexClient.get(`${base}/library/metadata/${ratingKey}/userState`, {
+            const res = await plexRequest<any>({
+              method: 'get',
+              url: `${base}/library/metadata/${ratingKey}/userState`,
               headers: getPlexHeaders(token),
               params: {
                 "X-Plex-Token": token,

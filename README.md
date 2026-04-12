@@ -198,7 +198,6 @@ CSP_FRAME_ANCESTORS=none                   # Embedding policy
 
 # Network Safety
 ALLOW_PRIVATE_PROVIDER_URLS=false          # Block private/LAN URLs for user-supplied providers (BYOP)
-PLEX_ALLOW_SELF_SIGNED=false               # Allow self-signed TLS for Plex (LAN only)
 PLEX_IMAGE_ALLOWED_HOSTS=plex.example.com,*.plex.direct  # Optional extra image hosts
 
 # BYOP Mode - Bring Your Own Provider
@@ -207,6 +206,7 @@ PROVIDER_LOCK=false                          # Let users choose and configure th
 # Misc
 USE_ANALYTICS=false                          # Enable anonymous usage analytics (Vercel deployments)
 ENABLE_DEBUG=false                           # Enable verbose debug logging and client-server error mapping
+USE_STATIC_FILTERS=false                     # Skip dynamic filter fetching; use built-in genre/year/rating lists instead (useful for very large libraries where filter API calls time out)
 ```
 
 ### Environment Variable Matrix
@@ -238,10 +238,10 @@ ENABLE_DEBUG=false                           # Enable verbose debug logging and 
 | `X_FRAME_OPTIONS` | ❌ | `DENY` | Security header: X-Frame-Options |
 | `CSP_FRAME_ANCESTORS`| ❌ | `none` | Security header: Content-Security-Policy frame-ancestors |
 | `ALLOW_PRIVATE_PROVIDER_URLS` | ❌ | `false` | Allow private/LAN provider URLs for BYOP user inputs |
-| `PLEX_ALLOW_SELF_SIGNED` | ❌ | `false` | Allow self-signed TLS for Plex connections |
 | `PLEX_IMAGE_ALLOWED_HOSTS` | ❌ | - | Extra allowlist for Plex image hosts (comma-separated). `PLEX_URL`/`PLEX_PUBLIC_URL` are allowed by default. |
 | `USE_ANALYTICS` | ❌ | `false` | Enable anonymous usage analytics (Vercel deployments) |
 | `ENABLE_DEBUG` | ❌ | `false` | Enable verbose debug logging and client-server error mapping |
+| `USE_STATIC_FILTERS` | ❌ | `false` | Skip dynamic filter fetching and use built-in genre/year/rating lists. Useful for very large libraries where filter API calls time out. |
 
 
 [^1]: Can be set to a local file (internal to container) OR external URL. Mostly relevant for Vercel deployments, which uses the Turso integration in the set-up workflow by default where these values are auto-generated and -injected. Can of course be swapped out with a database service provider of choice.

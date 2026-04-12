@@ -1,22 +1,78 @@
-import axios from 'axios';
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import https from 'https';
 import { config as appConfig } from '../config';
 import { resolveServerUrl } from './discovery';
 import { assertSafeUrl, assertSafeResolvedUrl, getDefaultProviderBaseUrl } from '@/lib/security/url-guard';
+import { logger } from '@/lib/logger';
 
 const PLEX_URL = appConfig.PLEX_URL || 'http://localhost:32400';
-
-const httpsAgent = appConfig.security.plexAllowSelfSigned
-  ? new https.Agent({ rejectUnauthorized: false })
-  : undefined;
 
 export const plexClient = axios.create({
   timeout: 60000,
   headers: {
     'Accept': 'application/json',
   },
-  ...(httpsAgent ? { httpsAgent } : {}),
 });
+
+/**
+ * TLS error codes emitted by Node.js when a server presents a self-signed or
+ * otherwise untrusted certificate.
+ */
+const TLS_ERROR_CODES = new Set([
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'CERT_HAS_EXPIRED',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+]);
+
+function isTlsError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as Record<string, unknown>;
+  const code = (err.code as string) || ((err.cause as Record<string, unknown>)?.code as string);
+  return TLS_ERROR_CODES.has(code);
+}
+
+/**
+ * Returns true when self-signed certificate bypass is permitted:
+ * - Always allowed when PROVIDER_LOCK=true (operator-configured server URL).
+ * - Allowed when PROVIDER_LOCK=false only if ALLOW_PRIVATE_PROVIDER_URLS=true.
+ */
+function canBypassSelfSigned(): boolean {
+  if (appConfig.app.providerLock) return true;
+  return appConfig.security.allowPrivateProviderUrls;
+}
+
+/**
+ * Drop-in replacement for plexClient.request() that automatically retries
+ * with TLS certificate validation disabled when:
+ *   1. The server returns a self-signed / untrusted certificate error, AND
+ *   2. canBypassSelfSigned() returns true.
+ *
+ * A warning is logged when the bypass is applied so operators are aware.
+ */
+export async function plexRequest<T = unknown>(config: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  try {
+    return await plexClient.request<T>(config);
+  } catch (error: unknown) {
+    if (isTlsError(error) && canBypassSelfSigned()) {
+      logger.warn(
+        '[PlexClient] TLS certificate error detected (self-signed or untrusted). ' +
+        'Retrying with certificate validation disabled. ' +
+        'This is allowed because ' +
+        (appConfig.app.providerLock ? 'PROVIDER_LOCK=true' : 'ALLOW_PRIVATE_PROVIDER_URLS=true') + '.'
+      );
+      const insecureClient = axios.create({
+        timeout: 60000,
+        headers: { 'Accept': 'application/json' },
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+      });
+      return await insecureClient.request<T>(config);
+    }
+    throw error;
+  }
+}
 
 export const getPlexUrl = (path: string, customBaseUrl?: string): string => {
   const fallbackBase = getDefaultProviderBaseUrl();
@@ -65,7 +121,9 @@ export const getPlexHeaders = (token?: string, clientId?: string) => {
 export const authenticatePlex = async (token: string, customBaseUrl?: string) => {
   // Plex "authentication" with a token is just verifying the token works
   const url = getPlexUrl('myplex/account', customBaseUrl);
-  const response = await plexClient.get(url, {
+  const response = await plexRequest({
+    method: 'get',
+    url,
     headers: getPlexHeaders(token),
   });
   return response.data;

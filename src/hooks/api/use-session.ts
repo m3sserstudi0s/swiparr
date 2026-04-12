@@ -69,8 +69,9 @@ export function useUpdateSession() {
       // This ensures the deck reloads with the updated filters
       if (sessionCode) {
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(sessionCode) });
+      } else {
+        await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.deck(null) });
       }
-      await queryClient.invalidateQueries({ queryKey: ["deck"] });
     },
   });
 }
