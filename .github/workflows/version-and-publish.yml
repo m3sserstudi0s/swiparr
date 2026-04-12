@@ -155,7 +155,7 @@ jobs:
   # Merge the two platform digests into a single multi-arch manifest and apply tags.
   merge:
     name: Merge multi-arch manifest
-    needs: [release, build]
+    needs: [build]
     runs-on: ubuntu-latest
     permissions:
       packages: write
