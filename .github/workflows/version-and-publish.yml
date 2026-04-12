@@ -155,7 +155,15 @@ jobs:
   # Merge the two platform digests into a single multi-arch manifest and apply tags.
   merge:
     name: Merge multi-arch manifest
-    needs: [build]
+    needs: [release, build]
+    if: |
+      always() &&
+      (
+        github.ref_name == 'develop' ||
+        (github.ref_name == 'master' && needs.release.outputs.published == 'true')
+      ) &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
+      (needs.build.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       packages: write
