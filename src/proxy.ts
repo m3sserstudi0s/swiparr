@@ -89,8 +89,26 @@ export async function proxy(request: NextRequest) {
     response.headers.set('X-Frame-Options', xFrameOptions);
   }
 
+  // Set frame-ancestors at runtime (next.config.ts headers are build-time,
+  // so we can't read runtime env vars there).
   const cspFrameAncestors = appConfig.proxy.cspFrameAncestors;
-  response.headers.set('Content-Security-Policy', `frame-ancestors ${cspFrameAncestors}`);
+  const existingCsp = response.headers.get('Content-Security-Policy');
+  if (existingCsp) {
+    // Modify the existing CSP — replace or append the frame-ancestors directive
+    if (existingCsp.includes('frame-ancestors')) {
+      response.headers.set(
+        'Content-Security-Policy',
+        existingCsp.replace(/frame-ancestors [^;]+/, `frame-ancestors ${cspFrameAncestors}`),
+      );
+    } else {
+      response.headers.set(
+        'Content-Security-Policy',
+        `${existingCsp}; frame-ancestors ${cspFrameAncestors}`,
+      );
+    }
+  } else {
+    response.headers.set('Content-Security-Policy', `frame-ancestors ${cspFrameAncestors}`);
+  }
 
 
   return response;
