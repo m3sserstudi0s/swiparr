@@ -22,6 +22,32 @@ export async function proxy(request: NextRequest) {
     ? NextResponse.rewrite(new URL(pathname + search, request.url))
     : NextResponse.next();
 
+  // Set iframe headers at runtime for ALL responses (including public paths
+  // like /login). next.config.ts headers are build-time and cannot read
+  // Docker runtime env vars, so we handle these in middleware.
+  const xFrameOptions = appConfig.proxy.xFrameOptions;
+  if (xFrameOptions.toUpperCase() !== 'DISABLED') {
+    response.headers.set('X-Frame-Options', xFrameOptions);
+  }
+
+  const cspFrameAncestors = appConfig.proxy.cspFrameAncestors;
+  const existingCsp = response.headers.get('Content-Security-Policy');
+  if (existingCsp) {
+    if (existingCsp.includes('frame-ancestors')) {
+      response.headers.set(
+        'Content-Security-Policy',
+        existingCsp.replace(/frame-ancestors [^;]+/, `frame-ancestors ${cspFrameAncestors}`),
+      );
+    } else {
+      response.headers.set(
+        'Content-Security-Policy',
+        `${existingCsp}; frame-ancestors ${cspFrameAncestors}`,
+      );
+    }
+  } else {
+    response.headers.set('Content-Security-Policy', `frame-ancestors ${cspFrameAncestors}`);
+  }
+
   // Define public paths
   const isPublicPath =
     pathname === "/login" ||
@@ -82,34 +108,6 @@ export async function proxy(request: NextRequest) {
     loginUrl.searchParams.set("reason", "provider_mismatch");
     return NextResponse.redirect(loginUrl);
   }
-
-  // Configurable Iframe Headers
-  const xFrameOptions = appConfig.proxy.xFrameOptions;
-  if (xFrameOptions.toUpperCase() !== 'DISABLED') {
-    response.headers.set('X-Frame-Options', xFrameOptions);
-  }
-
-  // Set frame-ancestors at runtime (next.config.ts headers are build-time,
-  // so we can't read runtime env vars there).
-  const cspFrameAncestors = appConfig.proxy.cspFrameAncestors;
-  const existingCsp = response.headers.get('Content-Security-Policy');
-  if (existingCsp) {
-    // Modify the existing CSP — replace or append the frame-ancestors directive
-    if (existingCsp.includes('frame-ancestors')) {
-      response.headers.set(
-        'Content-Security-Policy',
-        existingCsp.replace(/frame-ancestors [^;]+/, `frame-ancestors ${cspFrameAncestors}`),
-      );
-    } else {
-      response.headers.set(
-        'Content-Security-Policy',
-        `${existingCsp}; frame-ancestors ${cspFrameAncestors}`,
-      );
-    }
-  } else {
-    response.headers.set('Content-Security-Policy', `frame-ancestors ${cspFrameAncestors}`);
-  }
-
 
   return response;
 }
