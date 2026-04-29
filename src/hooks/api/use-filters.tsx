@@ -48,7 +48,6 @@ export function useFilters(open: boolean, watchRegion?: string) {
     },
     enabled: open,
     staleTime: 1000 * 60 * 60,
-    retry: 1, // retry once on failure before falling back to defaults
   });
 
   const yearsQuery = useQuery({
@@ -65,7 +64,6 @@ export function useFilters(open: boolean, watchRegion?: string) {
     },
     enabled: open,
     staleTime: 1000 * 60 * 60,
-    retry: 1,
   });
 
   const ratingsQuery = useQuery({
@@ -79,7 +77,6 @@ export function useFilters(open: boolean, watchRegion?: string) {
     },
     enabled: open,
     staleTime: 1000 * 60 * 60,
-    retry: 1,
   });
 
   const timedOut =
@@ -89,24 +86,11 @@ export function useFilters(open: boolean, watchRegion?: string) {
 
   useFilterTimeoutToast(timedOut);
 
-  // Fall back to defaults when queries fail (error state)
-  const genres = genresQuery.data?.data ?? (genresQuery.isError ? DEFAULT_GENRES : []);
-  const years = yearsQuery.data?.data ?? (yearsQuery.isError
-    ? Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => ({
-        Name: (1900 + i).toString(),
-        Value: 1900 + i,
-      }))
-    : []);
-  const ratings = ratingsQuery.data?.data ?? (ratingsQuery.isError
-    ? DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }))
-    : []);
-
   return {
-    genres,
-    years,
-    ratings,
+    genres: genresQuery.data?.data ?? [],
+    years: yearsQuery.data?.data ?? [],
+    ratings: ratingsQuery.data?.data ?? [],
     isLoading: genresQuery.isLoading || yearsQuery.isLoading || ratingsQuery.isLoading,
-    isError: genresQuery.isError || yearsQuery.isError || ratingsQuery.isError,
   };
 }
 
