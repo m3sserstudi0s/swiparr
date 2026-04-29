@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - CSP `frame-ancestors` now respects `CSP_FRAME_ANCESTORS` env var instead of being hardcoded to `'none'`
+- **Filters**: Reduced static filter fallback timeout from 15s to 5s for faster recovery when the media server API is slow. Frontend now falls back to default filters when the API requests fail, instead of silently showing empty filter lists.
+- **Filters**: Frontend queries retry once (instead of the default 3) before falling back to static defaults, speeding up recovery from API timeouts.
 
 ## [1.0.3] - 2025-02-06
 

@@ -730,7 +730,7 @@ export class MediaService {
     return provider.getLibraries(auth);
   }
 
-  private static readonly FILTER_TIMEOUT_MS = 15_000;
+  private static readonly FILTER_TIMEOUT_MS = 5_000; // 5s timeout before falling back to static filters
 
   /** Race a promise against a timeout. Returns `{ value, timedOut }`. */
   private static withFilterTimeout<T>(promise: Promise<T>): Promise<{ value: T | null; timedOut: boolean }> {
