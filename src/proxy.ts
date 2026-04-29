@@ -30,23 +30,24 @@ export async function proxy(request: NextRequest) {
     response.headers.set('X-Frame-Options', xFrameOptions);
   }
 
-  const cspFrameAncestors = appConfig.proxy.cspFrameAncestors;
-  const existingCsp = response.headers.get('Content-Security-Policy');
-  if (existingCsp) {
-    if (existingCsp.includes('frame-ancestors')) {
-      response.headers.set(
-        'Content-Security-Policy',
-        existingCsp.replace(/frame-ancestors [^;]+/, `frame-ancestors ${cspFrameAncestors}`),
-      );
-    } else {
-      response.headers.set(
-        'Content-Security-Policy',
-        `${existingCsp}; frame-ancestors ${cspFrameAncestors}`,
-      );
-    }
-  } else {
-    response.headers.set('Content-Security-Policy', `frame-ancestors ${cspFrameAncestors}`);
-  }
+  // Set Content-Security-Policy at runtime so CSP_FRAME_ANCESTORS
+  // (from Docker env vars) is respected. next.config.ts headers() runs
+  // AFTER middleware and cannot read runtime env vars, so the full CSP
+  // is built here instead.
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://plex.tv https://*.plex.direct wss://*.plex.direct https://api.themoviedb.org https://image.tmdb.org",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    `frame-ancestors ${appConfig.proxy.cspFrameAncestors}`,
+  ].join("; ");
+  response.headers.set("Content-Security-Policy", csp);
 
   // Define public paths
   const isPublicPath =
