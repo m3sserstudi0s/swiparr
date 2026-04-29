@@ -25,8 +25,22 @@ export async function proxy(request: NextRequest) {
   // Set iframe headers at runtime for ALL responses (including public paths
   // like /login). next.config.ts headers are build-time and cannot read
   // Docker runtime env vars, so we handle these in middleware.
+  //
+  // X-Frame-Options auto-syncs with CSP_FRAME_ANCESTORS:
+  //   - When frame-ancestors allows iframing (not 'none', not DISABLED),
+  //     X-Frame-Options is set to SAMEORIGIN for consistency.
+  //   - Explicit X_FRAME_OPTIONS can override with a specific value or DISABLED.
+  const cspFrameAncestors = appConfig.proxy.cspFrameAncestors;
+  const allowsIframing = !['none', 'DISABLED'].includes(cspFrameAncestors.toLowerCase());
+
   const xFrameOptions = appConfig.proxy.xFrameOptions;
-  if (xFrameOptions.toUpperCase() !== 'DISABLED') {
+  if (xFrameOptions.toUpperCase() === 'DISABLED') {
+    // Explicitly disabled — skip X-Frame-Options entirely
+  } else if (allowsIframing && xFrameOptions === 'DENY') {
+    // User wants iframing via CSP but hasn't changed the default DENY —
+    // auto-set to SAMEORIGIN to avoid conflicting with frame-ancestors
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  } else {
     response.headers.set('X-Frame-Options', xFrameOptions);
   }
 
@@ -45,7 +59,7 @@ export async function proxy(request: NextRequest) {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    `frame-ancestors ${appConfig.proxy.cspFrameAncestors}`,
+    `frame-ancestors ${cspFrameAncestors}`,
   ].join("; ");
   response.headers.set("Content-Security-Policy", csp);
 
