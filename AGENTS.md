@@ -84,8 +84,17 @@ npx drizzle-kit studio    # Database GUI
 - `src/components`: UI (shadcn-like), Layout, and Feature components.
 - `src/db`: Schema and migration logic.
 - `src/hooks`: Custom reusable hooks.
-- `src/lib`: Services, API clients, utilities.
+- `src/lib`: Services, API clients, utilities, runtime config (`config.ts`).
+- `src/proxy.ts`: **Middleware** — request-level logic (auth, headers, URL rewrites).
 - `src/types`: Shared TypeScript definitions.
+
+### Middleware (`src/proxy.ts`)
+
+Swiparr uses `src/proxy.ts` instead of the standard `src/middleware.ts`. This is a Next.js naming convention — the exported function is `proxy()` (not the default export pattern). The `config.matcher` export controls which routes the middleware applies to.
+
+**Key rule**: all request-level logic (CSP headers, authentication, base-path rewrites) goes in `proxy.ts`. Never create a separate `middleware.ts`.
+
+**Build-time vs runtime**: `next.config.ts` `headers()` is evaluated at **build time** during `next build`. It cannot read Docker runtime env vars. Any header that needs runtime configuration (e.g., `CSP_FRAME_ANCESTORS`, `X_FRAME_OPTIONS`) must be set in `proxy.ts` middleware, which runs at request time and can read `process.env`.
 
 ## Key Dependencies
 - `motion`: For animations.
