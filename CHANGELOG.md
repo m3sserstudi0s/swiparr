@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- CSP `frame-ancestors` now respects `CSP_FRAME_ANCESTORS` env var instead of being hardcoded to `'none'`
 
 ## [1.0.3] - 2025-02-06
 
