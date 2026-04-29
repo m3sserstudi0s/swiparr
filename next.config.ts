@@ -36,25 +36,10 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          {
-            // Strict Content-Security-Policy (M5).
-            // 'unsafe-inline' for styles is required by Tailwind CSS v4 / Next.js inline
-            // style injection; 'unsafe-eval' is intentionally omitted.
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data:",
-              "connect-src 'self' https://plex.tv https://*.plex.direct wss://*.plex.direct https://api.themoviedb.org https://image.tmdb.org",
-              "media-src 'self' blob:",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-            ].join("; "),
-          },
+          // Content-Security-Policy is set at runtime in proxy.ts (middleware)
+          // so it can read CSP_FRAME_ANCESTORS from Docker runtime env vars.
+          // next.config.ts headers() runs AFTER middleware in Next.js and would
+          // overwrite the runtime CSP, so it is intentionally omitted here.
         ],
       },
     ];

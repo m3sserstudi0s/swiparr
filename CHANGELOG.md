@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Changed
--
+- **CSP headers moved to middleware**: Content-Security-Policy is now built entirely in `proxy.ts` instead of `next.config.ts`, enabling runtime env vars like `CSP_FRAME_ANCESTORS` to take effect. `next.config.ts` `headers()` runs AFTER middleware in Next.js, so the CSP must be set in the middleware to avoid being overwritten.
+- **X-Frame-Options auto-syncs with CSP_FRAME_ANCESTORS**: When `CSP_FRAME_ANCESTORS` is set to a value that allows iframing (e.g., `'self'`), `X-Frame-Options` is automatically set to `SAMEORIGIN` to avoid conflicting with the permissive `frame-ancestors` directive. Explicit `X_FRAME_OPTIONS` or `DISABLED` overrides still work.
 
 ### Fixed
--
+- CSP `frame-ancestors` now respects `CSP_FRAME_ANCESTORS` env var instead of being hardcoded to `'none'`
 
 ## [1.0.3] - 2025-02-06
 

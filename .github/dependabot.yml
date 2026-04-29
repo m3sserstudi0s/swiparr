@@ -1,0 +1,62 @@
+# Dependabot Configuration for Swiparr
+version: 2
+updates:
+  # Maintain dependencies for npm (package.json)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "America/New_York"
+    # REDUCED from 5 to 3 to prevent PR flood
+    open-pull-requests-limit: 3
+    # ADDITIONAL ignored dependencies for stability
+    ignore:
+      - "eslint"                # Stable, well-maintained
+      - "typescript"            # Stable major version
+      - "webpack"               # Stable major version
+      - "react"                 # Framework core, test before updating
+      - "react-dom"             # Framework core, test before updating
+      - "next"                  # Framework core, test before updating
+      - "drizzle-kit"           # Database tool, careful updates
+    target-branch: "develop"
+    versioning-strategy: increase
+    allow:
+      - dependency-type: "direct"
+    check-branch-convention: "none"
+    commit-message:
+      include: "scope"
+      
+  # Maintain dependencies for Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 3
+    target-branch: "develop"
+    versioning-strategy: increase
+    allow:
+      - dependency-type: "all"
+    check-branch-convention: "none"
+    commit-message:
+      include: "scope"
+      
+  # Security updates (critical vulnerabilities)
+  - package-ecosystem: "npm"
+    directory: "/"
+    security-updates: true
+    schedule:
+      interval: "daily"
+      time: "02:00"
+      timezone: "America/New_York"
+    # REDUCED from 5 to 3 for security PRs too
+    open-pull-requests-limit: 3
+    target-branch: "develop"
+    allow:
+      - dependency-type: "direct"
+    check-branch-convention: "none"
+    commit-message:
+      include: "scope"

@@ -84,8 +84,21 @@ npx drizzle-kit studio    # Database GUI
 - `src/components`: UI (shadcn-like), Layout, and Feature components.
 - `src/db`: Schema and migration logic.
 - `src/hooks`: Custom reusable hooks.
-- `src/lib`: Services, API clients, utilities.
+- `src/lib`: Services, API clients, utilities, runtime config (`config.ts`).
+- `src/proxy.ts`: **Middleware** — request-level logic (auth, headers, URL rewrites).
 - `src/types`: Shared TypeScript definitions.
+
+### Middleware (`src/proxy.ts`)
+
+Swiparr uses `src/proxy.ts` instead of the standard `src/middleware.ts`. This is a Next.js naming convention — the exported function is `proxy()` (not the default export pattern). The `config.matcher` export controls which routes the middleware applies to.
+
+**Key rule**: all request-level logic (CSP headers, authentication, base-path rewrites) goes in `proxy.ts`. Never create a separate `middleware.ts`.
+
+**Build-time vs runtime**: `next.config.ts` `headers()` is evaluated at **build time** during `next build`. It cannot read Docker runtime env vars. Any header that needs runtime configuration (e.g., `CSP_FRAME_ANCESTORS`, `X_FRAME_OPTIONS`) must be set in `proxy.ts` middleware, which runs at request time and can read `process.env`.
+
+**Critical timing detail**: `next.config.ts` `headers()` runs **AFTER** middleware in Next.js. If you set a header in both places, the `next.config.ts` value will overwrite the middleware's value. For this reason, the entire `Content-Security-Policy` header was removed from `next.config.ts` and is now built entirely in `proxy.ts`. If you add a header to `next.config.ts` that the middleware also touches, the middleware's version will be silently lost.
+
+**X-Frame-Options sync**: When `CSP_FRAME_ANCESTORS` is set to a value other than `'none'` or `DISABLED`, the `X-Frame-Options` header should be `SAMEORIGIN` (not `DENY`) to avoid conflicting with the permissive `frame-ancestors` CSP directive. Both headers are managed in `proxy.ts`.
 
 ## Key Dependencies
 - `motion`: For animations.
