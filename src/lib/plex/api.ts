@@ -8,7 +8,7 @@ import { logger } from '@/lib/logger';
 const PLEX_URL = appConfig.PLEX_URL || 'http://localhost:32400';
 
 export const plexClient = axios.create({
-  timeout: 60000,
+  timeout: 10000,
   headers: {
     'Accept': 'application/json',
   },
@@ -64,7 +64,7 @@ export async function plexRequest<T = unknown>(config: AxiosRequestConfig): Prom
         (appConfig.app.providerLock ? 'PROVIDER_LOCK=true' : 'ALLOW_PRIVATE_PROVIDER_URLS=true') + '.'
       );
       const insecureClient = axios.create({
-        timeout: 60000,
+        timeout: 10000,
         headers: { 'Accept': 'application/json' },
         httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       });

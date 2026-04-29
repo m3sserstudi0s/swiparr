@@ -8,7 +8,7 @@ const EMBY_URL = appConfig.EMBY_URL || 'http://localhost:8096';
 
 // Create an axios instance with a timeout to prevent hanging requests
 export const apiClient = axios.create({
-  timeout: 60000, // 60 seconds
+  timeout: 10000, // 60 seconds
 });
 
 export const getEmbyUrl = (path: string, customBaseUrl?: string) => {

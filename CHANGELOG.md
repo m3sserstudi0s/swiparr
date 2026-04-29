@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - CSP `frame-ancestors` now respects `CSP_FRAME_ANCESTORS` env var instead of being hardcoded to `'none'`
+- **Filters**: Removed `USE_STATIC_FILTERS` env var. The system now auto-detects slow media server APIs: if a filter request times out, static defaults are used and cached in-memory so all subsequent filter drawer opens are instant. Reduced Axios timeout on media server API clients (Jellyfin/Emby/Plex) from 60s to 10s for faster fallback.
 
 ## [1.0.3] - 2025-02-06
 
