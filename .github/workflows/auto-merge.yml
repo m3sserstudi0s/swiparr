@@ -4,24 +4,17 @@ name: Auto-Merge Dependabot PRs
 on:
   pull_request:
     branches: [develop]
-    # Only run for Dependabot PRs
-    sender: { login: dependabot, actor: dependabot }
 
 jobs:
   automerge:
+    if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: write
     
     steps:
-      - name: Check if PR is from Dependabot
-        id: check-dependabot
-        run: |
-          echo "dependabot=true" >> $GITHUB_OUTPUT
-          
-      - name: Auto-merge if safe
-        if: ${{ steps.check-dependabot.outputs.dependabot == 'true' }}
+      - name: Auto-merge Dependabot PR
         run: |
           # Add a comment to the PR
           gh pr comment $PR_NUMBER -b "🤖 Auto-merging this Dependabot update to keep dependencies current."
@@ -30,10 +23,9 @@ jobs:
           gh pr merge $PR_NUMBER --auto --squash
           
           # Delete the branch if it's from Dependabot
-          if [[ "$HEAD_REPO" == *"dependabot"* ]]; then
-            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/ref/$HEAD_REF"
+          if [[ "$HEAD_REF" == dependabot/* ]]; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$HEAD_REF"
           fi
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
