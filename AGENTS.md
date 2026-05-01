@@ -79,6 +79,17 @@ npx drizzle-kit studio    # Database GUI
 - Use `sonner` for user-facing toast notifications.
 - Log errors to console with descriptive context in development.
 
+### SOLID Principles
+When designing and refactoring code, follow **SOLID** principles as closely as practical:
+
+- **S — Single Responsibility**: Each class, module, or function should have one well-defined reason to change. Extract database queries from route handlers, separate UI logic from data-fetching, and isolate third-party API clients behind thin wrappers.
+- **O — Open/Closed**: Prefer extending behaviour over modifying existing tested code. Use composition, dependency injection, and strategy patterns (e.g., provider-agnostic media-service layer) so new media sources can be added without touching core logic.
+- **L — Liskov Substitution**: Subtypes must be substitutable for their base types. If a class extends another, it should not weaken preconditions or strengthen postconditions. Keep provider implementations (Jellyfin, Emby, Plex) consistent with their shared interface contract.
+- **I — Interface Segregation**: Split large interfaces into smaller, focused ones. A component or service should not depend on methods it doesn't use. Prefer thin function signatures over fat interface classes.
+- **D — Dependency Inversion**: Depend on abstractions, not concretions. Business logic should not directly import database drivers, HTTP clients, or UI frameworks — depend on interfaces that those adapters implement.
+
+When applying SOLID, prioritise **SRP** and **DIP** as they deliver the most practical benefit in a Next.js codebase. Refactor opportunistically — don't over-engineer, but clean as you go.
+
 ## Project Structure
 - `src/app`: Routes, Layouts, API.
 - `src/components`: UI (shadcn-like), Layout, and Feature components.
