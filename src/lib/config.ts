@@ -51,6 +51,7 @@ const envSchema = z.object({
 
   USE_ANALYTICS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   ENABLE_DEBUG: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+  USE_STATIC_FILTERS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
 });
 
 const parsedEnv = envSchema.parse(process.env);
