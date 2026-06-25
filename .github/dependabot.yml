@@ -23,7 +23,6 @@ updates:
     versioning-strategy: increase
     allow:
       - dependency-type: "direct"
-    check-branch-convention: "none"
     commit-message:
       include: "scope"
       
@@ -40,23 +39,5 @@ updates:
     versioning-strategy: increase
     allow:
       - dependency-type: "all"
-    check-branch-convention: "none"
-    commit-message:
-      include: "scope"
-      
-  # Security updates (critical vulnerabilities)
-  - package-ecosystem: "npm"
-    directory: "/"
-    security-updates: true
-    schedule:
-      interval: "daily"
-      time: "02:00"
-      timezone: "America/New_York"
-    # REDUCED from 5 to 3 for security PRs too
-    open-pull-requests-limit: 3
-    target-branch: "develop"
-    allow:
-      - dependency-type: "direct"
-    check-branch-convention: "none"
     commit-message:
       include: "scope"
