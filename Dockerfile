@@ -42,6 +42,10 @@ ENV HOSTNAME="0.0.0.0"
 ARG URL_BASE_PATH=""
 ENV URL_BASE_PATH=$URL_BASE_PATH
 
+# Carry the app version into the runner so the UI can display it.
+ARG APP_VERSION
+ENV APP_VERSION=$APP_VERSION
+
 RUN apk add --no-cache libc6-compat curl su-exec
 
 RUN addgroup --system --gid 1001 nodejs
