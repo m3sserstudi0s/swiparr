@@ -12,6 +12,7 @@ import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useMovieActions } from "@/hooks/use-movie-actions";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
 import { useSession } from "@/hooks/api";
+import { useSettings } from "@/lib/settings";
 
 
 interface MovieListItemProps {
@@ -26,6 +27,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
   const { capabilities, serverPublicUrl, provider: runtimeProvider } = useRuntimeConfig();
 
   const { data: sessionStatus } = useSession();
+  const { settings } = useSettings();
 
   const {
     movie: syncedMovie,
@@ -143,7 +145,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           )}
 
           <div className="flex gap-2">
-            {capabilities.requiresServerUrl && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
+            {capabilities.requiresServerUrl && settings.showPlayButton && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"
