@@ -1,0 +1,12 @@
+{
+  "framework": "nextjs",
+  "installCommand": "npm ci",
+  "buildCommand": "node scripts/set-app-version.mjs && npm run db:migrate && node scripts/ensure-auth-secret.cjs && next build",
+  "outputDirectory": ".next",
+  "git": {
+    "deploymentEnabled": {
+      "master": true,
+      "develop": false
+    }
+  }
+}
