@@ -1,4 +1,6 @@
 # Dependabot Configuration for Swiparr
+# Note: GitLab-specific keys (check-branch-convention, security-updates) removed.
+# GitHub handles security updates via repo-level alerts, not YAML config.
 version: 2
 updates:
   # Maintain dependencies for npm (package.json)
