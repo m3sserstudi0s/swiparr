@@ -93,7 +93,7 @@ export const config = {
     publicUrl: SERVER_PUBLIC_URL,
   },
   app: {
-    version: (parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || packageJson.version).replace(/^v/i, ''),
+    version: (parsedEnv.APP_VERSION || parsedEnv.NEXT_PUBLIC_APP_VERSION || `${packageJson.version}-dev`).replace(/^v/i, ''),
     basePath: BASE_PATH,
     appPublicUrl: parsedEnv.APP_PUBLIC_URL,
     provider: parsedEnv.PROVIDER,
