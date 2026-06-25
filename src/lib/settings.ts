@@ -7,7 +7,6 @@ export interface Settings {
   useWatchlist: boolean;
   allowGuestLending: boolean;
   hasDismissedGuestLendingAlert: boolean;
-  showPlayButton: boolean;
 }
 
 interface SettingsState {
@@ -22,7 +21,6 @@ function getDefaultSettings(): Settings {
     useWatchlist: rc.provider === ProviderType.JELLYFIN && rc.useWatchlist,
     allowGuestLending: false,
     hasDismissedGuestLendingAlert: false,
-    showPlayButton: true,
   };
 }
 

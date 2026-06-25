@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Moon, Bookmark, Star, Users, Info, UserX, Play } from "lucide-react";
+import { Sun, Moon, Bookmark, Star, Users, Info, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { useTheme } from "next-themes";
@@ -135,26 +135,6 @@ export function GeneralSettings() {
                                 {settings.allowGuestLending ? "Enabled" : "Disabled"}
                             </Toggle>
                         </div>
-                    )}
-
-                    {capabilities.requiresServerUrl && (
-                        <div className="grid grid-flow-col items-center justify-between gap-2">
-                            <div className="space-y-0.5">
-                                <div className="text-sm font-medium">Play Button</div>
-                                <div className="text-xs text-muted-foreground text-pretty">Show a link to watch in your media server</div>
-                            </div>
-                            <Toggle
-                                pressed={settings.showPlayButton}
-                                onPressedChange={(pressed) => updateSettings({ showPlayButton: pressed })}
-                                variant="outline"
-                                size="sm"
-                                className="w-26"
-                            >
-                                <Play className="size-4" />
-                                {settings.showPlayButton ? "Shown" : "Hidden"}
-                            </Toggle>
-                        </div>
-                    )}
                 </>
             )}
         </SettingsSection>

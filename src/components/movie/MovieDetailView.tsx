@@ -23,7 +23,6 @@ import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 import { getLanguageLabel } from "@/lib/language";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
 import { ProviderType } from "@/lib/providers/types";
-import { useSettings } from "@/lib/settings";
 
 interface Props {
   movieId: string | null;
@@ -74,7 +73,6 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
 
   const { serverPublicUrl: runtimeServerUrl, capabilities: runtimeCapabilities, provider: runtimeProvider } = useRuntimeConfig();
   const { data: sessionStatus } = useSession({ enabled: !!movieId });
-  const { settings } = useSettings();
   const capabilities = sessionStatus?.capabilities || runtimeCapabilities;
   const activeProvider = sessionStatus?.provider || runtimeProvider;
   const serverPublicUrl = runtimeServerUrl;
@@ -217,7 +215,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 )}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
-                  {capabilities.requiresServerUrl && settings.showPlayButton ? (
+                  {capabilities.requiresServerUrl && !isGuest ? (
                     <Link href={detailsUrl} className="w-32" target="_blank">
                       <Button className="w-32" size="lg">
                         <Play className="w-4 h-4 mr-2 fill-current" /> Play
