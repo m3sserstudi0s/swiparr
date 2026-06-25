@@ -135,6 +135,7 @@ export function GeneralSettings() {
                                 {settings.allowGuestLending ? "Enabled" : "Disabled"}
                             </Toggle>
                         </div>
+                    )}
                 </>
             )}
         </SettingsSection>
