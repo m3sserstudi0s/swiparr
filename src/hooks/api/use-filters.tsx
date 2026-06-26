@@ -3,34 +3,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { ExternalLink } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { MediaGenre, MediaRating, MediaYear } from "@/types/media";
 import { QUERY_KEYS } from "./query-keys";
 import { DEFAULT_GENRES, DEFAULT_RATINGS, DEFAULT_THEMES } from "@/lib/constants";
 import { getRuntimeConfig } from "@/lib/runtime-config";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-
-const STATIC_FILTERS_README_URL =
-  "https://github.com/m3sserstudi0s/swiparr?tab=readme-ov-file#environment-variable-matrix";
 
 function useFilterTimeoutToast(timedOut: boolean) {
   const toastShown = useRef(false);
   useEffect(() => {
     if (timedOut && !toastShown.current) {
       toastShown.current = true;
-      toast.warning("Filter loading timed out", {
-        description: "Static filters are being used. For large libraries, consider defaulting to static filters.",
-        duration: 10_000,
-        action: (
-          <Link href={STATIC_FILTERS_README_URL} target="_blank" rel="noopener noreferrer">
-            <Button>
-              See
-              <ExternalLink className="h-3 w-3" />
-            </Button>
-          </Link>
-        ),
+      toast.info("Using default filters", {
+        description: "The media server is responding slowly, so default static filters are being used. Filters will stay fast for this session.",
+        duration: 8_000,
       });
     }
   }, [timedOut]);

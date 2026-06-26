@@ -20,6 +20,12 @@ export interface RuntimeConfig {
   enableDebug: boolean;
   tmdbDefaultRegion: string;
   useStaticFilters: boolean;
+  /** Admin-configured server URL for each provider (may be empty) */
+  providerUrls?: {
+    jellyfin: string;
+    emby: string;
+    plex: string;
+  };
 }
 
 
@@ -50,6 +56,11 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
     enableDebug: config.ENABLE_DEBUG,
     tmdbDefaultRegion: config.TMDB_DEFAULT_REGION || DEFAULT_TMDB_REGION,
     useStaticFilters: config.USE_STATIC_FILTERS,
+    providerUrls: {
+      jellyfin: config.JELLYFIN_URL || '',
+      emby: config.EMBY_URL || '',
+      plex: config.PLEX_URL || '',
+    },
     ...overrides
   };
 }

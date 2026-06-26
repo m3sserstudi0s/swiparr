@@ -215,7 +215,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 )}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
-                  {capabilities.requiresServerUrl ? (
+                  {capabilities.requiresServerUrl && !isGuest ? (
                     <Link href={detailsUrl} className="w-32" target="_blank">
                       <Button className="w-32" size="lg">
                         <Play className="w-4 h-4 mr-2 fill-current" /> Play

@@ -8,7 +8,7 @@ const JELLYFIN_URL = appConfig.JELLYFIN_URL || 'http://localhost:8096';
 
 // Create an axios instance with a timeout to prevent hanging requests
 export const apiClient = axios.create({
-  timeout: 60000, // 60 seconds
+  timeout: 10000, // 10 seconds — filters use withFilterTimeout as safety net
 });
 
 export const getJellyfinUrl = (path: string, customBaseUrl?: string) => {

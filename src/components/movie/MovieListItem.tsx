@@ -143,7 +143,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           )}
 
           <div className="flex gap-2">
-            {capabilities.requiresServerUrl && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
+            {capabilities.requiresServerUrl && !sessionStatus?.isGuest && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"

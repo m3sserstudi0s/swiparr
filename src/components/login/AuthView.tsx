@@ -102,6 +102,7 @@ interface AuthViewProps {
   providerLock: boolean;
   serverUrl: string;
   setServerUrl: (val: string) => void;
+  serverUrlPlaceholder?: string;
   username: string;
   setUsername: (val: string) => void;
   password: string;
@@ -128,6 +129,8 @@ interface AuthViewProps {
   plexPinCode?: string | null;
   setPlexPinCode?: (val: string | null) => void;
   plexAuthUrl?: string | null;
+  rememberMe?: boolean;
+  setRememberMe?: (val: boolean) => void;
 }
 
 
@@ -136,6 +139,7 @@ export function AuthView({
   providerLock,
   serverUrl,
   setServerUrl,
+  serverUrlPlaceholder,
   username,
   setUsername,
   password,
@@ -162,6 +166,8 @@ export function AuthView({
   plexPinCode,
   setPlexPinCode,
   plexAuthUrl,
+  rememberMe,
+  setRememberMe,
 }: AuthViewProps) {
 
   const providerName = provider[0].toUpperCase() + provider.substring(1);
@@ -212,11 +218,13 @@ export function AuthView({
             {!providerLock && (
               <Input
                 placeholder={
-                  provider === ProviderType.JELLYFIN
-                    ? "Jellyfin Server URL"
-                    : provider === ProviderType.EMBY
-                    ? "Emby Server URL"
-                    : "Plex Server URL (optional)"
+                  serverUrlPlaceholder || (
+                    provider === ProviderType.JELLYFIN
+                      ? "Jellyfin Server URL"
+                      : provider === ProviderType.EMBY
+                      ? "Emby Server URL"
+                      : "Plex Server URL (optional)"
+                  )
                 }
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
@@ -248,6 +256,20 @@ export function AuthView({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+
+                {setRememberMe && (
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe || false}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 rounded border-border bg-muted accent-primary"
+                    />
+                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                      Remember me
+                    </span>
+                  </label>
+                )}
 
                 <Button type="submit" className="w-full mt-2 font-semibold" disabled={loading}>
                   {loading ? "Connecting..." : "Log in"}

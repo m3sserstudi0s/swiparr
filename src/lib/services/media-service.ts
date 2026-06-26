@@ -730,6 +730,13 @@ export class MediaService {
     return provider.getLibraries(auth);
   }
 
+  /**
+   * In-memory cache: once a filter request times out for a provider,
+   * subsequent requests skip the API and use static defaults directly.
+   * Resets on process restart (cold start → fresh attempt).
+   */
+  private static readonly slowProviders = new Set<string>();
+
   private static readonly FILTER_TIMEOUT_MS = 15_000;
 
   /** Race a promise against a timeout. Returns `{ value, timedOut }`. */
@@ -749,13 +756,18 @@ export class MediaService {
       Value: 1900 + i,
     })).reverse();
 
-    if (getRuntimeConfig().useStaticFilters) {
+    const auth = await AuthService.getEffectiveCredentials(session);
+    const providerKey = auth.provider || "jellyfin";
+
+    // If this provider was already detected as slow, skip the API call entirely
+    if (MediaService.slowProviders.has(providerKey)) {
       return { data: staticYears, timedOut: false };
     }
-    const auth = await AuthService.getEffectiveCredentials(session);
+
     const provider = getMediaProvider(auth.provider);
     const { value, timedOut } = await MediaService.withFilterTimeout(provider.getYears(auth));
     if (timedOut || !value || value.length === 0) {
+      if (timedOut) MediaService.slowProviders.add(providerKey);
       logger.debug("[MediaService.getYears] Serving static year filters")
       return { data: staticYears, timedOut };
     }
@@ -766,10 +778,13 @@ export class MediaService {
     const { DEFAULT_RATINGS } = await import("@/lib/constants");
     const staticRatings = DEFAULT_RATINGS.map(r => ({ Name: r, Value: r }));
 
-    if (getRuntimeConfig().useStaticFilters) {
+    const auth = await AuthService.getEffectiveCredentials(session);
+    const providerKey = auth.provider || "jellyfin";
+
+    if (MediaService.slowProviders.has(providerKey)) {
       return { data: staticRatings, timedOut: false };
     }
-    const auth = await AuthService.getEffectiveCredentials(session);
+
     const provider = getMediaProvider(auth.provider);
 
     if (regionOverride) {
@@ -778,6 +793,7 @@ export class MediaService {
 
     const { value, timedOut } = await MediaService.withFilterTimeout(provider.getRatings(auth));
     if (timedOut || !value || value.length === 0) {
+      if (timedOut) MediaService.slowProviders.add(providerKey);
       logger.debug("[MediaService.getRatings] Serving static maturity rating filters")
       return { data: staticRatings, timedOut };
     }
@@ -787,13 +803,17 @@ export class MediaService {
   static async getGenres(session: SessionData): Promise<{ data: { Id: string; Name: string }[]; timedOut: boolean }> {
     const { DEFAULT_GENRES } = await import("@/lib/constants");
 
-    if (getRuntimeConfig().useStaticFilters) {
+    const auth = await AuthService.getEffectiveCredentials(session);
+    const providerKey = auth.provider || "jellyfin";
+
+    if (MediaService.slowProviders.has(providerKey)) {
       return { data: DEFAULT_GENRES, timedOut: false };
     }
-    const auth = await AuthService.getEffectiveCredentials(session);
+
     const provider = getMediaProvider(auth.provider);
     const { value, timedOut } = await MediaService.withFilterTimeout(provider.getGenres(auth));
     if (timedOut || !value || value.length === 0) {
+      if (timedOut) MediaService.slowProviders.add(providerKey);
       logger.debug("[MediaService.getGenres] Serving static genres filters")
       return { data: DEFAULT_GENRES, timedOut };
     }

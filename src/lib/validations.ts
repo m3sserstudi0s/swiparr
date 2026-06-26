@@ -6,6 +6,7 @@ export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().optional(),
   provider: z.string().optional(),
+  rememberMe: z.boolean().optional(),
   config: z.object({
     serverUrl: z.string().optional().refine((value) => {
       if (!value) return true;

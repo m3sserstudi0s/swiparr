@@ -24,7 +24,7 @@ import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
 
 
 export default function LoginContent() {
-  const { capabilities: initialCapabilities, basePath, provider, providerLock } = useRuntimeConfig();
+  const { capabilities: initialCapabilities, basePath, provider, providerLock, providerUrls } = useRuntimeConfig();
 
   const [selectedProvider, setSelectedProvider] = useState<string>(provider);
 
@@ -32,12 +32,26 @@ export default function LoginContent() {
     if (providerLock) return initialCapabilities;
     return PROVIDER_CAPABILITIES[selectedProvider as ProviderType] || initialCapabilities;
   }, [selectedProvider, providerLock, initialCapabilities]);
+
+  // Pre-fill the server URL placeholder with the admin-configured env var for the selected provider
+  const serverUrlPlaceholder = useMemo(() => {
+    if (providerLock) return '';
+    const urls = providerUrls;
+    if (!urls) return '';
+    switch (selectedProvider) {
+      case ProviderType.JELLYFIN: return urls.jellyfin;
+      case ProviderType.EMBY:     return urls.emby;
+      case ProviderType.PLEX:     return urls.plex;
+      default:                    return '';
+    }
+  }, [selectedProvider, providerLock, providerUrls]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [serverUrl, setServerUrl] = useState("");
   const [tmdbToken, setTmdbToken] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestSessionCode, setGuestSessionCode] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -172,7 +186,8 @@ export default function LoginContent() {
         password,
         provider: providerLock ? undefined : selectedProvider,
         config: providerLock ? undefined : config,
-        profilePicture: profilePicture || undefined
+        profilePicture: profilePicture || undefined,
+        rememberMe: rememberMe || undefined
       });
       return res.data;
 
@@ -353,6 +368,7 @@ export default function LoginContent() {
                   providerLock={providerLock}
                   serverUrl={serverUrl}
                   setServerUrl={setServerUrl}
+                  serverUrlPlaceholder={serverUrlPlaceholder}
                   username={username}
                   setUsername={setUsername}
                   password={password}
@@ -379,6 +395,8 @@ export default function LoginContent() {
                   plexPinCode={plexPinCode}
                   setPlexPinCode={setPlexPinCode}
                   plexAuthUrl={plexAuthUrl}
+                  rememberMe={rememberMe}
+                  setRememberMe={setRememberMe}
                 />
               )}
 
