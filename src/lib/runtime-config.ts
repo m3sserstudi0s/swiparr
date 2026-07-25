@@ -30,6 +30,20 @@ export interface RuntimeConfig {
 
 
 /**
+ * Capabilities for a provider, adjusted for instance-level configuration.
+ * Jellyfin gains streaming settings (hybrid deck: library + TMDB streaming
+ * catalogs) when a TMDB access token is configured. Server-side only source
+ * of truth - the client receives the result via window.__SWIPARR_CONFIG__.
+ */
+export function getEffectiveCapabilities(provider: ProviderType): ProviderCapabilities {
+  const base = PROVIDER_CAPABILITIES[provider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
+  if (provider === ProviderType.JELLYFIN && !!config.TMDB_ACCESS_TOKEN) {
+    return { ...base, hasStreamingSettings: true };
+  }
+  return base;
+}
+
+/**
  * Shared logic to get the config.
  * In the browser, it retrieves from window.__SWIPARR_CONFIG__.
  * On the server, it uses env vars.
@@ -40,7 +54,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
   }
 
   const provider = (overrides?.provider || config.app.provider) as ProviderType;
-  const capabilities = PROVIDER_CAPABILITIES[provider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
+  const capabilities = getEffectiveCapabilities(provider);
 
   const providerLock = config.app.providerLock;
   

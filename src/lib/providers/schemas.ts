@@ -50,6 +50,7 @@ export const JellyfinItemSchema = z.object({
   ProductionLocations: z.array(z.string()).optional(),
   ImageTags: z.record(z.string(), z.string()).optional(),
   BackdropImageTags: z.array(z.string()).optional(),
+  ProviderIds: z.record(z.string(), z.string()).optional(),
   UserData: z.object({
     IsFavorite: z.boolean().optional(),
     Likes: z.boolean().optional(),
