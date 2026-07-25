@@ -239,11 +239,26 @@ export class TmdbProvider implements MediaProvider {
         this.apiKey = auth.tmdbToken;
     }
     const data = await this.fetchTmdb<any>('watch/providers/movie', { watch_region: region });
-    return data.results.map((p: any) => ({
+    const providers: WatchProvider[] = data.results.map((p: any) => ({
       Id: p.provider_id.toString(),
       Name: p.provider_name,
       LogoPath: p.logo_path.startsWith('/') ? p.logo_path : `/${p.logo_path}`,
     }));
+
+    // Deployment-level allowlist (TMDB_ALLOWED_WATCH_PROVIDERS): comma-separated,
+    // case-insensitive substring match ("prime" matches "Amazon Prime Video").
+    // Unset = full TMDB list. Single choke point: settings UI, filter drawer,
+    // and hybrid deck metadata all consume this method.
+    const allowlist = (appConfig.TMDB_ALLOWED_WATCH_PROVIDERS || "")
+      .split(",")
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean);
+    if (allowlist.length === 0) return providers;
+
+    return providers.filter((p) => {
+      const name = p.Name.toLowerCase();
+      return allowlist.some((entry) => name.includes(entry));
+    });
   }
 
   async getRegions(auth?: AuthContext): Promise<MediaRegion[]> {

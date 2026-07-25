@@ -167,6 +167,7 @@ PLEX_PUBLIC_URL=https://plex.example.com # Public URL (optional)
 PROVIDER=tmdb
 TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
 TMDB_DEFAULT_REGION=SE                # Default region for availability/certifications (optional)
+TMDB_ALLOWED_WATCH_PROVIDERS=netflix,prime,disney  # Limit selectable streaming services (optional)
 ```
 </details>
 
@@ -225,6 +226,7 @@ USE_STATIC_FILTERS=false                     # Skip dynamic filter fetching; use
 | `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
 | `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
 | `TMDB_DEFAULT_REGION` | ❌ | `SE` | Default TMDB region (ISO 3166-1) for streaming availability/certifications |
+| `TMDB_ALLOWED_WATCH_PROVIDERS` | ❌ | - | Comma-separated allowlist of selectable streaming services (case-insensitive substring match, e.g. `netflix,prime,disney,apple tv`). Unset = full TMDB list |
 | `AUTH_SECRET` | ❌ | Auto-generated on boot/build | Secret used for session encryption and guest lending token encryption (min 32 chars). See Security & Privacy. |
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |

@@ -28,11 +28,19 @@ export class HybridDeckService {
       this.getProviderMeta(tmdbProvider, watchRegion, auth),
     ]);
 
+    // Saved selections may predate a TMDB_ALLOWED_WATCH_PROVIDERS allowlist -
+    // ids without metadata were filtered out and must not feed the deck.
+    // Skip the guard when the metadata fetch itself failed (empty map), so a
+    // TMDB hiccup doesn't silently drop the whole streaming leg.
+    const activeServiceIds = providerMeta.size > 0
+      ? watchProviders.filter((id) => providerMeta.has(id))
+      : watchProviders;
+
     // Crawl discover once per selected service (not one union call): only a
     // per-service crawl can attribute each title to the services carrying it.
     const streaming = new Map<string, { item: MediaItem; serviceIds: Set<string> }>();
     await Promise.all(
-      watchProviders.map(async (serviceId) => {
+      activeServiceIds.map(async (serviceId) => {
         const items = await this.fetchServiceCatalog(tmdbProvider, auth, sessionFilters, serviceId, watchRegion);
         for (const item of items) {
           const existing = streaming.get(item.Id);
