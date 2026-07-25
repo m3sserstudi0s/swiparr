@@ -37,6 +37,7 @@ const envSchema = z.object({
   // Provider Specific
   TMDB_ACCESS_TOKEN: z.string().optional(),
   TMDB_DEFAULT_REGION: z.string().optional(),
+  TMDB_ALLOWED_WATCH_PROVIDERS: z.string().optional(),
   PLEX_TOKEN: z.string().optional(),
 
   // UI / Proxy

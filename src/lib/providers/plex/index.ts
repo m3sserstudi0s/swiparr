@@ -1,11 +1,12 @@
 import { config as appConfig } from "@/lib/config";
-import { 
-  MediaProvider, 
-  ProviderCapabilities, 
-  SearchFilters, 
+import {
+  MediaProvider,
+  ProviderCapabilities,
+  SearchFilters,
   AuthContext,
   ImageResponse,
-  ProviderType
+  ProviderType,
+  PROVIDER_CAPABILITIES
 } from "../types";
 
 import { 
@@ -30,17 +31,7 @@ import { DEFAULT_THEMES } from "@/lib/constants";
 export class PlexProvider implements MediaProvider {
   readonly name = ProviderType.PLEX;
   
-  readonly capabilities: ProviderCapabilities = {
-    hasAuth: true,
-    hasQuickConnect: false,
-    hasWatchlist: true,
-    hasLibraries: true,
-    hasSettings: true,
-    requiresServerUrl: true,
-    isExperimental: false,
-    hasStreamingSettings: false,
-    isAdminPanel: true,
-  };
+  readonly capabilities: ProviderCapabilities = PROVIDER_CAPABILITIES[ProviderType.PLEX];
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     const token = auth?.accessToken || appConfig.PLEX_TOKEN;

@@ -9,6 +9,7 @@ import { db, userProfiles } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { ProviderType } from "@/lib/providers/types";
+import { resolveItemSource } from "@/lib/providers/item-source";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,11 +47,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   // Always derive the provider from the authenticated session — never from a
   // client-supplied query parameter — to prevent provider-confusion attacks (M4).
-  const providerType = auth?.provider;
+  // The tmdb: prefix (hybrid streaming-only items) is safe: it can only ever
+  // select TMDB, which uses the server's env token, never user credentials.
+  const { providerType, externalId } = isUserType
+    ? { providerType: auth?.provider, externalId: id }
+    : resolveItemSource(id, auth?.provider);
   const provider = getMediaProvider(providerType);
 
   // If no tag is provided, some providers (like TMDB) might use the ID if it looks like a path
-  const effectiveTag = tag || (providerType === ProviderType.TMDB ? id : undefined);
+  const effectiveTag = tag || (providerType === ProviderType.TMDB ? externalId : undefined);
 
   if (!effectiveTag && !isUserType && providerType === ProviderType.TMDB) {
     return new NextResponse("Missing image tag", { status: 400 });
@@ -58,7 +63,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   if ((providerType === ProviderType.PLEX || provider?.name === ProviderType.PLEX) && effectiveTag && effectiveTag.startsWith("http")) {
     try {
-      provider.getImageUrl(id, isUserType ? "user" : (imageType as any), effectiveTag, auth);
+      provider.getImageUrl(externalId, isUserType ? "user" : (imageType as any), effectiveTag, auth);
     } catch (e: any) {
       return new NextResponse("External image host not allowed", { status: 400 });
     }
@@ -72,7 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
     });
 
-    const response = await provider.fetchImage(id, isUserType ? "user" : imageType, effectiveTag || undefined, auth, options);
+    const response = await provider.fetchImage(externalId, isUserType ? "user" : imageType, effectiveTag || undefined, auth, options);
 
     return new NextResponse(response.data as any, {
       status: 200,

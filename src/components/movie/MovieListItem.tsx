@@ -11,6 +11,7 @@ import { MergedLike } from "@/types";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useMovieActions } from "@/hooks/use-movie-actions";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
+import { isTmdbSourcedId } from "@/lib/providers/item-source";
 import { useSession } from "@/hooks/api";
 
 
@@ -39,6 +40,8 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
   } = useMovieActions(movie, { isLiked, includeUserState: true });
 
   const currentMovie = syncedMovie ? { ...movie, ...syncedMovie } : movie;
+  // Hybrid decks contain tmdb:-prefixed streaming-only items: no play link, no watchlist
+  const isStreamingOnly = isTmdbSourcedId(currentMovie.Id);
   const activeProvider = sessionStatus?.provider || runtimeProvider;
   const detailsUrl = getProviderDetailsUrl({
     provider: activeProvider,
@@ -143,7 +146,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           )}
 
           <div className="flex gap-2">
-            {capabilities.requiresServerUrl && !sessionStatus?.isGuest && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
+            {capabilities.requiresServerUrl && !sessionStatus?.isGuest && !isStreamingOnly && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"
@@ -175,7 +178,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 </span>
               )}
             </div>}
-            {!sessionStatus?.isGuest && capabilities.hasAuth && capabilities.hasWatchlist && (
+            {!sessionStatus?.isGuest && capabilities.hasAuth && capabilities.hasWatchlist && !isStreamingOnly && (
               <Button
                 size="sm"
                 variant="ghost"

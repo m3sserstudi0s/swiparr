@@ -91,7 +91,9 @@ export const quickConnectSchema = z.object({
   secret: z.string().min(1),
 });
 
+// Empty watchProviders is valid: in hybrid mode it means "library only",
+// in TMDB mode it means "no streaming-service filter".
 export const userSettingsSchema = z.object({
-  watchProviders: z.array(z.string()).min(1, "At least one streaming service must be selected"),
+  watchProviders: z.array(z.string()),
   watchRegion: z.string().min(2).max(2),
 });

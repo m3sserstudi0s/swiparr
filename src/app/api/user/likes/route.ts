@@ -9,6 +9,7 @@ import { EventService } from "@/lib/services/event-service";
 import { EVENT_TYPES } from "@/lib/events";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { resolveItemSource } from "@/lib/providers/item-source";
 import { handleApiError } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 
@@ -44,8 +45,14 @@ export async function GET(request: NextRequest) {
     const itemsMap = new Map<string, MediaItem>();
     await Promise.all(ids.map(async (id: string) => {
         try {
-            const item = await provider.getItemDetails(id, auth, { includeUserState: true });
-            if (item) itemsMap.set(id, item);
+            // Hybrid decks store tmdb:-prefixed ids for streaming-only items
+            const { providerType, externalId } = resolveItemSource(id, auth.provider);
+            const itemProvider = providerType === auth.provider ? provider : getMediaProvider(providerType);
+            const item = await itemProvider.getItemDetails(externalId, auth, { includeUserState: true });
+            if (item) {
+                item.Id = id; // keep the prefixed id so DB rows keep matching
+                itemsMap.set(id, item);
+            }
         } catch (error) {
             logger.error(`Failed to fetch details for ${id}`, error);
         }

@@ -7,6 +7,10 @@ import { db, likes, sessionMembers } from "@/lib/db";
 import { eq, and, isNull, or } from "drizzle-orm";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
+import { ProviderType } from "@/lib/providers/types";
+import { resolveItemSource, isTmdbSourcedId, getTmdbProviderId } from "@/lib/providers/item-source";
+import { getEffectiveCapabilities } from "@/lib/runtime-config";
+import { logger } from "@/lib/logger";
 import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,8 +32,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const auth = await AuthService.getEffectiveCredentials(session);
-    const provider = getMediaProvider(auth.provider);
-    const item = await provider.getItemDetails(id, auth, { includeUserState });
+    // Hybrid decks contain tmdb:-prefixed streaming-only items - dispatch those to TMDB
+    const { providerType, externalId } = resolveItemSource(id, auth.provider || ProviderType.JELLYFIN);
+    const provider = getMediaProvider(providerType);
+    const item = await provider.getItemDetails(externalId, auth, { includeUserState });
+    // Keep the prefixed id: likes/swipes/undo on the client are keyed by it
+    item.Id = id;
+
+    const hybridCapable = auth.provider === ProviderType.JELLYFIN
+      && getEffectiveCapabilities(ProviderType.JELLYFIN).hasStreamingSettings;
+
+    if (isTmdbSourcedId(id)) {
+      item.InLibrary = false;
+    } else if (hybridCapable) {
+      item.InLibrary = true;
+      // Enrich library items with streaming availability (one TMDB call, non-fatal)
+      const tmdbId = getTmdbProviderId(item);
+      if (tmdbId) {
+        try {
+          const tmdbDetails = await getMediaProvider(ProviderType.TMDB).getItemDetails(tmdbId, auth);
+          item.WatchProviders = tmdbDetails.WatchProviders;
+        } catch (error) {
+          logger.debug("Failed to enrich library item with TMDB watch providers:", error);
+        }
+      }
+    }
 
     const itemLikes = await db.select().from(likes).where(and(
         eq(likes.externalId, id),
@@ -67,7 +94,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Add sessionCode to the item so the UI knows the context it was fetched for
     (item as any).sessionCode = targetSessionCode;
 
-    item.BlurDataURL = await provider.getBlurDataUrl(id, "Primary", auth);
+    item.BlurDataURL = await provider.getBlurDataUrl(externalId, "Primary", auth);
 
     if (!includeUserState && item.UserData) {
       item.UserData = undefined;

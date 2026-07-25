@@ -4,8 +4,8 @@ import { getSessionOptions } from "@/lib/session";
 import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { sessionActionSchema, sessionSettingsSchema } from "@/lib/validations";
-import { getMediaProvider } from "@/lib/providers/factory";
 import { ProviderType } from "@/lib/providers/types";
+import { getEffectiveCapabilities } from "@/lib/runtime-config";
 import { SessionService } from "@/lib/services/session-service";
 import { AuthService, GuestKickedError } from "@/lib/services/auth-service";
 import { ConfigService } from "@/lib/services/config-service";
@@ -141,7 +141,7 @@ export async function GET() {
     filters,
     settings,
     provider: activeProvider,
-    capabilities: getMediaProvider(activeProvider).capabilities,
+    capabilities: getEffectiveCapabilities(activeProvider as ProviderType),
     serverUrl: activeServerUrl,
     machineId: activeMachineId,
     settingsHash,
