@@ -7,6 +7,7 @@ import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { handleApiError } from "@/lib/api-utils";
 import { ProviderType } from "@/lib/providers/types";
+import { isTmdbSourcedId } from "@/lib/providers/item-source";
 import { watchlistSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
@@ -24,6 +25,11 @@ export async function POST(request: NextRequest) {
   const { itemId, action, useWatchlist } = validated.data;
 
   if (!itemId) return new NextResponse("Missing itemId", { status: 400 });
+
+  // Streaming-only items (hybrid deck) don't exist on the media server
+  if (isTmdbSourcedId(itemId)) {
+    return NextResponse.json({ error: "Not available in your library" }, { status: 400 });
+  }
 
   try {
     const auth = await AuthService.getEffectiveCredentials(session);

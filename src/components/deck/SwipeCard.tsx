@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Clock, Percent } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { SourceBadges } from "./SourceBadges";
 import { cn, ticksToTime } from "@/lib/utils";
 
 
@@ -144,6 +145,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                       {ticksToTime(item.RunTimeTicks)}
                     </Badge>
                   )}
+                  <SourceBadges item={item} />
                 </div>
                 <p className="line-clamp-3 text-sm text-neutral-400">
                   {item.Overview}

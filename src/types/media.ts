@@ -42,6 +42,8 @@ export interface MediaItem {
     Played?: boolean;
   };
   BlurDataURL?: string;
+  ProviderIds?: Record<string, string>;
+  InLibrary?: boolean;
   WatchProviders?: WatchProvider[];
   likedBy?: {
     userId: string;

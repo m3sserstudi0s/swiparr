@@ -1,10 +1,11 @@
-import { 
-  MediaProvider, 
-  ProviderCapabilities, 
-  SearchFilters, 
+import {
+  MediaProvider,
+  ProviderCapabilities,
+  SearchFilters,
   AuthContext,
   ImageResponse,
-  ProviderType
+  ProviderType,
+  PROVIDER_CAPABILITIES
 } from "../types";
 
 import { 
@@ -27,17 +28,7 @@ import { DEFAULT_THEMES } from "@/lib/constants";
 export class JellyfinProvider implements MediaProvider {
   readonly name = ProviderType.JELLYFIN;
   
-  readonly capabilities: ProviderCapabilities = {
-    hasAuth: true,
-    hasQuickConnect: true,
-    hasWatchlist: true,
-    hasLibraries: true,
-    hasSettings: true,
-    requiresServerUrl: true,
-    isExperimental: false,
-    hasStreamingSettings: true,
-    isAdminPanel: true
-  };
+  readonly capabilities: ProviderCapabilities = PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     // If multiple libraries are selected, we need to fetch from each one and merge
@@ -70,7 +61,7 @@ export class JellyfinProvider implements MediaProvider {
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams",
+      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams,ProviderIds",
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Trending" ? "CommunityRating" :
               filters.sortBy === "Popular" ? "CommunityRating" :
@@ -310,6 +301,7 @@ export class JellyfinProvider implements MediaProvider {
       })),
       ImageTags: item.ImageTags,
       BackdropImageTags: item.BackdropImageTags,
+      ProviderIds: item.ProviderIds,
       UserData: item.UserData ? {
         IsFavorite: item.UserData.IsFavorite,
         Likes: item.UserData.Likes,

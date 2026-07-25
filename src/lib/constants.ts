@@ -111,4 +111,9 @@ export const POPULAR_TMDB_WATCH_PROVIDER_NAMES = [
 
 export const ALLOWED_DEFAULT_PLEX_IMAGE_URL = "https://metadata-static.plex.tv";
 
+// Hybrid deck (library provider + TMDB streaming catalogs)
+export const TMDB_ID_PREFIX = "tmdb:";
+export const HYBRID_MONETIZATION_TYPES = "flatrate|free|ads";
+export const HYBRID_TMDB_MAX_PAGES_PER_PROVIDER = 15;
+
 export const DEFAULT_LANGUAGES = ["en"]; // English default for selection highlighting

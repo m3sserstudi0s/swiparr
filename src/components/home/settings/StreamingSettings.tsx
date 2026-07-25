@@ -142,11 +142,6 @@ export function StreamingSettings() {
     };
 
     const saveSettings = async (region: MediaRegion | null = selectedRegion) => {
-        if (selectedProviders.length === 0) {
-            toast.error("At least one streaming service must be selected");
-            return;
-        }
-
         toast.promise(updateSettingsMutation.mutateAsync({
             watchRegion: region?.Id || tmdbDefaultRegion,
             watchProviders: selectedProviders,
@@ -171,7 +166,6 @@ export function StreamingSettings() {
     }
 
     const handleSaveSelectedRegion = (region: MediaRegion | null) => {
-        console.log("Selected region:", region);
         setSelectedRegion(region);
         saveSettings(region);
     }

@@ -8,8 +8,10 @@ import { ProviderType } from "@/lib/providers/types";
 import { AuthService } from "./auth-service";
 import { ConfigService } from "./config-service";
 import { deckCache } from "./deck-cache";
+import { HybridDeckService } from "./hybrid-deck-service";
 import { logger } from "@/lib/logger";
-import { getRuntimeConfig } from "@/lib/runtime-config";
+import { getRuntimeConfig, getEffectiveCapabilities } from "@/lib/runtime-config";
+import { resolveItemSource } from "@/lib/providers/item-source";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
@@ -60,6 +62,7 @@ export class MediaService {
     }
 
     const { watchProviders, watchRegion } = await this.resolveWatchProviders(session, sessionFilters, auth, activeProviderName);
+    const hybrid = this.isHybridActive(activeProviderName, watchProviders);
     const defaultSort = activeProviderName === ProviderType.TMDB ? "Popular" : "Trending";
 
     // 3. Handle Search
@@ -76,10 +79,24 @@ export class MediaService {
 
     // 4. Handle Session vs Solo Mode
     if (session.sessionCode) {
-      return this.getSessionItems(session.sessionCode, sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset);
+      return this.getSessionItems(session.sessionCode, sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset, hybrid);
     } else {
-      return this.getSoloItems(sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset);
+      return this.getSoloItems(sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset, hybrid);
     }
+  }
+
+  /**
+   * Hybrid deck = library provider (Jellyfin) + TMDB streaming catalogs.
+   * Capable when the instance has a TMDB token; active once the user/session
+   * has at least one streaming service selected.
+   */
+  private static isHybridCapable(providerName: string): boolean {
+    return providerName === ProviderType.JELLYFIN
+      && getEffectiveCapabilities(ProviderType.JELLYFIN).hasStreamingSettings;
+  }
+
+  private static isHybridActive(providerName: string, watchProviders: string[] | undefined): boolean {
+    return this.isHybridCapable(providerName) && !!watchProviders?.length;
   }
 
   private static async resolveWatchProviders(session: SessionData, sessionFilters: Filters | null, auth: any, activeProviderName: string) {
@@ -87,7 +104,7 @@ export class MediaService {
     const { tmdbDefaultRegion } = getRuntimeConfig();
     let watchRegion = sessionFilters?.watchRegion || auth.watchRegion || tmdbDefaultRegion;
 
-    if (session.sessionCode && activeProviderName === ProviderType.TMDB) {
+    if (session.sessionCode && (activeProviderName === ProviderType.TMDB || this.isHybridCapable(activeProviderName))) {
       const accumulated = new Set<string>();
       const sessionMembersList = await db.query.sessionMembers.findMany({
         where: eq(sessionMembers.sessionCode, session.sessionCode)
@@ -126,13 +143,24 @@ export class MediaService {
     return { watchProviders, watchRegion };
   }
 
-  private static async getSessionItems(sessionCode: string, sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
+  private static async getSessionItems(sessionCode: string, sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number, hybrid: boolean = false) {
     const sortBy = sessionFilters?.sortBy || (auth.provider === ProviderType.TMDB ? "Popular" : "Trending");
 
-    // Handle deterministic Random sort for group sessions
-    if (sortBy === "Random") {
+    // Handle deterministic Random sort for group sessions.
+    // Hybrid decks always take this path: merging two backends with
+    // incompatible pagination only works on a full, seeded-shuffled deck.
+    if (sortBy === "Random" || hybrid) {
+      const currentSession = await db.query.sessions.findFirst({
+        where: eq(sessions.code, sessionCode)
+      });
+
+      if (!currentSession) {
+        throw new Error("Session not found");
+      }
+
+      // Use session's random seed, fallback to code if not present (backwards compatibility)
       return this.getDeterministicRandomItems(
-        sessionCode,
+        { cacheKey: sessionCode, seed: currentSession.randomSeed || sessionCode },
         sessionFilters,
         auth,
         provider,
@@ -141,7 +169,8 @@ export class MediaService {
         watchProviders,
         watchRegion,
         page,
-        limit
+        limit,
+        hybrid
       );
     }
 
@@ -259,7 +288,7 @@ export class MediaService {
   }
 
   private static async getDeterministicRandomItems(
-    sessionCode: string,
+    scope: { cacheKey: string; seed: string },
     sessionFilters: Filters | null,
     auth: any,
     provider: any,
@@ -268,19 +297,12 @@ export class MediaService {
     watchProviders: string[] | undefined,
     watchRegion: string,
     page: number,
-    limit: number
+    limit: number,
+    hybrid: boolean = false
   ): Promise<{ items: MediaItem[]; hasMore: boolean }> {
-    // Get session for random seed
-    const session = await db.query.sessions.findFirst({
-      where: eq(sessions.code, sessionCode)
-    });
-
-    if (!session) {
-      throw new Error("Session not found");
-    }
-
-    // Use session's random seed, fallback to code if not present (backwards compatibility)
-    const randomSeed = session.randomSeed || sessionCode;
+    const randomSeed = scope.seed;
+    // Hybrid decks must not collide with pure-provider cache entries
+    const cacheProvider = hybrid ? "hybrid" : auth.provider;
 
     // Build filter object for cache key
     const filterKey = {
@@ -302,18 +324,19 @@ export class MediaService {
 
     // Check cache first
     const filtersHash = this.generateFiltersHash(filterKey);
-    let cached = deckCache.getCachedDeck(sessionCode, auth.provider, filterKey);
+    let cached = deckCache.getCachedDeck(scope.cacheKey, cacheProvider, filterKey);
 
     if (!cached) {
       // Build the full deck by fetching all items
-      logger.info(`Building deterministic deck for session ${sessionCode} with seed ${randomSeed}`);
+      logger.info(`Building deterministic deck for ${scope.cacheKey} with seed ${randomSeed}`);
       const allItems = await this.fetchAllItemsForDeck(
         provider,
         auth,
         includedLibraries,
         sessionFilters,
         watchProviders,
-        watchRegion
+        watchRegion,
+        hybrid
       );
 
       // Filter out any undefined/null items
@@ -339,9 +362,9 @@ export class MediaService {
         itemsById.set(item.Id, item);
       }
       if (invalidCount > 0) {
-        logger.warn(`Filtered ${invalidCount} invalid items while building deck for session ${sessionCode}`);
+        logger.warn(`Filtered ${invalidCount} invalid items while building deck for ${scope.cacheKey}`);
       }
-      deckCache.setCachedDeck(sessionCode, auth.provider, filterKey, orderedIds, itemsById);
+      deckCache.setCachedDeck(scope.cacheKey, cacheProvider, filterKey, orderedIds, itemsById);
 
       cached = { orderedIds, itemsById };
       logger.info(`Deck built with ${orderedIds.length} items`);
@@ -349,8 +372,8 @@ export class MediaService {
 
     // Get paginated results excluding already swiped items
     const result = deckCache.getPaginatedItems(
-      sessionCode,
-      auth.provider,
+      scope.cacheKey,
+      cacheProvider,
       filterKey,
       excludeIds,
       page,
@@ -362,9 +385,12 @@ export class MediaService {
       return { items: [], hasMore: false };
     }
 
-    // Load blur data for first item
+    // Load blur data for first item (hybrid decks mix tmdb:-prefixed ids)
     if (result.items.length > 0) {
-      result.items[0].BlurDataURL = await provider.getBlurDataUrl(result.items[0].Id, "Primary", auth);
+      const first = result.items[0];
+      const { providerType, externalId } = resolveItemSource(first.Id, auth.provider);
+      const blurProvider = providerType === auth.provider ? provider : getMediaProvider(providerType);
+      first.BlurDataURL = await blurProvider.getBlurDataUrl(externalId, "Primary", auth);
     }
 
     return {
@@ -395,10 +421,23 @@ export class MediaService {
     includedLibraries: string[],
     sessionFilters: Filters | null,
     watchProviders: string[] | undefined,
-    watchRegion: string
+    watchRegion: string,
+    hybrid: boolean = false
   ): Promise<MediaItem[]> {
     const providerName = auth.provider as ProviderType;
     const allItems: MediaItem[] = [];
+
+    if (hybrid) {
+      return HybridDeckService.fetchAllHybridItems({
+        tmdbProvider: getMediaProvider(ProviderType.TMDB),
+        auth,
+        sessionFilters,
+        watchProviders: watchProviders || [],
+        watchRegion,
+        fetchLibraryItems: () =>
+          this.fetchAllJellyfinEmbyItems(provider, auth, includedLibraries, sessionFilters, undefined, watchRegion),
+      });
+    }
 
     // Provider-specific fetching strategies
     if (providerName === ProviderType.JELLYFIN || providerName === ProviderType.EMBY) {
@@ -597,7 +636,26 @@ export class MediaService {
     return allItems;
   }
 
-  private static async getSoloItems(sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number) {
+  private static async getSoloItems(sessionFilters: Filters | null, auth: any, provider: any, excludeIds: Set<string>, includedLibraries: string[], watchProviders: string[] | undefined, watchRegion: string, page: number, limit: number, effectiveOffset: number, hybrid: boolean = false) {
+    // Hybrid solo decks use the deterministic path with a stable per-user
+    // scope: the deck order stays consistent across reloads and pagination.
+    if (hybrid) {
+      const soloScope = `solo:${auth.userId || "user"}`;
+      return this.getDeterministicRandomItems(
+        { cacheKey: soloScope, seed: soloScope },
+        sessionFilters,
+        auth,
+        provider,
+        excludeIds,
+        includedLibraries,
+        watchProviders,
+        watchRegion,
+        page,
+        limit,
+        true
+      );
+    }
+
     const soloYears = sessionFilters?.yearRange ? Array.from({ length: (sessionFilters.yearRange[1] ?? 2025) - (sessionFilters.yearRange[0] ?? 1900) + 1 }, (_, i) => (sessionFilters.yearRange?.[0] ?? 1900) + i) : undefined;
     
     // If we have filters but the provider might not support them all (like Plex), 
@@ -829,20 +887,31 @@ export class MediaService {
     const auth = await AuthService.getEffectiveCredentials(session);
     const provider = getMediaProvider(auth.provider);
     if (provider.getRegions) return provider.getRegions(auth);
+
+    // Hybrid-capable library providers get their regions from TMDB
+    const activeProvider = auth.provider || session.user.provider || ProviderType.JELLYFIN;
+    if (this.isHybridCapable(activeProvider)) {
+      const tmdbProvider = getMediaProvider(ProviderType.TMDB);
+      if (tmdbProvider.getRegions) return tmdbProvider.getRegions(auth);
+    }
     return [];
   }
 
   static async getWatchProviders(session: SessionData, region: string, sessionCode?: string | null, wantAll?: boolean) {
     const auth = await AuthService.getEffectiveCredentials(session);
-    const provider = getMediaProvider(auth.provider);
     const activeProvider = auth.provider || session.user.provider || ProviderType.JELLYFIN;
 
-    if (activeProvider !== ProviderType.TMDB) {
+    if (activeProvider !== ProviderType.TMDB && !this.isHybridCapable(activeProvider)) {
       return { providers: [] };
     }
 
+    // Hybrid-capable library providers fetch the streaming catalog metadata from TMDB
+    const provider = activeProvider === ProviderType.TMDB
+      ? getMediaProvider(auth.provider)
+      : getMediaProvider(ProviderType.TMDB);
+
     if (!provider.getWatchProviders) return { providers: [] };
-    
+
     const allProviders = await provider.getWatchProviders(region, auth);
     const { POPULAR_TMDB_WATCH_PROVIDER_NAMES } = await import("@/lib/constants");
     const popularNames = POPULAR_TMDB_WATCH_PROVIDER_NAMES.map((name) => name.toLowerCase());

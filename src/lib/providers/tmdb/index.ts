@@ -1,12 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import { config as appConfig } from "@/lib/config";
-import { 
-  MediaProvider, 
-  ProviderCapabilities, 
-  SearchFilters, 
+import {
+  MediaProvider,
+  ProviderCapabilities,
+  SearchFilters,
   AuthContext,
   ImageResponse,
-  ProviderType
+  ProviderType,
+  PROVIDER_CAPABILITIES
 } from "../types";
 import axios from "axios";
 import { 
@@ -32,17 +33,7 @@ export class TmdbProvider implements MediaProvider {
   readonly name = ProviderType.TMDB;
   private apiKey: string;
   
-  readonly capabilities: ProviderCapabilities = {
-    hasAuth: false,
-    hasQuickConnect: false,
-    hasWatchlist: false,
-    hasLibraries: false,
-    hasSettings: true,
-    requiresServerUrl: false,
-    isExperimental: false,
-    hasStreamingSettings: true,
-    isAdminPanel: false,
-  };
+  readonly capabilities: ProviderCapabilities = PROVIDER_CAPABILITIES[ProviderType.TMDB];
 
   constructor(token?: string) {
     this.apiKey = token || appConfig.TMDB_ACCESS_TOKEN || '';
@@ -126,7 +117,7 @@ export class TmdbProvider implements MediaProvider {
 
     if (filters.watchProviders && filters.watchProviders.length > 0) {
         discoverParams.with_watch_providers = filters.watchProviders.join('|');
-        discoverParams.with_watch_monetization_types = 'flatrate|free|ads|rent|buy';
+        discoverParams.with_watch_monetization_types = filters.watchMonetizationTypes || 'flatrate|free|ads|rent|buy';
         if (filters.watchRegion || auth?.watchRegion) {
             discoverParams.watch_region = filters.watchRegion || auth?.watchRegion;
         }

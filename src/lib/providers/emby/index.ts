@@ -1,10 +1,11 @@
-import { 
-  MediaProvider, 
-  ProviderCapabilities, 
-  SearchFilters, 
+import {
+  MediaProvider,
+  ProviderCapabilities,
+  SearchFilters,
   AuthContext,
   ImageResponse,
-  ProviderType
+  ProviderType,
+  PROVIDER_CAPABILITIES
 } from "../types";
 import { 
   MediaItem, 
@@ -25,17 +26,7 @@ import { DEFAULT_THEMES } from "@/lib/constants";
 export class EmbyProvider implements MediaProvider {
   readonly name = ProviderType.EMBY;
   
-  readonly capabilities: ProviderCapabilities = {
-    hasAuth: true,
-    hasQuickConnect: false,
-    hasWatchlist: true,
-    hasLibraries: true,
-    hasSettings: true,
-    requiresServerUrl: true,
-    isExperimental: false,
-    hasStreamingSettings: false,
-    isAdminPanel: true,
-  };
+  readonly capabilities: ProviderCapabilities = PROVIDER_CAPABILITIES[ProviderType.EMBY];
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     // If multiple libraries are selected, we need to fetch from each one and merge
