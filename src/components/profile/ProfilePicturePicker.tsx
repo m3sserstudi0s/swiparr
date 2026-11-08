@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Camera, X, Plus, Loader } from "lucide-react";
+import { Camera, X, Plus, CircleNotch } from "@phosphor-icons/react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -188,7 +188,7 @@ export function ProfilePicturePicker({
                 {/* Loading State Overlay */}
                 {isUploading && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 z-20">
-                        <Loader className="size-6 animate-spin text-primary" />
+                        <CircleNotch className="size-6 animate-spin text-primary" />
                     </div>
                 )}
 
@@ -196,7 +196,7 @@ export function ProfilePicturePicker({
                 {editable && (
                     <div 
                         className={cn(
-                            "absolute rounded-full flex items-center justify-center shadow-md transition-transform active:scale-95 z-30",
+                            "absolute rounded-full flex items-center justify-center transition-transform active:scale-95 z-30",
                             showRemoveButton ? "bg-background text-foreground" : "bg-primary text-primary-foreground",
                             buttonSizeClassName,
                             buttonPositionLength

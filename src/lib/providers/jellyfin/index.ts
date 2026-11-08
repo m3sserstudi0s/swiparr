@@ -103,7 +103,7 @@ export class JellyfinProvider implements MediaProvider {
     });
 
     const data = JellyfinQueryResultSchema.parse(res.data);
-    let rawItems = data.Items;
+    const rawItems = data.Items;
     return rawItems.map((item) => this.mapToMediaItem(item));
   }
 

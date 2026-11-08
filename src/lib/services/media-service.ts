@@ -860,7 +860,7 @@ export class MediaService {
       return a.Name.localeCompare(b.Name);
     });
 
-    let memberSelections: Record<string, string[]> = {};
+    const memberSelections: Record<string, string[]> = {};
     let members: { externalUserId: string, externalUserName: string }[] = [];
     let accumulatedProviderIds: string[] = [];
 

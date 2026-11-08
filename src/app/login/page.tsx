@@ -1,7 +1,7 @@
 import { Footer } from "@/components/Footer";
 import LightRays from "@/components/ui/LightRays";
 import LoginContent from "@/components/login/LoginContent";
-import { Loader2 } from "lucide-react";
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getAsyncRuntimeConfig } from "@/lib/server/runtime-config";
@@ -55,7 +55,7 @@ export default function LoginPage() {
     <main className="flex items-center justify-center overflow-hidden h-svh pt-[env(safe-area-inset-top)] font-sans">
       <Suspense fallback={
         <div className="text-foreground">
-          <Loader2 className="animate-spin" />
+          <CircleNotch className="animate-spin" />
         </div>}>
         <LoginContent />
         <Footer className="pb-6 absolute bottom-5" />

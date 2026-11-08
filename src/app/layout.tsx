@@ -1,6 +1,6 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { JetBrains_Mono, Zalando_Sans } from 'next/font/google'
+import { Golos_Text, JetBrains_Mono } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import { getAsyncRuntimeConfig } from '@/lib/server/runtime-config'
 import { TouchProvider } from '@/components/ui/hybrid-tooltip'
@@ -9,18 +9,17 @@ import { config as appConfig } from "@/lib/config";
 import { Suspense } from 'react';
 import { RuntimeConfigScript } from '@/components/RuntimeConfigScript';
 
-const sansFlex = Zalando_Sans({
+const sansFlex = Golos_Text({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-sans',
+  variable: '--font-golos',
   adjustFontFallback: true,
-  fallback: ["Arial", "Times New Roman"],
 })
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-mono',
+  variable: '--font-jetbrains',
 })
 
 export const viewport: Viewport = {
