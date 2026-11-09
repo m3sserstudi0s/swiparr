@@ -210,7 +210,7 @@ export function StreamingSettings() {
                             </div>
                         </ComboboxTrigger>
                         <ComboboxContent container={container} className="min-w-44 z-1000">
-                            <ComboboxInput placeholder="MagnifyingGlass region..." showTrigger={false} autoFocus />
+                            <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
                             <ComboboxEmpty>No regions found</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
@@ -273,7 +273,7 @@ export function StreamingSettings() {
                                 <MagnifyingGlass className="size-4" />
                             </InputGroupAddon>
                             <InputGroupInput
-                                placeholder="MagnifyingGlass services..."
+                                placeholder="Search services..."
                                 value={providerSearch}
                                 onChange={(event) => setProviderSearch(event.target.value)}
                             />

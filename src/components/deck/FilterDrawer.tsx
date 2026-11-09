@@ -769,7 +769,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           <MagnifyingGlass className="size-4" />
                         </InputGroupAddon>
                         <InputGroupInput
-                          placeholder="MagnifyingGlass services..."
+                          placeholder="Search services..."
                           value={providerSearch}
                           onChange={(event) => setProviderSearch(event.target.value)}
                         />
