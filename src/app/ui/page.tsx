@@ -136,7 +136,7 @@ export default function SinkPage() {
         <Card data-fixture="panel">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle data-fixture="panel-title">Library sync</CardTitle>
-            <Badge variant="outline" data-fixture="badge-success">
+            <Badge variant="outline" className="text-success" data-fixture="badge-success">
               <Check />
               Healthy
             </Badge>
