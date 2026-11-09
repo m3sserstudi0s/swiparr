@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    let merged: MergedLike[] = likesResult.map((likeData: Like) => {
+    const merged: MergedLike[] = likesResult.map((likeData: Like) => {
         const item = itemsMap.get(likeData.externalId);
         if (!item) return null;
 

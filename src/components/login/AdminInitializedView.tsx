@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, ArrowRight } from "lucide-react";
+import { SealCheck, ArrowRight } from "@phosphor-icons/react/dist/ssr";
 
 interface AdminInitializedViewProps {
   onContinue: () => void;
@@ -10,7 +10,7 @@ export function AdminInitializedView({ onContinue }: AdminInitializedViewProps) 
   return (
     <div className="flex flex-col space-y-4 h-full">
       <Alert className="bg-primary/10 border-primary/20">
-        <ShieldCheck className="size-4 text-primary" />
+        <SealCheck className="size-4 text-primary" />
         <AlertTitle className="text-primary font-bold">Admin Privileges</AlertTitle>
         <AlertDescription className="text-xs text-primary/80">
           You are the first user and have been set as the administrator.

@@ -9,7 +9,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Tv, Check, Loader2, ChevronDown, ChevronRight, Search, X } from "lucide-react";
+import { Television, Check, CircleNotch, CaretDown, CaretRight, MagnifyingGlass, X } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { getErrorMessage, cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
@@ -164,7 +164,7 @@ export function StreamingSettings() {
         return (
             <SettingsSection title="Streaming">
                 <div className="flex items-center justify-center py-4">
-                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                    <CircleNotch className="size-6 animate-spin text-muted-foreground" />
                 </div>
             </SettingsSection>
         );
@@ -195,7 +195,7 @@ export function StreamingSettings() {
                         items={regions}
                         itemToStringValue={(r: MediaRegion) => r?.Name || ""}
                     >
-                        <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-44 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
+                        <ComboboxTrigger className="grid grid-cols-[1fr_auto] h-9 w-44 items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm transition-colors hover:bg-muted/20 focus:outline-none focus:ring-1 focus:ring-ring">
                             <div className="flex items-center gap-2 truncate">
                                 {selectedRegion ? (
                                     <>
@@ -210,7 +210,7 @@ export function StreamingSettings() {
                             </div>
                         </ComboboxTrigger>
                         <ComboboxContent container={container} className="min-w-44 z-1000">
-                            <ComboboxInput placeholder="Search region..." showTrigger={false} autoFocus />
+                            <ComboboxInput placeholder="MagnifyingGlass region..." showTrigger={false} autoFocus />
                             <ComboboxEmpty>No regions found</ComboboxEmpty>
                             <ComboboxList>
                                 {(r: MediaRegion) => (
@@ -236,13 +236,13 @@ export function StreamingSettings() {
                     <CollapsibleTrigger asChild>
                         <button className="flex items-center justify-between w-full group cursor-pointer">
                             <div className="flex items-center gap-2 text-sm font-medium">
-                                <Tv className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                <Television className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                 Streaming Services
                             </div>
                             {isExpanded ? (
-                                <ChevronDown className="size-4 text-muted-foreground" />
+                                <CaretDown className="size-4 text-muted-foreground" />
                             ) : (
-                                <ChevronRight className="size-4 text-muted-foreground" />
+                                <CaretRight className="size-4 text-muted-foreground" />
                             )}
                         </button>
                     </CollapsibleTrigger>
@@ -270,10 +270,10 @@ export function StreamingSettings() {
 
                         <InputGroup className="bg-muted/30 border-input">
                             <InputGroupAddon align="inline-start">
-                                <Search className="size-4" />
+                                <MagnifyingGlass className="size-4" />
                             </InputGroupAddon>
                             <InputGroupInput
-                                placeholder="Search services..."
+                                placeholder="MagnifyingGlass services..."
                                 value={providerSearch}
                                 onChange={(event) => setProviderSearch(event.target.value)}
                             />
@@ -293,7 +293,7 @@ export function StreamingSettings() {
 
                         {isLoadingProviders ? (
                             <div className="flex items-center justify-center py-4">
-                                <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                                <CircleNotch className="size-6 animate-spin text-muted-foreground" />
                             </div>
                         ) : (
                             <ScrollArea className="flex-1 overflow-y-auto h-75" viewportRef={handleProvidersViewport}>

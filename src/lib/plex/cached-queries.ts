@@ -14,7 +14,7 @@ export async function getCachedYears(accessToken: string, deviceId: string, user
     const sections = await getCachedLibraries(accessToken, deviceId, userId, serverUrl);
     const movieSections = sections.filter((l: any) => l.type === "movie");
     
-    let allYears = new Map<number, any>();
+    const allYears = new Map<number, any>();
     
     for (const section of movieSections) {
         const url = getPlexUrl(`/library/sections/${section.key}/year`, serverUrl);
@@ -42,7 +42,7 @@ export async function getCachedGenres(accessToken: string, deviceId: string, use
     const sections = await getCachedLibraries(accessToken, deviceId, userId, serverUrl);
     const movieSections = sections.filter((l: any) => l.type === "movie");
     
-    let allGenres = new Map<string, any>();
+    const allGenres = new Map<string, any>();
     
     for (const section of movieSections) {
         const url = getPlexUrl(`/library/sections/${section.key}/genre`, serverUrl);
@@ -90,7 +90,7 @@ export async function getCachedRatings(accessToken: string, deviceId: string, us
     const sections = await getCachedLibraries(accessToken, deviceId, userId, serverUrl);
     const movieSections = sections.filter((l: any) => l.type === "movie");
     
-    let allRatings = new Set<string>();
+    const allRatings = new Set<string>();
     
     for (const section of movieSections) {
         const url = getPlexUrl(`/library/sections/${section.key}/contentRating`, serverUrl);

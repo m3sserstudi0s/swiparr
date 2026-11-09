@@ -1,10 +1,10 @@
-import { Loader2Icon, LoaderIcon } from "lucide-react"
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 
 import { cn } from "@/lib/utils"
 
 function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
   return (
-    <LoaderIcon
+    <CircleNotch
       role="status"
       aria-label="Loading"
       className={cn("size-4 animate-spin", className)}

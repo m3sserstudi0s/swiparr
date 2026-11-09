@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Moon, Bookmark, Star, Users, Info, UserX } from "lucide-react";
+import { Sun, Moon, BookmarkSimple, Star, Users, Info, UserMinus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { useTheme } from "next-themes";
@@ -87,7 +87,7 @@ export function GeneralSettings() {
                                 size="sm"
                                 className="w-26"
                             >
-                                {settings.useWatchlist ? <Bookmark className="size-4" /> : <Star className="size-4" />}
+                                {settings.useWatchlist ? <BookmarkSimple className="size-4" /> : <Star className="size-4" />}
                                 {settings.useWatchlist ? "Watchlist" : "Favorites"}
                             </Toggle>
                         </div>
@@ -131,7 +131,7 @@ export function GeneralSettings() {
                                 size="sm"
                                 className="w-26"
                             >
-                                {settings.allowGuestLending ? <Users className="size-4" /> : <UserX className="size-4" />}
+                                {settings.allowGuestLending ? <Users className="size-4" /> : <UserMinus className="size-4" />}
                                 {settings.allowGuestLending ? "Enabled" : "Disabled"}
                             </Toggle>
                         </div>

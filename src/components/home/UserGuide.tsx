@@ -10,17 +10,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Kbd } from "@/components/ui/kbd"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-    Heart,
-    X,
-    RotateCcw,
-    Info,
-    Users,
-    Keyboard,
-    Filter,
-    Trophy,
-    ShieldCheck
-} from 'lucide-react'
+import { Heart, X, ArrowCounterClockwise, Info, Users, Keyboard, Funnel, Trophy, SealCheck } from "@phosphor-icons/react";
 import { motion } from 'framer-motion'
 
 interface UserGuideProps {
@@ -64,11 +54,11 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                                 <X className="size-4" />
                                                 <span className="font-semibold text-sm tracking-wide">Swipe left</span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground font-medium">Discard the current title and ignore it. The card won't show up again.</p>
+                                            <p className="text-sm text-muted-foreground font-medium">Discard the current title and ignore it. The card won&apos;t show up again.</p>
                                         </div>
                                         <div className="p-4 rounded-xl bg-muted/50 border border-border">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <RotateCcw className="size-4" />
+                                                <ArrowCounterClockwise className="size-4" />
                                                 <span className="font-semibold text-sm tracking-wide">Rewind</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground font-medium">Revert the last swipe action and put the last card in front.</p>
@@ -82,9 +72,9 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                         </div>
                                     </div>
                                     <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex gap-4">
-                                        <Filter className="size-4 text-primary mt-1 shrink-0" />
+                                        <Funnel className="size-4 text-primary mt-1 shrink-0" />
                                         <p className="text-sm text-muted-foreground">
-                                            Filter by Genre, Year, or Rating. Toggle Watchlist/Favorites sync in settings (Jellyfin only).
+                                            Funnel by Genre, Year, or Rating. Toggle Watchlist/Favorites sync in settings (Jellyfin only).
                                         </p>
                                     </div>
                                 </TabsContent>
@@ -133,7 +123,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                 <TabsContent value="guest" className="mt-8 space-y-6 pb-8">
                                     <section className="space-y-4">
                                         <div className="flex items-center gap-2">
-                                            <ShieldCheck className="size-5" />
+                                            <SealCheck className="size-5" />
                                             <h3 className="text-lg font-semibold">Guest access</h3>
                                         </div>
                                         <div className="p-4 rounded-xl border bg-muted/30 text-sm space-y-3">
