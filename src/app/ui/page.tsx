@@ -208,11 +208,11 @@ export default function SinkPage() {
                   >
                     Container
                   </th>
-                  <th className="border-border border-b px-2 py-1.5 text-left font-mono text-[10.5px] tracking-[0.1em] uppercase">
+                  <th className="text-muted-foreground border-border border-b px-2 py-1.5 text-left font-mono text-[10.5px] font-medium tracking-[0.1em] uppercase">
                     State
                   </th>
                   <th
-                    className="border-border border-b px-2 py-1.5 text-right font-mono text-[10.5px] tracking-[0.1em] uppercase"
+                    className="text-muted-foreground border-border border-b px-2 py-1.5 text-right font-mono text-[10.5px] font-medium tracking-[0.1em] uppercase"
                     data-fixture="table-num"
                   >
                     Uptime
