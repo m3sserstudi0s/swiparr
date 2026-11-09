@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -136,10 +137,7 @@ export default function SinkPage() {
         <Card data-fixture="panel">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle data-fixture="panel-title">Library sync</CardTitle>
-            <Badge variant="outline" className="text-success" data-fixture="badge-success">
-              <Check />
-              Healthy
-            </Badge>
+            <StatusBadge status="success" data-fixture="badge-success">Healthy</StatusBadge>
           </CardHeader>
           <CardContent className="grid gap-3">
             <span className="m-data">last run 4 min ago · 208 items</span>
@@ -165,22 +163,10 @@ export default function SinkPage() {
           </CardHeader>
           <CardContent className="grid gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" data-fixture="badge-neutral">
-                <Circle />
-                Idle
-              </Badge>
-              <Badge variant="outline" className="text-success" data-fixture="badge-success-2">
-                <Check />
-                Running
-              </Badge>
-              <Badge variant="outline" className="text-warning" data-fixture="badge-warning">
-                <Warning />
-                Degraded
-              </Badge>
-              <Badge variant="outline" className="text-destructive" data-fixture="badge-danger">
-                <X />
-                Stopped
-              </Badge>
+              <StatusBadge status="neutral" data-fixture="badge-neutral">Idle</StatusBadge>
+              <StatusBadge status="success" data-fixture="badge-success-2">Running</StatusBadge>
+              <StatusBadge status="warning" data-fixture="badge-warning">Degraded</StatusBadge>
+              <StatusBadge status="danger" data-fixture="badge-danger">Stopped</StatusBadge>
             </div>
             <Alert data-fixture="alert">
               <Info />
