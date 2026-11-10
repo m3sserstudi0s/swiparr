@@ -1,0 +1,56 @@
+{
+  "$schema": "./schema.json",
+  "source": "messer-swipe",
+  "sourceName": "Messer Swipe",
+  "sourceDescription": "Media swipe app — dev server on the host",
+  "host_workdir": "/Users/jakob/Repos/messer-swipe",
+  "actions": [
+    {
+      "id": "dev-server",
+      "title": "Dev Server",
+      "description": "Next.js dev server on host (PM2-supervised, scale-to-zero)",
+      "info": "Served at https://dev-server.messer.wtf. Port 3000 is shared with the other projects' dev servers, so starting this one stops whatever else occupies it — one dev server at a time by design. Runs on the macOS host under PM2 as messer-swipe-dev (host node_modules, Next 16 Turbopack); Stop deletes the PM2 app, and an idle watchdog scales it to zero after ~15 min without activity. Uses the repo's own .env (PROVIDER, AUTH_SECRET) and the local swiparr.db.",
+      "icon": "Play",
+      "lifecycle": "service",
+      "confirmMessage": "Start the Messer Swipe dev server on host? Served at https://dev-server.messer.wtf — this stops any other project's dev server on port 3000.",
+      "stopConfirmMessage": "Stop the Messer Swipe dev server? Deletes its PM2 app and kills the process.",
+      "probe_interval": 15,
+      "status_command": {
+        "title": "Check dev server PM2 app",
+        "description": "PM2 app messer-swipe-dev has a live pid.",
+        "command": "pid=$(/opt/homebrew/bin/pm2 pid messer-swipe-dev 2>/dev/null); if [ -n \"$pid\" ] && [ \"$pid\" != \"0\" ]; then exit 0; else exit 1; fi",
+        "run_on": "host"
+      },
+      "commands": [
+        {
+          "title": "Stop existing dev servers",
+          "description": "Single dev server across all projects.",
+          "info": "Deletes dev PM2 apps (incl. legacy names and the swipe idle watchdog), kills dev ports 3000/3001/8000/4321/4322/8898, removes the stale Next dev lock, and reaps stray host dev processes (dev-stray-guard --sweep).",
+          "command": "/opt/homebrew/bin/pm2 delete messer-swipe-dev messer-swipe-dev-watch site-dev site-dev-watch site-dev-heal site-studio-dev messer-notes-dev messer-notes-dev-watch portal-dev portal-dev-watch gallery-dev gallery-dev-watch 2>/dev/null || true; for p in 3000 3001 8000 4321 4322 8898; do lsof -tiTCP:$p -sTCP:LISTEN 2>/dev/null | xargs kill -9 2>/dev/null || true; done; rm -f /Users/jakob/Repos/messer-swipe/.next/dev/lock; sleep 1; /usr/bin/python3 /Users/jakob/Scripts/dev-stray-guard.py --sweep; echo 'cleaned — dev PM2 apps stopped, ports 3000/3001/8000 freed, stray dev processes reaped'",
+          "run_on": "host"
+        },
+        {
+          "title": "Start supervised dev server",
+          "description": "PM2 with an idle scale-to-zero watchdog.",
+          "info": "run-dev.sh cds into the repo and execs next dev, so PM2 tracks the real server. dev-idle-watch.py stops it after 15 min idle.",
+          "command": "/opt/homebrew/bin/pm2 start /Users/jakob/Scripts/run-dev.sh --name messer-swipe-dev --no-autorestart -- /Users/jakob/Repos/messer-swipe ./node_modules/.bin/next dev --port 3000 --hostname 0.0.0.0 >/dev/null; /opt/homebrew/bin/pm2 start /Users/jakob/Scripts/dev-idle-watch.py --name messer-swipe-dev-watch --no-autorestart -- --pm2-name messer-swipe-dev --repo /Users/jakob/Repos/messer-swipe --port 3000 --idle 15 --pm2 /opt/homebrew/bin/pm2 >/dev/null; sleep 2; echo 'started under PM2 — messer-swipe-dev + idle watchdog'",
+          "run_on": "host"
+        },
+        {
+          "title": "Wait for dev server",
+          "description": "Poll /login until ready; fail fast if the process died.",
+          "command": "for i in $(seq 1 45); do pid=$(/opt/homebrew/bin/pm2 pid messer-swipe-dev 2>/dev/null); if [ -z \"$pid\" ] || [ \"$pid\" = \"0\" ]; then echo 'dev server died at startup — tail of the error log:'; tail -20 /Users/jakob/.pm2/logs/messer-swipe-dev-error.log 2>/dev/null; exit 1; fi; curl -sf -H 'Host: dev-server.messer.wtf' http://127.0.0.1:3000/login >/dev/null 2>&1 && { echo 'dev server ready — https://dev-server.messer.wtf'; exit 0; }; sleep 2; done; echo 'TIMEOUT — dev server not ready after 90 s (see /Users/jakob/.pm2/logs/messer-swipe-dev-out.log)'; exit 1",
+          "run_on": "host"
+        }
+      ],
+      "stop_commands": [
+        {
+          "title": "Stop supervised dev server",
+          "description": "Delete PM2 apps, free port 3000, drop the dev lock.",
+          "command": "/opt/homebrew/bin/pm2 delete messer-swipe-dev messer-swipe-dev-watch 2>/dev/null || true; lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null | xargs kill -9 2>/dev/null || true; rm -f /Users/jakob/Repos/messer-swipe/.next/dev/lock; echo 'dev server stopped — PM2 apps deleted, port 3000 free'",
+          "run_on": "host"
+        }
+      ]
+    }
+  ]
+}
