@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, SlidersHorizontal, Images } from "lucide-react";
+import { RefreshCcw, SlidersHorizontal, GalleryHorizontalEnd } from "lucide-react";
 import {
   Empty,
   EmptyContent,
@@ -21,7 +21,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
       <Empty className="w-full h-full mt-10">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <Images />
+            <GalleryHorizontalEnd />
           </EmptyMedia>
           <EmptyTitle className="text-foreground">Nothing left to swipe.</EmptyTitle>
           <EmptyDescription>
@@ -35,7 +35,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
             className="w-28"
             onClick={onRefresh}
           >
-            <RefreshCw />
+            <RefreshCcw />
             Refresh
           </Button>
           <Button

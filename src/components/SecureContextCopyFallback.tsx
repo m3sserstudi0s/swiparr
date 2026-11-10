@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CircleAlert } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 interface SecureContextCopyFallbackProps {
   open: boolean;
@@ -34,7 +34,7 @@ export function SecureContextCopyFallback({
         </DialogHeader>
         <div className="space-y-4 py-4">
           <Alert>
-            <CircleAlert className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" />
             <AlertTitle>Manual copy required</AlertTitle>
             <AlertDescription className="text-xs">
               Automatic copy and sharing is disabled because Messer Swipe is not running in a secure context (HTTPS).

@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, HeartCrack, Bookmark, BadgeCheck, ExternalLink, Percent, HardDrive } from "lucide-react";
+import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink, Percent, HardDrive } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, WatchProvider } from "@/types";
@@ -190,7 +190,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       )}
                       {!!movie.OfficialRating && (
                         <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
-                          <BadgeCheck className="w-3 h-3"/>
+                          <ShieldCheck className="w-3 h-3"/>
                           {movie.OfficialRating}
                         </Badge>
                       )}
@@ -268,7 +268,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     }}
                     disabled={isUnliking}
                   >
-                    <HeartCrack className="w-5 h-5" />
+                    <HeartOff className="w-5 h-5" />
                   </Button>}
                 </div>
 

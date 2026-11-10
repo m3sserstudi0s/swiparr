@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { TriangleAlert } from "lucide-react";
+import { AlertTriangleIcon } from "lucide-react";
 import { ProviderType } from "@/lib/providers/types";
 import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
 import { ExternalLink, Copy, Check } from "lucide-react";
@@ -282,7 +282,7 @@ export function AuthView({
             )}
             {isExperimental && (
               <Alert className="max-w-full mt-2 ">
-                <TriangleAlert className="text-amber-600!"/>
+                <AlertTriangleIcon className="text-amber-600!"/>
                 <AlertTitle className="whitespace-nowrap">Experimental provider integration</AlertTitle>
                 <AlertDescription className="text-xs">
                   Certain features may not work as expected.

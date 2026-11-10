@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CircleAlert, WifiOff, Home, RotateCcw, Search } from "lucide-react";
+import { AlertCircle, WifiOff, Home, RotateCcw, Search } from "lucide-react";
 import Link from 'next/link';
 import { useRuntimeConfig } from '@/lib/runtime-config';
 import { GITHUB_URL } from '@/lib/constants';
@@ -45,7 +45,7 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
       action: () => (window.location.href = `${basePath}/`),
     },
     '500': {
-      icon: CircleAlert,
+      icon: AlertCircle,
       title: 'System Error',
       description: "Something went wrong on our end. We're working on fixing it.",
       buttonText: 'Try again',
@@ -59,7 +59,7 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
       action: () => window.location.reload(),
     },
     'generic': {
-      icon: CircleAlert,
+      icon: AlertCircle,
       title: 'Application Error',
       description: error?.message || 'An unexpected client-side error occurred and the application crashed.',
       buttonText: 'Restart',

@@ -1,7 +1,7 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Star, Calendar, HeartCrack, Clock, Bookmark, Percent } from "lucide-react";
+import { Play, Star, Calendar, HeartOff, Clock, Bookmark, Percent } from "lucide-react";
 import { cn, ticksToTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -202,7 +202,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
               onClick={handleUnlike}
               disabled={isUnliking}
             >
-              <HeartCrack className="w-3.5 h-3.5" />
+              <HeartOff className="w-3.5 h-3.5" />
             </Button>}
           </div>
         </div>
