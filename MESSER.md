@@ -44,7 +44,7 @@ would break somebody:
 | database file `swiparr.db` | data path on a mounted volume; a rename is a file move for zero user benefit |
 | `SCRYPT_SALT = "swiparr-guest-lending-v2"` | it is the KDF input for every stored guest access token; changing it makes them undecryptable |
 | Plex client id key `swiparr_plex_client_id` | holds the device Plex has already registered; a new key forces every Plex user to re-authorise |
-| `APP_PUBLIC_URL` default `swiparr.com` | the hosted demo domain, migrated separately |
+| `APP_PUBLIC_URL` default `swipe.messer.wtf` | the hosted demo domain; `swiparr.com` 301s to it via `LEGACY_REDIRECT_FROM` |
 
 ## Notes from adoption
 
