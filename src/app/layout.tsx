@@ -48,9 +48,12 @@ export async function generateMetadata(): Promise<Metadata> {
     description: tagline,
     appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
     icons: {
-      icon: `${basePath}/favicon.ico`,     
-      shortcut: `${basePath}/icon1.png`,   
-      apple: `${basePath}/apple-icon.png`,
+      icon: [
+        { url: `${basePath}/favicon.svg`, type: "image/svg+xml" },
+        { url: `${basePath}/favicon-32.png`, sizes: "32x32", type: "image/png" },
+      ],
+      shortcut: `${basePath}/favicon-32.png`,
+      apple: `${basePath}/apple-touch-icon.png`,
     },
     openGraph: {
       title: "Swiparr – Discover what to watch next",
