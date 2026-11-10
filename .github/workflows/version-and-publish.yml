@@ -208,3 +208,10 @@ jobs:
           docker buildx imagetools create \
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+
+      # A package published with GITHUB_TOKEN starts private. Public pulls (Docker users,
+      # Komodo) are the whole distribution story, so make it public on every publish.
+      - name: Ensure the package is public
+        run: gh api -X PATCH "/user/packages/container/$(basename '${{ env.IMAGE_NAME }}')" -f visibility=public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
