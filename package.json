@@ -12,6 +12,7 @@
     "build": "node scripts/set-app-version.mjs && npm run db:migrate && node scripts/ensure-auth-secret.cjs && next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.js",
     "db:push": "drizzle-kit push",

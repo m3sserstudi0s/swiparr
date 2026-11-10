@@ -20,6 +20,7 @@ import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings }
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
+import { mapJellyfinItem } from "./map";
 
 /**
  * Jellyfin Provider
@@ -95,7 +96,7 @@ export class JellyfinProvider implements MediaProvider {
 
     const data = JellyfinQueryResultSchema.parse(res.data);
     const rawItems = data.Items;
-    return rawItems.map((item) => this.mapToMediaItem(item));
+    return rawItems.map((item) => mapJellyfinItem(item));
   }
 
   async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
@@ -103,7 +104,7 @@ export class JellyfinProvider implements MediaProvider {
       headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
     });
     const data = JellyfinItemSchema.parse(res.data);
-    return this.mapToMediaItem(data);
+    return mapJellyfinItem(data);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
@@ -259,54 +260,4 @@ export class JellyfinProvider implements MediaProvider {
     }
   }
 
-  private getItemLanguage(item: any): string | undefined {
-    const preferred = item.PreferredMetadataLanguage?.trim();
-    if (preferred) {
-      return preferred;
-    }
-
-    const streams = Array.isArray(item.MediaStreams) ? item.MediaStreams : [];
-    const audioStreams = streams.filter((stream: { Type: any; }) => {
-      const type = typeof stream?.Type === "string" ? stream.Type : "";
-      return type.toLowerCase() === "audio";
-    });
-
-    const defaultAudio = audioStreams.find((stream: { IsDefault: any; Language: any; }) => stream?.IsDefault && stream?.Language);
-    if (defaultAudio?.Language) {
-      return defaultAudio.Language;
-    }
-
-    return audioStreams.find((stream: { Language: any; }) => stream?.Language)?.Language;
-  }
-
-  private mapToMediaItem(item: any): MediaItem {
-    return {
-      Id: item.Id,
-      Name: item.Name,
-      OriginalTitle: item.OriginalTitle,
-      Language: this.getItemLanguage(item),
-      RunTimeTicks: item.RunTimeTicks,
-      ProductionYear: item.ProductionYear,
-      CommunityRating: item.CommunityRating,
-      Overview: item.Overview,
-      Taglines: item.Taglines,
-      OfficialRating: item.OfficialRating,
-      Genres: item.Genres,
-      People: item.People?.map((p: any) => ({
-        Name: p.Name,
-        Id: p.Id,
-        Role: p.Role,
-        Type: p.Type,
-        PrimaryImageTag: p.PrimaryImageTag,
-      })),
-      ImageTags: item.ImageTags,
-      BackdropImageTags: item.BackdropImageTags,
-      ProviderIds: item.ProviderIds,
-      UserData: item.UserData ? {
-        IsFavorite: item.UserData.IsFavorite,
-        Likes: item.UserData.Likes,
-        Played: item.UserData.Played,
-      } : undefined,
-    };
-  }
 }
