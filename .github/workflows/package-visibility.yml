@@ -5,6 +5,9 @@ name: Package visibility
 # the visibility change with the only classic PAT the repo holds, and prints its scopes
 # so a failure is diagnosable. Safe to delete once the package is public.
 on:
+  push:
+    paths:
+      - '.github/workflows/package-visibility.yml'
   workflow_dispatch:
 
 jobs:
