@@ -10,7 +10,9 @@ export const GITHUB_REPO = "jakobbjelver/messer-swipe";
 export const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}`;
 export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 export const SUPPORT_URL = "https://buymeacoffee.com/jakobbjelver";
-export const MESSER_STUDIOS_URL = "https://messerstudios.dev";
+// The author, not the studio: the footer links a person and his portfolio.
+export const AUTHOR_URL = "https://jakob.bjelver.se/portfolio";
+export const AUTHOR_NAME = "Jakob Bjelvér";
 
 export const DEFAULT_THEMES = ["Christmas", "Halloween", "Zombie", "Superhero", "Time Travel", "Aliens", "Dystopia", "Cyberpunk", "Space", "Based on Video Game"]
 

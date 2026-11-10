@@ -10,7 +10,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Kbd } from "@/components/ui/kbd"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Heart, X, RotateCcw, Info, Users, Keyboard, Filter, Trophy, BadgeCheck } from "lucide-react";
+import { Heart, X, RotateCcw, Info, Users, Keyboard, Filter, Trophy, ShieldCheck } from "lucide-react";
 import { motion } from 'framer-motion'
 
 interface UserGuideProps {
@@ -123,7 +123,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                 <TabsContent value="guest" className="mt-8 space-y-6 pb-8">
                                     <section className="space-y-4">
                                         <div className="flex items-center gap-2">
-                                            <BadgeCheck className="size-5" />
+                                            <ShieldCheck className="size-5" />
                                             <h3 className="text-lg font-semibold">Guest access</h3>
                                         </div>
                                         <div className="p-4 rounded-xl border bg-muted/30 text-sm space-y-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Code, Info, Loader2, CircleAlert, CircleCheck, ExternalLink, FileText, ArrowUp } from "lucide-react";
+import { BookOpenText, Code, Info, Loader2, AlertCircle, CircleCheck, ExternalLink, FileText, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRuntimeConfig } from "@/lib/runtime-config";
@@ -88,7 +88,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                             <Loader2 className="size-4 animate-spin text-muted-foreground" />
                         ) : versionError || versionData?.error ? (
                             <Badge variant="destructive" className="h-6">
-                                <CircleAlert className="size-3" />
+                                <AlertCircle className="size-3" />
                                 Offline
                             </Badge>
                         ) : isLatest ? (

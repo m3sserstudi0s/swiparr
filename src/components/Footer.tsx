@@ -1,4 +1,4 @@
-import { GITHUB_URL, MESSER_STUDIOS_URL, SUPPORT_URL } from "@/lib/constants";
+import { AUTHOR_NAME, AUTHOR_URL, GITHUB_URL, SUPPORT_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface FooterProps {
@@ -33,16 +33,16 @@ export function Footer({ className }: FooterProps) {
         Open Source
       </a>
 
-      {/* Hide this bullet on small screens since Messer goes to a new line */}
+      {/* Hide this bullet on small screens since the author name goes to a new line */}
       <span className="mx-2 hidden sm:inline">•</span>
 
       <a
-        href={MESSER_STUDIOS_URL}
+        href={AUTHOR_URL}
         target="_blank"
         rel="noreferrer"
         className="hover:text-primary transition-colors w-full sm:w-auto mt-3 sm:mt-0"
       >
-        Messer Studios
+        {AUTHOR_NAME}
       </a>
     </div>
   );

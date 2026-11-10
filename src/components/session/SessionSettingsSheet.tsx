@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
-import { RotateCcw, Users, Heart, X, Sparkles, TrendingUp, ChartBar, Infinity, Loader2 } from "lucide-react";
+import { RotateCcw, Users, Heart, X, Sparkles, TrendingUp, Infinity, Loader } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
@@ -147,7 +147,7 @@ export function SessionSettingsSheet({
             <div className="space-y-4">
               <Label className="text-base font-semibold flex items-center gap-2">
                 Stats
-                {isLoading && <Loader2 className="size-4 animate-spin"/>}
+                {isLoading && <Loader className="size-4 animate-spin"/>}
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <Card className="bg-muted/30 border-none gap-0">
