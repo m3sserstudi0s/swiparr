@@ -209,9 +209,13 @@ jobs:
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
-      # A package published with GITHUB_TOKEN starts private. Public pulls (Docker users,
-      # Komodo) are the whole distribution story, so make it public on every publish.
+      # A package first published with GITHUB_TOKEN starts private, and the Packages
+      # API refuses OAuth/GITHUB_TOKEN — it needs a classic PAT with write:packages.
+      # Best-effort: never fail a published release over visibility.
       - name: Ensure the package is public
-        run: gh api -X PATCH "/user/packages/container/$(basename '${{ env.IMAGE_NAME }}')" -f visibility=public
+        continue-on-error: true
+        run: |
+          gh api -X PATCH "/user/packages/container/$(basename '${{ env.IMAGE_NAME }}')" -f visibility=public \
+            || echo "::warning::package visibility unchanged — needs a classic PAT with write:packages"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
