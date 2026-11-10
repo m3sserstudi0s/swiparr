@@ -92,6 +92,7 @@ export interface SearchFilters {
   themes?: string[];
   excludedThemes?: string[];
   tmdbLanguages?: string[];
+  watchMonetizationTypes?: string;
   limit?: number;
   offset?: number;
 }

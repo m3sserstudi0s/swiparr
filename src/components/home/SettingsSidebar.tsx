@@ -7,7 +7,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { List } from "@phosphor-icons/react";
+import { List } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";

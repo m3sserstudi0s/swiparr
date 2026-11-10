@@ -1,7 +1,31 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import { getRuntimeConfig } from './runtime-config';
 import { ProviderType } from './providers/types';
+import { LEGACY_SETTINGS_STORAGE_KEY, SETTINGS_STORAGE_KEY } from './constants';
+
+/**
+ * Settings were stored under "swiparr-settings" before the 2.0 brand flip. The first read of the
+ * new key falls back to the old one and moves it across, so nobody loses their preferences.
+ */
+const migratedStorage: StateStorage = {
+  getItem: (name) => {
+    if (typeof localStorage === 'undefined') return null;
+    const current = localStorage.getItem(name);
+    if (current !== null) return current;
+    const legacy = localStorage.getItem(LEGACY_SETTINGS_STORAGE_KEY);
+    if (legacy === null) return null;
+    localStorage.setItem(name, legacy);
+    localStorage.removeItem(LEGACY_SETTINGS_STORAGE_KEY);
+    return legacy;
+  },
+  setItem: (name, value) => {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(name, value);
+  },
+  removeItem: (name) => {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(name);
+  },
+};
 
 export interface Settings {
   useWatchlist: boolean;
@@ -35,8 +59,8 @@ export const useSettingsStore = create<SettingsState>()(
       resetSettings: () => set({ settings: getDefaultSettings() }),
     }),
     {
-      name: 'swiparr-settings',
-      storage: createJSONStorage(() => localStorage),
+      name: SETTINGS_STORAGE_KEY,
+      storage: createJSONStorage(() => migratedStorage),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         // If the server no longer advertises watchlist support, clamp the

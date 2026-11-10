@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
-import { Check, CaretDown, X } from "@phosphor-icons/react";
+import { Check, ChevronDown, X } from "lucide-react";
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,7 @@ function ComboboxTrigger({
       {...props}
     >
       {children}
-      <CaretDown
+      <ChevronDown
         data-slot="combobox-trigger-icon"
         className="text-muted-foreground pointer-events-none size-4 shrink-0"
       />

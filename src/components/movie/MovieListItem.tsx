@@ -1,7 +1,7 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Star, CalendarBlank, HeartBreak, Clock, BookmarkSimple, Percent } from "@phosphor-icons/react";
+import { Play, Star, Calendar, HeartCrack, Clock, Bookmark, Percent } from "lucide-react";
 import { cn, ticksToTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { MergedLike } from "@/types";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useMovieActions } from "@/hooks/use-movie-actions";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
+import { isTmdbSourcedId } from "@/lib/providers/item-source";
 import { useSession } from "@/hooks/api";
 
 
@@ -39,6 +40,8 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
   } = useMovieActions(movie, { isLiked, includeUserState: true });
 
   const currentMovie = syncedMovie ? { ...movie, ...syncedMovie } : movie;
+  // Hybrid decks contain tmdb:-prefixed streaming-only items: no play link, no watchlist
+  const isStreamingOnly = isTmdbSourcedId(currentMovie.Id);
   const activeProvider = sessionStatus?.provider || runtimeProvider;
   const detailsUrl = getProviderDetailsUrl({
     provider: activeProvider,
@@ -137,13 +140,13 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           {/* Only show date in full view */}
           {currentMovie.swipedAt && (
             <div className="text-xs text-muted-foreground flex items-center">
-              <CalendarBlank className="size-2.5 mr-1 mb-0.5" />
+              <Calendar className="size-2.5 mr-1 mb-0.5" />
               {formattedDateText}
             </div>
           )}
 
           <div className="flex gap-2">
-            {capabilities.requiresServerUrl && !sessionStatus?.isGuest && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
+            {capabilities.requiresServerUrl && !sessionStatus?.isGuest && !isStreamingOnly && <Link href={detailsUrl} onClick={e => e.stopPropagation()} className="flex-1">
 
               <Button
                 size="sm"
@@ -175,7 +178,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 </span>
               )}
             </div>}
-            {!sessionStatus?.isGuest && capabilities.hasAuth && capabilities.hasWatchlist && (
+            {!sessionStatus?.isGuest && capabilities.hasAuth && capabilities.hasWatchlist && !isStreamingOnly && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -187,7 +190,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 disabled={isTogglingWatchlist}
               >
                 {useWatchlist ?
-                  <BookmarkSimple className={cn("w-4 h-4", isInList && "fill-foreground")} />
+                  <Bookmark className={cn("w-4 h-4", isInList && "fill-foreground")} />
                   : <Star className={cn("w-4 h-4", isInList && "fill-foreground")} />
                 }
               </Button>
@@ -199,7 +202,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
               onClick={handleUnlike}
               disabled={isUnliking}
             >
-              <HeartBreak className="w-3.5 h-3.5" />
+              <HeartCrack className="w-3.5 h-3.5" />
             </Button>}
           </div>
         </div>

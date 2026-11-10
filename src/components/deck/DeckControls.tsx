@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, X, Rewind, SlidersHorizontal } from "@phosphor-icons/react/dist/ssr";
+import { Heart, X, Rewind, SlidersHorizontal } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
 

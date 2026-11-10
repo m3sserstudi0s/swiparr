@@ -1,10 +1,11 @@
-import { 
-  MediaProvider, 
-  ProviderCapabilities, 
-  SearchFilters, 
+import {
+  MediaProvider,
+  ProviderCapabilities,
+  SearchFilters,
   AuthContext,
   ImageResponse,
-  ProviderType
+  ProviderType,
+  PROVIDER_CAPABILITIES
 } from "../types";
 
 import { 
@@ -19,6 +20,7 @@ import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings }
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
+import { mapJellyfinItem } from "./map";
 
 /**
  * Jellyfin Provider
@@ -27,17 +29,7 @@ import { DEFAULT_THEMES } from "@/lib/constants";
 export class JellyfinProvider implements MediaProvider {
   readonly name = ProviderType.JELLYFIN;
   
-  readonly capabilities: ProviderCapabilities = {
-    hasAuth: true,
-    hasQuickConnect: true,
-    hasWatchlist: true,
-    hasLibraries: true,
-    hasSettings: true,
-    requiresServerUrl: true,
-    isExperimental: false,
-    hasStreamingSettings: true,
-    isAdminPanel: true
-  };
+  readonly capabilities: ProviderCapabilities = PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
 
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     // If multiple libraries are selected, we need to fetch from each one and merge
@@ -70,7 +62,7 @@ export class JellyfinProvider implements MediaProvider {
     const params: Record<string, any> = {
       IncludeItemTypes: "Movie",
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams",
+      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams,ProviderIds",
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Trending" ? "CommunityRating" :
               filters.sortBy === "Popular" ? "CommunityRating" :
@@ -99,20 +91,20 @@ export class JellyfinProvider implements MediaProvider {
 
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
       params,
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
     });
 
     const data = JellyfinQueryResultSchema.parse(res.data);
     const rawItems = data.Items;
-    return rawItems.map((item) => this.mapToMediaItem(item));
+    return rawItems.map((item) => mapJellyfinItem(item));
   }
 
   async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
     });
     const data = JellyfinItemSchema.parse(res.data);
-    return this.mapToMediaItem(data);
+    return mapJellyfinItem(data);
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
@@ -141,7 +133,7 @@ export class JellyfinProvider implements MediaProvider {
           includeItemTypes: "Movie",
           recursive: true,
         },
-        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
       });
 
       logger.debug("[JellyfinProvider.getThemes] Response data:", res.data);
@@ -224,7 +216,7 @@ export class JellyfinProvider implements MediaProvider {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
     try {
         const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any, undefined, auth) + "?maxWidth=20&quality=50";
-        const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+        const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {};
         return await getBlurDataURL(itemId, imageUrl, headers) || "";
     } catch (e) {
         return "";
@@ -233,7 +225,7 @@ export class JellyfinProvider implements MediaProvider {
 
   async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
     const url = this.getImageUrl(itemId, type as any, tag, auth);
-    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {};
     const res = await apiClient.get(url, {
       responseType: "arraybuffer",
       headers,
@@ -247,20 +239,20 @@ export class JellyfinProvider implements MediaProvider {
 
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const { authenticateJellyfin } = await import("@/lib/jellyfin/api");
-    return authenticateJellyfin(username, password || "", deviceId || "Swiparr", serverUrl);
+    return authenticateJellyfin(username, password || "", deviceId || "Messer Swipe", serverUrl);
   }
 
   async toggleWatchlist(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
     const url = getJellyfinUrl(`/Users/${auth?.userId}/Items/${itemId}/Rating`, auth?.serverUrl);
     await apiClient.post(url, null, { 
       params: { Likes: action === "add" },
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {}
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {}
     });
   }
 
   async toggleFavorite(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
     const url = getJellyfinUrl(`/Users/${auth?.userId}/FavoriteItems/${itemId}`, auth?.serverUrl);
-    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {};
     if (action === "add") {
       await apiClient.post(url, null, { headers });
     } else {
@@ -268,53 +260,4 @@ export class JellyfinProvider implements MediaProvider {
     }
   }
 
-  private getItemLanguage(item: any): string | undefined {
-    const preferred = item.PreferredMetadataLanguage?.trim();
-    if (preferred) {
-      return preferred;
-    }
-
-    const streams = Array.isArray(item.MediaStreams) ? item.MediaStreams : [];
-    const audioStreams = streams.filter((stream: { Type: any; }) => {
-      const type = typeof stream?.Type === "string" ? stream.Type : "";
-      return type.toLowerCase() === "audio";
-    });
-
-    const defaultAudio = audioStreams.find((stream: { IsDefault: any; Language: any; }) => stream?.IsDefault && stream?.Language);
-    if (defaultAudio?.Language) {
-      return defaultAudio.Language;
-    }
-
-    return audioStreams.find((stream: { Language: any; }) => stream?.Language)?.Language;
-  }
-
-  private mapToMediaItem(item: any): MediaItem {
-    return {
-      Id: item.Id,
-      Name: item.Name,
-      OriginalTitle: item.OriginalTitle,
-      Language: this.getItemLanguage(item),
-      RunTimeTicks: item.RunTimeTicks,
-      ProductionYear: item.ProductionYear,
-      CommunityRating: item.CommunityRating,
-      Overview: item.Overview,
-      Taglines: item.Taglines,
-      OfficialRating: item.OfficialRating,
-      Genres: item.Genres,
-      People: item.People?.map((p: any) => ({
-        Name: p.Name,
-        Id: p.Id,
-        Role: p.Role,
-        Type: p.Type,
-        PrimaryImageTag: p.PrimaryImageTag,
-      })),
-      ImageTags: item.ImageTags,
-      BackdropImageTags: item.BackdropImageTags,
-      UserData: item.UserData ? {
-        IsFavorite: item.UserData.IsFavorite,
-        Likes: item.UserData.Likes,
-        Played: item.UserData.Played,
-      } : undefined,
-    };
-  }
 }

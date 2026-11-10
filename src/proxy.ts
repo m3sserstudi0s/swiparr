@@ -4,6 +4,7 @@ import { getIronSession } from "iron-session";
 import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { config as appConfig } from "@/lib/config";
+import { LEGACY_SESSION_COOKIE, SESSION_COOKIE } from "@/lib/constants";
 
 export async function proxy(request: NextRequest) {
   const { search } = request.nextUrl;
@@ -85,6 +86,23 @@ export async function proxy(request: NextRequest) {
 
   if (isPublicPath) {
     return response;
+  }
+
+  // The session cookie was renamed at 2.0. A browser that still holds the old name is copied onto
+  // the new one here — same sealed value, same secret — so the rebrand logs nobody out.
+  const legacySession = request.cookies.get(LEGACY_SESSION_COOKIE)?.value;
+  if (legacySession && !request.cookies.get(SESSION_COOKIE)?.value) {
+    request.cookies.set(SESSION_COOKIE, legacySession);
+    response.cookies.set({
+      name: SESSION_COOKIE,
+      value: legacySession,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: appConfig.auth.secureCookies || appConfig.app.appPublicUrl?.startsWith("https://"),
+      path: basePath || "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+    response.cookies.delete(LEGACY_SESSION_COOKIE);
   }
 
   const session = await getIronSession<SessionData>(request, response, await getSessionOptions());

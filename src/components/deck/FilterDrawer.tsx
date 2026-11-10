@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { ArrowCounterClockwise, Star, Check, MagnifyingGlass, X } from "@phosphor-icons/react";
+import { RotateCcw, Star, Check, Search, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
@@ -68,7 +68,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const isTmdb = session?.provider === ProviderType.TMDB;
   const { capabilities, tmdbDefaultRegion } = useRuntimeConfig();
   const { data: userSettings } = useUserSettings();
-  const watchRegion = session?.provider === ProviderType.TMDB ? (userSettings?.watchRegion || tmdbDefaultRegion) : undefined;
+  // Any provider with streaming settings (TMDB, or Jellyfin in hybrid mode) has a watch region
+  const watchRegion = capabilities.hasStreamingSettings ? (userSettings?.watchRegion || tmdbDefaultRegion) : undefined;
 
   const { genres, years, ratings, isLoading: isLoadingFilters } = useFilters(open, watchRegion);
   const { data: themes = [], isLoading: isLoadingThemes } = useThemes(open);
@@ -85,6 +86,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
   const members = watchProvidersData?.members || [];
   const isLoading = isLoadingFilters || isLoadingThemes || isLoadingProviders;
 
+  // Hybrid deck (Jellyfin library + streaming catalogs): merging two backends
+  // only works on the full seeded-shuffled deck, so sorting is Random-only
+  const hybridActive = capabilities.hasStreamingSettings
+    && session?.provider === ProviderType.JELLYFIN
+    && availableWatchProviders.length > 0;
+
   const minYearLimit = useMemo(() => {
     if (!years || years.length === 0) return 1900;
     const yearNums = years.map((y: MediaYear) => y.Value).filter((n) => !isNaN(n));
@@ -99,11 +106,12 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
 
   const sortOptions = useMemo(() => {
+    if (hybridActive) return ["Random"];
     return [
       defaultSort,
       ...SORT_OPTIONS.filter(option => option !== defaultSort)
     ];
-  }, [defaultSort]);
+  }, [defaultSort, hybridActive]);
 
   useEffect(() => {
     if (open) {
@@ -136,14 +144,14 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
         setThemeFilterMode("include");
       }
       setSelectedLanguages(currentFilters?.tmdbLanguages ?? DEFAULT_LANGUAGES);
-      setSortBy(currentFilters?.sortBy || defaultSort);
+      setSortBy(hybridActive ? "Random" : (currentFilters?.sortBy || defaultSort));
       setUnplayedOnly(currentFilters?.unplayedOnly ?? true);
       setYearRange(currentFilters?.yearRange || [minYearLimit, maxYearLimit]);
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
       setProviderSearch("");
     }
-  }, [open, currentFilters, availableWatchProviderIds, minYearLimit, maxYearLimit, defaultSort]);
+  }, [open, currentFilters, availableWatchProviderIds, minYearLimit, maxYearLimit, defaultSort, hybridActive]);
 
   const normalizeFilters = (f: Filters): Filters => {
     const isYearDefault = !f.yearRange || (f.yearRange[0] === minYearLimit && f.yearRange[1] === maxYearLimit);
@@ -357,7 +365,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             className="h-8 gap-2 text-muted-foreground hover:text-foreground text-xs absolute right-4 top-4"
             onClick={resetAll}
           >
-            <ArrowCounterClockwise className="size-3" />
+            <RotateCcw className="size-3" />
             Reset
           </Button>
         </DrawerHeader>
@@ -766,7 +774,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       </div>
                       <InputGroup className="bg-muted/30 border-input">
                         <InputGroupAddon align="inline-start">
-                          <MagnifyingGlass className="size-4" />
+                          <Search className="size-4" />
                         </InputGroupAddon>
                         <InputGroupInput
                           placeholder="Search services..."

@@ -9,7 +9,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Television, Check, CircleNotch, CaretDown, CaretRight, MagnifyingGlass, X } from "@phosphor-icons/react";
+import { Tv, Check, Loader2, ChevronDown, ChevronRight, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage, cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
@@ -142,11 +142,6 @@ export function StreamingSettings() {
     };
 
     const saveSettings = async (region: MediaRegion | null = selectedRegion) => {
-        if (selectedProviders.length === 0) {
-            toast.error("At least one streaming service must be selected");
-            return;
-        }
-
         toast.promise(updateSettingsMutation.mutateAsync({
             watchRegion: region?.Id || tmdbDefaultRegion,
             watchProviders: selectedProviders,
@@ -164,14 +159,13 @@ export function StreamingSettings() {
         return (
             <SettingsSection title="Streaming">
                 <div className="flex items-center justify-center py-4">
-                    <CircleNotch className="size-6 animate-spin text-muted-foreground" />
+                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
                 </div>
             </SettingsSection>
         );
     }
 
     const handleSaveSelectedRegion = (region: MediaRegion | null) => {
-        console.log("Selected region:", region);
         setSelectedRegion(region);
         saveSettings(region);
     }
@@ -236,13 +230,13 @@ export function StreamingSettings() {
                     <CollapsibleTrigger asChild>
                         <button className="flex items-center justify-between w-full group cursor-pointer">
                             <div className="flex items-center gap-2 text-sm font-medium">
-                                <Television className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                <Tv className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                 Streaming Services
                             </div>
                             {isExpanded ? (
-                                <CaretDown className="size-4 text-muted-foreground" />
+                                <ChevronDown className="size-4 text-muted-foreground" />
                             ) : (
-                                <CaretRight className="size-4 text-muted-foreground" />
+                                <ChevronRight className="size-4 text-muted-foreground" />
                             )}
                         </button>
                     </CollapsibleTrigger>
@@ -270,7 +264,7 @@ export function StreamingSettings() {
 
                         <InputGroup className="bg-muted/30 border-input">
                             <InputGroupAddon align="inline-start">
-                                <MagnifyingGlass className="size-4" />
+                                <Search className="size-4" />
                             </InputGroupAddon>
                             <InputGroupInput
                                 placeholder="Search services..."
@@ -293,7 +287,7 @@ export function StreamingSettings() {
 
                         {isLoadingProviders ? (
                             <div className="flex items-center justify-center py-4">
-                                <CircleNotch className="size-6 animate-spin text-muted-foreground" />
+                                <Loader2 className="size-6 animate-spin text-muted-foreground" />
                             </div>
                         ) : (
                             <ScrollArea className="flex-1 overflow-y-auto h-75" viewportRef={handleProvidersViewport}>

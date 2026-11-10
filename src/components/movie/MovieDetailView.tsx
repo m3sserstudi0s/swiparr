@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, HeartBreak, BookmarkSimple, SealCheck, ArrowSquareOut, Percent } from "@phosphor-icons/react";
+import { Play, Clock, Star, HeartCrack, Bookmark, BadgeCheck, ExternalLink, Percent, HardDrive } from "lucide-react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, WatchProvider } from "@/types";
@@ -23,6 +23,7 @@ import { TMDB_MOVIE_BASE_URL } from "@/lib/constants";
 import { getLanguageLabel } from "@/lib/language";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
 import { ProviderType } from "@/lib/providers/types";
+import { isTmdbSourcedId, resolveItemSource } from "@/lib/providers/item-source";
 
 interface Props {
   movieId: string | null;
@@ -83,6 +84,9 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
     itemId: movie?.Id || "",
   });
   const languageLabel = getLanguageLabel(movie?.Language);
+  // Hybrid decks contain tmdb:-prefixed streaming-only items: no play link, no watchlist
+  const isStreamingOnly = !!movie && isTmdbSourcedId(movie.Id);
+  const tmdbLinkId = movie ? resolveItemSource(movie.Id).externalId : "";
 
   const ratingSource = movie?.CommunityRatingSource?.toLowerCase();
   const isRottenTomatoes = ratingSource?.includes("rottentomatoes") || ratingSource?.includes("tomato");
@@ -186,8 +190,14 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       )}
                       {!!movie.OfficialRating && (
                         <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
-                          <SealCheck className="w-3 h-3"/>
+                          <BadgeCheck className="w-3 h-3"/>
                           {movie.OfficialRating}
+                        </Badge>
+                      )}
+                      {movie.InLibrary && (
+                        <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
+                          <HardDrive className="w-3 h-3"/>
+                          In Library
                         </Badge>
                       )}
                       {!!movie.CommunityRating && ratingDisplay !== null && (
@@ -215,25 +225,25 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                 )}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
-                  {capabilities.requiresServerUrl && !isGuest ? (
+                  {capabilities.requiresServerUrl && !isGuest && !isStreamingOnly ? (
                     <Link href={detailsUrl} className="w-32" target="_blank">
                       <Button className="w-32" size="lg">
                         <Play className="w-4 h-4 mr-2 fill-current" /> Play
                       </Button>
                     </Link>
                   ) : (
-                    <Link 
-                      href={`${TMDB_MOVIE_BASE_URL}/${movie.Id}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <Link
+                      href={`${TMDB_MOVIE_BASE_URL}/${tmdbLinkId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="w-32"
                     >
                       <Button className="w-32" size="lg">
-                        <ArrowSquareOut className="w-4 h-4 mr-2" /> See more
+                        <ExternalLink className="w-4 h-4 mr-2" /> See more
                       </Button>
                     </Link>
                   )}
-                  {!isGuest && capabilities.hasAuth && capabilities.hasWatchlist && (
+                  {!isGuest && capabilities.hasAuth && capabilities.hasWatchlist && !isStreamingOnly && (
                     <Button
                       className="w-32"
                       size="lg"
@@ -242,7 +252,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       disabled={isTogglingWatchlist}
                     >
                       {useWatchlist ?
-                        <BookmarkSimple className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
+                        <Bookmark className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
                         : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
                       }
                       {useWatchlist ? "Watchlist" : "Favorite"}
@@ -258,7 +268,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     }}
                     disabled={isUnliking}
                   >
-                    <HeartBreak className="w-5 h-5" />
+                    <HeartCrack className="w-5 h-5" />
                   </Button>}
                 </div>
 

@@ -1,3 +1,11 @@
+// Names that outlive a rebrand. The product is Messer Swipe; these keys used to carry "swiparr".
+// Renaming the wire format is not free — each one has a documented migration or a reason to stay.
+export const SESSION_COOKIE = "messer-swipe-session";
+export const LEGACY_SESSION_COOKIE = "swiparr-session"; // migrated in proxy.ts
+export const SETTINGS_STORAGE_KEY = "messer-swipe-settings";
+export const LEGACY_SETTINGS_STORAGE_KEY = "swiparr-settings"; // migrated in lib/settings.ts
+export const SSE_LEADER_CHANNEL = "messer-swipe:sse-leader";
+
 export const GITHUB_REPO = "jakobbjelver/messer-swipe";
 export const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}`;
 export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
@@ -110,5 +118,10 @@ export const POPULAR_TMDB_WATCH_PROVIDER_NAMES = [
 ];
 
 export const ALLOWED_DEFAULT_PLEX_IMAGE_URL = "https://metadata-static.plex.tv";
+
+// Hybrid deck (library provider + TMDB streaming catalogs)
+export const TMDB_ID_PREFIX = "tmdb:movie:";
+export const HYBRID_MONETIZATION_TYPES = "flatrate|free|ads";
+export const HYBRID_TMDB_MAX_PAGES_PER_PROVIDER = 15;
 
 export const DEFAULT_LANGUAGES = ["en"]; // English default for selection highlighting

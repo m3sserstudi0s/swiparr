@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Warning, Info, Gear, MagnifyingGlass, X, Circle } from "@phosphor-icons/react/dist/ssr";
+import { Check, TriangleAlert, Info, Settings, Search, X, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,15 +30,15 @@ export default function SinkPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <span className="m-label" data-fixture="label">
-            messer-ui · swiparr
+            messer-ui · messer-swipe
           </span>
           <h1 data-fixture="h1">Kitchen sink</h1>
           <p className="text-muted-foreground text-sm">
-            Port 1 · <code>brand-swiparr</code> · measured by <code>messer check</code>.
+            Port 1 · <code>brand-messer-swipe</code> · measured by <code>messer check</code>.
           </p>
         </div>
         <Button size="sm" variant="outline">
-          <Gear />
+          <Settings />
           Theme
         </Button>
       </header>
@@ -103,7 +103,7 @@ export default function SinkPage() {
                 Large
               </Button>
               <Button size="icon" variant="outline" data-fixture="btn-icon" aria-label="Search">
-                <MagnifyingGlass />
+                <Search />
               </Button>
               <Button disabled data-fixture="btn-disabled">
                 Disabled
@@ -120,7 +120,7 @@ export default function SinkPage() {
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="sink-name">Name</Label>
-              <Input id="sink-name" defaultValue="Swiparr" data-fixture="input" />
+              <Input id="sink-name" defaultValue="Messer Swipe" data-fixture="input" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="sink-note">Notes</Label>
@@ -224,7 +224,7 @@ export default function SinkPage() {
                   </td>
                   <td className="border-border border-b px-2 py-2">
                     <Badge variant="outline" className="text-warning">
-                      <Warning />
+                      <TriangleAlert />
                       Degraded
                     </Badge>
                   </td>

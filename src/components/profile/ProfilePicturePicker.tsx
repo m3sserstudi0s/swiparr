@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Camera, X, Plus, CircleNotch } from "@phosphor-icons/react";
+import { Camera, X, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -188,7 +188,7 @@ export function ProfilePicturePicker({
                 {/* Loading State Overlay */}
                 {isUploading && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 z-20">
-                        <CircleNotch className="size-6 animate-spin text-primary" />
+                        <Loader2 className="size-6 animate-spin text-primary" />
                     </div>
                 )}
 

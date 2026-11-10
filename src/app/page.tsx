@@ -2,7 +2,7 @@
 import { CardDeck } from "@/components/deck/CardDeck";
 import { SessionManager } from "@/components/session/SessionManager";
 import { LikesList } from "@/components/likes/LikesList";
-import { Images, Heart } from "@phosphor-icons/react";
+import { Images, Heart } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/animate-ui/components/animate/tabs";
 import { SettingsSidebar } from "@/components/home/SettingsSidebar";
 import { useState } from "react";

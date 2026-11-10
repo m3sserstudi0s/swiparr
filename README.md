@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/7803607a-e4e7-4824-81a3-8e2df132fc03" alt="Swiparr" width="300" />
+  <img src="public/apple-touch-icon.png" alt="Messer Swipe" width="96" />
 </p>
 
-<h1 align="center">Swiparr 🍿</h1>
+<h1 align="center">Messer Swipe</h1>
 
 <p align="center">
   <strong>Discover what to watch next, by yourself or together.</strong>
 </p>
 
 <p align="center">
-  Swiparr turns the dreaded "what should we watch?" question into a fun, collaborative experience. 
+  Messer Swipe turns the dreaded "what should we watch?" question into a fun, collaborative experience. 
   <br>
   Like Tinder for movies, but smarter and works for groups.
 </p>
@@ -26,7 +26,7 @@
 
 ## 🎯 The Problem
 
-The struggle is real: 30 minutes of "what should we watch?" that ends with watching the same show again. Swiparr fixes this by:
+The struggle is real: 30 minutes of "what should we watch?" that ends with watching the same show again. Messer Swipe fixes this by:
 
 ✨ Turning discovery into a fun, game-like experience  
 🤝 Finding content everyone actually wants to watch  
@@ -60,17 +60,18 @@ The struggle is real: 30 minutes of "what should we watch?" that ends with watch
 
 ## 🚀 Quick Start
 
-### Fastest: Swiparr Global
+### Fastest: hosted
 
 **No setup, no server, no problem.**
 
-🌐 **[swiparr.com](https://swiparr.com)** - Free to use, community-supported (hopefully)
+🌐 **[swipe.messer.wtf](https://swipe.messer.wtf)** — the public demo, free to use
+(`swiparr.com` redirects here once the 2.0 domain flip ships)
 
 ### Easiest: Deploy to Vercel
 
 One-click deployment, perfect for personal or small group use:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe&env=PROVIDER,TMDB_ACCESS_TOKEN,USE_SECURE_COOKIES,PROVIDER_LOCK&envDefaults=%7B%22PROVIDER%22%3A%22tmdb%22%2C%22USE_SECURE_COOKIES%22%3A%22true%22%2C%22PROVIDER_LOCK%22%3A%22true%22%7D&envDescription=Get%20a%20TMDB%20Access%20Token%20to%20continue%20with%20TMDB%20(no%20media%20server%20needed)%2C%20or%20set%20another%20PROVIDER%20(jellyfin%2C%20plex%2C%20emby)%2C%20or%20set%20PROVIDER_LOCK%20to%20%22false%22%20to%20configure%20the%20provider%20(any)%20at%20run-time.&envLink=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe%3Ftab%3Dreadme-ov-file%23environment-variable-matrix&project-name=swiparr&repository-name=messer-swipe&demo-title=Swiparr&demo-description=Discover%20what%20to%20watch%20next%2C%20by%20yourself%20or%20together.&demo-url=https%3A%2F%2Fswiparr.com&demo-image=https%3A%2F%2Fswiparr.com%2Ficon1.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22tursocloud%22%2C%22productSlug%22%3A%22database%22%2C%22protocol%22%3A%22storage%22%2C%22group%22%3A%22%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe&env=PROVIDER,TMDB_ACCESS_TOKEN,USE_SECURE_COOKIES,PROVIDER_LOCK&envDefaults=%7B%22PROVIDER%22%3A%22tmdb%22%2C%22USE_SECURE_COOKIES%22%3A%22true%22%2C%22PROVIDER_LOCK%22%3A%22true%22%7D&envDescription=Get%20a%20TMDB%20Access%20Token%20to%20continue%20with%20TMDB%20(no%20media%20server%20needed)%2C%20or%20set%20another%20PROVIDER%20(jellyfin%2C%20plex%2C%20emby)%2C%20or%20set%20PROVIDER_LOCK%20to%20%22false%22%20to%20configure%20the%20provider%20(any)%20at%20run-time.&envLink=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe%3Ftab%3Dreadme-ov-file%23environment-variable-matrix&project-name=messer-swipe&repository-name=messer-swipe&demo-title=Messer%20Swipe&demo-description=Discover%20what%20to%20watch%20next%2C%20by%20yourself%20or%20together.&demo-url=https%3A%2F%2Fswiparr.com&demo-image=https%3A%2F%2Fswiparr.com%2Fapple-touch-icon.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22tursocloud%22%2C%22productSlug%22%3A%22database%22%2C%22protocol%22%3A%22storage%22%2C%22group%22%3A%22%22%7D%5D)
 
 Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out [^1].
 
@@ -86,15 +87,15 @@ Note: The automatic deployment workflow in Vercel uses the Turso integration by 
 
 ```yaml
 services:
-  swiparr:
+  messer-swipe:
     image: ghcr.io/jakobbjelver/messer-swipe:latest
-    container_name: swiparr
+    container_name: messer-swipe
     restart: unless-stopped
     environment:
       - PROVIDER=jellyfin  # or plex, emby, tmdb (or set PROVIDER_LOCK to "false")
       - JELLYFIN_URL=http://your-jellyfin:8096 # adjust to provider, none without server lock
     volumes:
-      - ./swiparr-data:/app/data
+      - ./messer-swipe-data:/app/data
     ports:
       - 4321:4321
 ```
@@ -108,10 +109,10 @@ docker compose up -d
 
 ```bash
 docker run -d \
-  --name swiparr \
+  --name messer-swipe \
   --restart unless-stopped \
   -p 4321:4321 \
-  -v $(pwd)/swiparr-data:/app/data \
+  -v $(pwd)/messer-swipe-data:/app/data \
   -e PROVIDER=jellyfin \
   -e JELLYFIN_URL=http://your-jellyfin:8096 \
   ghcr.io/jakobbjelver/messer-swipe:latest
@@ -167,6 +168,7 @@ PLEX_PUBLIC_URL=https://plex.example.com # Public URL (optional)
 PROVIDER=tmdb
 TMDB_ACCESS_TOKEN=your-tmdb-token     # API Read-Only Token (required)
 TMDB_DEFAULT_REGION=SE                # Default region for availability/certifications (optional)
+TMDB_ALLOWED_WATCH_PROVIDERS=netflix,prime,disney  # Limit selectable streaming services (optional)
 ```
 </details>
 
@@ -225,6 +227,7 @@ USE_STATIC_FILTERS=false                     # Skip dynamic filter fetching; use
 | `PLEX_TOKEN` | ❌ | - | Plex Admin/Access Token |
 | `TMDB_ACCESS_TOKEN` | ✳️ | - | TMDB API Read-Only Access Token |
 | `TMDB_DEFAULT_REGION` | ❌ | `SE` | Default TMDB region (ISO 3166-1) for streaming availability/certifications |
+| `TMDB_ALLOWED_WATCH_PROVIDERS` | ❌ | - | Comma-separated allowlist of selectable streaming services (case-insensitive substring match, e.g. `netflix,prime,disney,apple tv`). Unset = full TMDB list |
 | `AUTH_SECRET` | ❌ | Auto-generated on boot/build | Secret used for session encryption and guest lending token encryption (min 32 chars). See Security & Privacy. |
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
@@ -294,7 +297,7 @@ When you create a session, customize it for your group:
 
 1. Host enables "Guest Lending" in settings
 2. Guest joins session with just a name - no account needed
-3. Swiparr uses the host's credentials to fetch content
+3. Messer Swipe uses the host's credentials to fetch content
 4. Guest gets a unique ID, their swipes are tracked separately
 5. Guests cannot access host account or modify settings
 
@@ -369,7 +372,7 @@ Windows users can use https://generate-secret.vercel.app/32.
 
 ## 🤝 Contributing
 
-**Swiparr is now open for contributions!** 🎉
+**Messer Swipe is now open for contributions!** 🎉
 
 ### How to Contribute
 
@@ -383,7 +386,7 @@ Windows users can use https://generate-secret.vercel.app/32.
 
 ```bash
 git clone https://github.com/jakobbjelver/messer-swipe.git
-cd swiparr
+cd messer-swipe
 npm install
 npm run dev          # Start dev server
 npm run lint         # Check code style
@@ -403,7 +406,7 @@ npm run lint         # Check code style
 
 ## 💚 Support the Project
 
-Swiparr is free, open source, and community-supported. Your contributions help:
+Messer Swipe is free, open source, and community-supported. Your contributions help:
 
 - ☕ [**Buy Me a Coffee**](https://www.buymeacoffee.com/jakobbjelver) - Quick one-time support
 - 🌟 **Star on GitHub** - Show your support (it's free!)
@@ -430,7 +433,7 @@ All support, questions, and discussions happen in GitHub Discussions:
 
 ### Custom Base Path
 
-If you want to serve Swiparr under a subpath — e.g. `https://jellyfin.example.com/swipe/` — you need to set `URL_BASE_PATH` **at image build time**, not as a runtime environment variable.
+If you want to serve Messer Swipe under a subpath — e.g. `https://jellyfin.example.com/swipe/` — you need to set `URL_BASE_PATH` **at image build time**, not as a runtime environment variable.
 
 **Why?** Next.js bakes asset URLs (`/_next/static/...`) into the compiled output at build time. Setting a base path only at runtime can fix page routing but leaves all JS/CSS/image references pointing at the wrong path, breaking the app. The prefix must be known before the build.
 
@@ -440,28 +443,28 @@ If you want to serve Swiparr under a subpath — e.g. `https://jellyfin.example.
 
 ```bash
 git clone https://github.com/jakobbjelver/messer-swipe.git
-cd swiparr
-docker build --build-arg URL_BASE_PATH=/swipe -t swiparr-custom .
+cd messer-swipe
+docker build --build-arg URL_BASE_PATH=/swipe -t messer-swipe-custom .
 ```
-Then use `swiparr-custom` as your image name in your docker run command.
+Then use `messer-swipe-custom` as your image name in your docker run command.
 
 #### If you are using compose, compose can build and manage the image for you at runtime
 
 ```yaml
 services:
-  swiparr:
+  messer-swipe:
     pull_policy: build
     build:
       context: https://github.com/jakobbjelver/messer-swipe.git
       args:
         URL_BASE_PATH: /swipe
-    container_name: swiparr
+    container_name: messer-swipe
     restart: unless-stopped
     environment:
       - JELLYFIN_URL=http://jellyfin:8096
       - URL_BASE_PATH=/swipe       # must match the --build-arg value exactly
     volumes:
-      - ./swiparr-data:/app/data
+      - ./messer-swipe-data:/app/data
     ports:
       - 4321:4321
 ```
@@ -476,7 +479,7 @@ Forward requests for the subpath to the container. The app handles stripping the
 
 ```nginx
 location /swipe {
-    proxy_pass http://swiparr:4321;
+    proxy_pass http://messer-swipe:4321;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -488,15 +491,15 @@ location /swipe {
 ```yaml
 labels:
   - "traefik.enable=true"
-  - "traefik.http.routers.swiparr.rule=Host(`jellyfin.example.com`) && PathPrefix(`/swipe`)"
-  - "traefik.http.routers.swiparr.tls=true"
+  - "traefik.http.routers.messer-swipe.rule=Host(`jellyfin.example.com`) && PathPrefix(`/swipe`)"
+  - "traefik.http.routers.messer-swipe.tls=true"
 ```
 
 **Caddy:**
 
 ```caddy
 handle /swipe* {
-    reverse_proxy swiparr:4321
+    reverse_proxy messer-swipe:4321
 }
 ```
 
@@ -508,7 +511,7 @@ handle /swipe* {
 
 ```nginx
 location / {
-    proxy_pass http://swiparr:4321;
+    proxy_pass http://messer-swipe:4321;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -545,7 +548,7 @@ Use `--env-file .env` with Docker for cleaner configuration management.
 
 **MIT License** - See [LICENSE](LICENSE) file for details
 
-You're free to use, modify, and distribute Swiparr. Commercial use is permitted.
+You're free to use, modify, and distribute Messer Swipe. Commercial use is permitted.
 
 ---
 
@@ -554,7 +557,7 @@ You're free to use, modify, and distribute Swiparr. Commercial use is permitted.
 **Made with ❤️ and late nights**
 
 <p>
-  <a href="https://swiparr.com">🌐 Swiparr Global</a> • 
+  <a href="https://swiparr.com">🌐 Messer Swipe Global</a> • 
   <a href="https://github.com/jakobbjelver/messer-swipe">⭐ GitHub Repo</a> • 
   <a href="https://github.com/jakobbjelver/messer-swipe/discussions">💬 Community</a>
 </p>

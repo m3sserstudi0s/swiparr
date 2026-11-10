@@ -37,6 +37,7 @@ const envSchema = z.object({
   // Provider Specific
   TMDB_ACCESS_TOKEN: z.string().optional(),
   TMDB_DEFAULT_REGION: z.string().optional(),
+  TMDB_ALLOWED_WATCH_PROVIDERS: z.string().optional(),
   PLEX_TOKEN: z.string().optional(),
 
   // UI / Proxy
@@ -59,6 +60,7 @@ const parsedEnv = envSchema.parse(process.env);
 // Calculated values
 const getDefaultDbPath = () => {
   if (parsedEnv.NODE_ENV === 'production') {
+    // The database file keeps its old name: it is a data path on a mounted volume, not a brand.
     return 'file:/app/data/swiparr.db';
   }
   return 'file:swiparr.db';

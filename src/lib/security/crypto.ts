@@ -9,6 +9,8 @@ const SCRYPT_N = 16384;
 const SCRYPT_R = 8;
 const SCRYPT_P = 1;
 // Fixed salt: the secret itself provides uniqueness; this salt binds the key to its purpose
+// Never rename this salt: it is the KDF input for every stored guest access token. Changing it
+// (even to "messer-swipe") makes every existing session's host token undecryptable.
 const SCRYPT_SALT = Buffer.from("swiparr-guest-lending-v2");
 
 const deriveKey = (secret: string): Buffer => {
