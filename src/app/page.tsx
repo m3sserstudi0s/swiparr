@@ -36,13 +36,13 @@ export default function Home() {
           <TabsList className="grid mx-auto h-fit grid-cols-2 bg-muted/30 rounded-none z-0">
             <TabsTrigger value="swipe" className="h-11 w-16 group rounded-none z-0">
               <GalleryHorizontalEnd
-                className="size-5 z-0 fill-none transition-all group-data-[state=active]:fill-current"
+                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
               />
             </TabsTrigger>
 
             <TabsTrigger value="likes" className="h-11 w-16 group rounded-none z-0">
               <Heart
-                className="size-5 z-0 fill-none transition-all group-data-[state=active]:fill-current"
+                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
               />
             </TabsTrigger>
           </TabsList>

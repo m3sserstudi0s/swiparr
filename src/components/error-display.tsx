@@ -114,7 +114,7 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
         <Button asChild variant="outline" size="lg" className="min-w-44 font-semibold">
           <Link href={`${basePath}/`}>
             <Home className="size-4" />
-            Go House
+            Go Home
           </Link>
         </Button>
       </div>
