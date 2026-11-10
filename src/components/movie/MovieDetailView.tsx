@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink, Percent } from "lucide-react";
+import { Play, Clock, Star, HeartBreak, BookmarkSimple, SealCheck, ArrowSquareOut, Percent } from "@phosphor-icons/react";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, WatchProvider } from "@/types";
@@ -186,7 +186,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       )}
                       {!!movie.OfficialRating && (
                         <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
-                          <ShieldCheck className="w-3 h-3"/>
+                          <SealCheck className="w-3 h-3"/>
                           {movie.OfficialRating}
                         </Badge>
                       )}
@@ -229,7 +229,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       className="w-32"
                     >
                       <Button className="w-32" size="lg">
-                        <ExternalLink className="w-4 h-4 mr-2" /> See more
+                        <ArrowSquareOut className="w-4 h-4 mr-2" /> See more
                       </Button>
                     </Link>
                   )}
@@ -242,7 +242,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       disabled={isTogglingWatchlist}
                     >
                       {useWatchlist ?
-                        <Bookmark className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
+                        <BookmarkSimple className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
                         : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
                       }
                       {useWatchlist ? "Watchlist" : "Favorite"}
@@ -258,7 +258,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     }}
                     disabled={isUnliking}
                   >
-                    <HeartOff className="w-5 h-5" />
+                    <HeartBreak className="w-5 h-5" />
                   </Button>}
                 </div>
 
@@ -278,7 +278,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {movie.WatchProviders.map((provider: WatchProvider) => (
-                        <div key={provider.Id} className="flex items-center gap-2 bg-background/50 border rounded-lg px-2.5 py-1.5 shadow-sm">
+                        <div key={provider.Id} className="flex items-center gap-2 bg-background/50 border rounded-lg px-2.5 py-1.5">
                           <div className="relative size-5 overflow-hidden rounded">
                             <OptimizedImage
                               src={`https://image.tmdb.org/t/p/w92${provider.LogoPath}`}

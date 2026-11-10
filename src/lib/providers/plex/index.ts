@@ -147,7 +147,7 @@ export class PlexProvider implements MediaProvider {
         const url = getPlexUrl(`/library/sections/${section.Id}/all`, auth?.serverUrl);
         const res = await plexRequest<any>({ method: 'get', url, headers, params });
         const data = PlexContainerSchema.parse(res.data);
-        let items = data.MediaContainer.Metadata || [];
+        const items = data.MediaContainer.Metadata || [];
         allItems = [...allItems, ...items];
     }
 

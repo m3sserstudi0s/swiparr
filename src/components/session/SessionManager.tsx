@@ -1,7 +1,7 @@
 "use client";
 import { Suspense } from "react";
 import { Button } from "../ui/button";
-import { Users } from "lucide-react";
+import { Users } from "@phosphor-icons/react";
 import SessionContent from "./SessionContent";
 
 export function SessionManager() {

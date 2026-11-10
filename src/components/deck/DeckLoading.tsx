@@ -9,10 +9,10 @@ export function DeckLoading() {
         <Skeleton className="relative w-full h-full rounded-3xl" />
       </div>
       <div className="flex space-x-6 mt-4 items-center">
-        <Skeleton className="h-12 w-12 rounded-full" />
-        <Skeleton className="h-18 w-18 rounded-full" />
-        <Skeleton className="h-18 w-18 rounded-full" />
-        <Skeleton className="h-12 w-12 rounded-full" />
+        <Skeleton className="h-12 w-12 rounded-none" />
+        <Skeleton className="h-18 w-18 rounded-none" />
+        <Skeleton className="h-18 w-18 rounded-none" />
+        <Skeleton className="h-12 w-12 rounded-none" />
       </div>
     </div>
   );

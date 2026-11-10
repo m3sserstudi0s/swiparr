@@ -10,7 +10,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Shield, Library, Check, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Shield, Books, Check, CircleNotch, CaretDown, CaretRight } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -114,13 +114,13 @@ export function AdminSettings() {
                                 <CollapsibleTrigger asChild>
                                     <button className="flex items-center justify-between w-full group cursor-pointer">
                                         <div className="flex items-center gap-2 text-sm font-medium">
-                                            <Library className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                            <Books className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                             Libraries
                                         </div>
                                         {isExpanded ? (
-                                            <ChevronDown className="size-4 text-muted-foreground" />
+                                            <CaretDown className="size-4 text-muted-foreground" />
                                         ) : (
-                                            <ChevronRight className="size-4 text-muted-foreground" />
+                                            <CaretRight className="size-4 text-muted-foreground" />
                                         )}
                                     </button>
                                 </CollapsibleTrigger>
@@ -146,7 +146,7 @@ export function AdminSettings() {
                                     </div>
                                     {isLoadingLibs ? (
                                         <div className="flex items-center justify-center py-4">
-                                            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                                            <CircleNotch className="size-6 animate-spin text-muted-foreground" />
                                         </div>
                                     ) : (
                                         <div className="grid gap-2">

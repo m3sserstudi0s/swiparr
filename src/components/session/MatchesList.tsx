@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Sparkles } from "lucide-react";
+import { UserPlus, Sparkle } from "@phosphor-icons/react/dist/ssr";
 import { MovieListItem } from "../movie/MovieListItem";
 import { MediaItem } from "@/types";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
@@ -44,7 +44,7 @@ export function MatchesList({ activeCode, matches, openMovie }: MatchesListProps
                 <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <Sparkles />
+                      <Sparkle />
                     </EmptyMedia>
                     <EmptyTitle className="text-foreground">
                       No matches made yet

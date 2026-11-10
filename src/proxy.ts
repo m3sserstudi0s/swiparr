@@ -63,8 +63,14 @@ export async function proxy(request: NextRequest) {
   ].join("; ");
   response.headers.set("Content-Security-Policy", csp);
 
+  // The Messer UI sink is a build artifact, not a user surface: open in dev, and in production only
+  // when MESSER_SINK_PUBLIC=1 (used by `messer check` against a deployed build).
+  const sinkIsPublic =
+    pathname === "/ui" && (process.env.NODE_ENV !== "production" || process.env.MESSER_SINK_PUBLIC === "1");
+
   // Define public paths
   const isPublicPath =
+    sinkIsPublic ||
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/og") ||

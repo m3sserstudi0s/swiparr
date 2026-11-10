@@ -1,0 +1,24 @@
+name: messer-ui conformance
+
+on:
+  push:
+    branches: [main, develop, dev]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: jakobbjelver/messer-ui
+          path: .messer-ui
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Source pass: colours, radii, icon set, type scale and fonts. No browser, no running app.
+      # The full pass (npm run messer) needs the /ui sink served and runs before a release.
+      - name: messer check (static)
+        run: node .messer-ui/scripts/check.mjs --app . --static

@@ -1,4 +1,4 @@
-import { Info, UserPlus, X } from "lucide-react"
+import { Info, UserPlus, X } from "@phosphor-icons/react/dist/ssr";
 import {
     Item,
     ItemActions,
@@ -49,7 +49,7 @@ export function SessionAlert() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Guest Session</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    You are currently joined as a guest. Some features are unavailable due to you lending the session host's account.
+                                    You are currently joined as a guest. Some features are unavailable due to you lending the session host&apos;s account.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

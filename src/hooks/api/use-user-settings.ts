@@ -58,9 +58,8 @@ export function useUpdateUserSettings() {
 }
 
 export function useWatchProviders(region?: string, sessionCode?: string | null, all: boolean = false) {
-  if(!region) return { data: undefined, isLoading: undefined}
-  return useQuery({
-    queryKey: [...QUERY_KEYS.media.watchProviders(region, sessionCode), all],
+  const query = useQuery({
+    queryKey: [...QUERY_KEYS.media.watchProviders(region ?? "", sessionCode), all],
     queryFn: async () => {
       const res = await apiClient.get<{ providers: (WatchProvider & { MemberUserIds?: string[] })[], members?: any[] }>("/api/media/watch-providers", {
         params: { region, sessionCode, all },
@@ -69,6 +68,8 @@ export function useWatchProviders(region?: string, sessionCode?: string | null, 
     },
     enabled: !!region,
   });
+  if (!region) return { data: undefined, isLoading: undefined };
+  return query;
 }
 
 export function useRegions() {

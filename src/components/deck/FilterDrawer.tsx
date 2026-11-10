@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { RotateCcw, Star, Check, Search, X } from "lucide-react";
+import { ArrowCounterClockwise, Star, Check, MagnifyingGlass, X } from "@phosphor-icons/react";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
@@ -357,7 +357,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             className="h-8 gap-2 text-muted-foreground hover:text-foreground text-xs absolute right-4 top-4"
             onClick={resetAll}
           >
-            <RotateCcw className="size-3" />
+            <ArrowCounterClockwise className="size-3" />
             Reset
           </Button>
         </DrawerHeader>
@@ -382,7 +382,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       <Badge
                         key={option}
                         variant={sortBy === option ? "default" : "outline"}
-                        className="cursor-pointer text-sm py-1.5 px-4 rounded-full transition-colors"
+                        className="cursor-pointer text-sm py-1.5 px-4 rounded-none transition-colors"
                         onClick={() => setSortBy(option)}
                       >
                         {option}
@@ -396,7 +396,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
                     <div className="space-y-0.5">
                       <Label className="text-sm font-semibold tracking-tight">Hide Watched</Label>
-                      <p className="text-xs text-muted-foreground font-medium">Only show items you haven't seen yet</p>
+                      <p className="text-xs text-muted-foreground font-medium">Only show items you haven&apos;t seen yet</p>
                     </div>
                     <Switch
                       checked={unplayedOnly}
@@ -525,7 +525,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           key={genre.Id}
                           variant={isSelected ? "default" : "outline"}
                           className={cn(
-                            "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                            "cursor-pointer text-sm py-1.5 px-4 rounded-none",
                             genreFilterMode === "exclude" && isSelected && "bg-muted text-muted-foreground border-muted"
                           )}
                           onClick={() => toggleGenre(genre.Name)}
@@ -594,7 +594,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             key={theme}
                             variant={isSelected ? "default" : "outline"}
                             className={cn(
-                              "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                              "cursor-pointer text-sm py-1.5 px-4 rounded-none",
                               themeFilterMode === "exclude" && isSelected && "bg-muted text-muted-foreground border-muted"
                             )}
                             onClick={() => toggleTheme(theme)}
@@ -675,7 +675,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             key={rating.Value}
                             variant={isSelected ? "default" : "outline"}
                             className={cn(
-                              "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                              "cursor-pointer text-sm py-1.5 px-4 rounded-none",
                               ratingFilterMode === "exclude" && isSelected && "bg-muted text-muted-foreground border-muted"
                             )}
                             onClick={() => toggleRating(rating.Value)}
@@ -706,7 +706,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                           key={lang.code}
                           variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
                           className={cn(
-                            "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                            "cursor-pointer text-sm py-1.5 px-4 rounded-none",
                             selectedLanguages.includes(lang.code) && "bg-primary/20 text-primary border-primary/30"
                           )}
                           onClick={() => setSelectedLanguages([lang.code])}
@@ -722,7 +722,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                             key={lang.code}
                             variant={selectedLanguages.includes(lang.code) ? "secondary" : "outline"}
                             className={cn(
-                              "cursor-pointer text-sm py-1.5 px-4 rounded-full",
+                              "cursor-pointer text-sm py-1.5 px-4 rounded-none",
                               selectedLanguages.includes(lang.code) && "bg-primary/20 text-primary border-primary/30"
                             )}
                             onClick={() => setSelectedLanguages([lang.code])}
@@ -766,7 +766,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       </div>
                       <InputGroup className="bg-muted/30 border-input">
                         <InputGroupAddon align="inline-start">
-                          <Search className="size-4" />
+                          <MagnifyingGlass className="size-4" />
                         </InputGroupAddon>
                         <InputGroupInput
                           placeholder="Search services..."

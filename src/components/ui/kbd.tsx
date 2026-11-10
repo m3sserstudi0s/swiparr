@@ -4,11 +4,11 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const kbdVariants = cva(
-  "inline-flex items-center justify-center rounded border border-neutral-200 bg-neutral-100 px-1.5 font-mono text-[10px] font-medium text-neutral-500 opacity-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400",
+  "inline-flex items-center justify-center rounded-none border border-border bg-surface-2 px-1.5 font-mono text-[10px] font-medium text-muted-foreground",
   {
     variants: {
       variant: {
-        default: "shadow-[0_1px_0_0_rgba(0,0,0,0.05)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.05)]",
+        default: "",
         outline: "bg-transparent shadow-none",
       },
       size: {
