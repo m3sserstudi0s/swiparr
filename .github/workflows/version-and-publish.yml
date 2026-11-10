@@ -48,43 +48,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  sync_fork:
-    name: Sync fork (only when a release is published)
-    needs: release
-    if: needs.release.outputs.published == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false   # don't keep GITHUB_TOKEN auth header
-      - name: Sync fork (master + tags)
-        env:
-          SYNC_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
-        run: |
-          # Add fork remote using PAT
-          git remote add fork "https://jakobbjelver:${SYNC_TOKEN}@github.com/jakobbjelver/swiparr.git"
-
-          # Sync master branch
-          git push fork HEAD:master --force
-
-          # Sync tags
-          git push fork --tags --force
-
   # Build each platform on its own native runner (no QEMU emulation).
   # Each job pushes a digest-only image (no tag) and uploads its digest
   # as an artifact for the merge job below.
   build:
     name: Build image (${{ matrix.platform }})
-    needs: [release, sync_fork]
+    needs: [release]
     if: |
       always() &&
       (
         github.ref_name == 'develop' ||
         (github.ref_name == 'master' && needs.release.outputs.published == 'true')
       ) &&
-      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
-      (needs.sync_fork.result == 'success' || needs.sync_fork.result == 'skipped')
+      (needs.release.result == 'success' || needs.release.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:
