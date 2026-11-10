@@ -9,7 +9,7 @@
       "id": "dev-server",
       "title": "Dev Server",
       "description": "Next.js dev server on host (PM2-supervised, scale-to-zero)",
-      "info": "Served at https://dev-server.messer.wtf. Port 3000 is shared with the other projects' dev servers, so starting this one stops whatever else occupies it — one dev server at a time by design. Runs on the macOS host under PM2 as messer-swipe-dev (host node_modules, Next 16 Turbopack); Stop deletes the PM2 app, and an idle watchdog scales it to zero after ~15 min without activity. Uses the repo's own .env (PROVIDER, AUTH_SECRET) and the local swiparr.db.",
+      "info": "Served at https://dev-server.messer.wtf. Port 3000 is shared with the other projects' dev servers, so starting this one stops whatever else occupies it — one dev server at a time by design. Runs on the macOS host under PM2 as messer-swipe-dev (host node_modules, Next 16 Turbopack); Stop deletes the PM2 app, and an idle watchdog scales it to zero after ~15 min without activity. Uses the repo's own .env (PROVIDER, AUTH_SECRET) and the local swiparr.db, with JELLYFIN_URL overridden to the host-reachable jellyfin.orb.local:8096 — the .env value jellyfin:8096 is Docker-internal and unresolvable from the host, which made every login fail with \"Server connection failed\".",
       "icon": "Play",
       "lifecycle": "service",
       "confirmMessage": "Start the Messer Swipe dev server on host? Served at https://dev-server.messer.wtf — this stops any other project's dev server on port 3000.",
@@ -31,9 +31,9 @@
         },
         {
           "title": "Start supervised dev server",
-          "description": "PM2 with an idle scale-to-zero watchdog.",
-          "info": "run-dev.sh cds into the repo and execs next dev, so PM2 tracks the real server. dev-idle-watch.py stops it after 15 min idle.",
-          "command": "/opt/homebrew/bin/pm2 start /Users/jakob/Scripts/run-dev.sh --name messer-swipe-dev --no-autorestart -- /Users/jakob/Repos/messer-swipe ./node_modules/.bin/next dev --port 3000 --hostname 0.0.0.0 >/dev/null; /opt/homebrew/bin/pm2 start /Users/jakob/Scripts/dev-idle-watch.py --name messer-swipe-dev-watch --no-autorestart -- --pm2-name messer-swipe-dev --repo /Users/jakob/Repos/messer-swipe --port 3000 --idle 15 --pm2 /opt/homebrew/bin/pm2 >/dev/null; sleep 2; echo 'started under PM2 — messer-swipe-dev + idle watchdog'",
+          "description": "PM2 with an idle scale-to-zero watchdog; provider URL pointed at the host-reachable Jellyfin.",
+          "info": "run-dev.sh cds into the repo and execs next dev, so PM2 tracks the real server. dev-idle-watch.py stops it after 15 min idle. The repo .env carries JELLYFIN_URL=http://jellyfin:8096, a Docker-internal name that does NOT resolve on the macOS host (login fails with getaddrinfo ENOTFOUND jellyfin), so this step overrides it with the OrbStack hostname jellyfin.orb.local:8096 — env wins over .env in Next. JELLYFIN_PUBLIC_URL is overridden too because .env still points it at the retired watch.messerstudios.dev.",
+          "command": "/opt/homebrew/bin/pm2 start /Users/jakob/Scripts/run-dev.sh --name messer-swipe-dev --no-autorestart -- /Users/jakob/Repos/messer-swipe env JELLYFIN_URL=http://jellyfin.orb.local:8096 JELLYFIN_PUBLIC_URL=https://watch.messer.wtf ./node_modules/.bin/next dev --port 3000 --hostname 0.0.0.0 >/dev/null; /opt/homebrew/bin/pm2 start /Users/jakob/Scripts/dev-idle-watch.py --name messer-swipe-dev-watch --no-autorestart -- --pm2-name messer-swipe-dev --repo /Users/jakob/Repos/messer-swipe --port 3000 --idle 15 --pm2 /opt/homebrew/bin/pm2 >/dev/null; sleep 2; echo 'started under PM2 — messer-swipe-dev + idle watchdog'",
           "run_on": "host"
         },
         {
