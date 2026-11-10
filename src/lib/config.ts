@@ -60,6 +60,7 @@ const parsedEnv = envSchema.parse(process.env);
 // Calculated values
 const getDefaultDbPath = () => {
   if (parsedEnv.NODE_ENV === 'production') {
+    // The database file keeps its old name: it is a data path on a mounted volume, not a brand.
     return 'file:/app/data/swiparr.db';
   }
   return 'file:swiparr.db';

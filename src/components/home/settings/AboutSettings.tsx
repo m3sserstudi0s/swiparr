@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Code, Info, CircleNotch, WarningCircle, CheckCircle, ArrowSquareOut, FileText, ArrowUp } from "@phosphor-icons/react";
+import { BookOpenText, Code, Info, Loader2, CircleAlert, CircleCheck, ExternalLink, FileText, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRuntimeConfig } from "@/lib/runtime-config";
@@ -64,7 +64,7 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                             </div>
                             <span>Source code</span>
                         </div>
-                        <ArrowSquareOut className="size-4 text-muted-foreground" />
+                        <ExternalLink className="size-4 text-muted-foreground" />
                     </a>
                 </Button>
 
@@ -85,15 +85,15 @@ export function AboutSettings({ onShowUserGuide }: AboutSettingsProps) {
                             </div>
                         </div>
                         {isCheckingVersion ? (
-                            <CircleNotch className="size-4 animate-spin text-muted-foreground" />
+                            <Loader2 className="size-4 animate-spin text-muted-foreground" />
                         ) : versionError || versionData?.error ? (
                             <Badge variant="destructive" className="h-6">
-                                <WarningCircle className="size-3" />
+                                <CircleAlert className="size-3" />
                                 Offline
                             </Badge>
                         ) : isLatest ? (
                             <Badge variant="outline" className="h-6">
-                                <CheckCircle className="size-3" />
+                                <CircleCheck className="size-3" />
                                 Latest
                             </Badge>
                         ) : (

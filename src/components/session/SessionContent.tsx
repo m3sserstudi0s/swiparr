@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Users } from "@phosphor-icons/react";
+import { Users } from "lucide-react";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
 import { toast } from "sonner";
@@ -172,7 +172,7 @@ export default function SessionContent() {
         }
 
         const shareData = {
-            title: 'Swiparr session invite',
+            title: 'Messer Swipe session invite',
             text: `Join with code: ${activeCode}`,
             url: shareUrl
         };

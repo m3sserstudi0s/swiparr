@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { WarningCircle, WifiSlash, House, ArrowCounterClockwise, MagnifyingGlass } from "@phosphor-icons/react";
+import { CircleAlert, WifiOff, Home, RotateCcw, Search } from "lucide-react";
 import Link from 'next/link';
 import { useRuntimeConfig } from '@/lib/runtime-config';
 import { GITHUB_URL } from '@/lib/constants';
@@ -38,28 +38,28 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
 
   const errorConfigs = {
     '404': {
-      icon: MagnifyingGlass,
+      icon: Search,
       title: 'Page Not Found',
       description: "We couldn't find the page you're looking for. It might have been moved or deleted.",
       buttonText: 'Back',
       action: () => (window.location.href = `${basePath}/`),
     },
     '500': {
-      icon: WarningCircle,
+      icon: CircleAlert,
       title: 'System Error',
       description: "Something went wrong on our end. We're working on fixing it.",
       buttonText: 'Try again',
       action: reset || (() => window.location.reload()),
     },
     'offline': {
-      icon: WifiSlash,
+      icon: WifiOff,
       title: 'No Connection',
       description: 'You are currently offline. Check your internet connection and try again.',
       buttonText: 'Retry',
       action: () => window.location.reload(),
     },
     'generic': {
-      icon: WarningCircle,
+      icon: CircleAlert,
       title: 'Application Error',
       description: error?.message || 'An unexpected client-side error occurred and the application crashed.',
       buttonText: 'Restart',
@@ -72,7 +72,7 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center animate-in fade-in zoom-in duration-300">
-      <div className="bg-destructive/10 p-4 rounded-full mb-6">
+      <div className="bg-destructive/10 p-4 rounded-none mb-6">
         <Icon className="size-12 text-destructive" />
       </div>
       
@@ -107,13 +107,13 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Button onClick={config.action} size="lg" className="min-w-44 font-semibold">
-          <ArrowCounterClockwise className="size-4" />
+          <RotateCcw className="size-4" />
           {config.buttonText}
         </Button>
         
         <Button asChild variant="outline" size="lg" className="min-w-44 font-semibold">
           <Link href={`${basePath}/`}>
-            <House className="size-4" />
+            <Home className="size-4" />
             Go House
           </Link>
         </Button>

@@ -1,3 +1,4 @@
+import { SSE_LEADER_CHANNEL } from '@/lib/constants';
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EVENT_TYPES } from './events';
@@ -10,7 +11,7 @@ import { useSession, QUERY_KEYS } from '@/hooks/api';
 import { usePathname, useRouter } from 'next/navigation';
 import { logger } from './logger';
 
-const LEADER_CHANNEL = 'swiparr:sse-leader';
+const LEADER_CHANNEL = SSE_LEADER_CHANNEL;
 const LEADER_HEARTBEAT_MS = 3000;
 const LEADER_TIMEOUT_MS = 9000;
 

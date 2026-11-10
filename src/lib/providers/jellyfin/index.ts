@@ -91,7 +91,7 @@ export class JellyfinProvider implements MediaProvider {
 
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
       params,
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
     });
 
     const data = JellyfinQueryResultSchema.parse(res.data);
@@ -101,7 +101,7 @@ export class JellyfinProvider implements MediaProvider {
 
   async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items/${id}`, auth?.serverUrl), {
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
     });
     const data = JellyfinItemSchema.parse(res.data);
     return mapJellyfinItem(data);
@@ -133,7 +133,7 @@ export class JellyfinProvider implements MediaProvider {
           includeItemTypes: "Movie",
           recursive: true,
         },
-        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {},
+        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
       });
 
       logger.debug("[JellyfinProvider.getThemes] Response data:", res.data);
@@ -216,7 +216,7 @@ export class JellyfinProvider implements MediaProvider {
     const { getBlurDataURL } = await import("@/lib/server/image-blur");
     try {
         const imageUrl = this.getImageUrl(itemId, (type || "Primary") as any, undefined, auth) + "?maxWidth=20&quality=50";
-        const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+        const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {};
         return await getBlurDataURL(itemId, imageUrl, headers) || "";
     } catch (e) {
         return "";
@@ -225,7 +225,7 @@ export class JellyfinProvider implements MediaProvider {
 
   async fetchImage(itemId: string, type: string, tag?: string, auth?: AuthContext, options?: Record<string, string>): Promise<ImageResponse> {
     const url = this.getImageUrl(itemId, type as any, tag, auth);
-    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {};
     const res = await apiClient.get(url, {
       responseType: "arraybuffer",
       headers,
@@ -239,20 +239,20 @@ export class JellyfinProvider implements MediaProvider {
 
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const { authenticateJellyfin } = await import("@/lib/jellyfin/api");
-    return authenticateJellyfin(username, password || "", deviceId || "Swiparr", serverUrl);
+    return authenticateJellyfin(username, password || "", deviceId || "Messer Swipe", serverUrl);
   }
 
   async toggleWatchlist(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
     const url = getJellyfinUrl(`/Users/${auth?.userId}/Items/${itemId}/Rating`, auth?.serverUrl);
     await apiClient.post(url, null, { 
       params: { Likes: action === "add" },
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {}
+      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {}
     });
   }
 
   async toggleFavorite(itemId: string, action: "add" | "remove", auth?: AuthContext): Promise<void> {
     const url = getJellyfinUrl(`/Users/${auth?.userId}/FavoriteItems/${itemId}`, auth?.serverUrl);
-    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Swiparr") : {};
+    const headers = auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {};
     if (action === "add") {
       await apiClient.post(url, null, { headers });
     } else {

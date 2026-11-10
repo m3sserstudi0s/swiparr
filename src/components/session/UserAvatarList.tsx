@@ -5,7 +5,7 @@ import { SmoothAvatar } from "@/components/ui/smooth-avatar";
 import { HybridTooltip, HybridTooltipContent, HybridTooltipTrigger } from "@/components/ui/hybrid-tooltip";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/hooks/api";
-import { Crown } from "@phosphor-icons/react";
+import { Crown } from "lucide-react";
 
 
 interface Member {

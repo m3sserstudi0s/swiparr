@@ -105,8 +105,8 @@ export const assertSafePlexServerUrl = async (serverUrl: string): Promise<void> 
 
 export const getPlexHeaders = (token?: string, clientId?: string) => {
   const headers: any = {
-    'X-Plex-Client-Identifier': clientId || 'Swiparr',
-    'X-Plex-Product': 'Swiparr',
+    'X-Plex-Client-Identifier': clientId || 'Messer Swipe',
+    'X-Plex-Product': 'Messer Swipe',
     'X-Plex-Version': '1.0.0',
     'X-Plex-Platform': 'Web',
     'X-Plex-Device': 'Web',

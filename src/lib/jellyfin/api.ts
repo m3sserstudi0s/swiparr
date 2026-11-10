@@ -24,14 +24,14 @@ export const getJellyfinUrl = (path: string, customBaseUrl?: string) => {
 };
 
 export const getAuthHeaders = (deviceId: string) => {
-  const auth = `MediaBrowser Client="Swiparr", Device="Web", DeviceId="${deviceId}", Version="1.0.0"`;
+  const auth = `MediaBrowser Client="Messer Swipe", Device="Web", DeviceId="${deviceId}", Version="1.0.0"`;
   return {
     'Authorization': auth,
   };
 };
 
 export const getAuthenticatedHeaders = (accessToken: string, deviceId: string) => {
-  const auth = `MediaBrowser Token="${accessToken}", Client="Swiparr", Device="Web", DeviceId="${deviceId}", Version="1.0.0"`;
+  const auth = `MediaBrowser Token="${accessToken}", Client="Messer Swipe", Device="Web", DeviceId="${deviceId}", Version="1.0.0"`;
   return {
     'Authorization': auth,
   };
@@ -46,7 +46,7 @@ export const authenticateJellyfin = async (username: string, pw: string, deviceI
       Username: username,
       Pw: pw,
       Password: pw, // Some versions prefer Password over Pw
-      App: "Swiparr",
+      App: "Messer Swipe",
       Version: config.version,
       Device: "Web",
       DeviceId: deviceId

@@ -1,7 +1,7 @@
 services:
-  swiparr:
+  messer-swipe:
     image: ghcr.io/jakobbjelver/messer-swipe:latest
-    container_name: swiparr
+    container_name: messer-swipe
     restart: unless-stopped
     environment:
       # REQUIRED: The internal URL of your Jellyfin server (accessible by the container)
@@ -35,8 +35,8 @@ services:
       # IMPORTANT: This must be set at BUILD TIME via --build-arg, not just as a
       # runtime environment variable. The prebuilt image does not support this.
       # To use it, build your own image:
-      #   docker build --build-arg URL_BASE_PATH=/swipe -t swiparr-custom .
-      # Then replace the image field above with: image: swiparr-custom
+      #   docker build --build-arg URL_BASE_PATH=/swipe -t messer-swipe-custom .
+      # Then replace the image field above with: image: messer-swipe-custom
       # - URL_BASE_PATH=
       
       # OPTIONAL: The hostname the server binds to
@@ -49,7 +49,7 @@ services:
       # - PGID=1000
     volumes:
       # Persist database and other data
-      - ./swiparr-data:/app/data
+      - ./messer-swipe-data:/app/data
     ports:
       - 4321:4321
     healthcheck:

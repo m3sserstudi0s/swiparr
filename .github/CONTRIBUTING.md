@@ -1,6 +1,6 @@
-# Contributing to Swiparr
+# Contributing to Messer Swipe
 
-Thank you for your interest in contributing to Swiparr! We welcome contributions from the community and are pleased to have you join us.
+Thank you for your interest in contributing to Messer Swipe! We welcome contributions from the community and are pleased to have you join us.
 
 ## 💚 Code of Conduct
 
@@ -29,7 +29,7 @@ Before starting work on any significant changes, please open a discussion to:
 ```bash
 # Clone the repository
 git clone https://github.com/jakobbjelver/messer-swipe.git
-cd swiparr
+cd messer-swipe
 
 # Install dependencies
 npm install
@@ -227,14 +227,14 @@ Contributors will be:
 
 ## 📜 Legal
 
-By contributing to Swiparr, you:
+By contributing to Messer Swipe, you:
 - Agree to license your contributions under MIT License
 - Confirm you have the right to contribute this code
 - Understand contributions may be used commercially
 
 ## 🙏 Thank You!
 
-Your contributions make Swiparr better for everyone. Whether it's a small bug fix or a major feature, every contribution is valued and appreciated.
+Your contributions make Messer Swipe better for everyone. Whether it's a small bug fix or a major feature, every contribution is valued and appreciated.
 
 **Questions about contributing?** Open a [discussion](https://github.com/jakobbjelver/messer-swipe/discussions) and ask!
 
@@ -246,7 +246,7 @@ Your contributions make Swiparr better for everyone. Whether it's a small bug fi
 
 <p>
   <a href="https://github.com/jakobbjelver/messer-swipe">🏠 Back to Main Repo</a> •
-  <a href="https://swiparr.com">🎬 Try Swiparr Cloud</a>
+  <a href="https://swipe.messer.wtf">Try Messer Swipe</a>
 </p>
 
 </div>

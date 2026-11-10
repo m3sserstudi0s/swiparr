@@ -1,0 +1,159 @@
+import { ImageResponse } from 'next/og'
+
+// One social card for the whole app, drawn in the canon's own geometry: an ink box, the generated
+// mark, a mono label and a muted line. Satori cannot read CSS variables, so the four colours are the
+// resolved token values — the mark PNG carries the same ink box, so the two never drift apart.
+
+export const OG_SIZE = { width: 1200, height: 630 }
+export const OG_CONTENT_TYPE = 'image/png'
+
+const INK = '#141414'
+const PAPER = '#fafafa'
+const MUTED = '#a0a0a0'
+const HAIRLINE = '#2a2a2a'
+
+const TITLE = 'Messer Swipe'
+
+const FOOT_LEFT = 'messer.wtf'
+const FOOT_RIGHT = 'swipe'
+
+export async function loadGoogleFont(family: string, text: string) {
+  const url = `https://fonts.googleapis.com/css2?family=${family}&text=${encodeURIComponent(text)}`
+  const css = await (await fetch(url)).text()
+  const resource = css.match(/src: url\((.+)\) format\(['"](.+)['"]\)/)
+  if (resource && (resource[2] === 'truetype' || resource[2] === 'opentype')) {
+    const response = await fetch(resource[1])
+    if (response.ok) return await response.arrayBuffer()
+  }
+  throw new Error(`Failed to load font: ${family}`)
+}
+
+export function fallbackImage(message: string) {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%',
+          background: INK,
+          color: PAPER,
+          fontSize: 64,
+          fontFamily: 'sans-serif',
+        }}
+      >
+        {message}
+      </div>
+    ),
+    { ...OG_SIZE },
+  )
+}
+
+export async function renderOgCard({
+  origin,
+  basePath,
+  join = false,
+  code,
+}: {
+  origin: string
+  basePath: string
+  join?: boolean
+  code?: string | null
+}) {
+  const subtitle = join
+    ? 'You are invited to join a session.'
+    : 'Swipe on what to watch next, by yourself or together.'
+
+  const [sans, mono] = await Promise.all([
+    loadGoogleFont('Golos+Text', TITLE + subtitle),
+    loadGoogleFont('JetBrains+Mono', TITLE.toUpperCase() + FOOT_LEFT + FOOT_RIGHT + (code ?? '')),
+  ])
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          width: '100%',
+          height: '100%',
+          background: INK,
+          color: PAPER,
+          padding: 72,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* The mark's glyph, drawn in paper on the ink card. The generated PNG would be an ink
+              tile on ink — invisible — and this is the same Lucide `layers` the mark is built from. */}
+          <svg width={96} height={96} viewBox="0 0 24 24" fill="none" stroke={PAPER} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" />
+            <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" />
+            <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" />
+          </svg>
+          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 32 }}>
+            <div
+              style={{
+                fontFamily: 'JetBrains Mono',
+                fontSize: 44,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              {TITLE}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', fontFamily: 'Golos Text', fontSize: 38, color: MUTED, maxWidth: 1000 }}>
+            {subtitle}
+          </div>
+          {code ? (
+            <div
+              style={{
+                display: 'flex',
+                marginTop: 32,
+                padding: '18px 28px',
+                border: `1px solid ${HAIRLINE}`,
+                fontFamily: 'JetBrains Mono',
+                fontSize: 48,
+                letterSpacing: '0.28em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {code}
+            </div>
+          ) : null}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            borderTop: `1px solid ${HAIRLINE}`,
+            paddingTop: 24,
+            fontFamily: 'JetBrains Mono',
+            fontSize: 16,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: MUTED,
+          }}
+        >
+          <span>{FOOT_LEFT}</span>
+          <span>{FOOT_RIGHT}</span>
+        </div>
+      </div>
+    ),
+    {
+      ...OG_SIZE,
+      fonts: [
+        { name: 'Golos Text', data: sans, style: 'normal', weight: 600 },
+        { name: 'JetBrains Mono', data: mono, style: 'normal', weight: 500 },
+      ],
+    },
+  )
+}

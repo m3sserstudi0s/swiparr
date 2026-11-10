@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { MediaItem } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Heart } from "@phosphor-icons/react";
+import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
@@ -96,7 +96,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 <Button
                   size="lg"
                   variant={'secondary'}
-                  className="rounded-full text-lg h-12 w-48 font-bold shadow-lg"
+                  className="rounded-none text-lg h-12 w-48 font-bold"
                   onClick={onClose}
                 >
                   Continue

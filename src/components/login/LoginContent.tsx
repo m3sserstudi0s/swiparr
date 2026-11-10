@@ -7,7 +7,8 @@ import { useQuickConnectUpdates } from "@/lib/use-updates";
 import { usePlexPinAuth } from "@/hooks/usePlexPinAuth";
 import Image from "next/image";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import logo from "../../../public/icon0.svg"
+import logoLight from "../../../public/favicon.svg"
+import logoDark from "../../../public/favicon-dark.svg"
 import { apiClient } from "@/lib/api-client";
 import { cn, getErrorMessage } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
@@ -315,7 +316,9 @@ export default function LoginContent() {
         title="Quick Connect Code"
         value={qcCode || ""}
       />
-      <Image src={logo} alt="Logo" className="size-16 dark:invert dark:opacity-90 opacity-75 absolute top-16" loading="eager" />
+      {/* The generated mark, not a hand-drawn logo: ink box on light, inverted box on dark. */}
+      <Image src={logoLight} alt="Messer Swipe" width={64} height={64} className="size-16 absolute top-16 dark:hidden" loading="eager" priority />
+      <Image src={logoDark} alt="Messer Swipe" width={64} height={64} className="size-16 absolute top-16 hidden dark:block" loading="eager" priority />
       <Card className={cn("w-full border-border bg-card text-card-foreground pt-8", !providerLock ? "max-w-sm" : "max-w-xs")}>
         <CardContent className={cn("transition-all duration-300 h-auto", !providerLock && "px-5")}>
           {wasMadeAdmin ? (

@@ -1,24 +1,37 @@
-/* messer-ui — brand swiparr. Generated; do not edit. */
+/* messer-ui canon 2.0.0 — generated from canon/ and brand/; do not edit. */
+/* brand messer-swipe — accent and chart ramps only. */
 :root {
-  --primary: oklch(0.52 0.13 300);
+  --primary: oklch(0.30 0.008 260);
   --primary-foreground: #ffffff;
-  --primary-hover: color-mix(in oklab, oklch(0.52 0.13 300) 86%, #000000);
-  --ring: oklch(0.52 0.13 300);
-  --chart-1: oklch(0.82 0.0975 300);
-  --chart-2: oklch(0.7 0.13 300);
-  --chart-3: oklch(0.58 0.13 300);
-  --chart-4: oklch(0.46 0.13 300);
-  --chart-5: oklch(0.34 0.13 300);
+  --primary-hover: color-mix(in oklab, oklch(0.30 0.008 260) 86%, #000000);
+  --ring: oklch(0.30 0.008 260);
+  --chart-1: oklch(0.82 0.015 205);
+  --chart-2: oklch(0.7 0.02 205);
+  --chart-3: oklch(0.58 0.02 205);
+  --chart-4: oklch(0.46 0.02 205);
+  --chart-5: oklch(0.34 0.02 205);
+  --chart-cat-1: oklch(0.88 0.006 205);
+  --chart-cat-2: oklch(0.76 0.006 205);
+  --chart-cat-3: oklch(0.64 0.006 205);
+  --chart-cat-4: oklch(0.52 0.006 205);
+  --chart-cat-5: oklch(0.4 0.006 205);
+  --chart-cat-6: oklch(0.28 0.006 205);
 }
 
 .dark {
-  --primary: oklch(0.70 0.13 300);
+  --primary: oklch(0.92 0.004 260);
   --primary-foreground: #0a0a0a;
-  --primary-hover: color-mix(in oklab, oklch(0.70 0.13 300) 86%, #ffffff);
-  --ring: oklch(0.70 0.13 300);
-  --chart-1: oklch(0.86 0.0975 300);
-  --chart-2: oklch(0.74 0.0975 300);
-  --chart-3: oklch(0.62 0.13 300);
-  --chart-4: oklch(0.5 0.13 300);
-  --chart-5: oklch(0.38 0.13 300);
+  --primary-hover: color-mix(in oklab, oklch(0.92 0.004 260) 86%, #ffffff);
+  --ring: oklch(0.92 0.004 260);
+  --chart-1: oklch(0.86 0.015 205);
+  --chart-2: oklch(0.74 0.015 205);
+  --chart-3: oklch(0.62 0.02 205);
+  --chart-4: oklch(0.5 0.02 205);
+  --chart-5: oklch(0.38 0.02 205);
+  --chart-cat-1: oklch(0.9 0.006 205);
+  --chart-cat-2: oklch(0.78 0.006 205);
+  --chart-cat-3: oklch(0.66 0.006 205);
+  --chart-cat-4: oklch(0.54 0.006 205);
+  --chart-cat-5: oklch(0.42 0.006 205);
+  --chart-cat-6: oklch(0.3 0.006 205);
 }

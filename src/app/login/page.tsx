@@ -1,7 +1,7 @@
 import { Footer } from "@/components/Footer";
 import LightRays from "@/components/ui/LightRays";
 import LoginContent from "@/components/login/LoginContent";
-import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
+import { Loader2 } from "lucide-react";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getAsyncRuntimeConfig } from "@/lib/server/runtime-config";
@@ -19,7 +19,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   if (join && typeof join === 'string') {
     const ogUrl = new URL(`${basePath}/api/og`, origin);
     ogUrl.searchParams.set('join', join);
-    const title = "Swiparr – Join session";
+    const title = "Messer Swipe – Join session";
     const description = `You've been invited to join a session with code: ${join}.`;
     return {
       title,
@@ -46,7 +46,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
   return {
     title: "Login",
-    description: "Login to Swiparr to start swiping on what to watch next, by yourself or together.",
+    description: "Login to Messer Swipe to start swiping on what to watch next, by yourself or together.",
   };
 }
 
@@ -55,7 +55,7 @@ export default function LoginPage() {
     <main className="flex items-center justify-center overflow-hidden h-svh pt-[env(safe-area-inset-top)] font-sans">
       <Suspense fallback={
         <div className="text-foreground">
-          <CircleNotch className="animate-spin" />
+          <Loader2 className="animate-spin" />
         </div>}>
         <LoginContent />
         <Footer className="pb-6 absolute bottom-5" />

@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowsClockwise, Images } from "@phosphor-icons/react/dist/ssr";
+import { RefreshCw, Images } from "lucide-react";
 import {
   Empty,
   EmptyContent,
@@ -30,7 +30,7 @@ export function DeckError() {
             onClick={() => {
               window.location.reload();
             }}>
-            <ArrowsClockwise />
+            <RefreshCw />
             Reload
           </Button>
         </EmptyContent>

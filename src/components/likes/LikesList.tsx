@@ -17,7 +17,7 @@ import {
     EmptyTitle,
     EmptyDescription,
 } from "@/components/ui/empty"
-import { Heart } from "@phosphor-icons/react";
+import { Heart } from "lucide-react";
 
 export function LikesList() {
     const [sortBy, setSortBy] = useState("date");

@@ -1,37 +1,7 @@
-import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
 import { connection } from 'next/server'
 import { getAsyncRuntimeConfig } from '@/lib/server/runtime-config'
-
-async function loadGoogleFont(font: string, text: string) {
-  const url = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`
-  const css = await (await fetch(url)).text()
-
-  const resource = css.match(/src: url\((.+)\) format\(['"](.+)['"]\)/)
-
-  if (resource && (resource[2] === 'truetype' || resource[2] === 'opentype')) {
-    const response = await fetch(resource[1])
-    if (response.ok) {
-      return await response.arrayBuffer()
-    }
-  }
-
-  throw new Error(`Failed to load font: ${font}`)
-}
-
-function renderFallbackImage(message: string) {
-  return new ImageResponse(
-    (
-      <div
-        tw="flex items-center justify-center w-full h-full bg-[#141414] text-white"
-        style={{ background: 'linear-gradient(to bottom right, #141414, #2a2a2a)' }}
-      >
-        <div tw="text-6xl font-bold">{message}</div>
-      </div>
-    ),
-    { width: 1200, height: 630 }
-  )
-}
+import { fallbackImage, OG_CONTENT_TYPE, renderOgCard } from '@/lib/og'
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,85 +9,19 @@ export async function GET(req: NextRequest) {
       await connection()
     } catch (error) {
       console.warn('[og] connection() failed during prerender.')
-      return renderFallbackImage('Swiparr')
+      return fallbackImage('Messer Swipe')
     }
+
     const { searchParams } = new URL(req.url)
     const join = searchParams.get('join')
-    const { basePath, appPublicUrl } = await getAsyncRuntimeConfig();
-    const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`;
-    const logoUrl = `${origin}${basePath}/icon1.png`;
+    const { basePath, appPublicUrl } = await getAsyncRuntimeConfig()
+    const origin = appPublicUrl.startsWith('http') ? appPublicUrl : `https://${appPublicUrl}`
 
-    // Fetch fonts
-    const [sansFont, monoFont] = await Promise.all([
-      loadGoogleFont('Zalando+Sans', 'Swiparr' + (join ? "You&apos;re invited to join a session Join a session and start swiping on what to watch next together." : "Swipe on what to watch next, by yourself or together.")),
-      loadGoogleFont('JetBrains+Mono', join || 'CODE')
-    ])
-
-    const emoji = join ? '🤝' : '🍿';
-
-    return new ImageResponse(
-      (
-        <div tw="flex flex-col items-center justify-center w-full h-full bg-[#141414]" style={{
-          background: 'linear-gradient(to bottom right, #141414, #2a2a2a)',
-        }}>
-          {/* Header with Logo and Emoji */}
-          <div tw="flex items-center mb-4">
-            <img
-              src={logoUrl}
-              alt="Logo"
-              tw="w-32 h-32 rounded-[30px]"
-            />
-            <div tw="text-8xl ml-8 flex">
-              {emoji}
-            </div>
-          </div>
-
-          {/* Bold App Name UNDER the logo/emoji */}
-          <div tw="text-8xl font-black text-white mb-8" style={{ fontFamily: 'Zalando Sans' }}>
-            Swiparr
-          </div>
-
-          {join ? (
-            <div tw="flex flex-col items-center">
-              <div tw="text-5xl font-bold text-white mb-4">
-                You&apos;re invited to join a session
-              </div>
-              <div tw="text-3xl text-[#a0a0a0] mb-5 max-w-3xl text-center leading-normal">
-                Join a session and start swiping on what to watch next together.
-              </div>
-              <div tw="text-6xl font-bold text-[#a0a0a0] px-12 py-5 rounded-3xl border-4 border-[#a0a0a0]" style={{ fontFamily: 'JetBrains Mono' }}>
-                {join}
-              </div>
-            </div>
-          ) : (
-            <div tw="text-4xl text-[#a0a0a0] text-center max-w-4xl leading-relaxed">
-              Swipe on what to watch next, by yourself or together.
-            </div>
-          )}
-        </div>
-      ),
-      {
-        width: 1200,
-        height: 630,
-        emoji: 'fluent',
-        fonts: [
-          {
-            name: 'Zalando Sans',
-            data: sansFont,
-            style: 'normal',
-            weight: 700,
-          },
-          {
-            name: 'JetBrains Mono',
-            data: monoFont,
-            style: 'normal',
-            weight: 700,
-          }
-        ]
-      }
-    )
-  } catch (e: any) {
-    console.error(`OG Generation Error: ${e.message}`)
-    return new Response(`Failed to generate image: ${e.message}`, { status: 500 })
+    const image = await renderOgCard({ origin, basePath, join: Boolean(join), code: join })
+    return new Response(image.body, { headers: { 'Content-Type': OG_CONTENT_TYPE } })
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e)
+    console.error(`OG Generation Error: ${message}`)
+    return new Response(`Failed to generate image: ${message}`, { status: 500 })
   }
 }

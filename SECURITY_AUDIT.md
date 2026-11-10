@@ -1,4 +1,4 @@
-# Security Audit — Swiparr
+# Security Audit — Messer Swipe
 
 **Audit scope**: Full codebase review covering authentication, session management, input validation, cryptography, SSRF, and HTTP security headers.  
 **Started in**: v1.3.3
@@ -213,7 +213,7 @@ Covered by C3 above. The KDF weakness applied equally to all tokens stored in th
 
 **Status**: Accepted — delegated to reverse proxy
 
-`HSTS` is intentionally omitted from the Next.js `headers()` config because Swiparr is designed to run behind a reverse proxy (e.g., Nginx, Caddy, Traefik) that handles TLS termination and sets HSTS at the edge. Setting it in the application layer would cause issues when accessed over HTTP on the local network.
+`HSTS` is intentionally omitted from the Next.js `headers()` config because Messer Swipe is designed to run behind a reverse proxy (e.g., Nginx, Caddy, Traefik) that handles TLS termination and sets HSTS at the edge. Setting it in the application layer would cause issues when accessed over HTTP on the local network.
 
 ---
 

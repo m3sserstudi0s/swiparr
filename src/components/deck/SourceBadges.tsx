@@ -3,7 +3,7 @@ import React from "react";
 
 import { MediaItem } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { HardDrive } from "@phosphor-icons/react";
+import { HardDrive } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 
 const MAX_VISIBLE_LOGOS = 4;

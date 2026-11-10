@@ -42,11 +42,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(url),
     title: {
-      default: "Swiparr",
-      template: "%s | Swiparr"
+      default: "Messer Swipe",
+      template: "%s | Messer Swipe"
     },
     description: tagline,
-    appleWebApp: { capable: true, title: "Swiparr", statusBarStyle: "black-translucent" },
+    appleWebApp: { capable: true, title: "Messer Swipe", statusBarStyle: "black-translucent" },
     icons: {
       icon: [
         { url: `${basePath}/favicon.svg`, type: "image/svg+xml" },
@@ -56,16 +56,16 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: `${basePath}/apple-touch-icon.png`,
     },
     openGraph: {
-      title: "Swiparr – Discover what to watch next",
+      title: "Messer Swipe – Discover what to watch next",
       description: tagline,
       url: url,
-      siteName: "Swiparr",
+      siteName: "Messer Swipe",
       locale: "en_US",
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: "Swiparr – Discover what to watch next",
+      title: "Messer Swipe – Discover what to watch next",
       description: tagline,
     },
   };

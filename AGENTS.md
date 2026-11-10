@@ -1,10 +1,10 @@
-# Swiparr - Agent Development Guide
+# Messer Swipe - Agent Development Guide
 
 When you need to search docs, use `context7` tools.
 If you are unsure how to do something, use `gh_grep` to search code examples from GitHub.
 
 ## Project Overview
-**Swiparr** is a media discovery tool for Jellyfin, Emby, Plex, and TMDB, featuring a Tinder-like swipe interface.
+**Messer Swipe** is a media discovery tool for Jellyfin, Emby, Plex, and TMDB, featuring a Tinder-like swipe interface.
 - **Framework**: Next.js 16 (App Router), React 19 (React Compiler enabled)
 - **Styling**: Tailwind CSS v4, Framer Motion
 - **Database**: SQLite with Drizzle ORM
@@ -101,7 +101,7 @@ When applying SOLID, prioritise **SRP** and **DIP** as they deliver the most pra
 
 ### Middleware (`src/proxy.ts`)
 
-Swiparr uses `src/proxy.ts` instead of the standard `src/middleware.ts`. This is a Next.js naming convention — the exported function is `proxy()` (not the default export pattern). The `config.matcher` export controls which routes the middleware applies to.
+Messer Swipe uses `src/proxy.ts` instead of the standard `src/middleware.ts`. This is a Next.js naming convention — the exported function is `proxy()` (not the default export pattern). The `config.matcher` export controls which routes the middleware applies to.
 
 **Key rule**: all request-level logic (CSP headers, authentication, base-path rewrites) goes in `proxy.ts`. Never create a separate `middleware.ts`.
 

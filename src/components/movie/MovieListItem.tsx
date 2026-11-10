@@ -1,7 +1,7 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Star, CalendarBlank, HeartBreak, Clock, BookmarkSimple, Percent } from "@phosphor-icons/react";
+import { Play, Star, Calendar, HeartCrack, Clock, Bookmark, Percent } from "lucide-react";
 import { cn, ticksToTime } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -140,7 +140,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
           {/* Only show date in full view */}
           {currentMovie.swipedAt && (
             <div className="text-xs text-muted-foreground flex items-center">
-              <CalendarBlank className="size-2.5 mr-1 mb-0.5" />
+              <Calendar className="size-2.5 mr-1 mb-0.5" />
               {formattedDateText}
             </div>
           )}
@@ -190,7 +190,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
                 disabled={isTogglingWatchlist}
               >
                 {useWatchlist ?
-                  <BookmarkSimple className={cn("w-4 h-4", isInList && "fill-foreground")} />
+                  <Bookmark className={cn("w-4 h-4", isInList && "fill-foreground")} />
                   : <Star className={cn("w-4 h-4", isInList && "fill-foreground")} />
                 }
               </Button>
@@ -202,7 +202,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
               onClick={handleUnlike}
               disabled={isUnliking}
             >
-              <HeartBreak className="w-3.5 h-3.5" />
+              <HeartCrack className="w-3.5 h-3.5" />
             </Button>}
           </div>
         </div>

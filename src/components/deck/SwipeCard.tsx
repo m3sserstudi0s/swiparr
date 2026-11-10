@@ -4,7 +4,7 @@ import React, { forwardRef, useRef, memo } from "react";
 import { MediaItem } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Clock, Percent } from "@phosphor-icons/react";
+import { Star, Clock, Percent } from "lucide-react";
 import { Direction, FramerTinderCard, TinderCardHandle } from "./FrameTinderCard";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { SourceBadges } from "./SourceBadges";

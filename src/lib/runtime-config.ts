@@ -33,7 +33,7 @@ export interface RuntimeConfig {
  * Capabilities for a provider, adjusted for instance-level configuration.
  * Jellyfin gains streaming settings (hybrid deck: library + TMDB streaming
  * catalogs) when a TMDB access token is configured. Server-side only source
- * of truth - the client receives the result via window.__SWIPARR_CONFIG__.
+ * of truth - the client receives the result via window.__MESSER_SWIPE_CONFIG__.
  */
 export function getEffectiveCapabilities(provider: ProviderType): ProviderCapabilities {
   const base = PROVIDER_CAPABILITIES[provider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
@@ -45,12 +45,12 @@ export function getEffectiveCapabilities(provider: ProviderType): ProviderCapabi
 
 /**
  * Shared logic to get the config.
- * In the browser, it retrieves from window.__SWIPARR_CONFIG__.
+ * In the browser, it retrieves from window.__MESSER_SWIPE_CONFIG__.
  * On the server, it uses env vars.
  */
 export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeConfig {
-  if (typeof window !== 'undefined' && window.__SWIPARR_CONFIG__) {
-    return window.__SWIPARR_CONFIG__;
+  if (typeof window !== 'undefined' && window.__MESSER_SWIPE_CONFIG__) {
+    return window.__MESSER_SWIPE_CONFIG__;
   }
 
   const provider = (overrides?.provider || config.app.provider) as ProviderType;
@@ -89,7 +89,7 @@ export function getRuntimeConfig(overrides?: Partial<RuntimeConfig>): RuntimeCon
  */
 declare global {
   interface Window {
-    __SWIPARR_CONFIG__?: RuntimeConfig;
+    __MESSER_SWIPE_CONFIG__?: RuntimeConfig;
   }
 }
 
@@ -100,5 +100,5 @@ export function useRuntimeConfig(): RuntimeConfig {
   if (typeof window === 'undefined') {
     return getRuntimeConfig();
   }
-  return window.__SWIPARR_CONFIG__ || getRuntimeConfig();
+  return window.__MESSER_SWIPE_CONFIG__ || getRuntimeConfig();
 }

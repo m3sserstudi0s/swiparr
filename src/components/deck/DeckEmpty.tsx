@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowsClockwise, SlidersHorizontal, Images } from "@phosphor-icons/react/dist/ssr";
+import { RefreshCw, SlidersHorizontal, Images } from "lucide-react";
 import {
   Empty,
   EmptyContent,
@@ -35,7 +35,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
             className="w-28"
             onClick={onRefresh}
           >
-            <ArrowsClockwise />
+            <RefreshCw />
             Refresh
           </Button>
           <Button

@@ -1,11 +1,11 @@
 import { getRuntimeConfig } from "./runtime-config";
 
 /**
- * Centralized logger for Swiparr.
- * Prefixes all logs with [Swiparr] and handles debug level based on configuration.
+ * Centralized logger for Messer Swipe.
+ * Prefixes all logs with [Messer Swipe] and handles debug level based on configuration.
  */
 
-const PREFIX = "[Swiparr]";
+const PREFIX = "[Messer Swipe]";
 
 const isDebugEnabled = () => {
     try {

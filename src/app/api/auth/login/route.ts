@@ -97,6 +97,6 @@ export async function POST(request: NextRequest) {
        }
     }
 
-    return handleApiError(error, "Server connection failed or invalid credentials. Check Swiparr logs for details.");
+    return handleApiError(error, "Server connection failed or invalid credentials. Check Messer Swipe logs for details.");
   }
 }

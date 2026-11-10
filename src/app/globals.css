@@ -7,7 +7,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Swiparr-specific: sidebar surface mapping + the zero radius shadcn expects. */
+/* Messer Swipe-specific: sidebar surface mapping + the zero radius shadcn expects. */
 
 :root {
   --radius: 0px;

@@ -23,7 +23,7 @@ export interface PlexPinResponse {
 function getPlexHeaders(clientId: string) {
   return {
     'X-Plex-Client-Identifier': clientId,
-    'X-Plex-Product': 'Swiparr',
+    'X-Plex-Product': 'Messer Swipe',
     'X-Plex-Version': '1.0.0',
     'X-Plex-Platform': 'Web',
     'X-Plex-Device': 'Web',
@@ -99,7 +99,7 @@ export function buildAuthUrl(pinCode: string, clientId: string, forwardUrl?: str
   const params = new URLSearchParams({
     'code': pinCode,
     'clientID': clientId,
-    'context[device][product]': 'Swiparr',
+    'context[device][product]': 'Messer Swipe',
     'context[device][version]': '1.0.0',
     'context[device][platform]': 'Web',
     'context[device][device]': 'Web',
