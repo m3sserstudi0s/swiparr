@@ -65,13 +65,13 @@ The struggle is real: 30 minutes of "what should we watch?" that ends with watch
 **No setup, no server, no problem.**
 
 🌐 **[swipe.messer.wtf](https://swipe.messer.wtf)** — the public demo, free to use
-(`swiparr.com` redirects here once the 2.0 domain flip ships)
+(`swiparr.com` redirects here)
 
 ### Easiest: Deploy to Vercel
 
 One-click deployment, perfect for personal or small group use:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe&env=PROVIDER,TMDB_ACCESS_TOKEN,USE_SECURE_COOKIES,PROVIDER_LOCK&envDefaults=%7B%22PROVIDER%22%3A%22tmdb%22%2C%22USE_SECURE_COOKIES%22%3A%22true%22%2C%22PROVIDER_LOCK%22%3A%22true%22%7D&envDescription=Get%20a%20TMDB%20Access%20Token%20to%20continue%20with%20TMDB%20(no%20media%20server%20needed)%2C%20or%20set%20another%20PROVIDER%20(jellyfin%2C%20plex%2C%20emby)%2C%20or%20set%20PROVIDER_LOCK%20to%20%22false%22%20to%20configure%20the%20provider%20(any)%20at%20run-time.&envLink=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe%3Ftab%3Dreadme-ov-file%23environment-variable-matrix&project-name=messer-swipe&repository-name=messer-swipe&demo-title=Messer%20Swipe&demo-description=Discover%20what%20to%20watch%20next%2C%20by%20yourself%20or%20together.&demo-url=https%3A%2F%2Fswiparr.com&demo-image=https%3A%2F%2Fswiparr.com%2Fapple-touch-icon.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22tursocloud%22%2C%22productSlug%22%3A%22database%22%2C%22protocol%22%3A%22storage%22%2C%22group%22%3A%22%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe&env=PROVIDER,TMDB_ACCESS_TOKEN,USE_SECURE_COOKIES,PROVIDER_LOCK&envDefaults=%7B%22PROVIDER%22%3A%22tmdb%22%2C%22USE_SECURE_COOKIES%22%3A%22true%22%2C%22PROVIDER_LOCK%22%3A%22true%22%7D&envDescription=Get%20a%20TMDB%20Access%20Token%20to%20continue%20with%20TMDB%20(no%20media%20server%20needed)%2C%20or%20set%20another%20PROVIDER%20(jellyfin%2C%20plex%2C%20emby)%2C%20or%20set%20PROVIDER_LOCK%20to%20%22false%22%20to%20configure%20the%20provider%20(any)%20at%20run-time.&envLink=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe%3Ftab%3Dreadme-ov-file%23environment-variable-matrix&project-name=messer-swipe&repository-name=messer-swipe&demo-title=Messer%20Swipe&demo-description=Discover%20what%20to%20watch%20next%2C%20by%20yourself%20or%20together.&demo-url=https%3A%2F%2Fswipe.messer.wtf&demo-image=https%3A%2F%2Fswipe.messer.wtf%2Fapple-touch-icon.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22tursocloud%22%2C%22productSlug%22%3A%22database%22%2C%22protocol%22%3A%22storage%22%2C%22group%22%3A%22%22%7D%5D)
 
 Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out [^1].
 
@@ -232,7 +232,8 @@ USE_STATIC_FILTERS=false                     # Skip dynamic filter fetching; use
 | `USE_SECURE_COOKIES` | ❌ | `false` | Set to `true` for HTTPS deployments |
 | `DATABASE_URL` | ❌ | `file:/app/data/swiparr.db` | SQLite path or Turso URL [^1] |
 | `DATABASE_AUTH_TOKEN`| ❌ | - | Auth token for remote databases (e.g. Turso) |
-| `APP_PUBLIC_URL` | ❌ | `swiparr.com` | The public domain where the app is hosted |
+| `APP_PUBLIC_URL` | ❌ | `swipe.messer.wtf` | The public domain where the app is hosted (drives canonical URLs, OG images, `robots.txt` and secure cookies) |
+| `LEGACY_REDIRECT_FROM` | ❌ | - | Comma-separated hostnames that 301 to `APP_PUBLIC_URL`, path preserved (e.g. `old.example.com,www.old.example.com`). Read at build time — change it, redeploy. |
 | `URL_BASE_PATH` | ❌ | - | Base path for subpath deployments (e.g. `/swipe`). **Must be set at image build time** — see [Custom Base Path](#custom-base-path). |
 | `ADMIN_USERNAME` | ❌ | - | Global admin username (overrides provider-specific) [^2] |
 | `JELLYFIN_ADMIN_USERNAME` | ❌ | - | Jellyfin-specific admin username [^2] |
@@ -410,7 +411,7 @@ Messer Swipe is free, open source, and community-supported. Your contributions h
 
 - ☕ [**Buy Me a Coffee**](https://www.buymeacoffee.com/jakobbjelver) - Quick one-time support
 - 🌟 **Star on GitHub** - Show your support (it's free!)
-- 🏢 **Use swiparr.com** - The hosted version includes infrastructure funding
+- 🏢 **Use swipe.messer.wtf** - The hosted version includes infrastructure funding
 
 **All support directly funds development and infrastructure costs.**
 
@@ -557,7 +558,7 @@ You're free to use, modify, and distribute Messer Swipe. Commercial use is permi
 **Made with ❤️ and late nights**
 
 <p>
-  <a href="https://swiparr.com">🌐 Messer Swipe Global</a> • 
+  <a href="https://swipe.messer.wtf">🌐 Messer Swipe Global</a> • 
   <a href="https://github.com/jakobbjelver/messer-swipe">⭐ GitHub Repo</a> • 
   <a href="https://github.com/jakobbjelver/messer-swipe/discussions">💬 Community</a>
 </p>
