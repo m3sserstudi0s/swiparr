@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: m3sserstudi0s/swiparr
+  IMAGE_NAME: jakobbjelver/messer-swipe
 
 jobs:
   release:

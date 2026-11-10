@@ -1,4 +1,4 @@
-export const GITHUB_REPO = "m3sserstudi0s/swiparr";
+export const GITHUB_REPO = "jakobbjelver/messer-swipe";
 export const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}`;
 export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 export const SUPPORT_URL = "https://buymeacoffee.com/jakobbjelver";

@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/license/m3sserstudi0s/swiparr" alt="License" />
+  <img src="https://img.shields.io/github/license/jakobbjelver/messer-swipe" alt="License" />
   <img src="https://img.shields.io/badge/docker-ghcr.io-blue" alt="Docker" />
   <a href="https://www.buymeacoffee.com/jakobbjelver" target="_blank">
     <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee" />
@@ -70,7 +70,7 @@ The struggle is real: 30 minutes of "what should we watch?" that ends with watch
 
 One-click deployment, perfect for personal or small group use:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fm3sserstudi0s%2Fswiparr&env=PROVIDER,TMDB_ACCESS_TOKEN,USE_SECURE_COOKIES,PROVIDER_LOCK&envDefaults=%7B%22PROVIDER%22%3A%22tmdb%22%2C%22USE_SECURE_COOKIES%22%3A%22true%22%2C%22PROVIDER_LOCK%22%3A%22true%22%7D&envDescription=Get%20a%20TMDB%20Access%20Token%20to%20continue%20with%20TMDB%20(no%20media%20server%20needed)%2C%20or%20set%20another%20PROVIDER%20(jellyfin%2C%20plex%2C%20emby)%2C%20or%20set%20PROVIDER_LOCK%20to%20%22false%22%20to%20configure%20the%20provider%20(any)%20at%20run-time.&envLink=https%3A%2F%2Fgithub.com%2Fm3sserstudi0s%2Fswiparr%3Ftab%3Dreadme-ov-file%23environment-variable-matrix&project-name=swiparr&repository-name=swiparr&demo-title=Swiparr&demo-description=Discover%20what%20to%20watch%20next%2C%20by%20yourself%20or%20together.&demo-url=https%3A%2F%2Fswiparr.com&demo-image=https%3A%2F%2Fswiparr.com%2Ficon1.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22tursocloud%22%2C%22productSlug%22%3A%22database%22%2C%22protocol%22%3A%22storage%22%2C%22group%22%3A%22%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe&env=PROVIDER,TMDB_ACCESS_TOKEN,USE_SECURE_COOKIES,PROVIDER_LOCK&envDefaults=%7B%22PROVIDER%22%3A%22tmdb%22%2C%22USE_SECURE_COOKIES%22%3A%22true%22%2C%22PROVIDER_LOCK%22%3A%22true%22%7D&envDescription=Get%20a%20TMDB%20Access%20Token%20to%20continue%20with%20TMDB%20(no%20media%20server%20needed)%2C%20or%20set%20another%20PROVIDER%20(jellyfin%2C%20plex%2C%20emby)%2C%20or%20set%20PROVIDER_LOCK%20to%20%22false%22%20to%20configure%20the%20provider%20(any)%20at%20run-time.&envLink=https%3A%2F%2Fgithub.com%2Fjakobbjelver%2Fmesser-swipe%3Ftab%3Dreadme-ov-file%23environment-variable-matrix&project-name=swiparr&repository-name=messer-swipe&demo-title=Swiparr&demo-description=Discover%20what%20to%20watch%20next%2C%20by%20yourself%20or%20together.&demo-url=https%3A%2F%2Fswiparr.com&demo-image=https%3A%2F%2Fswiparr.com%2Ficon1.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22tursocloud%22%2C%22productSlug%22%3A%22database%22%2C%22protocol%22%3A%22storage%22%2C%22group%22%3A%22%22%7D%5D)
 
 Note: The automatic deployment workflow in Vercel uses the Turso integration by default as a database service provider. Free to set up, possible to swap out [^1].
 
@@ -87,7 +87,7 @@ Note: The automatic deployment workflow in Vercel uses the Turso integration by 
 ```yaml
 services:
   swiparr:
-    image: ghcr.io/m3sserstudi0s/swiparr:latest
+    image: ghcr.io/jakobbjelver/messer-swipe:latest
     container_name: swiparr
     restart: unless-stopped
     environment:
@@ -114,7 +114,7 @@ docker run -d \
   -v $(pwd)/swiparr-data:/app/data \
   -e PROVIDER=jellyfin \
   -e JELLYFIN_URL=http://your-jellyfin:8096 \
-  ghcr.io/m3sserstudi0s/swiparr:latest
+  ghcr.io/jakobbjelver/messer-swipe:latest
 ```
 
 3. Open [http://localhost:4321](http://localhost:4321)
@@ -374,15 +374,15 @@ Windows users can use https://generate-secret.vercel.app/32.
 ### How to Contribute
 
 1. **Start with Discussion** - Propose changes before coding
-   - [💡 Ideas & Feature Proposals](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=ideas)
-   - [🐛 Bug Reports](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=bugs)
+   - [💡 Ideas & Feature Proposals](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=ideas)
+   - [🐛 Bug Reports](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=bugs)
 2. **Fork & Develop** - After discussion approval
 3. **Pull Request** - With clear description and tests
 
 ### Development Setup
 
 ```bash
-git clone https://github.com/m3sserstudi0s/swiparr.git
+git clone https://github.com/jakobbjelver/messer-swipe.git
 cd swiparr
 npm install
 npm run dev          # Start dev server
@@ -419,10 +419,10 @@ All support, questions, and discussions happen in GitHub Discussions:
 
 | Topic | Link |
 |-------|------|
-| ❓ Questions & Help | [Ask a Question](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=q-a) |
-| 💡 Feature Ideas | [Propose a Feature](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=ideas) |
-| 🐛 Bug Reports | [Report a Bug](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=bugs) |
-| 🙌 General Chat | [Start a Discussion](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=general) |
+| ❓ Questions & Help | [Ask a Question](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=q-a) |
+| 💡 Feature Ideas | [Propose a Feature](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=ideas) |
+| 🐛 Bug Reports | [Report a Bug](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=bugs) |
+| 🙌 General Chat | [Start a Discussion](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=general) |
 
 ---
 
@@ -436,20 +436,25 @@ If you want to serve Swiparr under a subpath — e.g. `https://jellyfin.example.
 
 > **The prebuilt image from `ghcr.io` does not support `URL_BASE_PATH`** — it is built without a base path. You must build your own image.
 
-#### Step 1 — Clone and build with your base path
+#### If you are not using compose and want to build the image
 
 ```bash
-git clone https://github.com/m3sserstudi0s/swiparr.git
+git clone https://github.com/jakobbjelver/messer-swipe.git
 cd swiparr
 docker build --build-arg URL_BASE_PATH=/swipe -t swiparr-custom .
 ```
+Then use `swiparr-custom` as your image name in your docker run command.
 
-#### Step 2 — Use your custom image in compose
+#### If you are using compose, compose can build and manage the image for you at runtime
 
 ```yaml
 services:
   swiparr:
-    image: swiparr-custom          # your locally built image
+    pull_policy: build
+    build:
+      context: https://github.com/jakobbjelver/messer-swipe.git
+      args:
+        URL_BASE_PATH: /swipe
     container_name: swiparr
     restart: unless-stopped
     environment:
@@ -550,8 +555,8 @@ You're free to use, modify, and distribute Swiparr. Commercial use is permitted.
 
 <p>
   <a href="https://swiparr.com">🌐 Swiparr Global</a> • 
-  <a href="https://github.com/m3sserstudi0s/swiparr">⭐ GitHub Repo</a> • 
-  <a href="https://github.com/m3sserstudi0s/swiparr/discussions">💬 Community</a>
+  <a href="https://github.com/jakobbjelver/messer-swipe">⭐ GitHub Repo</a> • 
+  <a href="https://github.com/jakobbjelver/messer-swipe/discussions">💬 Community</a>
 </p>
 
 </div>
