@@ -159,8 +159,8 @@ Based on community discussions and planned development:
 - **Fixed**: Bug fixes
 - **Security**: Security improvements and fixes
 
-For detailed information about each change, see the [GitHub Releases](https://github.com/m3sserstudi0s/swiparr/releases) page or individual commit history.
+For detailed information about each change, see the [GitHub Releases](https://github.com/jakobbjelver/messer-swipe/releases) page or individual commit history.
 
 ---
 
-**Did we miss something?** Let us know in the [GitHub Discussions](https://github.com/m3sserstudi0s/swiparr/discussions)!
+**Did we miss something?** Let us know in the [GitHub Discussions](https://github.com/jakobbjelver/messer-swipe/discussions)!

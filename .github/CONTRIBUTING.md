@@ -18,9 +18,9 @@ Before starting work on any significant changes, please open a discussion to:
 - **Coordinate** with other contributors
 
 **Discussion Categories:**
-- 💡 [Ideas](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=ideas) - New features
-- 🐛 [Bugs](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=bugs) - Bug reports
-- ❓ [Q&A](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=q-a) - Questions
+- 💡 [Ideas](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=ideas) - New features
+- 🐛 [Bugs](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=bugs) - Bug reports
+- ❓ [Q&A](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=q-a) - Questions
 
 ### 2. Development Workflow
 
@@ -28,7 +28,7 @@ Before starting work on any significant changes, please open a discussion to:
 
 ```bash
 # Clone the repository
-git clone https://github.com/m3sserstudi0s/swiparr.git
+git clone https://github.com/jakobbjelver/messer-swipe.git
 cd swiparr
 
 # Install dependencies
@@ -206,7 +206,7 @@ When contributing, ensure:
 
 ## 💬 Getting Help
 
-- **Questions?** Use [Q&A discussions](https://github.com/m3sserstudi0s/swiparr/discussions/new?category=q-a)
+- **Questions?** Use [Q&A discussions](https://github.com/jakobbjelver/messer-swipe/discussions/new?category=q-a)
 - **Stuck?** Tag `@maintainers` in your discussion
 - **Discord?** May be available in the future
 
@@ -236,7 +236,7 @@ By contributing to Swiparr, you:
 
 Your contributions make Swiparr better for everyone. Whether it's a small bug fix or a major feature, every contribution is valued and appreciated.
 
-**Questions about contributing?** Open a [discussion](https://github.com/m3sserstudi0s/swiparr/discussions) and ask!
+**Questions about contributing?** Open a [discussion](https://github.com/jakobbjelver/messer-swipe/discussions) and ask!
 
 ---
 
@@ -245,7 +245,7 @@ Your contributions make Swiparr better for everyone. Whether it's a small bug fi
 **Happy contributing!** 🎉
 
 <p>
-  <a href="https://github.com/m3sserstudi0s/swiparr">🏠 Back to Main Repo</a> •
+  <a href="https://github.com/jakobbjelver/messer-swipe">🏠 Back to Main Repo</a> •
   <a href="https://swiparr.com">🎬 Try Swiparr Cloud</a>
 </p>
 

@@ -1,10 +1,10 @@
 {
-  "name": "swiparr",
+  "name": "messer-swipe",
   "version": "1.6.0",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/m3sserstudi0s/swiparr.git"
+    "url": "https://github.com/jakobbjelver/messer-swipe.git"
   },
   "type": "module",
   "scripts": {
