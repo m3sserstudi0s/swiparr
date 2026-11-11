@@ -34,6 +34,9 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 
+import { kindsForDeckMode } from "@/lib/deck-mode";
+import type { DeckMode } from "@/types/session";
+
 interface FilterDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,6 +46,9 @@ interface FilterDrawerProps {
 
 
 export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: FilterDrawerProps) {
+  // Which deck the user is filtering: movies or shows. Pre-2.0 filter objects
+  // carry no deckMode, so the default is movies and the toggle starts there.
+  const [deckMode, setDeckMode] = useState<DeckMode>("movies");
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
   const [genreFilterMode, setGenreFilterMode] = useState<"include" | "exclude">("include");
@@ -150,6 +156,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
       setProviderSearch("");
+      setDeckMode(currentFilters?.deckMode ?? "movies");
     }
   }, [open, currentFilters, availableWatchProviderIds, minYearLimit, maxYearLimit, defaultSort, hybridActive]);
 
@@ -180,7 +187,11 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       unplayedOnly: f.unplayedOnly ?? true,
       yearRange: isYearDefault ? undefined : f.yearRange,
       runtimeRange: isRuntimeDefault ? undefined : f.runtimeRange,
-      minCommunityRating: (f.minCommunityRating && f.minCommunityRating > 0) ? f.minCommunityRating : undefined
+      minCommunityRating: (f.minCommunityRating && f.minCommunityRating > 0) ? f.minCommunityRating : undefined,
+      // The deck mode travels with the filters so the deck refetches when it
+      // changes; `kinds` is always derived from it, never taken from the input.
+      deckMode: f.deckMode ?? deckMode,
+      kinds: kindsForDeckMode(f.deckMode ?? deckMode)
     };
   };
 
@@ -198,7 +209,8 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       unplayedOnly: unplayedOnly,
       yearRange: yearRange,
       runtimeRange: runtimeRange,
-      minCommunityRating: minRating
+      minCommunityRating: minRating,
+      deckMode
     });
   };
 
@@ -383,6 +395,29 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               </div>
             ) : (
               <>
+                {/* Deck Section: which content model the filters apply to */}
+                {capabilities.hasSeries && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                        Deck
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                      {([["movies", "Movies"], ["shows", "Shows"]] as [DeckMode, string][]).map(([mode, label]) => (
+                        <Badge
+                          key={mode}
+                          variant={deckMode === mode ? "default" : "outline"}
+                          className="cursor-pointer text-sm py-1.5 px-4 rounded-none transition-colors"
+                          onClick={() => setDeckMode(mode)}
+                        >
+                          {label}
+                        </Badge>
+                      ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Sort Section */}
                 <div className="space-y-4 -mb-4">
                   <div className="flex flex-wrap gap-2">
