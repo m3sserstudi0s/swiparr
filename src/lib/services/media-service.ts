@@ -73,6 +73,8 @@ export class MediaService {
     // 3. Handle Search
     if (searchTerm) {
       const results = await provider.getItems({ 
+        kinds: sessionFilters?.kinds,
+        started: sessionFilters?.started,
         searchTerm, 
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         watchProviders,
@@ -207,6 +209,8 @@ export class MediaService {
         });
       }
       fetchedItems = await provider.getItems({
+        kinds: sessionFilters?.kinds,
+        started: sessionFilters?.started,
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         genres: sessionFilters?.genres,
         excludedGenres: sessionFilters?.excludedGenres,
@@ -486,6 +490,8 @@ export class MediaService {
       while (hasMore && allItems.length < maxItems) {
         try {
           const items = await provider.getItems({
+            kinds: sessionFilters?.kinds,
+            started: sessionFilters?.started,
             libraries: [libraryId],
             genres: sessionFilters?.genres,
             excludedGenres: sessionFilters?.excludedGenres,
@@ -529,6 +535,20 @@ export class MediaService {
     return allItems;
   }
 
+  /**
+   * Library collection types a deck may read. Movies-only (the pre-2.0 shape)
+   * stays the default so an old filter object behaves exactly as before.
+   */
+  private static libraryCollectionTypes(sessionFilters: Filters | null): Set<string> {
+    const kinds = sessionFilters?.kinds?.length ? sessionFilters.kinds : ["movie" as const];
+    const types = new Set<string>();
+    for (const kind of kinds) {
+      if (kind === "movie") types.add("movies");
+      else if (kind === "series" || kind === "episode") types.add("tvshows");
+    }
+    return types;
+  }
+
   private static async fetchAllPlexItems(
     provider: any,
     auth: any,
@@ -541,9 +561,10 @@ export class MediaService {
     // Get libraries to fetch from
     let libraries = includedLibraries;
     if (libraries.length === 0) {
+      const collectionTypes = this.libraryCollectionTypes(sessionFilters);
       const availableLibraries = await provider.getLibraries(auth);
       libraries = availableLibraries
-        .filter((lib: any) => lib.CollectionType === "movies")
+        .filter((lib: any) => collectionTypes.has(lib.CollectionType))
         .map((lib: any) => lib.Id);
     }
 
@@ -552,6 +573,8 @@ export class MediaService {
       try {
         // Plex doesn't support pagination well in the same way, so fetch larger batches
         const items = await provider.getItems({
+          kinds: sessionFilters?.kinds,
+          started: sessionFilters?.started,
           libraries: [libraryId],
           genres: sessionFilters?.genres,
           excludedGenres: sessionFilters?.excludedGenres,
@@ -600,6 +623,8 @@ export class MediaService {
     for (let page = 1; page <= maxPages; page++) {
       try {
         const items = await provider.getItems({
+          kinds: sessionFilters?.kinds,
+          started: sessionFilters?.started,
           genres: sessionFilters?.genres,
           excludedGenres: sessionFilters?.excludedGenres,
           years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
@@ -702,6 +727,8 @@ export class MediaService {
         });
       }
       fetchedItems = await provider.getItems({
+        kinds: sessionFilters?.kinds,
+        started: sessionFilters?.started,
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         genres: sessionFilters?.genres,
         excludedGenres: sessionFilters?.excludedGenres,

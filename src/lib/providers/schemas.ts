@@ -33,7 +33,23 @@ export const TmdbSearchResponseSchema = z.object({
 export const JellyfinItemSchema = z.object({
   Id: z.string(),
   Name: z.string(),
+  // `Movie` | `Series` | `Season` | `Episode` | ... — the only reliable kind signal.
+  Type: z.string().optional(),
   OriginalTitle: z.string().optional(),
+  // Shows: parentage and counts. Jellyfin puts the season number in
+  // ParentIndexNumber and the episode number in IndexNumber.
+  SeriesId: z.string().optional(),
+  SeriesName: z.string().optional(),
+  SeasonId: z.string().optional(),
+  SeasonName: z.string().optional(),
+  IndexNumber: z.number().optional(),
+  ParentIndexNumber: z.number().optional(),
+  ChildCount: z.number().optional(),
+  RecursiveItemCount: z.number().optional(),
+  Status: z.string().optional(),
+  EndDate: z.string().optional(),
+  PremiereDate: z.string().optional(),
+  SeriesPrimaryImageTag: z.string().optional(),
   RunTimeTicks: z.number().optional(),
   ProductionYear: z.number().optional(),
   CommunityRating: z.number().optional(),
@@ -55,6 +71,10 @@ export const JellyfinItemSchema = z.object({
     IsFavorite: z.boolean().optional(),
     Likes: z.boolean().optional(),
     Played: z.boolean().optional(),
+    // Series progress: Played=false + UnplayedItemCount on the series row.
+    UnplayedItemCount: z.number().optional(),
+    PlaybackPositionTicks: z.number().optional(),
+    LastPlayedDate: z.string().optional(),
   }).optional(),
   People: z.array(z.object({
     Name: z.string(),

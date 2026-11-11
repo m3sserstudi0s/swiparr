@@ -62,6 +62,8 @@ export const sessionSettingsSchema = z.object({
     // send it but it is never trusted over the mode.
     deckMode: z.enum(["movies", "shows", "continue", "episodes", "mixed"]).optional(),
     kinds: z.array(z.enum(["movie", "series", "season", "episode"])).optional(),
+    status: z.array(z.enum(["continuing", "ended"])).optional(),
+    started: z.enum(["any", "notStarted", "inProgress"]).optional(),
   }).optional().or(z.any()),
   settings: z.object({
     maxMatches: z.number().int().min(0).optional(),

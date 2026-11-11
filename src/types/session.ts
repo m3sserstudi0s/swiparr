@@ -25,6 +25,10 @@ export interface Filters {
   deckMode?: DeckMode;
   /** Derived from `deckMode`, stored so cache keys and API params carry it. */
   kinds?: MediaKind[];
+  /** Series airing state the deck may restrict to (shows mode). */
+  status?: ("continuing" | "ended")[];
+  /** Series watch state: what the Start and Continue decks differ by. */
+  started?: "any" | "notStarted" | "inProgress";
 }
 
 export interface SessionSettings {
