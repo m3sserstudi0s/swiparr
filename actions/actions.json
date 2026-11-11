@@ -26,7 +26,7 @@
           "title": "Stop existing dev servers",
           "description": "Single dev server across all projects.",
           "info": "Deletes dev PM2 apps (incl. legacy names and the swipe idle watchdog), kills dev ports 3000/3001/8000/4321/4322/8898, removes the stale Next dev lock, and reaps stray host dev processes (dev-stray-guard --sweep).",
-          "command": "/opt/homebrew/bin/pm2 delete messer-swipe-dev messer-swipe-dev-watch site-dev site-dev-watch site-dev-heal site-studio-dev messer-notes-dev messer-notes-dev-watch portal-dev portal-dev-watch gallery-dev gallery-dev-watch 2>/dev/null || true; for p in 3000 3001 8000 4321 4322 8898; do lsof -tiTCP:$p -sTCP:LISTEN 2>/dev/null | xargs kill -9 2>/dev/null || true; done; rm -f /Users/jakob/Repos/messer-swipe/.next/dev/lock; sleep 1; /usr/bin/python3 /Users/jakob/Scripts/dev-stray-guard.py --sweep; echo 'cleaned — dev PM2 apps stopped, ports 3000/3001/8000 freed, stray dev processes reaped'",
+          "command": "/opt/homebrew/bin/pm2 delete messer-swipe-dev messer-swipe-dev-watch site-dev site-dev-watch site-dev-heal site-studio-dev messer-notes-dev messer-notes-dev-watch portal-dev portal-dev-watch gallery-dev gallery-dev-watch 2>/dev/null || true; /Users/jakob/Scripts/kill-port.sh 3000 3001 8000 4321 4322 8898; rm -f /Users/jakob/Repos/messer-swipe/.next/dev/lock; sleep 1; /usr/bin/python3 /Users/jakob/Scripts/dev-stray-guard.py --sweep; echo 'cleaned — dev PM2 apps stopped, ports 3000/3001/8000 freed, stray dev processes reaped'",
           "run_on": "host"
         },
         {
@@ -47,7 +47,7 @@
         {
           "title": "Stop supervised dev server",
           "description": "Delete PM2 apps, free port 3000, drop the dev lock.",
-          "command": "/opt/homebrew/bin/pm2 delete messer-swipe-dev messer-swipe-dev-watch 2>/dev/null || true; lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null | xargs kill -9 2>/dev/null || true; rm -f /Users/jakob/Repos/messer-swipe/.next/dev/lock; echo 'dev server stopped — PM2 apps deleted, port 3000 free'",
+          "command": "/opt/homebrew/bin/pm2 delete messer-swipe-dev messer-swipe-dev-watch 2>/dev/null || true; /Users/jakob/Scripts/kill-port.sh 3000; rm -f /Users/jakob/Repos/messer-swipe/.next/dev/lock; echo 'dev server stopped — PM2 apps deleted, port 3000 free'",
           "run_on": "host"
         }
       ]
