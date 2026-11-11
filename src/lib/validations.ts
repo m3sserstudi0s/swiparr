@@ -58,6 +58,10 @@ export const sessionSettingsSchema = z.object({
     excludedThemes: z.array(z.string()).optional(),
     tmdbLanguages: z.array(z.string()).optional(),
     unplayedOnly: z.boolean().optional(),
+    // 2.0 deck modes. `kinds` is derived from `deckMode` server-side; clients may
+    // send it but it is never trusted over the mode.
+    deckMode: z.enum(["movies", "shows", "continue", "episodes", "mixed"]).optional(),
+    kinds: z.array(z.enum(["movie", "series", "season", "episode"])).optional(),
   }).optional().or(z.any()),
   settings: z.object({
     maxMatches: z.number().int().min(0).optional(),

@@ -1,3 +1,11 @@
+import type { MediaKind } from "@/types/media";
+
+/**
+ * Which deck a session is showing (2.0). One active mode per session; `mixed`
+ * is opt-in and chips each card with its kind.
+ */
+export type DeckMode = "movies" | "shows" | "continue" | "episodes" | "mixed";
+
 export interface Filters {
   genres: string[];
   excludedGenres?: string[];
@@ -13,6 +21,10 @@ export interface Filters {
   excludedThemes?: string[];
   tmdbLanguages?: string[];
   unplayedOnly?: boolean;
+  /** Absent on every filter object written before 2.0 — read it via `deckModeOf`. */
+  deckMode?: DeckMode;
+  /** Derived from `deckMode`, stored so cache keys and API params carry it. */
+  kinds?: MediaKind[];
 }
 
 export interface SessionSettings {

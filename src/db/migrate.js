@@ -44,6 +44,67 @@ async function wipeLegacyCryptoTokens() {
   }
 }
 
+async function prefixLegacyTmdbIds() {
+  // 2.0 typed the TMDB ids (`tmdb:movie:<id>`, `tmdb:tv:<id>`). Rows written by
+  // earlier TMDB-mode installs hold bare numbers, which would never match a
+  // typed id again — the user would re-see everything they already swiped.
+  //
+  // Only safe under PROVIDER=tmdb: Jellyfin/Emby ids are GUIDs and Plex
+  // ratingKeys are ALSO bare numbers, so an unconditional prefix would rewrite
+  // a Plex library's likes into TMDB ids. Numeric-only, colon-free rows only,
+  // and skip any row that would collide with an already-typed one.
+  if (process.env.PROVIDER !== 'tmdb') return;
+
+  // Second guard: the app may have run under another provider on this same DB
+  // (a switched install, or a household Jellyfin database). Session.provider
+  // records who wrote it, so any non-tmdb session means these ids are not ours.
+  try {
+    const byProvider = await client.execute(
+      'SELECT provider, COUNT(*) AS n FROM Session GROUP BY provider'
+    );
+    const foreign = byProvider.rows.filter((row) => row.provider && row.provider !== 'tmdb');
+    if (foreign.length > 0) {
+      console.warn(
+        '[2.0] Skipping legacy TMDB id prefixing: this database carries sessions from ' +
+          foreign.map((row) => `${row.provider} (${row.n})`).join(', ') +
+          '. Bare numeric ids here may be that provider\'s, not TMDB\'s.'
+      );
+      return;
+    }
+  } catch (error) {
+    console.warn('[2.0] Could not read Session.provider, skipping id prefixing:', error.message);
+    return;
+  }
+
+  for (const table of ['Like', 'Hidden']) {
+    try {
+      const result = await client.execute(`
+        UPDATE "${table}" AS legacy
+        SET externalId = 'tmdb:movie:' || legacy.externalId
+        WHERE legacy.externalId NOT LIKE '%:%'
+          -- All digits and nothing else: a leading-digit test is not enough, because
+          -- Jellyfin/Emby GUIDs are 32-char hex and often start with a digit.
+          AND NOT legacy.externalId GLOB '*[^0-9]*'
+          AND NOT EXISTS (
+            SELECT 1 FROM "${table}" AS typed
+            WHERE typed.externalId = 'tmdb:movie:' || legacy.externalId
+              AND typed.externalUserId = legacy.externalUserId
+              AND typed.kind = legacy.kind
+              AND (
+                (typed.sessionCode IS NULL AND legacy.sessionCode IS NULL)
+                OR typed.sessionCode = legacy.sessionCode
+              )
+          )
+      `);
+      if (result.rowsAffected > 0) {
+        console.log(`[2.0] Prefixed ${result.rowsAffected} legacy TMDB id(s) in ${table}.`);
+      }
+    } catch (error) {
+      console.warn(`[2.0] Could not prefix legacy TMDB ids in ${table}:`, error.message);
+    }
+  }
+}
+
 async function main() {
   console.log('Running migrations...');
   try {
@@ -52,6 +113,7 @@ async function main() {
     await migrate(db, { migrationsFolder });
     console.log('Migrations complete!');
     await wipeLegacyCryptoTokens();
+    await prefixLegacyTmdbIds();
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);

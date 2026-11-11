@@ -63,6 +63,12 @@ npx drizzle-kit studio    # Database GUI
 - Use `integer({ mode: 'boolean' })` for booleans.
 - Use `createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)`.
 
+### Content Kinds (`MediaKind`)
+- `MediaItem.Kind` is optional and **absent means movie**: every path before 2.0 only fetched movies. Read it via `itemKind()` (`src/lib/media-kind.ts`), never with an inline `?? "movie"`.
+- `src/lib/providers/item-source.ts` is the only parser of typed ids: `tmdb:movie:<id>` and `tmdb:tv:<id>`. `kindFromId()` returns `undefined` for library ids — a Jellyfin GUID says nothing about its kind.
+- `Like.kind` / `Hidden.kind` are `NOT NULL DEFAULT 'movie'` and part of every unique index, so one externalId can be liked as a movie *and* as a series.
+- Session filters carry `deckMode` (`movies | shows | continue | episodes | mixed`). Filter objects written before 2.0 have neither `deckMode` nor `kinds`; read them through `deckModeOf()` / `withDeckDefaults()` (`src/lib/deck-mode.ts`). `kinds` is derived from the mode and never trusted from storage.
+
 ### API Routes (`src/app/api/.../route.ts`)
 - Use named exports for methods: `export async function GET(...)`.
 - Return structured JSON: `return Response.json({ data }, { status: 200 })`.

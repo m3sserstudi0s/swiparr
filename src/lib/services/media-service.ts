@@ -12,6 +12,7 @@ import { HybridDeckService } from "./hybrid-deck-service";
 import { logger } from "@/lib/logger";
 import { getRuntimeConfig, getEffectiveCapabilities } from "@/lib/runtime-config";
 import { resolveItemSource } from "@/lib/providers/item-source";
+import { withDeckDefaults } from "@/lib/deck-mode";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
@@ -60,6 +61,10 @@ export class MediaService {
           })()
         : session.soloFilters;
     }
+
+    // Fill in `deckMode`/`kinds`. Filter objects written before 2.0 have neither,
+    // and every one of them means the movies deck.
+    sessionFilters = withDeckDefaults(sessionFilters);
 
     const { watchProviders, watchRegion } = await this.resolveWatchProviders(session, sessionFilters, auth, activeProviderName);
     const hybrid = this.isHybridActive(activeProviderName, watchProviders);

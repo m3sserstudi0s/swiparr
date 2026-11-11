@@ -6,6 +6,7 @@ import { EVENT_TYPES } from "@/lib/events";
 import { EventService } from "./event-service";
 import { SessionSettings, Filters, SessionData } from "@/types";
 import { ProviderType } from "@/lib/providers/types";
+import { resolveSwipeKind } from "@/lib/media-kind";
 import { ConfigService } from "./config-service";
 import { logger } from "@/lib/logger";
 import { encryptValue, getGuestLendingSecret } from "@/lib/security/crypto";
@@ -263,6 +264,11 @@ export class SessionService {
   }
 
   static async addSwipe(user: SessionData["user"], sessionCode: string | null | undefined, itemId: string, direction: "left" | "right", item?: any) {
+    // Kind of the swiped card: payload first, then the typed id prefix, then movie.
+    // Lookups below stay unscoped by kind on purpose — ids are unique across types
+    // (library GUIDs, `tmdb:movie:`/`tmdb:tv:` prefixes), so a kind column there
+    // would only add a way to miss an existing row.
+    const swipeKind = resolveSwipeKind(item, itemId);
     // Check for existing swipes to handle conversions and re-likes
     // Should be impossible by not showing the same card twice
     const [existingLike, existingHidden] = await Promise.all([
@@ -373,6 +379,7 @@ export class SessionService {
           await db.insert(likes).values({
             externalUserId: user.Id,
             externalId: itemId,
+            kind: swipeKind,
             sessionCode: sessionCode || null,
             isMatch: isMatch,
           });
@@ -420,6 +427,7 @@ export class SessionService {
           await db.insert(hiddens).values({
             externalUserId: user.Id,
             externalId: itemId,
+            kind: swipeKind,
             sessionCode: sessionCode || null,
           });
         } catch (e: any) {
