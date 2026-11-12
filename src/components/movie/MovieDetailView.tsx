@@ -24,6 +24,7 @@ import { getLanguageLabel } from "@/lib/language";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
 import { ProviderType } from "@/lib/providers/types";
 import { isTmdbSourcedId, resolveItemSource } from "@/lib/providers/item-source";
+import { SeriesDetailSection } from "@/components/shows/SeriesDetailSection";
 
 interface Props {
   movieId: string | null;
@@ -223,6 +224,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     {movie.Taglines[0]}
                   </div>
                 )}
+
+                {movie.Kind === "series" && <SeriesDetailSection series={movie} />}
 
                 <div className="flex gap-2 mb-8 flex-wrap">
                   {capabilities.requiresServerUrl && !isGuest && !isStreamingOnly ? (

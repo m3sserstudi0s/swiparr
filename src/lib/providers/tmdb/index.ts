@@ -22,6 +22,8 @@ import {
 import { TmdbSearchResponseSchema, TmdbMovieSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
+import { kindFromId } from "@/lib/providers/item-source";
+import { mapTvDetails, mapTvEpisode, mapTvListItem, mapTvSeason, tvApiId, tvStatusOf } from "./tv";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 /**
@@ -34,6 +36,9 @@ export class TmdbProvider implements MediaProvider {
   private apiKey: string;
   
   readonly capabilities: ProviderCapabilities = PROVIDER_CAPABILITIES[ProviderType.TMDB];
+
+  /** id -> counts/status, so one deck page does not re-fetch what it just learned. */
+  private tvCountsCache = new Map<string, { at: number; seasons?: number; episodes?: number; status?: MediaItem["Status"] }>();
 
   constructor(token?: string) {
     this.apiKey = token || appConfig.TMDB_ACCESS_TOKEN || '';
@@ -50,11 +55,42 @@ export class TmdbProvider implements MediaProvider {
     return res.data;
   }
 
+  /**
+   * Dispatches by content kind. TMDB keeps films and series in separate endpoints
+   * and separate id spaces, so a deck of one kind never touches the other's code,
+   * and a mixed deck asks both and interleaves.
+   */
   async getItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
-    
+
+    const kinds = filters.kinds && filters.kinds.length > 0 ? filters.kinds : ["movie" as const];
+    const wantsSeries = kinds.some((kind) => kind !== "movie");
+    const wantsMovies = kinds.includes("movie");
+
+    if (wantsSeries && !wantsMovies) {
+      return this.getSeriesItems(filters, auth);
+    }
+    if (!wantsSeries) {
+      return this.getMovieItems(filters, auth);
+    }
+
+    // Mixed deck: both kinds, limited per side so one cannot starve the other.
+    const half = Math.max(Math.ceil((filters.limit || 20) / 2), 8);
+    const [movies, series] = await Promise.all([
+      this.getMovieItems({ ...filters, limit: half }, auth),
+      this.getSeriesItems({ ...filters, limit: half }, auth),
+    ]);
+    const merged: MediaItem[] = [];
+    for (let i = 0; i < Math.max(movies.length, series.length); i++) {
+      if (movies[i]) merged.push(movies[i]);
+      if (series[i]) merged.push(series[i]);
+    }
+    return merged.slice(0, filters.limit || 20);
+  }
+
+  private async getMovieItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
     const genres = await this.getGenres(auth);
     const genreIdMap = new Map(genres.map(g => [g.Name, g.Id]));
     const genreNameMap = new Map(genres.map(g => [g.Id, g.Name]));
@@ -187,22 +223,241 @@ export class TmdbProvider implements MediaProvider {
     });
   }
 
+  /** Series counterpart of `getMovieItems`, using TMDB's `/tv` endpoints. */
+  private async getSeriesItems(filters: SearchFilters, auth?: AuthContext): Promise<MediaItem[]> {
+    const genres = await this.getTvGenres(auth);
+    const genreIdMap = new Map(genres.map(g => [g.Name, g.Id]));
+    const genreNameMap = new Map(genres.map(g => [g.Id, g.Name]));
+    const page = filters.offset ? Math.floor(filters.offset / 20) + 1 : 1;
+
+    if (filters.searchTerm) {
+      const data = await this.fetchTmdb<any>('search/tv', { query: filters.searchTerm, page });
+      const searchRes = TmdbSearchResponseSchema.parse(data);
+      return this.enrichSeriesCounts(searchRes.results.map((s: any) => mapTvListItem(s, genreNameMap)), auth);
+    }
+
+    if (filters.sortBy === "Trending" && (!filters.watchProviders || filters.watchProviders.length === 0)) {
+      const data = await this.fetchTmdb<any>('trending/tv/week', { page });
+      const trendingRes = TmdbSearchResponseSchema.parse(data);
+      const results = this.applyTrendingFilters(trendingRes.results.map((s: any) => mapTvListItem(s, genreNameMap)), filters);
+      return this.enrichSeriesCounts(results, auth);
+    }
+
+    const discoverParams: Record<string, any> = {
+      page,
+      with_genres: filters.genres?.map(name => genreIdMap.get(name)).filter(Boolean).join(','),
+      sort_by: filters.sortBy === "Popular" ? "popularity.desc" :
+               filters.sortBy === "Top Rated" ? "vote_average.desc" :
+               filters.sortBy === "Newest" ? "first_air_date.desc" : "popularity.desc",
+    };
+
+    if (filters.excludedGenres && filters.excludedGenres.length > 0) {
+      discoverParams.without_genres = filters.excludedGenres.map(name => genreIdMap.get(name)).filter(Boolean).join(',');
+    }
+
+    if (filters.themes && filters.themes.length > 0) {
+      const keywordIds = (await Promise.all(filters.themes.map(async (theme) => {
+        const searchData = await this.fetchTmdb<any>('search/keyword', { query: theme });
+        return searchData.results?.[0]?.id;
+      }))).filter(Boolean);
+      if (keywordIds.length > 0) discoverParams.with_keywords = keywordIds.join('|');
+    }
+
+    if (filters.watchProviders && filters.watchProviders.length > 0) {
+      discoverParams.with_watch_providers = filters.watchProviders.join('|');
+      discoverParams.with_watch_monetization_types = filters.watchMonetizationTypes || 'flatrate|free|ads|rent|buy';
+      if (filters.watchRegion || auth?.watchRegion) {
+        discoverParams.watch_region = filters.watchRegion || auth?.watchRegion;
+      }
+    }
+
+    if (filters.years && filters.years.length > 0) {
+      const minYear = Math.min(...filters.years);
+      const maxYear = Math.max(...filters.years);
+      if (minYear === maxYear) {
+        discoverParams.first_air_date_year = minYear;
+      } else {
+        discoverParams['first_air_date.gte'] = `${minYear}-01-01`;
+        discoverParams['first_air_date.lte'] = `${maxYear}-12-31`;
+      }
+    }
+
+    if (filters.minCommunityRating && filters.minCommunityRating > 0) {
+      discoverParams['vote_average.gte'] = filters.minCommunityRating;
+    }
+
+    if (filters.runtimeRange) {
+      const [min, max] = filters.runtimeRange;
+      if (min > 0) discoverParams['with_runtime.gte'] = min;
+      if (max < 240) discoverParams['with_runtime.lte'] = max;
+    }
+
+    if (filters.ratings && filters.ratings.length > 0) {
+      const { tmdbDefaultRegion } = getRuntimeConfig();
+      const region = filters.watchRegion || auth?.watchRegion || tmdbDefaultRegion;
+      discoverParams.certification_country = region === 'UK' ? 'GB' : region;
+      discoverParams.certification = filters.ratings.join('|');
+    }
+
+    if (filters.tmdbLanguages && filters.tmdbLanguages.length > 0) {
+      discoverParams.with_original_language = filters.tmdbLanguages.join('|');
+    }
+
+    if (filters.sortBy === "Random") {
+      try {
+        const initialRes = await this.fetchTmdb<any>('discover/tv', { ...discoverParams, page: 1 });
+        const totalPages = Math.min(initialRes.total_pages, 500);
+        discoverParams.page = Math.floor(Math.random() * totalPages) + 1;
+      } catch {
+        discoverParams.page = Math.floor(Math.random() * 20) + 1;
+      }
+    }
+
+    const data = await this.fetchTmdb<any>('discover/tv', discoverParams);
+    const discoverRes = TmdbSearchResponseSchema.parse(data);
+    const mapped = discoverRes.results.map((s: any) => {
+      const item = mapTvListItem(s, genreNameMap);
+      if (filters.ratings && filters.ratings.length === 1) {
+        item.OfficialRating = filters.ratings[0];
+      }
+      return item;
+    });
+    return this.enrichSeriesCounts(mapped, auth);
+  }
+
+  /**
+   * Fills the season/episode counts and status that list payloads do not carry.
+   *
+   * TMDB has no bulk details endpoint, so this is one request per show — cached by
+   * id with a TTL, capped to the page being returned, and run with a small
+   * concurrency so a 20-card deck costs ~1 s instead of 20 sequential round trips.
+   * A failure leaves the card as it was rather than breaking the deck.
+   */
+  private async enrichSeriesCounts(items: MediaItem[], auth?: AuthContext): Promise<MediaItem[]> {
+    const TTL_MS = 10 * 60 * 1000;
+    const now = Date.now();
+    const pending = items.filter(
+      (item) => item.Kind === "series" && item.SeasonCount === undefined && item.Id
+    );
+    if (pending.length === 0) return items;
+
+    const concurrency = 6;
+    for (let i = 0; i < pending.length; i += concurrency) {
+      const batch = pending.slice(i, i + concurrency);
+      await Promise.all(batch.map(async (item) => {
+        const cached = this.tvCountsCache.get(item.Id);
+        if (cached && now - cached.at < TTL_MS) {
+          item.SeasonCount = cached.seasons;
+          item.EpisodeCount = cached.episodes;
+          item.Status = cached.status;
+          return;
+        }
+        try {
+          const detail = await this.fetchTmdb<any>(`tv/${tvApiId(item.Id)}`);
+          const seasons = typeof detail.number_of_seasons === "number" ? detail.number_of_seasons : undefined;
+          const episodes = typeof detail.number_of_episodes === "number" ? detail.number_of_episodes : undefined;
+          const status = tvStatusOf(detail.status);
+          item.SeasonCount = seasons;
+          item.EpisodeCount = episodes;
+          item.Status = status;
+          this.tvCountsCache.set(item.Id, { at: now, seasons, episodes, status });
+        } catch (error) {
+          logger.debug("[TMDBProvider.enrichSeriesCounts] detail lookup failed", { id: item.Id });
+        }
+      }));
+    }
+
+    if (this.tvCountsCache.size > 1000) {
+      for (const [key, value] of this.tvCountsCache) {
+        if (now - value.at > TTL_MS) this.tvCountsCache.delete(key);
+      }
+    }
+
+    return items;
+  }
+
+  private async getTvGenres(auth?: AuthContext): Promise<MediaGenre[]> {
+    const data = await this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/tv/list');
+    return data.genres.map(g => ({ Id: g.id.toString(), Name: g.name }));
+  }
+
   async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
-    const movie = await this.fetchTmdb<any>(`movie/${id}`, {
+    // Accepts both the typed id (`tmdb:tv:1396`, movie ids may be bare) and a bare one.
+    if (kindFromId(id) === "series") {
+      const tv = await this.fetchTmdb<any>(`tv/${tvApiId(id)}`, {
+        append_to_response: 'credits,images,watch/providers,content_ratings',
+      });
+      const mapped = mapTvDetails(tv);
+      mapped.WatchProviders = this.mapWatchProviders(tv['watch/providers']?.results, auth?.watchRegion);
+      const ratings = tv.content_ratings?.results as Array<{ iso_3166_1: string; rating: string }> | undefined;
+      const { tmdbDefaultRegion } = getRuntimeConfig();
+      const region = auth?.watchRegion || tmdbDefaultRegion;
+      const contentRating = ratings?.find((r) => r.iso_3166_1 === region) ?? ratings?.[0];
+      if (contentRating?.rating) mapped.OfficialRating = contentRating.rating;
+      return mapped;
+    }
+
+    const movie = await this.fetchTmdb<any>(`movie/${tvApiId(id)}`, {
         append_to_response: 'credits,images,watch/providers,release_dates'
     });
     return this.mapMovieDetailsToMediaItem(movie, auth?.watchRegion);
+  }
+
+  /**
+   * Seasons come from the show payload's `seasons` array; episodes come from
+   * `tv/{id}/season/{n}`. TMDB has no watched state, so nothing here carries
+   * progress — `hasProgress: false` keeps Continue out of a TMDB deck.
+   */
+  async getChildren(
+    seriesId: string,
+    kind: "season" | "episode",
+    auth?: AuthContext,
+    options?: { season?: number }
+  ): Promise<MediaItem[]> {
+    if (auth?.tmdbToken) {
+      this.apiKey = auth.tmdbToken;
+    }
+    const id = tvApiId(seriesId);
+    const show = await this.fetchTmdb<any>(`tv/${id}`);
+
+    if (kind === "season") {
+      const seasons: any[] = show.seasons || [];
+      return seasons
+        .filter((s) => s.season_number > 0)
+        .map((s) => mapTvSeason(s, { id: show.id, name: show.name }));
+    }
+
+    const seasonNumber = options?.season ?? 1;
+    const seasonData = await this.fetchTmdb<any>(`tv/${id}/season/${seasonNumber}`);
+    return (seasonData.episodes || []).map((episode: any) =>
+      mapTvEpisode(episode, { id: show.id, name: show.name }, seasonNumber)
+    );
+  }
+
+  /** TMDB knows nothing about what has been watched, so there is no next-up. */
+  async getNextUp(_auth?: AuthContext, _limit = 24): Promise<MediaItem[]> {
+    return [];
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
     if (auth?.tmdbToken) {
         this.apiKey = auth.tmdbToken;
     }
-    const data = await this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/movie/list');
-    return data.genres.map(g => ({ Id: g.id.toString(), Name: g.name }));
+    // One merged list: the drawer filters both deck kinds with the same controls,
+    // and TMDB gives movies and series overlapping but not identical genre ids.
+    const [movies, series] = await Promise.all([
+      this.fetchTmdb<{ genres: { id: number; name: string }[] }>('genre/movie/list'),
+      this.getTvGenres(auth).catch(() => [] as MediaGenre[]),
+    ]);
+    const merged = new Map<string, MediaGenre>();
+    for (const g of movies.genres) merged.set(g.name.toLowerCase(), { Id: g.id.toString(), Name: g.name });
+    for (const g of series) {
+      if (!merged.has(g.Name.toLowerCase())) merged.set(g.Name.toLowerCase(), g);
+    }
+    return Array.from(merged.values());
   }
 
   async getThemes(auth?: AuthContext): Promise<string[]> {
@@ -222,9 +477,20 @@ export class TmdbProvider implements MediaProvider {
     try {
         const { tmdbDefaultRegion } = getRuntimeConfig();
         const region = auth?.watchRegion || tmdbDefaultRegion;
-        const data = await this.fetchTmdb<any>('certification/movie/list');
-        const certs = data.certifications?.[region] || data.certifications?.[tmdbDefaultRegion] || [];
-        return certs.map((c: any) => ({ Name: c.certification, Value: c.certification }));
+        const [movieData, tvData] = await Promise.all([
+            this.fetchTmdb<any>('certification/movie/list'),
+            this.fetchTmdb<any>('certification/tv/list').catch(() => null),
+        ]);
+        const pick = (data: any) => data?.certifications?.[region] || data?.certifications?.[tmdbDefaultRegion] || [];
+        const seen = new Set<string>();
+        const ratings: MediaRating[] = [];
+        for (const c of [...pick(movieData), ...pick(tvData)]) {
+            const value = c?.certification;
+            if (!value || seen.has(value)) continue;
+            seen.add(value);
+            ratings.push({ Name: value, Value: value });
+        }
+        return ratings;
     } catch (e) {
         return []; 
     }

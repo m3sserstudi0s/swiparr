@@ -22,3 +22,7 @@ jobs:
       # The full pass (npm run messer) needs the /ui sink served and runs before a release.
       - name: messer check (static)
         run: node .messer-ui/scripts/check.mjs --app . --static
+      # `check` cannot see a stale block copy; this compares every installed block against
+      # registry/<item> (a deliberate divergence is declared in apps.json).
+      - name: installed blocks match the registry
+        run: node .messer-ui/scripts/blocks.mjs --app .

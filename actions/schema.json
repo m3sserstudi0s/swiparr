@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Portal Actions",
+  "description": "Schema for actions.json — portal action definitions consumed by the Server Portal Actions module",
+  "type": "object",
+  "properties": {
+    "source": { "type": "string" },
+    "container": { "type": "string" },
+    "workdir": { "type": "string" },
+    "host_workdir": { "type": "string" },
+    "sourceName": { "type": "string", "description": "Display name for this source group in the Portal UI (e.g. \"JARA\")" },
+    "sourceDescription": { "type": "string", "description": "One-line project description shown on the source group card" },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/action" }
+    }
+  },
+  "required": ["actions"],
+  "definitions": {
+    "action": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "description": "Short display heading — card title, run-dialog heading, confirm titles" },
+        "description": { "type": "string" },
+        "info": { "type": "string", "description": "Optional long-form details shown in the card's info tooltip" },
+        "note": { "type": "string", "description": "Optional callout rendered as a note banner in the card's info tooltip" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" },
+        "lifecycle": {
+          "type": "string",
+          "enum": ["one-shot", "service"],
+          "default": "one-shot",
+          "description": "service = runs until manually stopped; portal shows a start/stop toggle with probed status"
+        },
+        "confirmMessage": { "type": "string" },
+        "stopConfirmMessage": { "type": "string" },
+        "commands": {
+          "type": "array",
+          "description": "One-shot: the run steps. Service: the START steps.",
+          "items": { "$ref": "#/definitions/command" }
+        },
+        "stop_commands": {
+          "type": "array",
+          "description": "Service only: steps run when stopping.",
+          "items": { "$ref": "#/definitions/command" }
+        },
+        "status_command": {
+          "$ref": "#/definitions/command",
+          "description": "Service only: probe. Exit 0 = running, non-zero = stopped."
+        },
+        "probe_interval": { "type": "number" }
+      },
+      "required": ["id", "title", "description"]
+    },
+    "command": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Short step title shown in the run dialog; UI falls back to description" },
+        "description": { "type": "string", "description": "Always-visible step summary (rendered under the title in the run dialog)" },
+        "info": { "type": "string", "description": "Optional long-form detail rendered as a hybrid tooltip on the step — use for text too long for the always-visible description" },
+        "command": { "type": "string" },
+        "run_on": {
+          "type": "string",
+          "enum": ["host", "container"],
+          "description": "'host' runs directly on macOS via SSH, 'container' (default) inside the container"
+        }
+      },
+      "required": ["description", "command"]
+    }
+  }
+}

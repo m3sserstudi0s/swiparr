@@ -122,7 +122,12 @@ export const POPULAR_TMDB_WATCH_PROVIDER_NAMES = [
 export const ALLOWED_DEFAULT_PLEX_IMAGE_URL = "https://metadata-static.plex.tv";
 
 // Hybrid deck (library provider + TMDB streaming catalogs)
-export const TMDB_ID_PREFIX = "tmdb:movie:";
+// Typed prefixes keep a TMDB movie id and a TMDB series id apart in one string:
+// `tmdb:movie:550` and `tmdb:tv:1399`. `TMDB_ID_PREFIX` is the movie prefix kept
+// under its old name because likes/hidden rows already store it.
+export const TMDB_MOVIE_ID_PREFIX = "tmdb:movie:";
+export const TMDB_TV_ID_PREFIX = "tmdb:tv:";
+export const TMDB_ID_PREFIX = TMDB_MOVIE_ID_PREFIX;
 export const HYBRID_MONETIZATION_TYPES = "flatrate|free|ads";
 export const HYBRID_TMDB_MAX_PAGES_PER_PROVIDER = 15;
 

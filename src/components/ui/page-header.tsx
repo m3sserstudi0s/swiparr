@@ -1,8 +1,8 @@
-import { cn } from "@/lib/utils";
-
 /**
  * Messer UI page header: the mono meta eyebrow, the h1 in the human voice, an optional
  * description, and right-aligned actions. One shape for every surface.
+ *
+ * Deliberately no `cn` import — see status-badge.
  */
 export function PageHeader({
   eyebrow,
@@ -18,7 +18,7 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("flex flex-wrap items-end justify-between gap-4", className)}>
+    <header className={`flex flex-wrap items-end justify-between gap-4 ${className ?? ""}`.trim()}>
       <div className="grid gap-1">
         {eyebrow ? <span className="m-label">{eyebrow}</span> : null}
         <h1>{title}</h1>

@@ -11,8 +11,17 @@ export interface MediaStudio {
   Id: string;
 }
 
+export type MediaKind = "movie" | "series" | "season" | "episode";
+
 export interface MediaItem {
   Id: string;
+  /**
+   * Content type. Optional on purpose: every pre-shows code path only ever
+   * fetched movies, so an absent Kind means "movie" (`itemKind()` in
+   * `@/lib/media-kind` is the single normalizer). Series/season/episode paths
+   * set it explicitly as they are built.
+   */
+  Kind?: MediaKind;
   Guid?: string;
   Name: string;
   OriginalTitle?: string;
@@ -44,6 +53,22 @@ export interface MediaItem {
   BlurDataURL?: string;
   ProviderIds?: Record<string, string>;
   InLibrary?: boolean;
+  // Shows (2.0). Populated only by series/season/episode paths; absent on
+  // movies so no existing consumer has to change.
+  SeriesId?: string;
+  SeriesName?: string;
+  SeasonNumber?: number;
+  EpisodeNumber?: number;
+  SeasonCount?: number;
+  EpisodeCount?: number;
+  Status?: "continuing" | "ended" | "upcoming";
+  EndYear?: number;
+  EpisodeRuntimeMinutes?: number;
+  Progress?: {
+    played: boolean;
+    unplayedCount?: number;
+    positionTicks?: number;
+  };
   WatchProviders?: WatchProvider[];
   likedBy?: {
     userId: string;

@@ -12,6 +12,8 @@ import { HybridDeckService } from "./hybrid-deck-service";
 import { logger } from "@/lib/logger";
 import { getRuntimeConfig, getEffectiveCapabilities } from "@/lib/runtime-config";
 import { resolveItemSource } from "@/lib/providers/item-source";
+import { deckModeOf, withDeckDefaults } from "@/lib/deck-mode";
+import { canServeContinuation, excludeSwiped, seriesIdsFromNextUp, slicePage, unwatchedEpisodes } from "@/lib/continue-deck";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
@@ -61,6 +63,10 @@ export class MediaService {
         : session.soloFilters;
     }
 
+    // Fill in `deckMode`/`kinds`. Filter objects written before 2.0 have neither,
+    // and every one of them means the movies deck.
+    sessionFilters = withDeckDefaults(sessionFilters);
+
     const { watchProviders, watchRegion } = await this.resolveWatchProviders(session, sessionFilters, auth, activeProviderName);
     const hybrid = this.isHybridActive(activeProviderName, watchProviders);
     const defaultSort = activeProviderName === ProviderType.TMDB ? "Popular" : "Trending";
@@ -68,6 +74,8 @@ export class MediaService {
     // 3. Handle Search
     if (searchTerm) {
       const results = await provider.getItems({ 
+        kinds: sessionFilters?.kinds,
+        started: sessionFilters?.started,
         searchTerm, 
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         watchProviders,
@@ -77,12 +85,76 @@ export class MediaService {
       return { items: results, hasMore: false };
     }
 
-    // 4. Handle Session vs Solo Mode
+    // 4. Continuation decks answer "what am I in the middle of" rather than
+    // "what should we watch", so they bypass filters, hybrid merging and the
+    // session/solo split: the provider's own next-up is the whole deck.
+    const deckMode = deckModeOf(sessionFilters);
+    if (deckMode === "continue" || deckMode === "episodes") {
+      return this.getContinuationItems(sessionFilters, auth, provider, excludeIds, page, limit, deckMode);
+    }
+
+    // 5. Handle Session vs Solo Mode
     if (session.sessionCode) {
       return this.getSessionItems(session.sessionCode, sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset, hybrid);
     } else {
       return this.getSoloItems(sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset, hybrid);
     }
+  }
+
+  /**
+   * "Continuing" / "Ended" is a property of a show, and no provider filters on it
+   * server-side, so it is applied here. A film is unaffected; a show with unknown
+   * status is kept rather than hidden, because "unknown" is not "ended".
+   */
+  private static filterBySeriesStatus(items: MediaItem[], filters: Filters | null): MediaItem[] {
+    const wanted = filters?.status;
+    if (!wanted?.length) return items;
+    return items.filter((item) => {
+      if (item.Kind !== "series") return true;
+      if (!item.Status) return true;
+      return wanted.includes(item.Status as "continuing" | "ended");
+    });
+  }
+
+  /**
+   * Continue = the provider's next-up shelf (one episode per show you are in the
+   * middle of). Episodes = the unwatched episodes of those same shows, so the
+   * deck still only offers shows you have actually started.
+   *
+   * Providers without `hasNextUp` get an empty deck rather than an error: a TMDB
+   * instance has no watched state, and an empty Continue row is the honest answer.
+   */
+  private static async getContinuationItems(
+    sessionFilters: Filters | null,
+    auth: any,
+    provider: any,
+    excludeIds: Set<string>,
+    page: number,
+    limit: number,
+    mode: "continue" | "episodes"
+  ): Promise<{ items: MediaItem[]; hasMore: boolean }> {
+    if (!canServeContinuation(mode, provider.capabilities ?? {})) {
+      // An empty deck is the honest answer for a provider with no watched state;
+      // the client shows the mode-aware empty state instead of an error.
+      return { items: [], hasMore: false };
+    }
+
+    const nextUp = await provider.getNextUp(auth, Math.max(limit * 2, 24));
+    const visible = excludeSwiped(nextUp, excludeIds);
+
+    if (mode === "continue") {
+      return slicePage(visible, page, limit);
+    }
+
+    const episodes: MediaItem[] = [];
+    for (const seriesId of seriesIdsFromNextUp(visible)) {
+      try {
+        episodes.push(...unwatchedEpisodes(await provider.getChildren(seriesId, "episode", auth), excludeIds));
+      } catch {
+        // A provider that cannot list episodes contributes fewer, not an error.
+      }
+    }
+    return slicePage(episodes, page, limit);
   }
 
   /**
@@ -202,6 +274,8 @@ export class MediaService {
         });
       }
       fetchedItems = await provider.getItems({
+        kinds: sessionFilters?.kinds,
+        started: sessionFilters?.started,
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         genres: sessionFilters?.genres,
         excludedGenres: sessionFilters?.excludedGenres,
@@ -235,6 +309,7 @@ export class MediaService {
 
       let filtered = this.applyClientFilters(fetchedItems, sessionFilters);
       filtered = filtered.filter(item => !excludeIds.has(item.Id));
+      filtered = this.filterBySeriesStatus(filtered, sessionFilters);
       items.push(...filtered);
 
       if (hasExclusionFilters) {
@@ -481,6 +556,8 @@ export class MediaService {
       while (hasMore && allItems.length < maxItems) {
         try {
           const items = await provider.getItems({
+            kinds: sessionFilters?.kinds,
+            started: sessionFilters?.started,
             libraries: [libraryId],
             genres: sessionFilters?.genres,
             excludedGenres: sessionFilters?.excludedGenres,
@@ -524,6 +601,20 @@ export class MediaService {
     return allItems;
   }
 
+  /**
+   * Library collection types a deck may read. Movies-only (the pre-2.0 shape)
+   * stays the default so an old filter object behaves exactly as before.
+   */
+  private static libraryCollectionTypes(sessionFilters: Filters | null): Set<string> {
+    const kinds = sessionFilters?.kinds?.length ? sessionFilters.kinds : ["movie" as const];
+    const types = new Set<string>();
+    for (const kind of kinds) {
+      if (kind === "movie") types.add("movies");
+      else if (kind === "series" || kind === "episode") types.add("tvshows");
+    }
+    return types;
+  }
+
   private static async fetchAllPlexItems(
     provider: any,
     auth: any,
@@ -536,9 +627,10 @@ export class MediaService {
     // Get libraries to fetch from
     let libraries = includedLibraries;
     if (libraries.length === 0) {
+      const collectionTypes = this.libraryCollectionTypes(sessionFilters);
       const availableLibraries = await provider.getLibraries(auth);
       libraries = availableLibraries
-        .filter((lib: any) => lib.CollectionType === "movies")
+        .filter((lib: any) => collectionTypes.has(lib.CollectionType))
         .map((lib: any) => lib.Id);
     }
 
@@ -547,6 +639,8 @@ export class MediaService {
       try {
         // Plex doesn't support pagination well in the same way, so fetch larger batches
         const items = await provider.getItems({
+          kinds: sessionFilters?.kinds,
+          started: sessionFilters?.started,
           libraries: [libraryId],
           genres: sessionFilters?.genres,
           excludedGenres: sessionFilters?.excludedGenres,
@@ -595,6 +689,8 @@ export class MediaService {
     for (let page = 1; page <= maxPages; page++) {
       try {
         const items = await provider.getItems({
+          kinds: sessionFilters?.kinds,
+          started: sessionFilters?.started,
           genres: sessionFilters?.genres,
           excludedGenres: sessionFilters?.excludedGenres,
           years: (sessionFilters?.yearRange && sessionFilters.yearRange[0] !== undefined && sessionFilters.yearRange[1] !== undefined) ? Array.from({ length: sessionFilters.yearRange[1] - sessionFilters.yearRange[0] + 1 }, (_, i) => sessionFilters.yearRange![0] + i) : undefined,
@@ -697,6 +793,8 @@ export class MediaService {
         });
       }
       fetchedItems = await provider.getItems({
+        kinds: sessionFilters?.kinds,
+        started: sessionFilters?.started,
         libraries: includedLibraries.length > 0 ? includedLibraries : undefined,
         genres: sessionFilters?.genres,
         excludedGenres: sessionFilters?.excludedGenres,
@@ -730,6 +828,7 @@ export class MediaService {
 
       let filtered = this.applyClientFilters(fetchedItems, sessionFilters);
       filtered = filtered.filter(item => !excludeIds.has(item.Id));
+      filtered = this.filterBySeriesStatus(filtered, sessionFilters);
       items.push(...filtered);
 
       if (hasExclusionFilters) {

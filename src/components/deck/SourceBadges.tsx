@@ -24,7 +24,7 @@ export function SourceBadges({ item }: { item: MediaItem }) {
       {item.InLibrary && (
         <Badge
           variant="secondary"
-          className="gap-1 text-xs/0 bg-neutral-600/70 hover:bg-accent text-neutral-100 border-0"
+          className="gap-1 bg-neutral-600/70 hover:bg-accent text-neutral-100 border-0"
         >
           <HardDrive className="w-3 h-3 mb-px" />
           Library
@@ -49,7 +49,7 @@ export function SourceBadges({ item }: { item: MediaItem }) {
             </div>
           ))}
           {overflowCount > 0 && (
-            <Badge variant="outline" className="text-xs/0 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 px-1.5">
+            <Badge variant="outline" className="border-neutral-700/70 bg-neutral-700/20 text-neutral-100 px-1.5">
               +{overflowCount}
             </Badge>
           )}

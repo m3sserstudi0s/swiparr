@@ -22,6 +22,9 @@ import { PlexContainerSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { assertSafeUrl, getAllowedPlexImageHosts, isAllowedHost } from "@/lib/security/url-guard";
 import { DEFAULT_THEMES } from "@/lib/constants";
+import { plexSectionTypeForKind, plexTypeOf } from "./params";
+import { mapPlexItem } from "./map";
+import { matchesStartedFilter } from "@/lib/series-state";
 
 /**
  * Plex Provider
@@ -39,9 +42,17 @@ export class PlexProvider implements MediaProvider {
     
     let allItems: any[] = [];
     const sections = await this.getLibraries(auth);
+
+    // `kinds` is derived from the deck mode; a movie-only deck must not see show
+    // sections, and a `mixed` deck needs both, so filter sections by kind first.
+    const kinds = filters.kinds && filters.kinds.length > 0 ? filters.kinds : (["movie"] as const);
+    const wantedCollections = new Set<string>(
+      kinds.map((kind) => plexSectionTypeForKind(kind) === "show" ? "tvshows" : "movies")
+    );
+
     const targetSections = filters.libraries && filters.libraries.length > 0 
       ? sections.filter(s => filters.libraries?.includes(s.Id))
-      : sections.filter(s => s.CollectionType === "movies");
+      : sections.filter(s => wantedCollections.has(s.CollectionType ?? "movies"));
 
     if (targetSections.length === 0) return [];
 
@@ -56,8 +67,9 @@ export class PlexProvider implements MediaProvider {
         }
 
         // Build query for Plex Advanced Filtering
+        const sectionIsShows = section.CollectionType === "tvshows";
         const params: Record<string, any> = {
-            type: 1, // Movies
+            type: plexTypeOf(sectionIsShows ? "series" : "movie"),
             'X-Plex-Container-Start': filters.offset || 0,
             'X-Plex-Container-Size': limitPerSection,
             includeGuids: 1,
@@ -142,8 +154,14 @@ export class PlexProvider implements MediaProvider {
         allItems = [...allItems, ...items];
     }
 
-    // Secondary client-side limit if multiple sections merged
-    return allItems.slice(0, filters.limit || 20).map(item => this.mapToMediaItem(item));
+    const mapped = allItems.slice(0, filters.limit || 20).map(item => this.mapToMediaItem(item));
+
+    // Plex has no "started" concept of its own; the shared helper reads view state
+    // from the mapped item so shows behave like they do on Jellyfin.
+    if (filters.started && filters.started !== "any") {
+      return mapped.filter((item) => matchesStartedFilter(item, filters.started!));
+    }
+    return mapped;
   }
 
   async getItemDetails(id: string, auth?: AuthContext, options?: { includeUserState?: boolean }): Promise<MediaItem> {
@@ -170,6 +188,68 @@ export class PlexProvider implements MediaProvider {
       await this.attachWatchlistState(item, token);
     }
     return this.mapToMediaItem(item);
+  }
+
+  /**
+   * Seasons of a show, or the episodes of one season.
+   *
+   * Plex splits these across two hops: `/library/metadata/{show}/children`
+   * returns seasons, and a season's own children are its episodes. There is no
+   * "all episodes of show" endpoint that keeps numbering, so an episode request
+   * without a season number walks the first season only — the caller is expected
+   * to pass `season` when it knows it.
+   */
+  async getChildren(
+    seriesId: string,
+    kind: "season" | "episode",
+    auth?: AuthContext,
+    options?: { season?: number }
+  ): Promise<MediaItem[]> {
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
+    if (!token) throw new Error("Plex Token is required");
+    const headers = getPlexHeaders(token);
+
+    const fetchChildren = async (id: string): Promise<any[]> => {
+      const url = getPlexUrl(`/library/metadata/${id}/children`, auth?.serverUrl);
+      const res = await plexRequest<any>({ method: 'get', url, headers });
+      const data = PlexContainerSchema.parse(res.data);
+      const container = data.MediaContainer;
+      // Plex puts real children in Metadata and adds shortcut nodes to Directory
+      // ("All episodes", which has no ratingKey), so both arrays are read and the
+      // keyless nodes dropped rather than trusting either array alone.
+      const children = [
+        ...(container.Metadata || []),
+        ...(container.Directory || []),
+        ...(container.Video || []),
+      ];
+      return children.filter((child) => Boolean(child.ratingKey));
+    };
+
+    const seasons = await fetchChildren(seriesId);
+    if (kind === "season") return seasons.map((item) => this.mapToMediaItem(item));
+
+    const season = typeof options?.season === "number"
+      ? seasons.find((s) => s.index === options.season)
+      : seasons[0];
+    if (!season?.ratingKey) return [];
+
+    const episodes = await fetchChildren(String(season.ratingKey));
+    return episodes.map((item) => this.mapToMediaItem(item));
+  }
+
+  /** Continue-watching across the whole server — Plex's own onDeck shelf. */
+  async getNextUp(auth?: AuthContext, limit = 24): Promise<MediaItem[]> {
+    const token = auth?.accessToken || appConfig.PLEX_TOKEN;
+    if (!token) throw new Error("Plex Token is required");
+    const url = getPlexUrl("/library/onDeck", auth?.serverUrl);
+    const res = await plexRequest<any>({
+      method: 'get',
+      url,
+      headers: getPlexHeaders(token),
+      params: { 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': limit },
+    });
+    const data = PlexContainerSchema.parse(res.data);
+    return (data.MediaContainer.Metadata || []).map((item) => this.mapToMediaItem(item));
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
@@ -231,12 +311,16 @@ export class PlexProvider implements MediaProvider {
       throw new Error("Auth credentials required");
     }
     const libraryItems = await getCachedLibraries(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
+    // Plex tags sections "movie" | "show" | "artist" | "photo"; our library list
+    // needs the browseable ones, with the CollectionType the rest of the app uses.
     return libraryItems
-      .filter((l: any) => l.type === "movie")
+      .filter((l: any) => l.type === "movie" || l.type === "show")
       .map((l: any) => ({
         Id: l.key,
         Name: l.title,
-        CollectionType: "movies",
+        // The app's vocabulary is "movies" / "tvshows" (as Jellyfin returns), not
+        // Plex's "show" — media-service filters libraries by that value.
+        CollectionType: l.type === "show" ? "tvshows" : "movies",
       }));
   }
 
@@ -312,15 +396,76 @@ export class PlexProvider implements MediaProvider {
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const token = password || appConfig.PLEX_TOKEN;
     if (!token) throw new Error("Plex Token is required");
-    
-    // Try to discover the best server URL to avoid TLS certificate issues
-    // This will prefer .plex.direct URLs over IP addresses for local HTTPS
+
+    const clientId = deviceId || "Messer Swipe";
+
+    /**
+     * Identify the user from plex.tv, not from the server.
+     *
+     * `/myplex/account` on the server answers 403 to anyone who does not own it,
+     * which is what made a shared or managed user fail to sign in at all (#74).
+     * plex.tv knows the account behind any valid token.
+     */
+    let plexUser: { id?: number | string; username?: string; title?: string } | null = null;
+    try {
+      const res = await plexRequest<any>({
+        method: 'get',
+        url: 'https://plex.tv/api/v2/user',
+        headers: { ...getPlexHeaders(token), 'X-Plex-Client-Identifier': clientId },
+      });
+      plexUser = res.data ?? null;
+    } catch (error) {
+      logger.debug('[PlexProvider.authenticate] plex.tv user lookup failed, falling back to the server', error);
+    }
+
+    /**
+     * A token minted for a Home/managed user (or any shared user) authenticates as
+     * `guest` against a server it does not own. The usable credential is the
+     * per-server `accessToken` that plex.tv lists for the server resource, so it
+     * is resolved here and stored as the session token.
+     */
+    let serverToken: string | null = null;
+    try {
+      const identity = await plexRequest<any>({
+        method: 'get',
+        url: getPlexUrl('/identity', serverUrl),
+        headers: getPlexHeaders(token),
+      });
+      const machineId = identity?.data?.MediaContainer?.machineIdentifier as string | undefined;
+
+      const res = await plexRequest<any>({
+        method: 'get',
+        url: 'https://plex.tv/api/v2/resources?includeHttps=1',
+        headers: { ...getPlexHeaders(token), 'X-Plex-Client-Identifier': clientId },
+      });
+      const resources: any[] = Array.isArray(res.data) ? res.data : [];
+      const servers = resources.filter((r) => (r.provides || '').split(',').includes('server'));
+      const target = machineId
+        ? servers.find((r) => r.clientIdentifier === machineId)
+        : servers[0];
+      serverToken = target?.accessToken ?? null;
+    } catch (error) {
+      logger.debug('[PlexProvider.authenticate] plex.tv resource lookup failed; using the provided token', error);
+    }
+
+    if (plexUser || serverToken) {
+      return {
+        User: {
+          Id: (plexUser?.id ?? username).toString(),
+          Name: plexUser?.username || plexUser?.title || username,
+        },
+        AccessToken: serverToken || token,
+      };
+    }
+
+    // Owner fallback: keep the old path working when plex.tv is unreachable.
     const discovered = await getBestServerUrl(token, serverUrl);
     const effectiveServerUrl = discovered?.serverUrl || serverUrl;
-    
-    const headers = getPlexHeaders(token);
-    const url = getPlexUrl("/myplex/account", effectiveServerUrl);
-    const res = await plexRequest<any>({ method: 'get', url, headers });
+    const res = await plexRequest<any>({
+      method: 'get',
+      url: getPlexUrl("/myplex/account", effectiveServerUrl),
+      headers: getPlexHeaders(token),
+    });
     const user = res.data.MyPlex;
     return {
       User: {
@@ -332,81 +477,7 @@ export class PlexProvider implements MediaProvider {
   }
 
   private mapToMediaItem(item: any): MediaItem {
-    const languageTags: string[] = [];
-
-    if (item.Language) {
-      languageTags.push(...item.Language.map((l: any) => l.tag).filter(Boolean));
-    }
-
-    if (item.Media) {
-      for (const media of item.Media) {
-        for (const part of media.Part || []) {
-          for (const stream of part.Stream || []) {
-            if (stream.languageCode) languageTags.push(stream.languageCode);
-            if (stream.language) languageTags.push(stream.language);
-            if (stream.title) languageTags.push(stream.title);
-          }
-        }
-      }
-    }
-
-    const language = languageTags.length > 0 ? languageTags[0] : undefined;
-
-    const directorPeople = item.Director?.map((d: any, idx: number) => ({
-      Id: `director-${item.ratingKey}-${idx}`,
-      Name: d.tag,
-      Role: "Director",
-      Type: "Director",
-    })) || [];
-
-    const castPeople = item.Role?.map((r: any, idx: number) => ({
-      Id: (r.id ? r.id.toString() : `cast-${item.ratingKey}-${idx}`),
-      Name: r.tag,
-      Role: r.role || "Actor",
-      Type: "Actor",
-      PrimaryImageTag: r.thumb,
-    })) || [];
-
-    const watchlistGuid = item.guid || (item.Guid?.[0]?.id ?? undefined);
-    const isWatchlisted = (item.userState?.watchlistedAt ?? 0) > 0;
-    const isPlayed = (item.viewCount ?? 0) > 0 || (item.viewOffset ?? 0) > 0 || (item.lastViewedAt ?? 0) > 0;
-
-    const ratingImage = item.ratingImage || item.audienceRatingImage;
-    const ratingSource = typeof ratingImage === "string" ? ratingImage.toLowerCase() : "";
-    const hasImdbRating = ratingSource.includes("imdb");
-    const communityRating = hasImdbRating
-      ? item.rating
-      : (item.audienceRating ?? item.rating);
-
-
-    return {
-      Id: item.ratingKey,
-      Guid: watchlistGuid,
-      Name: item.title,
-      OriginalTitle: item.originalTitle,
-      Language: language,
-      RunTimeTicks: item.duration ? item.duration * 10000 : undefined, 
-      ProductionYear: item.year,
-      CommunityRating: communityRating,
-      CommunityRatingSource: ratingImage,
-      Overview: item.summary,
-      Taglines: item.tagline ? [item.tagline] : [],
-      OfficialRating: item.contentRating,
-      Genres: item.Genre?.map((g: any) => g.tag) || [],
-      People: [...castPeople, ...directorPeople],
-      ImageTags: {
-        Primary: item.thumb,
-        Backdrop: item.art,
-      },
-      BackdropImageTags: item.art ? [item.art] : [],
-      UserData: item.userRating !== undefined || isWatchlisted || isPlayed
-        ? {
-            IsFavorite: item.userRating > 0,
-            Likes: isWatchlisted,
-            Played: isPlayed,
-          }
-        : undefined,
-    };
+    return mapPlexItem(item);
   }
 
   private async resolveGenreIds(genres: string[], auth?: AuthContext): Promise<string[]> {

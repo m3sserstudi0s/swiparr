@@ -34,6 +34,9 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 
+import { deriveDeckMode } from "@/lib/deck-mode";
+import type { DeckMode } from "@/types/session";
+
 interface FilterDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,6 +46,17 @@ interface FilterDrawerProps {
 
 
 export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: FilterDrawerProps) {
+  /**
+   * The Media section is two toggles plus filters, not a mode picker: which kinds
+   * are in the deck, and — when shows are included — whether a card is a whole
+   * show or a single episode. `deckMode` used to be a five-way choice here; it is
+   * now derived from these (see `deriveDeckMode`) so the server contract is
+   * unchanged while the UI expresses relationships instead of exclusivity.
+   */
+  const [mediaKinds, setMediaKinds] = useState<("movie" | "series")[]>(["movie"]);
+  const [showUnit, setShowUnit] = useState<"series" | "episode">("series");
+  const [seriesStatus, setSeriesStatus] = useState<("continuing" | "ended")[]>([]);
+  const [watchingOnly, setWatchingOnly] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
   const [genreFilterMode, setGenreFilterMode] = useState<"include" | "exclude">("include");
@@ -150,6 +164,16 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setRuntimeRange(currentFilters?.runtimeRange || [0, 240]);
       setMinRating(currentFilters?.minCommunityRating || 0);
       setProviderSearch("");
+      // Legacy filter objects only carry a deckMode; translate it into the two rows
+      // so an existing user's deck is what they left it as.
+      const legacyMode = currentFilters?.deckMode ?? "movies";
+      const kinds = currentFilters?.kinds?.filter((kind): kind is "movie" | "series" => kind === "movie" || kind === "series");
+      const fallbackKinds: ("movie" | "series")[] =
+        legacyMode === "mixed" ? ["movie", "series"] : legacyMode === "movies" ? ["movie"] : ["series"];
+      setMediaKinds(kinds?.length ? kinds : fallbackKinds);
+      setShowUnit(currentFilters?.showUnit ?? (legacyMode === "continue" || legacyMode === "episodes" ? "episode" : "series"));
+      setSeriesStatus(currentFilters?.status ?? []);
+      setWatchingOnly(currentFilters?.started === "inProgress" || legacyMode === "continue");
     }
   }, [open, currentFilters, availableWatchProviderIds, minYearLimit, maxYearLimit, defaultSort, hybridActive]);
 
@@ -180,7 +204,15 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       unplayedOnly: f.unplayedOnly ?? true,
       yearRange: isYearDefault ? undefined : f.yearRange,
       runtimeRange: isRuntimeDefault ? undefined : f.runtimeRange,
-      minCommunityRating: (f.minCommunityRating && f.minCommunityRating > 0) ? f.minCommunityRating : undefined
+      minCommunityRating: (f.minCommunityRating && f.minCommunityRating > 0) ? f.minCommunityRating : undefined,
+      // The selected kinds travel with the filters so the deck refetches when they
+      // change. `deckMode` is derived from them plus the show options — never typed
+      // by the user — and stays on the object because the server dispatches on it.
+      kinds: f.kinds?.length ? f.kinds : ["movie"],
+      showUnit: f.showUnit,
+      status: f.status?.length ? f.status : undefined,
+      started: f.started,
+      deckMode: deriveDeckMode({ kinds: f.kinds, showUnit: f.showUnit, started: f.started })
     };
   };
 
@@ -198,7 +230,11 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       unplayedOnly: unplayedOnly,
       yearRange: yearRange,
       runtimeRange: runtimeRange,
-      minCommunityRating: minRating
+      minCommunityRating: minRating,
+      kinds: mediaKinds,
+      showUnit,
+      status: seriesStatus,
+      started: watchingOnly ? "inProgress" : "any",
     });
   };
 
@@ -239,6 +275,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setRuntimeRange([0, 240]);
     setMinRating(0);
     setProviderSearch("");
+    // The Media section is part of the filters, so Reset clears it too — back to
+    // the default deck (movies, whole shows, no narrowing) rather than leaving a
+    // shows-or-episodes deck behind a reset-looking drawer.
+    setMediaKinds(["movie"]);
+    setShowUnit("series");
+    setSeriesStatus([]);
+    setWatchingOnly(false);
   };
 
   const filteredSortOptions = sortOptions;
@@ -383,6 +426,125 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
               </div>
             ) : (
               <>
+                {/* Media Section: what goes in the deck, and what a show card is.
+                    Two levels on purpose — the second row only exists when Shows is
+                    selected, and it is visually subordinate because it narrows the
+                    choice above rather than competing with it. */}
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                      Media
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge
+                        variant={mediaKinds.includes("movie") ? "default" : "outline"}
+                        className="cursor-pointer text-sm py-1.5 px-4 rounded-none transition-colors"
+                        onClick={() => {
+                          const next = mediaKinds.includes("movie")
+                            ? mediaKinds.filter((k) => k !== "movie")
+                            : [...mediaKinds, "movie" as const];
+                          // Never leave the deck with nothing to show: the last
+                          // selected kind stays on.
+                          if (next.length > 0) setMediaKinds(next);
+                        }}
+                      >
+                        Movies
+                      </Badge>
+                      <Badge
+                        variant={mediaKinds.includes("series") ? "default" : "outline"}
+                        className={`text-sm py-1.5 px-4 rounded-none transition-colors ${capabilities.hasSeries ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}
+                        aria-disabled={!capabilities.hasSeries}
+                        onClick={() => {
+                          if (!capabilities.hasSeries) return;
+                          const next = mediaKinds.includes("series")
+                            ? mediaKinds.filter((k) => k !== "series")
+                            : [...mediaKinds, "series" as const];
+                          if (next.length > 0) setMediaKinds(next);
+                        }}
+                      >
+                        Shows
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {mediaKinds.includes("series") && (
+                    <div className="ml-1 space-y-3 border-l border-border pl-3">
+                      <div className="space-y-1.5">
+                        <span className="text-xs uppercase tracking-wider text-muted-foreground">Cards</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {([
+                            { unit: "series" as const, label: "Whole shows", enabled: true },
+                            {
+                              unit: "episode" as const,
+                              label: "Single episodes",
+                              // Movies and episodes in one deck is a puzzle, not a feature.
+                              enabled: !mediaKinds.includes("movie"),
+                            },
+                          ]).map(({ unit, label, enabled }) => (
+                            <Badge
+                              key={unit}
+                              variant={showUnit === unit ? "default" : "outline"}
+                              className={`text-xs py-1 px-3 rounded-none transition-colors ${enabled ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}
+                              aria-disabled={!enabled}
+                              onClick={() => enabled && setShowUnit(unit)}
+                            >
+                              {label}
+                            </Badge>
+                          ))}
+                        </div>
+                        {mediaKinds.includes("movie") && (
+                          <p className="text-xs text-muted-foreground">
+                            Episodes need Shows on its own.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <span className="text-xs uppercase tracking-wider text-muted-foreground">Narrow to</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {([
+                            { key: "continuing" as const, label: "Continuing" },
+                            { key: "ended" as const, label: "Ended" },
+                          ]).map(({ key, label }) => (
+                            <Badge
+                              key={key}
+                              variant={seriesStatus.includes(key) ? "default" : "outline"}
+                              className="cursor-pointer text-xs py-1 px-3 rounded-none transition-colors"
+                              onClick={() =>
+                                setSeriesStatus((prev) =>
+                                  prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]
+                                )
+                              }
+                            >
+                              {label}
+                            </Badge>
+                          ))}
+                          <Badge
+                            variant={watchingOnly ? "default" : "outline"}
+                            className={`text-xs py-1 px-3 rounded-none transition-colors ${
+                              capabilities.hasProgress && capabilities.hasNextUp
+                                ? "cursor-pointer"
+                                : "cursor-not-allowed opacity-40"
+                            }`}
+                            aria-disabled={!(capabilities.hasProgress && capabilities.hasNextUp)}
+                            onClick={() => {
+                              if (!(capabilities.hasProgress && capabilities.hasNextUp)) return;
+                              setWatchingOnly((prev) => !prev);
+                            }}
+                          >
+                            Only what I&apos;m watching
+                          </Badge>
+                        </div>
+                        {!(capabilities.hasProgress && capabilities.hasNextUp) && (
+                          <p className="text-xs text-muted-foreground">
+                            This provider has no watch progress, so shows cannot be narrowed that way.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Sort Section */}
                 <div className="space-y-4 -mb-4">
                   <div className="flex flex-wrap gap-2">

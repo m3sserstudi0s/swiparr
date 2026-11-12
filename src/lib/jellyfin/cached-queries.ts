@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { tagProvider } from "@/lib/cache-tags";
+import { isBrowseableCollectionType } from "@/lib/providers/collection-types";
 import { getJellyfinUrl, getAuthenticatedHeaders, apiClient } from "./api";
 import { ProviderType } from "../providers/types";
 
@@ -48,9 +49,11 @@ export async function getCachedLibraries(accessToken: string, deviceId: string, 
         headers: getAuthenticatedHeaders(accessToken, deviceId),
     });
 
-    // Filter to only include Movie libraries
+    // Movie *and* show sections: since 2.0 the deck can swipe series, so filtering
+    // to movies here hid every TV library from Admin → Libraries and left the shows
+    // deck with nothing to read.
     return (res.data.Items || []).filter((lib: any) =>
-        lib.CollectionType === "movies"
+        isBrowseableCollectionType(lib.CollectionType)
     );
 }
 

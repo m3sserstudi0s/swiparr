@@ -26,13 +26,15 @@ export const likes = sqliteTable("Like", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   externalId: text("externalId").notNull(),
   externalUserId: text("externalUserId").notNull(),
+  // Content kind of the liked item. Pre-2.0 rows are movies, hence the default.
+  kind: text("kind").notNull().default("movie"),
   isMatch: integer("isMatch", { mode: "boolean" }).notNull().default(false),
   sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
   createdAt: text("createdAt").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => {
   return [
-    uniqueIndex("Like_session_key").on(table.externalId, table.externalUserId, table.sessionCode).where(sql`sessionCode IS NOT NULL`),
-    uniqueIndex("Like_solo_key").on(table.externalId, table.externalUserId).where(sql`sessionCode IS NULL`),
+    uniqueIndex("Like_session_key").on(table.externalId, table.externalUserId, table.sessionCode, table.kind).where(sql`sessionCode IS NOT NULL`),
+    uniqueIndex("Like_solo_key").on(table.externalId, table.externalUserId, table.kind).where(sql`sessionCode IS NULL`),
     index("Like_externalUserId_createdAt_idx").on(table.externalUserId, table.createdAt),
     index("Like_sessionCode_externalUserId_idx").on(table.sessionCode, table.externalUserId),
     index("Like_sessionCode_externalId_idx").on(table.sessionCode, table.externalId),
@@ -46,11 +48,13 @@ export const hiddens = sqliteTable("Hidden", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   externalId: text("externalId").notNull(),
   externalUserId: text("externalUserId").notNull(),
+  // Content kind of the hidden item. Pre-2.0 rows are movies.
+  kind: text("kind").notNull().default("movie"),
   sessionCode: text("sessionCode").references(() => sessions.code, { onDelete: "cascade" }),
 }, (table) => {
   return [
-    uniqueIndex("Hidden_session_key").on(table.externalId, table.externalUserId, table.sessionCode).where(sql`sessionCode IS NOT NULL`),
-    uniqueIndex("Hidden_solo_key").on(table.externalId, table.externalUserId).where(sql`sessionCode IS NULL`),
+    uniqueIndex("Hidden_session_key").on(table.externalId, table.externalUserId, table.sessionCode, table.kind).where(sql`sessionCode IS NOT NULL`),
+    uniqueIndex("Hidden_solo_key").on(table.externalId, table.externalUserId, table.kind).where(sql`sessionCode IS NULL`),
     index("Hidden_sessionCode_externalUserId_idx").on(table.sessionCode, table.externalUserId),
     index("Hidden_externalUserId_sessionCode_idx").on(table.externalUserId, table.sessionCode),
   ];

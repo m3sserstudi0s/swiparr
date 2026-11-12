@@ -18,6 +18,10 @@ import { apiClient, getEmbyUrl, getAuthenticatedHeaders } from "@/lib/emby/api";
 import { getCachedYears, getCachedGenres, getCachedLibraries, getCachedRatings } from "@/lib/emby/cached-queries";
 import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 import { DEFAULT_THEMES } from "@/lib/constants";
+import { mapJellyfinItem } from "@/lib/providers/jellyfin/map";
+import { JELLYFIN_ITEM_FIELDS, toIncludeItemTypes } from "@/lib/providers/jellyfin/params";
+import { matchesStartedFilter } from "@/lib/series-state";
+import { isBrowseableCollectionType } from "@/lib/providers/collection-types";
 
 /**
  * Emby Provider
@@ -53,9 +57,9 @@ export class EmbyProvider implements MediaProvider {
     }
 
     const params: Record<string, any> = {
-      IncludeItemTypes: "Movie",
+      IncludeItemTypes: toIncludeItemTypes(filters.kinds),
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams",
+      Fields: JELLYFIN_ITEM_FIELDS,
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Trending" ? "CommunityRating" :
               filters.sortBy === "Popular" ? "CommunityRating" :
@@ -89,7 +93,13 @@ export class EmbyProvider implements MediaProvider {
 
     const data = JellyfinQueryResultSchema.parse(res.data);
     const rawItems = data.Items;
-    return rawItems.map((item) => this.mapToMediaItem(item));
+    // Emby returns the same payload shape as Jellyfin, so the shared mapper is the
+    // single source of Kind/series fields rather than a second hand-written one.
+    const items = rawItems.map((item) => mapJellyfinItem(item));
+    if (filters.started && filters.started !== "any") {
+      return items.filter((item) => matchesStartedFilter(item, filters.started!));
+    }
+    return items;
   }
 
   async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {
@@ -98,6 +108,40 @@ export class EmbyProvider implements MediaProvider {
     });
     const data = JellyfinItemSchema.parse(res.data);
     return this.mapToMediaItem(data);
+  }
+
+  /**
+   * Seasons or episodes of one series. Emby's tree is Jellyfin's, so the request
+   * shape is identical; only the URL builder differs.
+   */
+  async getChildren(
+    seriesId: string,
+    kind: "season" | "episode",
+    auth?: AuthContext,
+    options?: { season?: number }
+  ): Promise<MediaItem[]> {
+    if (!auth?.userId) throw new Error("Auth credentials required");
+    const path = kind === "season" ? `/Shows/${seriesId}/Seasons` : `/Shows/${seriesId}/Episodes`;
+    const params: Record<string, any> = { userId: auth.userId, Fields: JELLYFIN_ITEM_FIELDS };
+    if (kind === "episode" && typeof options?.season === "number") params.season = options.season;
+
+    const res = await apiClient.get(getEmbyUrl(path, auth.serverUrl), {
+      params,
+      headers: auth.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
+    });
+    const data = JellyfinQueryResultSchema.parse(res.data);
+    return data.Items.map((item) => mapJellyfinItem(item));
+  }
+
+  /** Next unwatched episode per series — the Continue deck. */
+  async getNextUp(auth?: AuthContext, limit = 24): Promise<MediaItem[]> {
+    if (!auth?.userId) throw new Error("Auth credentials required");
+    const res = await apiClient.get(getEmbyUrl("/Shows/NextUp", auth.serverUrl), {
+      params: { userId: auth.userId, Limit: limit, Fields: JELLYFIN_ITEM_FIELDS },
+      headers: auth.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
+    });
+    const data = JellyfinQueryResultSchema.parse(res.data);
+    return data.Items.map((item) => mapJellyfinItem(item));
   }
 
   async getGenres(auth?: AuthContext): Promise<MediaGenre[]> {
@@ -171,7 +215,7 @@ export class EmbyProvider implements MediaProvider {
     }
     const items = await getCachedLibraries(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
     return items
-      .filter((l: any) => l.CollectionType === "movies")
+      .filter((l: any) => isBrowseableCollectionType(l.CollectionType))
       .map((l: any) => ({
         Id: l.Id,
         Name: l.Name,

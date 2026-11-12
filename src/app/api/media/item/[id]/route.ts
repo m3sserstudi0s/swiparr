@@ -35,7 +35,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Hybrid decks contain tmdb:-prefixed streaming-only items - dispatch those to TMDB
     const { providerType, externalId } = resolveItemSource(id, auth.provider || ProviderType.JELLYFIN);
     const provider = getMediaProvider(providerType);
-    const item = await provider.getItemDetails(externalId, auth, { includeUserState });
+    // TMDB keeps films and series in separate id spaces, so it needs the typed id
+    // to know which endpoint to call; other providers take the bare external id.
+    const detailsId = providerType === ProviderType.TMDB ? id : externalId;
+    const item = await provider.getItemDetails(detailsId, auth, { includeUserState });
     // Keep the prefixed id: likes/swipes/undo on the client are keyed by it
     item.Id = id;
 

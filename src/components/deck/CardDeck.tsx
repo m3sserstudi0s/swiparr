@@ -326,7 +326,7 @@ export function CardDeck() {
       ) : <div className="h-8.75" />}
       <div className="relative w-full h-[68svh] flex justify-center items-center select-none">
         {activeDeck.length === 0 ? (
-          <DeckEmpty onRefresh={() => {
+          <DeckEmpty deckMode={sessionFilters?.deckMode} onRefresh={() => {
             setRemovedIds([]);
             swipedIdsRef.current.clear();
             setDisplayDeck([]);

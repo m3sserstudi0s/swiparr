@@ -1,3 +1,11 @@
+import type { MediaKind } from "@/types/media";
+
+/**
+ * Which deck a session is showing (2.0). One active mode per session; `mixed`
+ * is opt-in and chips each card with its kind.
+ */
+export type DeckMode = "movies" | "shows" | "continue" | "episodes" | "mixed";
+
 export interface Filters {
   genres: string[];
   excludedGenres?: string[];
@@ -13,6 +21,20 @@ export interface Filters {
   excludedThemes?: string[];
   tmdbLanguages?: string[];
   unplayedOnly?: boolean;
+  /** Absent on every filter object written before 2.0 — read it via `deckModeOf`. */
+  deckMode?: DeckMode;
+  /**
+   * What one show card represents. `series` swipes a whole show, `episode` swipes
+   * a single episode. Set from the Media section of the drawer, not by the user
+   * choosing a "mode".
+   */
+  showUnit?: "series" | "episode";
+  /** Derived from `deckMode`, stored so cache keys and API params carry it. */
+  kinds?: MediaKind[];
+  /** Series airing state the deck may restrict to (shows mode). */
+  status?: ("continuing" | "ended")[];
+  /** Series watch state: what the Start and Continue decks differ by. */
+  started?: "any" | "notStarted" | "inProgress";
 }
 
 export interface SessionSettings {

@@ -21,6 +21,8 @@ import { JellyfinQueryResultSchema, JellyfinItemSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
 import { mapJellyfinItem } from "./map";
+import { JELLYFIN_ITEM_FIELDS, toIncludeItemTypes } from "./params";
+import { matchesStartedFilter } from "@/lib/series-state";
 
 /**
  * Jellyfin Provider
@@ -60,9 +62,10 @@ export class JellyfinProvider implements MediaProvider {
     }
 
     const params: Record<string, any> = {
-      IncludeItemTypes: "Movie",
+      // Kinds drive the item type: movies by default, `Movie,Series` for mixed.
+      IncludeItemTypes: toIncludeItemTypes(filters.kinds),
       Recursive: true,
-      Fields: "Overview,RunTimeTicks,ProductionYear,CommunityRating,OfficialRating,Genres,ImageTags,BackdropImageTags,UserData,PreferredMetadataLanguage,ProductionLocations,MediaStreams,ProviderIds",
+      Fields: JELLYFIN_ITEM_FIELDS,
       SortBy: filters.sortBy === "Random" ? "Random" : 
               filters.sortBy === "Trending" ? "CommunityRating" :
               filters.sortBy === "Popular" ? "CommunityRating" :
@@ -96,7 +99,65 @@ export class JellyfinProvider implements MediaProvider {
 
     const data = JellyfinQueryResultSchema.parse(res.data);
     const rawItems = data.Items;
-    return rawItems.map((item) => mapJellyfinItem(item));
+    const items = rawItems.map((item) => mapJellyfinItem(item));
+
+    // Jellyfin has no server-side "series not started" filter, so the series
+    // modes filter on the counts it returns. Movies always pass.
+    if (filters.started && filters.started !== "any") {
+      return items.filter((item) => matchesStartedFilter(item, filters.started!));
+    }
+    return items;
+  }
+
+  /**
+   * Seasons or episodes of one series, in air order.
+   * Jellyfin splits these across /Shows/{id}/Seasons and /Shows/{id}/Episodes.
+   */
+  async getChildren(
+    seriesId: string,
+    kind: "season" | "episode",
+    auth?: AuthContext,
+    options?: { season?: number }
+  ): Promise<MediaItem[]> {
+    if (!auth?.userId) throw new Error("Auth credentials required");
+
+    const path = kind === "season"
+      ? `/Shows/${seriesId}/Seasons`
+      : `/Shows/${seriesId}/Episodes`;
+
+    const params: Record<string, any> = {
+      userId: auth.userId,
+      Fields: JELLYFIN_ITEM_FIELDS,
+    };
+    // Undefined means "every season"; 0 is a real season number.
+    if (kind === "episode" && typeof options?.season === "number") {
+      params.season = options.season;
+    }
+
+    const res = await apiClient.get(getJellyfinUrl(path, auth.serverUrl), {
+      params,
+      headers: auth.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
+    });
+
+    const data = JellyfinQueryResultSchema.parse(res.data);
+    return data.Items.map((item) => mapJellyfinItem(item));
+  }
+
+  /** Next unwatched episode per series — the Continue deck. */
+  async getNextUp(auth?: AuthContext, limit = 24): Promise<MediaItem[]> {
+    if (!auth?.userId) throw new Error("Auth credentials required");
+
+    const res = await apiClient.get(getJellyfinUrl("/Shows/NextUp", auth.serverUrl), {
+      params: {
+        userId: auth.userId,
+        Limit: limit,
+        Fields: JELLYFIN_ITEM_FIELDS,
+      },
+      headers: auth.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
+    });
+
+    const data = JellyfinQueryResultSchema.parse(res.data);
+    return data.Items.map((item) => mapJellyfinItem(item));
   }
 
   async getItemDetails(id: string, auth?: AuthContext, _options?: { includeUserState?: boolean }): Promise<MediaItem> {

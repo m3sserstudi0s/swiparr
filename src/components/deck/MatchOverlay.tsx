@@ -2,6 +2,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { MediaItem } from "@/types";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import type { StartHereResult } from "@/lib/start-here";
 import { Heart } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
@@ -16,6 +19,22 @@ interface MatchOverlayProps {
 }
 
 export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) {
+  // A series match needs an episode, not a poster: ask where to begin. Group
+  // progress is host-only by design, so the panel says whose position it is.
+  const isSeries = item?.Kind === "series";
+  const { data: startHere } = useQuery({
+    queryKey: ["match-start-here", item?.Id],
+    queryFn: async () => {
+      const res = await apiClient.get<{ startHere: StartHereResult; hostOnly: boolean }>(
+        "/api/media/start-here",
+        { params: { seriesId: item?.Id } }
+      );
+      return res.data;
+    },
+    enabled: isSeries,
+    retry: false,
+  });
+
   const { openMovie } = useMovieDetail();
   const { data: session } = useSession();
   const likedBy = item?.likedBy ?? [];
@@ -63,6 +82,18 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
 
               {item.likedBy && item.likedBy.length > 0 && (
                 <UserAvatarList users={item.likedBy} size="lg" className="mb-10" />
+              )}
+
+              {isSeries && startHere?.startHere && startHere.startHere.action !== "unavailable" && (
+                <div className="border border-neutral-800 px-4 py-3 mb-8 text-left w-full max-w-sm">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
+                    {startHere.hostOnly ? "The host's position" : "Where you are"}
+                  </div>
+                  <div className="text-sm font-medium text-neutral-100">{startHere.startHere.label}</div>
+                  {startHere.startHere.warning && (
+                    <div className="text-xs text-neutral-400 mt-0.5">{startHere.startHere.warning}</div>
+                  )}
+                </div>
               )}
 
               <motion.div

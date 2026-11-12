@@ -1,4 +1,5 @@
-import type { MediaItem } from "@/types/media";
+import type { MediaItem, MediaKind } from "@/types/media";
+import { kindFromJellyfinType } from "./params";
 
 function getItemLanguage(item: any): string | undefined {
   const preferred = item.PreferredMetadataLanguage?.trim();
@@ -20,13 +21,39 @@ function getItemLanguage(item: any): string | undefined {
   return audioStreams.find((stream: { Language: any }) => stream?.Language)?.Language;
 }
 
+function normalizeStatus(status?: string): MediaItem["Status"] | undefined {
+  const value = (status ?? "").toLowerCase();
+  if (value === "continuing") return "continuing";
+  if (value === "ended") return "ended";
+  if (value === "upcoming") return "upcoming";
+  return undefined;
+}
+
+function yearOf(iso?: string): number | undefined {
+  if (!iso) return undefined;
+  const year = new Date(iso).getFullYear();
+  return Number.isFinite(year) ? year : undefined;
+}
+
+function ticksToMinutes(ticks?: number): number | undefined {
+  if (typeof ticks !== "number" || ticks <= 0) return undefined;
+  return Math.round(ticks / 600_000_000);
+}
+
 /**
  * Pure mapping from a Jellyfin item payload to a MediaItem.
  * Kept free of provider imports so it can be tested without HTTP or Next runtime.
+ *
+ * Series/season/episode fields are attached only for those kinds: a movie comes
+ * out exactly as it did before 2.0 (plus `Kind`), so nothing downstream has to
+ * learn to ignore empty series fields.
  */
 export function mapJellyfinItem(item: any): MediaItem {
-  return {
+  const kind: MediaKind = kindFromJellyfinType(item.Type) ?? "movie";
+
+  const mapped: MediaItem = {
     Id: item.Id,
+    Kind: kind,
     Name: item.Name,
     OriginalTitle: item.OriginalTitle,
     Language: getItemLanguage(item),
@@ -53,4 +80,37 @@ export function mapJellyfinItem(item: any): MediaItem {
       Played: item.UserData.Played,
     } : undefined,
   };
+
+  // Progress is a shows concept: only surfaced when Jellyfin reports a count.
+  if (typeof item.UserData?.UnplayedItemCount === "number") {
+    mapped.Progress = {
+      played: !!item.UserData.Played,
+      unplayedCount: item.UserData.UnplayedItemCount,
+      positionTicks: item.UserData.PlaybackPositionTicks,
+    };
+  }
+
+  if (kind === "series") {
+    mapped.SeasonCount = item.ChildCount;
+    mapped.EpisodeCount = item.RecursiveItemCount;
+    mapped.Status = normalizeStatus(item.Status);
+    mapped.EndYear = yearOf(item.EndDate);
+  }
+
+  if (kind === "season") {
+    mapped.SeriesId = item.SeriesId;
+    mapped.SeriesName = item.SeriesName;
+    mapped.SeasonNumber = item.IndexNumber;
+    mapped.EpisodeCount = item.ChildCount;
+  }
+
+  if (kind === "episode") {
+    mapped.SeriesId = item.SeriesId;
+    mapped.SeriesName = item.SeriesName;
+    mapped.SeasonNumber = item.ParentIndexNumber;
+    mapped.EpisodeNumber = item.IndexNumber;
+    mapped.EpisodeRuntimeMinutes = ticksToMinutes(item.RunTimeTicks);
+  }
+
+  return mapped;
 }

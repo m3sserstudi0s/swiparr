@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useSession, useAdminStatus, useMediaLibraries, useAdminLibraries, useUpdateAdminLibraries, useClaimAdmin } from "@/hooks/api";
+import { collectionTypeLabel } from "@/lib/providers/collection-types";
 import { MediaLibrary } from "@/types/media";
 
 export function AdminSettings() {
@@ -152,7 +153,7 @@ export function AdminSettings() {
                                         <div className="grid gap-2">
                                             {availableLibraries.length === 0 ? (
                                                 <div className="text-xs text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                                                    No movie libraries found
+                                                    No libraries found
                                                 </div>
                                             ) : (
                                                 availableLibraries.map((lib: MediaLibrary) => {
@@ -171,7 +172,7 @@ export function AdminSettings() {
                                                             <div className="flex flex-col items-start gap-0.5 text-left">
                                                                 <span>{lib.Name}</span>
                                                                 <span className="text-[10px] uppercase tracking-wider opacity-60">
-                                                                    {lib.CollectionType}
+                                                                    {collectionTypeLabel(lib.CollectionType)}
                                                                 </span>
                                                             </div>
                                                             {isIncluded && <Check className="size-4" />}
