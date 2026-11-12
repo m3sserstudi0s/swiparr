@@ -31,7 +31,7 @@ deploy:
 
 dev:
   command: "npm run dev"
-  ports: ["3000"]
+  ports: [3000]
   pm2: "messer-swipe-dev"
   action: "actions/actions.json"
 
@@ -43,11 +43,14 @@ exceptions:
     reason: >-
       Next 16 App Router app with route handlers, iron-session auth and a Drizzle database. It is a
       legacy stack by STANDARD §4; a Go + Vite rewrite would be a product decision, not a cleanup.
+    expires: "2027-06-30"
   - id: base-ui
     reason: >-
       The combobox atom uses Base UI while the rest of the UI is Radix. Both are vendored shadcn
       primitives; replacing the combobox is a separate change (canon has no combobox item yet).
+    expires: "2027-06-30"
   - id: axios
     reason: >-
       Every provider client is axios with per-provider timeouts. Replacing it buys nothing while the
       provider layer stays; it is isolated behind src/lib/providers/*/api.ts.
+    expires: "2027-06-30"
