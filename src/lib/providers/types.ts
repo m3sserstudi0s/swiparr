@@ -60,11 +60,11 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     isExperimental: true,
     hasStreamingSettings: false,
     isAdminPanel: true,
-    // Same API surface as Jellyfin; wired in Phase 3.
-    hasSeries: false,
-    hasSeasons: false,
-    hasProgress: false,
-    hasNextUp: false,
+    // Same API surface as Jellyfin, sharing its mapper and request shaping.
+    hasSeries: true,
+    hasSeasons: true,
+    hasProgress: true,
+    hasNextUp: true,
   },
   [ProviderType.PLEX]: {
     hasAuth: true,
