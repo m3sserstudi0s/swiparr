@@ -36,7 +36,7 @@ src/styles/messer/  generated canon files — never edited by hand
 ## Commands
 
 ```bash
-npm ci                     # install (lockfile is committed)
+npm ci                     # install (lockfile committed; Node 24+)
 npm run dev                # next dev on :3000 (needs a host-reachable JELLYFIN_URL)
 npm run build              # migrations + next build
 npm run lint               # eslint .

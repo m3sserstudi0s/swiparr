@@ -34,7 +34,7 @@ const has = (key) => Boolean(env[key] && String(env[key]).trim());
 
 // 1. Node version the toolchain expects
 const major = Number(process.versions.node.split(".")[0]);
-record("node >= 22", major >= 22, `v${process.versions.node}`);
+record("node >= 24", major >= 24, `v${process.versions.node}`);
 
 // 2. Auth secret: production needs one, dev can generate it
 record("AUTH_SECRET", has("AUTH_SECRET"), has("AUTH_SECRET") ? `${env.AUTH_SECRET.length} chars` : "missing — run scripts/ensure-auth-secret.cjs");
