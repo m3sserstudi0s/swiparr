@@ -47,7 +47,7 @@ export class PlexProvider implements MediaProvider {
     // sections, and a `mixed` deck needs both, so filter sections by kind first.
     const kinds = filters.kinds && filters.kinds.length > 0 ? filters.kinds : (["movie"] as const);
     const wantedCollections = new Set<string>(
-      kinds.map((kind) => plexSectionTypeForKind(kind) === "show" ? "shows" : "movies")
+      kinds.map((kind) => plexSectionTypeForKind(kind) === "show" ? "tvshows" : "movies")
     );
 
     const targetSections = filters.libraries && filters.libraries.length > 0 
@@ -67,7 +67,7 @@ export class PlexProvider implements MediaProvider {
         }
 
         // Build query for Plex Advanced Filtering
-        const sectionIsShows = section.CollectionType === "shows";
+        const sectionIsShows = section.CollectionType === "tvshows";
         const params: Record<string, any> = {
             type: plexTypeOf(sectionIsShows ? "series" : "movie"),
             'X-Plex-Container-Start': filters.offset || 0,
@@ -318,7 +318,9 @@ export class PlexProvider implements MediaProvider {
       .map((l: any) => ({
         Id: l.key,
         Name: l.title,
-        CollectionType: l.type === "show" ? "shows" : "movies",
+        // The app's vocabulary is "movies" / "tvshows" (as Jellyfin returns), not
+        // Plex's "show" — media-service filters libraries by that value.
+        CollectionType: l.type === "show" ? "tvshows" : "movies",
       }));
   }
 
