@@ -37,6 +37,24 @@ export interface StartHereResult {
   restart?: EpisodeRef;
 }
 
+/**
+ * Panel heading for a resolved start-here answer.
+ *
+ * The heading describes whether a position exists, not who owns it: a provider
+ * with no watch state (TMDB) still resolves `start`, and calling that "Where you
+ * are" claims knowledge nobody has. `null` means the panel should not render.
+ */
+export function startHereHeading(input: {
+  action: StartHereAction;
+  hostOnly: boolean;
+}): string | null {
+  if (input.action === "unavailable" || input.action === "finished") return null;
+  // S1E1 is not a position — nobody has started, so there is nothing to be "at".
+  if (input.action === "start") return "Where to start";
+  if (input.hostOnly) return "The host's position";
+  return "Where you are";
+}
+
 const label = (ep: EpisodeRef) => `S${ep.season}E${ep.episode}`;
 
 export function resolveStartHere(input: {

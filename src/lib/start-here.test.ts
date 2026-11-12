@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { resolveStartHere, type EpisodeRef, type MemberPosition } from "./start-here";
+import { resolveStartHere, startHereHeading, type EpisodeRef, type MemberPosition } from "./start-here";
 
 const episodes: EpisodeRef[] = [
   { season: 1, episode: 1 },
@@ -81,4 +81,18 @@ test("out-of-range positions are clamped, not thrown", () => {
   const result = resolveStartHere({ episodes, members: [member("A", 99), member("B", -3, true)] });
   assert.equal(result.action, "ahead");
   assert.deepEqual(result.episode, { season: 1, episode: 1 });
+});
+
+test("the heading describes the answer, not the ownership of it", () => {
+  // Nobody has started: there is no position, so "Where you are" would be a lie
+  // even for the host.
+  assert.equal(startHereHeading({ action: "start", hostOnly: false }), "Where to start");
+  assert.equal(startHereHeading({ action: "start", hostOnly: true }), "Where to start");
+  // A real position: whose it is then matters for guests.
+  assert.equal(startHereHeading({ action: "continue", hostOnly: false }), "Where you are");
+  assert.equal(startHereHeading({ action: "continue", hostOnly: true }), "The host's position");
+  assert.equal(startHereHeading({ action: "ahead", hostOnly: false }), "Where you are");
+  // No panel at all.
+  assert.equal(startHereHeading({ action: "finished", hostOnly: false }), null);
+  assert.equal(startHereHeading({ action: "unavailable", hostOnly: false }), null);
 });

@@ -10,7 +10,9 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
-import { SlidersHorizontal } from "lucide-react";
+import {
+  SlidersHorizontal,
+} from "@phosphor-icons/react/dist/ssr";
 
 import {
   ToggleGroup,

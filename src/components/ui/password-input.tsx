@@ -1,7 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Eye, EyeOff } from "lucide-react";
+import {
+  Eye,
+  EyeSlash,
+} from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/utils"
 import {
   InputGroup,
@@ -41,7 +44,7 @@ export function PasswordInput({
           className="text-muted-foreground/60 hover:text-foreground"
         >
           {isVisible ? (
-            <EyeOff className="size-3.5" aria-hidden="true" />
+            <EyeSlash className="size-3.5" aria-hidden="true" />
           ) : (
             <Eye className="size-3.5" aria-hidden="true" />
           )}

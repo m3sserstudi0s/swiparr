@@ -83,3 +83,17 @@ export function resolveItemSource(
   }
   return { providerType: sessionProvider, externalId: id };
 }
+
+/**
+ * The id a provider's `getItemDetails` wants.
+ *
+ * TMDB decides movie-vs-series from the typed prefix, so stripping it first
+ * silently resolves a series to whatever film happens to share its numeric id
+ * (id 57243 is both Doctor Who and The Women on the 6th Floor). Every provider
+ * that is not TMDB takes the bare id. Call sites must use this instead of
+ * passing `externalId` when they mean "details".
+ */
+export function detailsIdFor(id: string, providerType?: string): string {
+  const { externalId } = resolveItemSource(id, providerType);
+  return providerType === ProviderType.TMDB ? id : externalId;
+}

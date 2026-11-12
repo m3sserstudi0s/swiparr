@@ -9,7 +9,16 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
-import { RotateCcw, Users, Heart, X, Sparkles, TrendingUp, Infinity, Loader } from "lucide-react";
+import {
+  ArrowCounterClockwise,
+  Users,
+  Heart,
+  X,
+  Sparkle,
+  TrendUp,
+  Infinity,
+  CircleNotch,
+} from "@phosphor-icons/react/dist/ssr";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
@@ -147,18 +156,18 @@ export function SessionSettingsSheet({
             <div className="space-y-4">
               <Label className="text-base font-semibold flex items-center gap-2">
                 Stats
-                {isLoading && <Loader className="size-4 animate-spin"/>}
+                {isLoading && <CircleNotch className="size-4 animate-spin"/>}
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <Card className="bg-muted/30 border-none gap-0">
                   <CardHeader>Me</CardHeader>
                   <CardContent className="space-y-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black font-mono">{stats?.mySwipes.right || 0}</span>
+                      <span className="text-2xl font-semibold tabular-nums">{stats?.mySwipes.right || 0}</span>
                       <span className="text-xs text-muted-foreground">likes</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <TrendingUp className="size-3 text-primary" />
+                      <TrendUp className="size-3 text-primary" />
                       <span>
                         <span className="font-mono">{stats?.myLikeRate.toFixed(0) || 0}</span>
                         % like rate
@@ -169,11 +178,11 @@ export function SessionSettingsSheet({
                 <Card className="bg-muted/30 border-none gap-0">
                   <CardHeader className="flex flex-row items-center gap-0 mb-2">
                     Group
-                    <Badge variant='outline' className="font-mono scale-75">AVERAGE</Badge>
+                    <Badge variant='outline' className="text-[10px] font-semibold uppercase tracking-wider scale-75">AVERAGE</Badge>
                   </CardHeader>
                   <CardContent className="space-y-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black font-mono"><span className="text-lg font-sans font-normal">~ </span>{(stats?.avgSwipes.right || 0).toFixed(1)}</span>
+                      <span className="text-2xl font-semibold tabular-nums"><span className="text-lg font-normal">~ </span>{(stats?.avgSwipes.right || 0).toFixed(1)}</span>
                       <span className="text-xs text-muted-foreground">likes</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -194,11 +203,11 @@ export function SessionSettingsSheet({
                 </div>
                 <div className="flex gap-4">
                   <div className="text-center">
-                    <p className="text-lg font-black text-primary font-mono">{stats?.totalSwipes.right || 0}</p>
+                    <p className="text-lg font-semibold tabular-nums text-primary">{stats?.totalSwipes.right || 0}</p>
                     <Heart className="size-3 mx-auto fill-primary text-primary" />
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-black text-muted-foreground font-mono">{stats?.totalSwipes.left || 0}</p>
+                    <p className="text-lg font-semibold tabular-nums text-muted-foreground">{stats?.totalSwipes.left || 0}</p>
                     <X className="size-3 mx-auto" />
                   </div>
                 </div>
@@ -210,7 +219,7 @@ export function SessionSettingsSheet({
                   onClick={handleResetStats}
                   disabled={isResettingStats}
                 >
-                  <RotateCcw className={cn('size-3 text-xs/0', isResettingStats && "animate-spin")} />
+                  <ArrowCounterClockwise className={cn('size-3 text-xs/0', isResettingStats && "animate-spin")} />
                   {isResettingStats ? "Resetting..." : confirmResetStats ? "Confirm reset" : "Reset stats"}
                 </Button>
               </div>
@@ -322,7 +331,7 @@ export function SessionSettingsSheet({
               className="gap-2 text-muted-foreground hover:text-foreground"
               onClick={resetAll}
             >
-              <RotateCcw className="size-3 text-xs/0" />
+              <ArrowCounterClockwise className="size-3 text-xs/0" />
               Reset settings
             </Button>
             </div>

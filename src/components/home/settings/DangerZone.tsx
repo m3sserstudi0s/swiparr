@@ -1,6 +1,10 @@
 "use client";
 
-import { Trash2, LogOut, RotateCcw } from "lucide-react";
+import {
+  Trash,
+  SignOut,
+  ArrowCounterClockwise,
+} from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
 import { SettingsSection } from "./SettingsSection";
 import { useSettingsStore } from "@/lib/settings";
@@ -27,7 +31,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                         className="w-22"
                         onClick={resetSettings}
                     >
-                        <RotateCcw className="mr-2 size-4" /> Reset
+                        <ArrowCounterClockwise className="mr-2 size-4" /> Reset
                     </Button>
                 </div>
 
@@ -42,7 +46,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                         className="w-22"
                         onClick={onClearData}
                     >
-                        <Trash2 className="mr-2 size-4" /> Clear
+                        <Trash className="mr-2 size-4" /> Clear
                     </Button>
                 </div>
 
@@ -57,7 +61,7 @@ export function DangerZone({ onClearData, onLogout }: DangerZoneProps) {
                         onClick={onLogout}
                         className="w-22"
                     >
-                        <LogOut className="mr-2 size-4" /> Exit
+                        <SignOut className="mr-2 size-4" /> Exit
                     </Button>
                 </div>
             </div>

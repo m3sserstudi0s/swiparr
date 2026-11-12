@@ -30,14 +30,26 @@ export interface RuntimeConfig {
 
 
 /**
+ * Which providers can offer region + streaming-provider settings.
+ *
+ * Jellyfin gains them when a TMDB token is configured (the hybrid deck). A plain
+ * TMDB instance has the same controls: TMDB discover takes `watch_region` and
+ * `with_watch_providers` for every catalogue, so hiding the Region dropdown there
+ * was a UI limit, not a service one.
+ */
+export function gainsStreamingSettings(provider: ProviderType, hasTmdbToken: boolean): boolean {
+  if (!hasTmdbToken) return false;
+  return provider === ProviderType.JELLYFIN || provider === ProviderType.TMDB;
+}
+
+/**
  * Capabilities for a provider, adjusted for instance-level configuration.
- * Jellyfin gains streaming settings (hybrid deck: library + TMDB streaming
- * catalogs) when a TMDB access token is configured. Server-side only source
- * of truth - the client receives the result via window.__MESSER_SWIPE_CONFIG__.
+ * Server-side only source of truth - the client receives the result via
+ * window.__MESSER_SWIPE_CONFIG__.
  */
 export function getEffectiveCapabilities(provider: ProviderType): ProviderCapabilities {
   const base = PROVIDER_CAPABILITIES[provider] || PROVIDER_CAPABILITIES[ProviderType.JELLYFIN];
-  if (provider === ProviderType.JELLYFIN && !!config.TMDB_ACCESS_TOKEN) {
+  if (gainsStreamingSettings(provider, !!config.TMDB_ACCESS_TOKEN)) {
     return { ...base, hasStreamingSettings: true };
   }
   return base;

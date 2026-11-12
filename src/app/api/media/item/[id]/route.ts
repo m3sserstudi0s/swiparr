@@ -8,7 +8,7 @@ import { eq, and, isNull, or } from "drizzle-orm";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
 import { ProviderType } from "@/lib/providers/types";
-import { resolveItemSource, isTmdbSourcedId, getTmdbProviderId } from "@/lib/providers/item-source";
+import { detailsIdFor, resolveItemSource, isTmdbSourcedId, getTmdbProviderId } from "@/lib/providers/item-source";
 import { getEffectiveCapabilities } from "@/lib/runtime-config";
 import { logger } from "@/lib/logger";
 import { handleApiError } from "@/lib/api-utils";
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const provider = getMediaProvider(providerType);
     // TMDB keeps films and series in separate id spaces, so it needs the typed id
     // to know which endpoint to call; other providers take the bare external id.
-    const detailsId = providerType === ProviderType.TMDB ? id : externalId;
+    const detailsId = detailsIdFor(id, providerType);
     const item = await provider.getItemDetails(detailsId, auth, { includeUserState });
     // Keep the prefixed id: likes/swipes/undo on the client are keyed by it
     item.Id = id;

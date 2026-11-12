@@ -10,7 +10,17 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Kbd } from "@/components/ui/kbd"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Heart, X, RotateCcw, Info, Users, Keyboard, Filter, Trophy, ShieldCheck } from "lucide-react";
+import {
+  Heart,
+  X,
+  ArrowCounterClockwise,
+  Info,
+  Users,
+  Keyboard,
+  Funnel,
+  Trophy,
+  ShieldCheck,
+} from "@phosphor-icons/react/dist/ssr";
 import { motion } from 'framer-motion'
 
 interface UserGuideProps {
@@ -58,7 +68,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                         </div>
                                         <div className="p-4 rounded-xl bg-muted/50 border border-border">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <RotateCcw className="size-4" />
+                                                <ArrowCounterClockwise className="size-4" />
                                                 <span className="font-semibold text-sm tracking-wide">Rewind</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground font-medium">Revert the last swipe action and put the last card in front.</p>
@@ -72,7 +82,7 @@ export function UserGuide({ open, onOpenChange }: UserGuideProps) {
                                         </div>
                                     </div>
                                     <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex gap-4">
-                                        <Filter className="size-4 text-primary mt-1 shrink-0" />
+                                        <Funnel className="size-4 text-primary mt-1 shrink-0" />
                                         <p className="text-sm text-muted-foreground">
                                             Filter by Genre, Year, or Rating. Toggle Watchlist/Favorites sync in settings (Jellyfin only).
                                         </p>

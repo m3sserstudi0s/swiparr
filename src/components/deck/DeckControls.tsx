@@ -1,6 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, X, Rewind, SlidersHorizontal } from "lucide-react";
+import {
+  Heart,
+  X,
+  Rewind,
+  SlidersHorizontal,
+} from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +65,7 @@ export function DeckControls({
         onClick={onSwipeRight}
         disabled={isRightSwipeDisabled}
       >
-        <Heart className="size-9 fill-primary-foreground" />
+        <Heart weight="fill" className="size-9" />
         {rightSwipesRemaining !== undefined && (
           <Badge variant='secondary' className="rounded-none absolute -top-2 -right-2">
             {rightSwipesRemaining}

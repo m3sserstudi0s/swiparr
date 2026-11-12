@@ -3,7 +3,9 @@ import React from "react";
 
 import { MediaItem } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { HardDrive } from "lucide-react";
+import {
+  HardDrives,
+} from "@phosphor-icons/react/dist/ssr";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 
 const MAX_VISIBLE_LOGOS = 4;
@@ -26,7 +28,7 @@ export function SourceBadges({ item }: { item: MediaItem }) {
           variant="secondary"
           className="gap-1 bg-neutral-600/70 hover:bg-accent text-neutral-100 border-0"
         >
-          <HardDrive className="w-3 h-3 mb-px" />
+          <HardDrives className="w-3 h-3 mb-px" />
           Library
         </Badge>
       )}

@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
-import { resolveItemSource } from "@/lib/providers/item-source";
+import { detailsIdFor, resolveItemSource } from "@/lib/providers/item-source";
 import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
     const itemsPromises = ids.map(async (id: any) => {
         try {
             // Hybrid decks store tmdb:-prefixed ids for streaming-only items
-            const { providerType, externalId } = resolveItemSource(id, auth.provider);
+            const { providerType } = resolveItemSource(id, auth.provider);
             const itemProvider = providerType === auth.provider ? provider : getMediaProvider(providerType);
-            const item = await itemProvider.getItemDetails(externalId, auth, { includeUserState: true });
+            const item = await itemProvider.getItemDetails(detailsIdFor(id, providerType), auth, { includeUserState: true });
             item.Id = id; // keep the prefixed id so likedBy mapping below matches DB rows
             return item;
         } catch (error) {

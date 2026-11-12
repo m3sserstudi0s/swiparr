@@ -87,11 +87,11 @@ export async function renderOgCard({
       >
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* The mark's glyph, drawn in paper on the ink card. The generated PNG would be an ink
-              tile on ink — invisible — and this is the same Lucide `layers` the mark is built from. */}
-          <svg width={96} height={96} viewBox="0 0 24 24" fill="none" stroke={PAPER} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" />
-            <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" />
-            <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" />
+              tile on ink — invisible — and this is Phosphor's `cards-three-fill`, the same glyph
+              `brand/messer-swipe.json` names (256 grid, inlined because Satori cannot render a
+              React icon component). */}
+          <svg width={96} height={96} viewBox="0 0 256 256" fill={PAPER}>
+            <path d="M224,104v96a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V104A16,16,0,0,1,48,88H208A16,16,0,0,1,224,104ZM56,72H200a8,8,0,0,0,0-16H56a8,8,0,0,0,0,16ZM72,40H184a8,8,0,0,0,0-16H72a8,8,0,0,0,0,16Z" />
           </svg>
           <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 32 }}>
             <div

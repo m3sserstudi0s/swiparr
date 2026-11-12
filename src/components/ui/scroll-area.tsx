@@ -22,14 +22,11 @@ function ScrollArea({
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
         ref={viewportRef}
-        /* 
-           We create a mask that is transparent at the top (0-10%), 
-           solid black in the middle, and transparent at the bottom (90-100%).
-           This works over ANY background (images, gradients, or solid colors).
-        */
+        /* Canon `scroll-fade` (messer-ui utilities.css, vendored from shadcn): a
+           scroll-driven mask that fades only the edge with content behind it. */
         className={cn(
           "focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1",
-          "mask-[linear-gradient(to_bottom,transparent_0%,black_5%,black_95%,transparent_100%)]"
+          "scroll-fade"
         )}
       >
         {children}

@@ -4,8 +4,11 @@ import { MediaItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import type { StartHereResult } from "@/lib/start-here";
-import { Heart } from "lucide-react";
+import { startHereHeading, type StartHereResult } from "@/lib/start-here";
+import { getRuntimeConfig } from "@/lib/runtime-config";
+import {
+  Heart,
+} from "@phosphor-icons/react/dist/ssr";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
@@ -22,6 +25,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
   // A series match needs an episode, not a poster: ask where to begin. Group
   // progress is host-only by design, so the panel says whose position it is.
   const isSeries = item?.Kind === "series";
+  const knowsProgress = getRuntimeConfig().capabilities.hasProgress;
   const { data: startHere } = useQuery({
     queryKey: ["match-start-here", item?.Id],
     queryFn: async () => {
@@ -31,7 +35,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
       );
       return res.data;
     },
-    enabled: isSeries,
+    enabled: isSeries && knowsProgress,
     retry: false,
   });
 
@@ -70,7 +74,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 transition={{ repeat: Infinity, duration: 2 }}
                 className="absolute -top-10 opacity-40 pointer-events-none"
               >
-                <Heart className="w-75 h-75 fill-neutral-900 text-neutral-900" />
+                <Heart weight="fill" className="w-75 h-75 text-neutral-900" />
               </motion.div>
 
               <h1 className="text-5xl font-black italic text-neutral-100 mb-2 drop-shadow-2xl tracking-tighter uppercase">
@@ -84,10 +88,11 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 <UserAvatarList users={item.likedBy} size="lg" className="mb-10" />
               )}
 
-              {isSeries && startHere?.startHere && startHere.startHere.action !== "unavailable" && (
+              {isSeries && knowsProgress && startHere?.startHere &&
+                startHereHeading({ action: startHere.startHere.action, hostOnly: startHere.hostOnly }) && (
                 <div className="border border-neutral-800 px-4 py-3 mb-8 text-left w-full max-w-sm">
                   <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
-                    {startHere.hostOnly ? "The host's position" : "Where you are"}
+                    {startHereHeading({ action: startHere.startHere.action, hostOnly: startHere.hostOnly })}
                   </div>
                   <div className="text-sm font-medium text-neutral-100">{startHere.startHere.label}</div>
                   {startHere.startHere.warning && (

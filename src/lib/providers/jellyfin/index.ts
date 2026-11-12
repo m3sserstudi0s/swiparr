@@ -22,6 +22,7 @@ import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
 import { mapJellyfinItem } from "./map";
 import { JELLYFIN_ITEM_FIELDS, toIncludeItemTypes } from "./params";
+import { interleaveByKind, splitPaging } from "./interleave";
 import { matchesStartedFilter } from "@/lib/series-state";
 
 /**
@@ -61,9 +62,11 @@ export class JellyfinProvider implements MediaProvider {
       return unique.slice(0, filters.limit || 20);
     }
 
+    const includeItemTypes = toIncludeItemTypes(filters.kinds);
+    const typeList = includeItemTypes.split(",").filter(Boolean);
     const params: Record<string, any> = {
       // Kinds drive the item type: movies by default, `Movie,Series` for mixed.
-      IncludeItemTypes: toIncludeItemTypes(filters.kinds),
+      IncludeItemTypes: includeItemTypes,
       Recursive: true,
       Fields: JELLYFIN_ITEM_FIELDS,
       SortBy: filters.sortBy === "Random" ? "Random" : 
@@ -92,14 +95,31 @@ export class JellyfinProvider implements MediaProvider {
       params.SearchTerm = filters.searchTerm;
     }
 
-    const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
-      params,
-      headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
-    });
+    const fetchPage = async (pageParams: Record<string, any>) => {
+      const res = await apiClient.get(getJellyfinUrl(`/Users/${auth?.userId}/Items`, auth?.serverUrl), {
+        params: pageParams,
+        headers: auth?.accessToken ? getAuthenticatedHeaders(auth.accessToken, auth.deviceId || "Messer Swipe") : {},
+      });
+      const data = JellyfinQueryResultSchema.parse(res.data);
+      return data.Items.map((item) => mapJellyfinItem(item));
+    };
 
-    const data = JellyfinQueryResultSchema.parse(res.data);
-    const rawItems = data.Items;
-    const items = rawItems.map((item) => mapJellyfinItem(item));
+    // Jellyfin buckets a mixed `Movie,Series` query by type before paging, so a
+    // 20-row page of a film-heavy library is 20 films and a mixed deck never shows
+    // a show. Ask once per type and interleave; the page is then genuinely mixed.
+    let items: MediaItem[];
+    if (typeList.length > 1) {
+      const pageSize = filters.limit || 20;
+      const paging = splitPaging(pageSize, filters.offset || 0, typeList.length);
+      const pages = await Promise.all(
+        typeList.map((type) =>
+          fetchPage({ ...params, IncludeItemTypes: type, Limit: paging.limit, StartIndex: paging.offset })
+        )
+      );
+      items = interleaveByKind(pages, pageSize);
+    } else {
+      items = await fetchPage(params);
+    }
 
     // Jellyfin has no server-side "series not started" filter, so the series
     // modes filter on the counts it returns. Movies always pass.

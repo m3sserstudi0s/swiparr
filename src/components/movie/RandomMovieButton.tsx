@@ -1,6 +1,8 @@
 "use client";
 
-import { Dices } from "lucide-react";
+import {
+  DiceFive,
+} from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMovieDetail } from "./MovieDetailProvider";
@@ -39,7 +41,7 @@ export function RandomMovieButton({ items, className }: RandomMovieButtonProps) 
             size="icon"
             onClick={handleRandomMovie}
         >
-            <Dices className="transform group-hover:rotate-360 group-hover:scale-85 transition-transform duration-500" />
+            <DiceFive className="transform group-hover:rotate-360 group-hover:scale-85 transition-transform duration-500" />
         </Button>
     );
 }

@@ -1,7 +1,9 @@
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { UserAvatarList } from "./UserAvatarList";
 import { Button } from "../ui/button";
-import { Settings } from "lucide-react";
+import {
+  Gear,
+} from "@phosphor-icons/react/dist/ssr";
 import { useState } from "react";
 import { SessionSettingsSheet } from "./SessionSettingsSheet";
 import { toast } from "sonner";
@@ -49,7 +51,7 @@ export function SessionHeader({ activeCode, members, currentSettings }: SessionH
             className="rounded-sm"
             onClick={() => setIsSettingsOpen(true)}
           >
-            <Settings className="size-5" />
+            <Gear className="size-5" />
           </Button>
             : <p className="ml-2">Session</p>
           }

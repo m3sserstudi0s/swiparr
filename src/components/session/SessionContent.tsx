@@ -2,7 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Users } from "lucide-react";
+import {
+  Users,
+} from "@phosphor-icons/react/dist/ssr";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
 import { RandomMovieButton } from "../movie/RandomMovieButton";
 import { toast } from "sonner";

@@ -17,6 +17,11 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        // Meta chip: a machine value or a short state on artwork. Sentence case is
+        // canon §18 for dashboard badges; the deck's chips are uppercase meta, which
+        // MESSER.md declares. Never mono — mono is for numbers and labels, not chips.
+        meta:
+          "border-border text-muted-foreground text-[10px] font-semibold uppercase tracking-wider py-0 h-4",
       },
     },
     defaultVariants: {

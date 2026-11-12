@@ -77,6 +77,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/og") ||
     pathname.startsWith("/opengraph-image") ||
     pathname.startsWith("/api/health") ||
+    pathname === "/healthz" ||
+    pathname === "/readyz" ||
     pathname.startsWith("/_next") ||
     pathname.includes("favicon.ico") ||
     pathname.includes("manifest.json") ||
@@ -153,6 +155,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Health/readiness are matched (they are pages, not API routes) and answered
+    // by the public-path branch above.
     // App pages except Next internals and static assets.
     "/((?!_next/static|_next/image|favicon.ico|manifest.json|manifest.webmanifest|sw.js|.*\\.(?:png|svg|ico|jpg|jpeg|gif|webp|avif|css|js|map|txt|xml)$).*)",
     // API routes except explicitly public auth/health/og endpoints.

@@ -7,10 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertTriangleIcon } from "lucide-react";
+import {
+  Warning,
+} from "@phosphor-icons/react/dist/ssr";
 import { ProviderType } from "@/lib/providers/types";
 import { ProfilePicturePicker } from "../profile/ProfilePicturePicker";
-import { ExternalLink, Copy, Check } from "lucide-react";
+import {
+  ArrowSquareOut,
+  Copy,
+  Check,
+} from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/utils";
 
 interface AuthCodeViewProps {
@@ -61,7 +67,7 @@ function AuthCodeView({ code, copied, onCopy, onCancel, variant, authUrl }: Auth
           onClick={() => window.open(authUrl, "_blank")}
           className="gap-2"
         >
-          <ExternalLink className="h-4 w-4" />
+          <ArrowSquareOut className="h-4 w-4" />
           Open Plex
         </Button>
       )}
@@ -282,7 +288,7 @@ export function AuthView({
             )}
             {isExperimental && (
               <Alert className="max-w-full mt-2 ">
-                <AlertTriangleIcon className="text-amber-600!"/>
+                <Warning className="text-amber-600!"/>
                 <AlertTitle className="whitespace-nowrap">Experimental provider integration</AlertTitle>
                 <AlertDescription className="text-xs">
                   Certain features may not work as expected.

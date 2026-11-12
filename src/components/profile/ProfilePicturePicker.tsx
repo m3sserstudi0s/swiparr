@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Camera, X, Plus, Loader } from "lucide-react";
+import {
+  Camera,
+  X,
+  Plus,
+  CircleNotch,
+} from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -137,10 +142,11 @@ export function ProfilePicturePicker({
     };
 
     const containerSizeClassName = size == 'sm' ? 'size-12' : size == 'md' ? 'size-16' : 'size-20'
-    const buttonSizeClassName = size == 'sm' ? 'size-6' : size == 'md' ? 'size-6.5' : 'size-7'
-    const buttonIconSizeClassName = size == 'sm' ? 'size-4' : size == 'md' ? 'size-4.5' : 'size-5'
+    const buttonSizeClassName = size == 'sm' ? 'size-5' : size == 'md' ? 'size-5.5' : 'size-6.5'
+    const buttonIconSizeClassName = size == 'sm' ? 'size-3.5' : size == 'md' ? 'size-3.5' : 'size-4'
     const cameraIconSizeClassName = size == 'sm' ? 'size-6' : size == 'md' ? 'size-7' : 'size-8'
-    const buttonPositionLength = size == 'sm' ? '-bottom-2 -right-2' : size == 'md' ? '-bottom-1.5 -right-1.5' : '-bottom-1 -right-1'
+    // Half on the avatar's corner: a square tag, never a circle.
+    const buttonPositionLength = size == 'sm' ? '-bottom-1.5 -right-1.5' : size == 'md' ? '-bottom-1.5 -right-1.5' : '-bottom-2 -right-2'
 
     return (
         <div className={cn("relative flex flex-col items-center", className, containerSizeClassName)}>
@@ -185,10 +191,10 @@ export function ProfilePicturePicker({
                 </div>
 
 
-                {/* Loading State Overlay */}
+                {/* Loading State Overlay — it sits on the avatar, so it keeps the avatar's shape. */}
                 {isUploading && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 z-20">
-                        <Loader className="size-6 animate-spin text-primary" />
+                        <CircleNotch className="size-6 animate-spin text-primary" />
                     </div>
                 )}
 
@@ -196,7 +202,7 @@ export function ProfilePicturePicker({
                 {editable && (
                     <div 
                         className={cn(
-                            "absolute rounded-full flex items-center justify-center transition-transform active:scale-95 z-30",
+                            "absolute rounded-none flex items-center justify-center border-2 border-background transition-transform active:scale-95 z-30",
                             showRemoveButton ? "bg-background text-foreground" : "bg-primary text-primary-foreground",
                             buttonSizeClassName,
                             buttonPositionLength

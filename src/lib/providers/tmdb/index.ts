@@ -23,8 +23,16 @@ import { TmdbSearchResponseSchema, TmdbMovieSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
 import { kindFromId } from "@/lib/providers/item-source";
-import { mapTvDetails, mapTvEpisode, mapTvListItem, mapTvSeason, tvApiId, tvStatusOf } from "./tv";
+import { mapTvDetails, mapTvEpisode, mapTvListItem, mapTvSeason, seasonNumbersFor, tvApiId, tvStatusOf } from "./tv";
+import { mapWithConcurrency } from "@/lib/concurrency";
 import { getRuntimeConfig } from "@/lib/runtime-config";
+
+/**
+ * How long a whole-show episode fan-out is reused. A detail view asks for the
+ * episodes twice (the section and start-here), and a 13-season show costs 13
+ * TMDB calls; ten minutes is short enough that a newly aired episode appears.
+ */
+const TMDB_EPISODES_TTL_MS = 10 * 60 * 1000;
 
 /**
  * TMDB Provider
@@ -39,6 +47,9 @@ export class TmdbProvider implements MediaProvider {
 
   /** id -> counts/status, so one deck page does not re-fetch what it just learned. */
   private tvCountsCache = new Map<string, { at: number; seasons?: number; episodes?: number; status?: MediaItem["Status"] }>();
+
+  /** id -> every episode of a show, in air order (one TMDB call per season). */
+  private episodesCache = new Map<string, { at: number; items: MediaItem[] }>();
 
   constructor(token?: string) {
     this.apiKey = token || appConfig.TMDB_ACCESS_TOKEN || '';
@@ -430,11 +441,36 @@ export class TmdbProvider implements MediaProvider {
         .map((s) => mapTvSeason(s, { id: show.id, name: show.name }));
     }
 
-    const seasonNumber = options?.season ?? 1;
-    const seasonData = await this.fetchTmdb<any>(`tv/${id}/season/${seasonNumber}`);
-    return (seasonData.episodes || []).map((episode: any) =>
-      mapTvEpisode(episode, { id: show.id, name: show.name }, seasonNumber)
-    );
+    // TMDB answers one season at a time. Asking for "all episodes" of a 13-season
+    // show used to return season 1 only, which made every other season row empty
+    // in the detail view. Fan out over the show's own season list instead.
+    const seasons = options?.season !== undefined ? [options.season] : seasonNumbersFor(show);
+    if (seasons.length === 0) return [];
+
+    const cached = this.episodesCache.get(id);
+    if (options?.season === undefined && cached && Date.now() - cached.at < TMDB_EPISODES_TTL_MS) {
+      return cached.items;
+    }
+
+    const chunks = await mapWithConcurrency(seasons, 5, async (seasonNumber) => {
+      const seasonData = await this.fetchTmdb<any>(`tv/${id}/season/${seasonNumber}`);
+      return (seasonData.episodes || []).map((episode: any) =>
+        mapTvEpisode(episode, { id: show.id, name: show.name }, seasonNumber)
+      );
+    });
+    const items = chunks.flat();
+
+    if (options?.season === undefined) {
+      // A detail view asks for the whole show twice (episodes + start-here); the
+      // cache keeps that to one fan-out per series.
+      if (this.episodesCache.size >= 50) {
+        const oldest = this.episodesCache.keys().next().value;
+        if (oldest !== undefined) this.episodesCache.delete(oldest);
+      }
+      this.episodesCache.set(id, { at: Date.now(), items });
+    }
+
+    return items;
   }
 
   /** TMDB knows nothing about what has been watched, so there is no next-up. */

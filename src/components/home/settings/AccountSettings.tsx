@@ -1,6 +1,10 @@
 "use client";
 
-import { Shield, UserPlus, Globe } from "lucide-react";
+import {
+  Shield,
+  UserPlus,
+  Globe,
+} from "@phosphor-icons/react/dist/ssr";
 import { SettingsSection } from "./SettingsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +76,7 @@ export function AccountSettings() {
                     <div className="flex items-center gap-1.5">
                         <span className="text-base font-medium truncate">{userName}</span>
                         {isAdmin && (
-                            <Badge variant='outline' className="text-[10px] h-4 px-1.5 uppercase tracking-wider">
+                            <Badge variant='outline' className="text-[10px] h-4 px-1.5 font-semibold uppercase tracking-wider">
                                 Admin
                             </Badge>
                         )}

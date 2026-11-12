@@ -2,7 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, WifiOff, Home, RotateCcw, Search } from "lucide-react";
+import {
+  WarningCircle,
+  WifiSlash,
+  House,
+  ArrowCounterClockwise,
+  MagnifyingGlass,
+} from "@phosphor-icons/react/dist/ssr";
 import Link from 'next/link';
 import { useRuntimeConfig } from '@/lib/runtime-config';
 import { GITHUB_URL } from '@/lib/constants';
@@ -38,28 +44,28 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
 
   const errorConfigs = {
     '404': {
-      icon: Search,
+      icon: MagnifyingGlass,
       title: 'Page Not Found',
       description: "We couldn't find the page you're looking for. It might have been moved or deleted.",
       buttonText: 'Back',
       action: () => (window.location.href = `${basePath}/`),
     },
     '500': {
-      icon: AlertCircle,
+      icon: WarningCircle,
       title: 'System Error',
       description: "Something went wrong on our end. We're working on fixing it.",
       buttonText: 'Try again',
       action: reset || (() => window.location.reload()),
     },
     'offline': {
-      icon: WifiOff,
+      icon: WifiSlash,
       title: 'No Connection',
       description: 'You are currently offline. Check your internet connection and try again.',
       buttonText: 'Retry',
       action: () => window.location.reload(),
     },
     'generic': {
-      icon: AlertCircle,
+      icon: WarningCircle,
       title: 'Application Error',
       description: error?.message || 'An unexpected client-side error occurred and the application crashed.',
       buttonText: 'Restart',
@@ -107,13 +113,13 @@ export default function ErrorDisplay({ error, reset, type = 'generic' }: ErrorDi
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Button onClick={config.action} size="lg" className="min-w-44 font-semibold">
-          <RotateCcw className="size-4" />
+          <ArrowCounterClockwise className="size-4" />
           {config.buttonText}
         </Button>
         
         <Button asChild variant="outline" size="lg" className="min-w-44 font-semibold">
           <Link href={`${basePath}/`}>
-            <Home className="size-4" />
+            <House className="size-4" />
             Go Home
           </Link>
         </Button>

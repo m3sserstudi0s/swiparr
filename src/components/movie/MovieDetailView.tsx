@@ -3,7 +3,17 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Star, HeartOff, Bookmark, ShieldCheck, ExternalLink, Percent, HardDrive } from "lucide-react";
+import {
+  Play,
+  Clock,
+  Star,
+  HeartBreak,
+  Bookmark,
+  ShieldCheck,
+  ArrowSquareOut,
+  Percent,
+  HardDrives,
+} from "@phosphor-icons/react/dist/ssr";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useQuery } from "@tanstack/react-query";
 import { MediaItem, WatchProvider } from "@/types";
@@ -103,7 +113,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
           onScroll={handleScroll} // Update motion value here
           className={cn(
             "p-0 overflow-y-auto h-[90vh] sm:max-w-full outline-none mt-1 no-scrollbar relative",
-            "mask-[linear-gradient(to_bottom,transparent_0%,black_30px,black_calc(100%-80px),transparent_100%)]"
+            "scroll-fade"
           )}>
 
           {isLoading ? (
@@ -190,20 +200,20 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         </span>
                       )}
                       {!!movie.OfficialRating && (
-                        <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
+                        <Badge variant="meta" className="border-foreground/30 text-foreground/80">
                           <ShieldCheck className="w-3 h-3"/>
                           {movie.OfficialRating}
                         </Badge>
                       )}
                       {movie.InLibrary && (
-                        <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
-                          <HardDrive className="w-3 h-3"/>
+                        <Badge variant="meta" className="border-foreground/30 text-foreground/80">
+                          <HardDrives className="w-3 h-3"/>
                           In Library
                         </Badge>
                       )}
                       {!!movie.CommunityRating && ratingDisplay !== null && (
                         <span className="flex items-center gap-1 font-bold text-xs/0">
-                          {isRottenTomatoes ? <Percent className="w-3 h-3" /> : <Star className="w-3 h-3 fill-current" />}
+                          {isRottenTomatoes ? <Percent className="w-3 h-3" /> : <Star weight="fill" className="w-3 h-3" />}
                           {ratingDisplay}{isRottenTomatoes ? "%" : ""}
                         </span>
                       )}
@@ -231,7 +241,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   {capabilities.requiresServerUrl && !isGuest && !isStreamingOnly ? (
                     <Link href={detailsUrl} className="w-32" target="_blank">
                       <Button className="w-32" size="lg">
-                        <Play className="w-4 h-4 mr-2 fill-current" /> Play
+                        <Play weight="fill" className="w-4 h-4 mr-2" /> Play
                       </Button>
                     </Link>
                   ) : (
@@ -242,7 +252,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       className="w-32"
                     >
                       <Button className="w-32" size="lg">
-                        <ExternalLink className="w-4 h-4 mr-2" /> See more
+                        <ArrowSquareOut className="w-4 h-4 mr-2" /> See more
                       </Button>
                     </Link>
                   )}
@@ -255,8 +265,8 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                       disabled={isTogglingWatchlist}
                     >
                       {useWatchlist ?
-                        <Bookmark className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
-                        : <Star className={cn("w-4 h-4 mr-2", isInList && "fill-foreground")} />
+                        <Bookmark weight={isInList ? "fill" : "regular"} className="w-4 h-4 mr-2" />
+                        : <Star weight={isInList ? "fill" : "regular"} className="w-4 h-4 mr-2" />
                       }
                       {useWatchlist ? "Watchlist" : "Favorite"}
                     </Button>
@@ -271,7 +281,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                     }}
                     disabled={isUnliking}
                   >
-                    <HeartOff className="w-5 h-5" />
+                    <HeartBreak className="w-5 h-5" />
                   </Button>}
                 </div>
 

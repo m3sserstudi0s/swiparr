@@ -4,11 +4,16 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, Check, Play } from "lucide-react";
+import {
+  CaretDown,
+  Check,
+  Play,
+} from "@phosphor-icons/react/dist/ssr";
 import { MediaItem } from "@/types";
 import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import type { StartHereResult } from "@/lib/start-here";
+import { startHereHeading, type StartHereResult } from "@/lib/start-here";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 /**
  * Series detail: commitment numbers, where to start, and the seasons/episodes.
@@ -61,6 +66,9 @@ const statusLabel = (status: MediaItem["Status"]) => {
 
 export function SeriesDetailSection({ series }: Props) {
   const [openSeasons, setOpenSeasons] = useState<number[]>([]);
+  // A provider without watch state cannot answer "where are you": asking it for a
+  // start-here position would print S1E1 under a heading that claims progress.
+  const knowsProgress = getRuntimeConfig().capabilities.hasProgress;
 
   const { data: seasons, isLoading: isLoadingSeasons } = useQuery({
     queryKey: ["series-seasons", series.Id],
@@ -90,8 +98,10 @@ export function SeriesDetailSection({ series }: Props) {
       });
       return res.data;
     },
-    // A provider without series support answers 501; the section simply hides.
+    // A provider without series support answers 501, and one without watch
+    // state has no position to report; either way the section simply hides.
     retry: false,
+    enabled: knowsProgress,
   });
 
   const episodesBySeason = useMemo(() => {
@@ -116,34 +126,37 @@ export function SeriesDetailSection({ series }: Props) {
 
   const commitment = commitmentLine(series, episodes);
   const status = statusLabel(series.Status);
+  const startHereTitle = startHere?.startHere
+    ? startHereHeading({ action: startHere.startHere.action, hostOnly: startHere.hostOnly })
+    : null;
 
   return (
     <section className="mt-2 mb-8">
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {commitment && (
-          <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {commitment}
           </span>
         )}
         {status && (
-          <Badge variant="outline" className="rounded-none text-[10px] uppercase tracking-wider font-mono">
+          <Badge variant="meta">
             {status}
           </Badge>
         )}
         {typeof series.CommunityRating === "number" && (
-          <Badge variant="outline" className="rounded-none text-[10px] font-mono">
+          <Badge variant="meta">
             {series.CommunityRating.toFixed(1)}
           </Badge>
         )}
       </div>
 
-      {startHere?.startHere && startHere.startHere.action !== "unavailable" && (
+      {knowsProgress && startHere?.startHere && startHereTitle && (
         <div className="border border-border p-4 mb-6">
           <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
-            {startHere.hostOnly ? "The host's position" : "Where you are"}
+            {startHereTitle}
           </div>
           <div className="flex items-center gap-2">
-            <Play className="size-4 fill-current" />
+            <Play weight="fill" className="size-4" />
             <span className="text-sm font-medium">{startHere.startHere.label}</span>
           </div>
           {startHere.startHere.warning && (
@@ -176,16 +189,16 @@ export function SeriesDetailSection({ series }: Props) {
                   onClick={() => toggleSeason(seasonNumber)}
                 >
                   <span className="flex items-baseline gap-3 min-w-0">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[10.5px] font-mono uppercase tracking-wider text-muted-foreground">
                       {String(seasonNumber).padStart(2, "0")}
                     </span>
                     <span className="text-sm font-medium truncate">{season.Name}</span>
                   </span>
                   <span className="flex items-center gap-3 shrink-0">
-                    <span className="text-[10px] font-mono text-muted-foreground">
+                    <span className="text-[10.5px] font-mono tabular-nums text-muted-foreground">
                       {watched}/{seasonEpisodes.length || season.EpisodeCount || 0}
                     </span>
-                    <ChevronDown
+                    <CaretDown
                       className={cn("size-4 text-muted-foreground transition-transform", isOpen && "rotate-180")}
                     />
                   </span>
@@ -198,7 +211,7 @@ export function SeriesDetailSection({ series }: Props) {
                         key={episode.Id}
                         className="flex items-center gap-3 py-1.5 pl-8 text-sm"
                       >
-                        <span className="text-[10px] font-mono text-muted-foreground w-8 shrink-0">
+                        <span className="text-[10.5px] font-mono tabular-nums text-muted-foreground w-8 shrink-0">
                           E{episode.EpisodeNumber ?? "?"}
                         </span>
                         <span className={cn("flex-1 truncate", episode.Progress?.played && "text-muted-foreground")}>
@@ -206,7 +219,7 @@ export function SeriesDetailSection({ series }: Props) {
                         </span>
                         {episode.Progress?.played && <Check className="size-3.5 shrink-0 text-muted-foreground" />}
                         {typeof episode.EpisodeRuntimeMinutes === "number" && (
-                          <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                          <span className="text-[10.5px] font-mono tabular-nums text-muted-foreground shrink-0">
                             {episode.EpisodeRuntimeMinutes} min
                           </span>
                         )}

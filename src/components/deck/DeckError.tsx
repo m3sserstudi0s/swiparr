@@ -1,6 +1,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, GalleryHorizontalEnd } from "lucide-react";
+import {
+  ArrowsCounterClockwise,
+  CardsThree,
+} from "@phosphor-icons/react/dist/ssr";
 import {
   Empty,
   EmptyContent,
@@ -16,7 +19,7 @@ export function DeckError() {
       <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <GalleryHorizontalEnd />
+            <CardsThree />
           </EmptyMedia>
           <EmptyTitle className="text-foreground">Something unexpected happened.</EmptyTitle>
           <EmptyDescription>
@@ -30,7 +33,7 @@ export function DeckError() {
             onClick={() => {
               window.location.reload();
             }}>
-            <RefreshCcw />
+            <ArrowsCounterClockwise />
             Reload
           </Button>
         </EmptyContent>

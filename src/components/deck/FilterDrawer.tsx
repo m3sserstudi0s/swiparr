@@ -12,7 +12,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { RotateCcw, Star, Check, Search, X } from "lucide-react";
+import {
+  ArrowCounterClockwise,
+  Star,
+  Check,
+  MagnifyingGlass,
+  X,
+} from "@phosphor-icons/react/dist/ssr";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
@@ -409,7 +415,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             className="h-8 gap-2 text-muted-foreground hover:text-foreground text-xs absolute right-4 top-4"
             onClick={resetAll}
           >
-            <RotateCcw className="size-3" />
+            <ArrowCounterClockwise className="size-3" />
             Reset
           </Button>
         </DrawerHeader>
@@ -617,7 +623,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Release Year</Label>
-                    <Badge variant="secondary" className="font-mono">
+                    <Badge variant="secondary" className="tabular-nums">
                       {yearRange[0]} — {yearRange[1]}
                     </Badge>
                   </div>
@@ -636,7 +642,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Runtime</Label>
-                    <Badge variant="secondary" className="font-mono">
+                    <Badge variant="secondary" className="tabular-nums">
                       {formatRuntime(runtimeRange[0])} — {runtimeRange[1] === 240 ? "4:00+" : formatRuntime(runtimeRange[1])}
                     </Badge>
                   </div>
@@ -948,7 +954,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       </div>
                       <InputGroup className="bg-muted/30 border-input">
                         <InputGroupAddon align="inline-start">
-                          <Search className="size-4" />
+                          <MagnifyingGlass className="size-4" />
                         </InputGroupAddon>
                         <InputGroupInput
                           placeholder="Search services..."
