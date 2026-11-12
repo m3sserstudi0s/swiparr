@@ -1,0 +1,53 @@
+# PROJECT.yaml — "Messer Swipe"
+# The machine-readable facts. The audit cross-checks this file against the repo, the skill and
+# ~/Server/services.yaml. A false manifest is worse than no manifest: keep it true.
+
+schema: 1
+standard: "1.1"
+name: "messer-swipe"
+display: "Messer Swipe"
+family: "messer"
+status: "active"
+tier: "service"
+kind: "repo"
+skill: "swiparr"
+
+stack:
+  backend: "none"                # Next route handlers only; no separate server
+  frontend: "next"
+  router: "next-app"
+  data: "sqlite"
+  ui: "messer-ui"
+  brand: "messer-swipe"
+  port: 1
+
+deploy:
+  kind: "docker"
+  image: "ghcr.io/jakobbjelver/messer-swipe"
+  stack: "video"
+  service: "messer-swipe"
+  domain: "swipe-server.messer.wtf"
+  dev_domain: "dev-server.messer.wtf"
+
+dev:
+  command: "npm run dev"
+  ports: ["3000"]
+  pm2: "messer-swipe-dev"
+  action: "actions/actions.json"
+
+health: "/healthz"
+
+# Every exception is dated and has a reason. An expired exception is an error.
+exceptions:
+  - id: nextjs
+    reason: >-
+      Next 16 App Router app with route handlers, iron-session auth and a Drizzle database. It is a
+      legacy stack by STANDARD §4; a Go + Vite rewrite would be a product decision, not a cleanup.
+  - id: base-ui
+    reason: >-
+      The combobox atom uses Base UI while the rest of the UI is Radix. Both are vendored shadcn
+      primitives; replacing the combobox is a separate change (canon has no combobox item yet).
+  - id: axios
+    reason: >-
+      Every provider client is axios with per-provider timeouts. Replacing it buys nothing while the
+      provider layer stays; it is isolated behind src/lib/providers/*/api.ts.

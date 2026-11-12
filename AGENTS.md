@@ -1,125 +1,91 @@
-# Messer Swipe - Agent Development Guide
+# AGENTS.md — Messer Swipe
 
-When you need to search docs, use `context7` tools.
-If you are unsure how to do something, use `gh_grep` to search code examples from GitHub.
+Agent contract for this repo. The product is **Messer Swipe**: a swipe deck over a Jellyfin, Emby,
+Plex or TMDB library. Project skill: **`swiparr`** (load it first — it carries the live traps).
 
-## Project Overview
-**Messer Swipe** is a media discovery tool for Jellyfin, Emby, Plex, and TMDB, featuring a Tinder-like swipe interface.
-- **Framework**: Next.js 16 (App Router), React 19 (React Compiler enabled)
-- **Styling**: Tailwind CSS v4, Framer Motion
-- **Database**: SQLite with Drizzle ORM
-- **State**: Zustand (Global), TanStack Query (Server), React Hook Form (Forms)
-- **Auth**: iron-session
+## What this is
 
-## Available Commands
+A single-user-ish Next.js app that turns a media library into a Tinder-like deck, solo or in a group
+session. One repo, one deployable container (`ghcr.io/jakobbjelver/messer-swipe`), one stack in
+Komodo (`video-stack`). Providers are interchangeable behind one interface; a Jellyfin instance can
+also mix TMDB streaming catalogues into the same deck ("hybrid").
 
-### Development & Building
-```bash
-npm run dev      # Start dev server
-npm run build    # Run migrations and build for production
-npm run lint     # Run ESLint
+## Read first
+
+| File | Why |
+|---|---|
+| `MESSER.md` | UI adoption record: brand, canon version, deviations |
+| `.github/CONTRIBUTING.md` | commit conventions (semantic-release reads them) |
+| `AGENTS.md` (this file) | invariants and commands |
+| `PROJECT.yaml` | machine-readable facts the audit cross-checks |
+| `.hermes/plans/` | the shows/2.0 programme and its execution log |
+
+## Layout
+
+```
+src/app/            routes: deck (/), login, /ui sink, /healthz, /readyz, api/*
+src/components/     deck, movie, shows, session, likes, settings, ui (shadcn atoms, local)
+src/lib/providers/  jellyfin | emby | plex | tmdb + factory, item-source, mappers
+                    (map.ts is provider-free on purpose: unit tests import it)
+src/lib/services/   media-service (deck assembly), session-service, auth-service
+src/lib/            pure helpers with their own *.test.ts siblings
+src/db/             drizzle schema + generated SQL migrations (src/db/migrations)
+src/styles/messer/  generated canon files — never edited by hand
 ```
 
-### Database Operations
+## Commands
+
 ```bash
-npx drizzle-kit generate  # Create migration from schema
-npm run db:migrate        # Apply migrations (uses tsx)
-npx drizzle-kit push      # Push schema directly (dev)
-npx drizzle-kit studio    # Database GUI
+npm ci                     # install (lockfile is committed)
+npm run dev                # next dev on :3000 (needs a host-reachable JELLYFIN_URL)
+npm run build              # migrations + next build
+npm run lint               # eslint .
+npm run typecheck          # tsc --noEmit  (authoritative; the patch tool's lint is not)
+npm test                   # node --import tsx --test "src/**/*.test.ts"
+npm run check              # lint + typecheck + test — run before every commit
+npm run doctor             # env, provider reachability, db, version
+npm run db:migrate         # apply migrations (tsx)
+npm run db:generate        # new migration from schema changes
 ```
 
-### Testing
-*No test framework currently configured. Use standard Vitest/Jest patterns if adding.*
+The canonical dev server is the Portal action (`actions/actions.json`, PM2 `messer-swipe-dev`) on
+`dev-server.messer.wtf`; it overrides `JELLYFIN_URL` with the OrbStack name because a host process
+cannot resolve Docker service names.
 
-## Code Style Guidelines
+## Invariants
 
-### Imports & Project Structure
-- **Path Aliases**: Always use `@/*` for `src/*`.
-  ```typescript
-  import { db } from '@/db'
-  import { Button } from '@/components/ui/button'
-  ```
-- **Grouping**: 1. React/Next, 2. External libs, 3. Internal `@/*`, 4. Local relative.
-- **Exports**: Prefer named exports for utilities/types; default exports for components/pages.
+1. **`MediaItem.Kind` absent means movie.** Read it with `itemKind()`; never `?? "movie"` inline.
+2. **`src/lib/providers/item-source.ts` is the only parser of typed ids** (`tmdb:movie:`, `tmdb:tv:`).
+   For `getItemDetails` pass `detailsIdFor(id, providerType)`: TMDB needs the prefixed id, every other
+   provider the bare one. Stripping first resolves a series to the film that shares its numeric id.
+3. **A provider declares a capability only when its adapter exists.** `hasSeries`, `hasSeasons`,
+   `hasProgress`, `hasNextUp` gate deck modes; a premature `true` renders an empty deck with no error.
+4. **`deckMode` is derived, filter chips are not.** Storage carries `deckMode` + `kinds`; read them
+   through `deckModeOf()` / `withDeckDefaults()` (`src/lib/deck-mode.ts`).
+5. **Every provider is reachable only through the factory**, and the session's provider is the source
+   of truth — never a client-supplied URL or provider.
+6. **`src/proxy.ts` is the only middleware.** All request-level logic (CSP, auth, base-path rewrites)
+   lives there; `next.config.ts` `headers()` is build-time and runs after the middleware.
+7. **Mono is for machine values.** Badges use the `meta` variant; see `MESSER.md`.
+8. **Icons are Phosphor** (`@phosphor-icons/react/dist/ssr`), `weight="fill"` only for state.
+9. **A new provider mapper is a pure function** in a `map.ts` with no axios/Next import, so it is
+   testable without a runtime.
+10. **Tests are `node:test`.** Do not add vitest/jest; the lockfile cost is not worth it.
 
-### Naming Conventions
-- **Files**: `kebab-case.ts` (logic), `PascalCase.tsx` (components).
-- **Components**: `PascalCase`.
-- **Hooks**: `useCamelCase`.
-- **Database**: Tables are `PascalCase` singular in code, camelCase in DB.
-- **API**: `kebab-case` folder structure in `src/app/api/`.
+## Working rules
 
-### TypeScript & Types
-- **Strict Mode**: Explicitly define return types for all exported functions.
-- **Drizzle Types**:
-  ```typescript
-  export type User = InferSelectModel<typeof users>
-  export type NewUser = InferInsertModel<typeof users>
-  ```
-- **Zod**: Use for all external data validation (API requests, config).
+- Commits follow `.github/CONTRIBUTING.md`. `fix:` only for the first attempt at a bug; iterations use
+  `chore:`, `refactor:` or `chore(fix):` — each `fix:` publishes a release on `master`.
+- Branch: `develop` is the working branch, `master` releases. Never commit to `master` by hand.
+- Commit as Jakob (`Jakob Bjelvér <jakobbjelver@gmail.com>`); Vercel only builds his commits.
+- After changing a provider or the deck service, prove it through `/api/media/items` — a helper
+  having a test is not evidence the deck uses it.
+- Never accept a credential in chat; ask for a revocable token.
+- Public communication (release notes, catalog PRs) is drafted for approval first.
 
-### Database Schema (`src/db/schema.ts`)
-- Use `text` for IDs (UUIDs) or `integer` for auto-increment.
-- Use `integer({ mode: 'boolean' })` for booleans.
-- Use `createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)`.
+## Where the depth is
 
-### Content Kinds (`MediaKind`)
-- `MediaItem.Kind` is optional and **absent means movie**: every path before 2.0 only fetched movies. Read it via `itemKind()` (`src/lib/media-kind.ts`), never with an inline `?? "movie"`.
-- `src/lib/providers/item-source.ts` is the only parser of typed ids: `tmdb:movie:<id>` and `tmdb:tv:<id>`. `kindFromId()` returns `undefined` for library ids — a Jellyfin GUID says nothing about its kind.
-- `Like.kind` / `Hidden.kind` are `NOT NULL DEFAULT 'movie'` and part of every unique index, so one externalId can be liked as a movie *and* as a series.
-- Session filters carry `deckMode` (`movies | shows | continue | episodes | mixed`). Filter objects written before 2.0 have neither `deckMode` nor `kinds`; read them through `deckModeOf()` / `withDeckDefaults()` (`src/lib/deck-mode.ts`). `kinds` is derived from the mode and never trusted from storage.
-
-### API Routes (`src/app/api/.../route.ts`)
-- Use named exports for methods: `export async function GET(...)`.
-- Return structured JSON: `return Response.json({ data }, { status: 200 })`.
-- Standardize errors: `return Response.json({ error: 'Message' }, { status: 400 })`.
-
-### React Patterns
-- **Directives**: Use `'use client'` at the top of files requiring interactivity/hooks.
-- **Server Components**: Default to Server Components for data fetching.
-- **State**: Prefer `Zustand` for global UI state and `React Query` for server data.
-- **Forms**: Use `react-hook-form` with `zodResolver`.
-
-### Error Handling
-- Wrap async operations in `try/catch`.
-- Use `sonner` for user-facing toast notifications.
-- Log errors to console with descriptive context in development.
-
-### SOLID Principles
-When designing and refactoring code, follow **SOLID** principles as closely as practical:
-
-- **S — Single Responsibility**: Each class, module, or function should have one well-defined reason to change. Extract database queries from route handlers, separate UI logic from data-fetching, and isolate third-party API clients behind thin wrappers.
-- **O — Open/Closed**: Prefer extending behaviour over modifying existing tested code. Use composition, dependency injection, and strategy patterns (e.g., provider-agnostic media-service layer) so new media sources can be added without touching core logic.
-- **L — Liskov Substitution**: Subtypes must be substitutable for their base types. If a class extends another, it should not weaken preconditions or strengthen postconditions. Keep provider implementations (Jellyfin, Emby, Plex) consistent with their shared interface contract.
-- **I — Interface Segregation**: Split large interfaces into smaller, focused ones. A component or service should not depend on methods it doesn't use. Prefer thin function signatures over fat interface classes.
-- **D — Dependency Inversion**: Depend on abstractions, not concretions. Business logic should not directly import database drivers, HTTP clients, or UI frameworks — depend on interfaces that those adapters implement.
-
-When applying SOLID, prioritise **SRP** and **DIP** as they deliver the most practical benefit in a Next.js codebase. Refactor opportunistically — don't over-engineer, but clean as you go.
-
-## Project Structure
-- `src/app`: Routes, Layouts, API.
-- `src/components`: UI (shadcn-like), Layout, and Feature components.
-- `src/db`: Schema and migration logic.
-- `src/hooks`: Custom reusable hooks.
-- `src/lib`: Services, API clients, utilities, runtime config (`config.ts`).
-- `src/proxy.ts`: **Middleware** — request-level logic (auth, headers, URL rewrites).
-- `src/types`: Shared TypeScript definitions.
-
-### Middleware (`src/proxy.ts`)
-
-Messer Swipe uses `src/proxy.ts` instead of the standard `src/middleware.ts`. This is a Next.js naming convention — the exported function is `proxy()` (not the default export pattern). The `config.matcher` export controls which routes the middleware applies to.
-
-**Key rule**: all request-level logic (CSP headers, authentication, base-path rewrites) goes in `proxy.ts`. Never create a separate `middleware.ts`.
-
-**Build-time vs runtime**: `next.config.ts` `headers()` is evaluated at **build time** during `next build`. It cannot read Docker runtime env vars. Any header that needs runtime configuration (e.g., `CSP_FRAME_ANCESTORS`, `X_FRAME_OPTIONS`) must be set in `proxy.ts` middleware, which runs at request time and can read `process.env`.
-
-**Critical timing detail**: `next.config.ts` `headers()` runs **AFTER** middleware in Next.js. If you set a header in both places, the `next.config.ts` value will overwrite the middleware's value. For this reason, the entire `Content-Security-Policy` header was removed from `next.config.ts` and is now built entirely in `proxy.ts`. If you add a header to `next.config.ts` that the middleware also touches, the middleware's version will be silently lost.
-
-**X-Frame-Options sync**: When `CSP_FRAME_ANCESTORS` is set to a value other than `'none'` or `DISABLED`, the `X-Frame-Options` header should be `SAMEORIGIN` (not `DENY`) to avoid conflicting with the permissive `frame-ancestors` CSP directive. Both headers are managed in `proxy.ts`.
-
-## Key Dependencies
-- `motion`: For animations.
-- `tmdb-ts`: TMDB integration.
-- `iron-session`: Auth state.
-- `lucide-react`: Icons.
-- `vaul`: Drawers/Sheets.
+- **Project skill `swiparr`** — provider traps, deploy and release flow, live verification recipes.
+- `MESSER.md` — UI deviations with dates and exits.
+- `.hermes/plans/2026-11-10_0015-messer-swipe-programme.md` — 2.0 scope and decisions.
+- `CONTRIBUTING.md` — commit and review conventions.
