@@ -275,6 +275,13 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
     setRuntimeRange([0, 240]);
     setMinRating(0);
     setProviderSearch("");
+    // The Media section is part of the filters, so Reset clears it too — back to
+    // the default deck (movies, whole shows, no narrowing) rather than leaving a
+    // shows-or-episodes deck behind a reset-looking drawer.
+    setMediaKinds(["movie"]);
+    setShowUnit("series");
+    setSeriesStatus([]);
+    setWatchingOnly(false);
   };
 
   const filteredSortOptions = sortOptions;

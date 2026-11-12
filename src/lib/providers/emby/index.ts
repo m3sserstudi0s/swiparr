@@ -21,6 +21,7 @@ import { DEFAULT_THEMES } from "@/lib/constants";
 import { mapJellyfinItem } from "@/lib/providers/jellyfin/map";
 import { JELLYFIN_ITEM_FIELDS, toIncludeItemTypes } from "@/lib/providers/jellyfin/params";
 import { matchesStartedFilter } from "@/lib/series-state";
+import { isBrowseableCollectionType } from "@/lib/providers/collection-types";
 
 /**
  * Emby Provider
@@ -214,7 +215,7 @@ export class EmbyProvider implements MediaProvider {
     }
     const items = await getCachedLibraries(auth.accessToken, auth.deviceId, auth.userId, auth.serverUrl);
     return items
-      .filter((l: any) => l.CollectionType === "movies")
+      .filter((l: any) => isBrowseableCollectionType(l.CollectionType))
       .map((l: any) => ({
         Id: l.Id,
         Name: l.Name,
