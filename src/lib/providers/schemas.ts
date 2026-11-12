@@ -149,13 +149,22 @@ export const PlexMetadataSchema = z.object({
   })).optional(),
 });
 
+/**
+ * A child entry may be a pseudo-node rather than an item: `/library/metadata/{id}/children`
+ * on a show returns an "All episodes" directory (key `/allLeaves`) with no
+ * `ratingKey`, so the child arrays accept a missing id and the caller filters.
+ */
+export const PlexChildSchema = PlexMetadataSchema.extend({
+  ratingKey: z.string().optional(),
+});
+
 export const PlexContainerSchema = z.object({
   MediaContainer: z.object({
     size: z.number(),
     // Plex names the child array after the element it holds: /children returns
     // Directory (seasons) or Video (episodes), list endpoints return Metadata.
     Metadata: z.array(PlexMetadataSchema).optional(),
-    Directory: z.array(PlexMetadataSchema).optional(),
-    Video: z.array(PlexMetadataSchema).optional(),
+    Directory: z.array(PlexChildSchema).optional(),
+    Video: z.array(PlexChildSchema).optional(),
   }),
 });

@@ -214,7 +214,15 @@ export class PlexProvider implements MediaProvider {
       const res = await plexRequest<any>({ method: 'get', url, headers });
       const data = PlexContainerSchema.parse(res.data);
       const container = data.MediaContainer;
-      return container.Directory || container.Video || container.Metadata || [];
+      // Plex puts real children in Metadata and adds shortcut nodes to Directory
+      // ("All episodes", which has no ratingKey), so both arrays are read and the
+      // keyless nodes dropped rather than trusting either array alone.
+      const children = [
+        ...(container.Metadata || []),
+        ...(container.Directory || []),
+        ...(container.Video || []),
+      ];
+      return children.filter((child) => Boolean(child.ratingKey));
     };
 
     const seasons = await fetchChildren(seriesId);
