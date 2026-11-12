@@ -396,15 +396,76 @@ export class PlexProvider implements MediaProvider {
   async authenticate(username: string, password?: string, deviceId?: string, serverUrl?: string): Promise<any> {
     const token = password || appConfig.PLEX_TOKEN;
     if (!token) throw new Error("Plex Token is required");
-    
-    // Try to discover the best server URL to avoid TLS certificate issues
-    // This will prefer .plex.direct URLs over IP addresses for local HTTPS
+
+    const clientId = deviceId || "Messer Swipe";
+
+    /**
+     * Identify the user from plex.tv, not from the server.
+     *
+     * `/myplex/account` on the server answers 403 to anyone who does not own it,
+     * which is what made a shared or managed user fail to sign in at all (#74).
+     * plex.tv knows the account behind any valid token.
+     */
+    let plexUser: { id?: number | string; username?: string; title?: string } | null = null;
+    try {
+      const res = await plexRequest<any>({
+        method: 'get',
+        url: 'https://plex.tv/api/v2/user',
+        headers: { ...getPlexHeaders(token), 'X-Plex-Client-Identifier': clientId },
+      });
+      plexUser = res.data ?? null;
+    } catch (error) {
+      logger.debug('[PlexProvider.authenticate] plex.tv user lookup failed, falling back to the server', error);
+    }
+
+    /**
+     * A token minted for a Home/managed user (or any shared user) authenticates as
+     * `guest` against a server it does not own. The usable credential is the
+     * per-server `accessToken` that plex.tv lists for the server resource, so it
+     * is resolved here and stored as the session token.
+     */
+    let serverToken: string | null = null;
+    try {
+      const identity = await plexRequest<any>({
+        method: 'get',
+        url: getPlexUrl('/identity', serverUrl),
+        headers: getPlexHeaders(token),
+      });
+      const machineId = identity?.data?.MediaContainer?.machineIdentifier as string | undefined;
+
+      const res = await plexRequest<any>({
+        method: 'get',
+        url: 'https://plex.tv/api/v2/resources?includeHttps=1',
+        headers: { ...getPlexHeaders(token), 'X-Plex-Client-Identifier': clientId },
+      });
+      const resources: any[] = Array.isArray(res.data) ? res.data : [];
+      const servers = resources.filter((r) => (r.provides || '').split(',').includes('server'));
+      const target = machineId
+        ? servers.find((r) => r.clientIdentifier === machineId)
+        : servers[0];
+      serverToken = target?.accessToken ?? null;
+    } catch (error) {
+      logger.debug('[PlexProvider.authenticate] plex.tv resource lookup failed; using the provided token', error);
+    }
+
+    if (plexUser || serverToken) {
+      return {
+        User: {
+          Id: (plexUser?.id ?? username).toString(),
+          Name: plexUser?.username || plexUser?.title || username,
+        },
+        AccessToken: serverToken || token,
+      };
+    }
+
+    // Owner fallback: keep the old path working when plex.tv is unreachable.
     const discovered = await getBestServerUrl(token, serverUrl);
     const effectiveServerUrl = discovered?.serverUrl || serverUrl;
-    
-    const headers = getPlexHeaders(token);
-    const url = getPlexUrl("/myplex/account", effectiveServerUrl);
-    const res = await plexRequest<any>({ method: 'get', url, headers });
+    const res = await plexRequest<any>({
+      method: 'get',
+      url: getPlexUrl("/myplex/account", effectiveServerUrl),
+      headers: getPlexHeaders(token),
+    });
     const user = res.data.MyPlex;
     return {
       User: {
