@@ -13,9 +13,38 @@ import {
 interface DeckEmptyProps {
   onRefresh: () => void;
   onOpenFilter: () => void;
+  deckMode?: string;
 }
 
-export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
+/**
+ * The copy has to match the deck, or an empty Continue looks like a broken app:
+ * "nothing left to swipe" is true of a movies deck and misleading when the reason
+ * is that nothing has been started yet.
+ */
+const EMPTY_COPY: Record<string, { title: string; description: string }> = {
+  continue: {
+    title: "Nothing to continue.",
+    description: "Start watching a show and its next episode will land here.",
+  },
+  episodes: {
+    title: "No unwatched episodes.",
+    description: "Episodes of the shows you have started appear here until you have seen them.",
+  },
+  shows: {
+    title: "Nothing left to swipe.",
+    description: "You're all swiped up on shows. Refresh to fetch more, or adjust the filters.",
+  },
+  mixed: {
+    title: "Nothing left to swipe.",
+    description: "Films and shows are used up. Refresh to fetch more, or adjust the filters.",
+  },
+};
+
+export function DeckEmpty({ onRefresh, onOpenFilter, deckMode }: DeckEmptyProps) {
+  const copy = EMPTY_COPY[deckMode ?? "movies"] ?? {
+    title: "Nothing left to swipe.",
+    description: "You're all swiped up. Refresh to fetch more, or adjust the filters.",
+  };
   return (
     <div className="flex flex-col items-center justify-top text-center h-full text-muted-foreground ">
       <Empty className="w-full h-full mt-10">
@@ -23,10 +52,8 @@ export function DeckEmpty({ onRefresh, onOpenFilter }: DeckEmptyProps) {
           <EmptyMedia variant="icon">
             <GalleryHorizontalEnd />
           </EmptyMedia>
-          <EmptyTitle className="text-foreground">Nothing left to swipe.</EmptyTitle>
-          <EmptyDescription>
-            You&apos;re all swiped up. Refresh to fetch more, or adjust the filters.
-          </EmptyDescription>
+          <EmptyTitle className="text-foreground">{copy.title}</EmptyTitle>
+          <EmptyDescription>{copy.description}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="flex flex-row justify-center">
           <Button

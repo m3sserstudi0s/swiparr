@@ -23,7 +23,7 @@ import { TmdbSearchResponseSchema, TmdbMovieSchema } from "../schemas";
 import { logger } from "@/lib/logger";
 import { DEFAULT_THEMES } from "@/lib/constants";
 import { kindFromId } from "@/lib/providers/item-source";
-import { mapTvDetails, mapTvEpisode, mapTvListItem, mapTvSeason, tvApiId } from "./tv";
+import { mapTvDetails, mapTvEpisode, mapTvListItem, mapTvSeason, tvApiId, tvStatusOf } from "./tv";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
 /**
@@ -36,6 +36,9 @@ export class TmdbProvider implements MediaProvider {
   private apiKey: string;
   
   readonly capabilities: ProviderCapabilities = PROVIDER_CAPABILITIES[ProviderType.TMDB];
+
+  /** id -> counts/status, so one deck page does not re-fetch what it just learned. */
+  private tvCountsCache = new Map<string, { at: number; seasons?: number; episodes?: number; status?: MediaItem["Status"] }>();
 
   constructor(token?: string) {
     this.apiKey = token || appConfig.TMDB_ACCESS_TOKEN || '';
@@ -230,14 +233,14 @@ export class TmdbProvider implements MediaProvider {
     if (filters.searchTerm) {
       const data = await this.fetchTmdb<any>('search/tv', { query: filters.searchTerm, page });
       const searchRes = TmdbSearchResponseSchema.parse(data);
-      return searchRes.results.map((s: any) => mapTvListItem(s, genreNameMap));
+      return this.enrichSeriesCounts(searchRes.results.map((s: any) => mapTvListItem(s, genreNameMap)), auth);
     }
 
     if (filters.sortBy === "Trending" && (!filters.watchProviders || filters.watchProviders.length === 0)) {
       const data = await this.fetchTmdb<any>('trending/tv/week', { page });
       const trendingRes = TmdbSearchResponseSchema.parse(data);
-      const results = trendingRes.results.map((s: any) => mapTvListItem(s, genreNameMap));
-      return this.applyTrendingFilters(results, filters);
+      const results = this.applyTrendingFilters(trendingRes.results.map((s: any) => mapTvListItem(s, genreNameMap)), filters);
+      return this.enrichSeriesCounts(results, auth);
     }
 
     const discoverParams: Record<string, any> = {
@@ -312,13 +315,65 @@ export class TmdbProvider implements MediaProvider {
 
     const data = await this.fetchTmdb<any>('discover/tv', discoverParams);
     const discoverRes = TmdbSearchResponseSchema.parse(data);
-    return discoverRes.results.map((s: any) => {
+    const mapped = discoverRes.results.map((s: any) => {
       const item = mapTvListItem(s, genreNameMap);
       if (filters.ratings && filters.ratings.length === 1) {
         item.OfficialRating = filters.ratings[0];
       }
       return item;
     });
+    return this.enrichSeriesCounts(mapped, auth);
+  }
+
+  /**
+   * Fills the season/episode counts and status that list payloads do not carry.
+   *
+   * TMDB has no bulk details endpoint, so this is one request per show — cached by
+   * id with a TTL, capped to the page being returned, and run with a small
+   * concurrency so a 20-card deck costs ~1 s instead of 20 sequential round trips.
+   * A failure leaves the card as it was rather than breaking the deck.
+   */
+  private async enrichSeriesCounts(items: MediaItem[], auth?: AuthContext): Promise<MediaItem[]> {
+    const TTL_MS = 10 * 60 * 1000;
+    const now = Date.now();
+    const pending = items.filter(
+      (item) => item.Kind === "series" && item.SeasonCount === undefined && item.Id
+    );
+    if (pending.length === 0) return items;
+
+    const concurrency = 6;
+    for (let i = 0; i < pending.length; i += concurrency) {
+      const batch = pending.slice(i, i + concurrency);
+      await Promise.all(batch.map(async (item) => {
+        const cached = this.tvCountsCache.get(item.Id);
+        if (cached && now - cached.at < TTL_MS) {
+          item.SeasonCount = cached.seasons;
+          item.EpisodeCount = cached.episodes;
+          item.Status = cached.status;
+          return;
+        }
+        try {
+          const detail = await this.fetchTmdb<any>(`tv/${tvApiId(item.Id)}`);
+          const seasons = typeof detail.number_of_seasons === "number" ? detail.number_of_seasons : undefined;
+          const episodes = typeof detail.number_of_episodes === "number" ? detail.number_of_episodes : undefined;
+          const status = tvStatusOf(detail.status);
+          item.SeasonCount = seasons;
+          item.EpisodeCount = episodes;
+          item.Status = status;
+          this.tvCountsCache.set(item.Id, { at: now, seasons, episodes, status });
+        } catch (error) {
+          logger.debug("[TMDBProvider.enrichSeriesCounts] detail lookup failed", { id: item.Id });
+        }
+      }));
+    }
+
+    if (this.tvCountsCache.size > 1000) {
+      for (const [key, value] of this.tvCountsCache) {
+        if (now - value.at > TTL_MS) this.tvCountsCache.delete(key);
+      }
+    }
+
+    return items;
   }
 
   private async getTvGenres(auth?: AuthContext): Promise<MediaGenre[]> {

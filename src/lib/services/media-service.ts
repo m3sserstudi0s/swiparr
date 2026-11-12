@@ -12,7 +12,8 @@ import { HybridDeckService } from "./hybrid-deck-service";
 import { logger } from "@/lib/logger";
 import { getRuntimeConfig, getEffectiveCapabilities } from "@/lib/runtime-config";
 import { resolveItemSource } from "@/lib/providers/item-source";
-import { withDeckDefaults } from "@/lib/deck-mode";
+import { deckModeOf, withDeckDefaults } from "@/lib/deck-mode";
+import { canServeContinuation, excludeSwiped, seriesIdsFromNextUp, slicePage, unwatchedEpisodes } from "@/lib/continue-deck";
 
 export class MediaService {
   static async getMediaItems(session: SessionData, page: number, limit: number, searchTerm?: string, overrideFilters?: Filters) {
@@ -84,12 +85,61 @@ export class MediaService {
       return { items: results, hasMore: false };
     }
 
-    // 4. Handle Session vs Solo Mode
+    // 4. Continuation decks answer "what am I in the middle of" rather than
+    // "what should we watch", so they bypass filters, hybrid merging and the
+    // session/solo split: the provider's own next-up is the whole deck.
+    const deckMode = deckModeOf(sessionFilters);
+    if (deckMode === "continue" || deckMode === "episodes") {
+      return this.getContinuationItems(sessionFilters, auth, provider, excludeIds, page, limit, deckMode);
+    }
+
+    // 5. Handle Session vs Solo Mode
     if (session.sessionCode) {
       return this.getSessionItems(session.sessionCode, sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset, hybrid);
     } else {
       return this.getSoloItems(sessionFilters, auth, provider, excludeIds, includedLibraries, watchProviders, watchRegion, page, limit, effectiveOffset, hybrid);
     }
+  }
+
+  /**
+   * Continue = the provider's next-up shelf (one episode per show you are in the
+   * middle of). Episodes = the unwatched episodes of those same shows, so the
+   * deck still only offers shows you have actually started.
+   *
+   * Providers without `hasNextUp` get an empty deck rather than an error: a TMDB
+   * instance has no watched state, and an empty Continue row is the honest answer.
+   */
+  private static async getContinuationItems(
+    sessionFilters: Filters | null,
+    auth: any,
+    provider: any,
+    excludeIds: Set<string>,
+    page: number,
+    limit: number,
+    mode: "continue" | "episodes"
+  ): Promise<{ items: MediaItem[]; hasMore: boolean }> {
+    if (!canServeContinuation(mode, provider.capabilities ?? {})) {
+      // An empty deck is the honest answer for a provider with no watched state;
+      // the client shows the mode-aware empty state instead of an error.
+      return { items: [], hasMore: false };
+    }
+
+    const nextUp = await provider.getNextUp(auth, Math.max(limit * 2, 24));
+    const visible = excludeSwiped(nextUp, excludeIds);
+
+    if (mode === "continue") {
+      return slicePage(visible, page, limit);
+    }
+
+    const episodes: MediaItem[] = [];
+    for (const seriesId of seriesIdsFromNextUp(visible)) {
+      try {
+        episodes.push(...unwatchedEpisodes(await provider.getChildren(seriesId, "episode", auth), excludeIds));
+      } catch {
+        // A provider that cannot list episodes contributes fewer, not an error.
+      }
+    }
+    return slicePage(episodes, page, limit);
   }
 
   /**

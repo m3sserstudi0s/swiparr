@@ -403,12 +403,23 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                         Deck
                       </Label>
                       <div className="flex flex-wrap gap-2">
-                      {([["movies", "Movies"], ["shows", "Shows"]] as [DeckMode, string][]).map(([mode, label]) => (
+                      {([
+                        // Continue and Episodes need watched state; a provider without it
+                        // (TMDB, or a library with no progress) shows them disabled rather
+                        // than offering a deck that can only ever be empty.
+                        { mode: "movies" as DeckMode, label: "Movies", enabled: true },
+                        { mode: "shows" as DeckMode, label: "Shows", enabled: capabilities.hasSeries },
+                        { mode: "continue" as DeckMode, label: "Continue", enabled: capabilities.hasNextUp && capabilities.hasProgress },
+                        { mode: "episodes" as DeckMode, label: "Episodes", enabled: capabilities.hasNextUp && capabilities.hasSeasons },
+                        { mode: "mixed" as DeckMode, label: "Mixed", enabled: capabilities.hasSeries },
+                      ]).filter((option) => option.mode === "movies" || capabilities.hasSeries)
+                        .map(({ mode, label, enabled }) => (
                         <Badge
                           key={mode}
                           variant={deckMode === mode ? "default" : "outline"}
-                          className="cursor-pointer text-sm py-1.5 px-4 rounded-none transition-colors"
-                          onClick={() => setDeckMode(mode)}
+                          className={`text-sm py-1.5 px-4 rounded-none transition-colors ${enabled ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}
+                          aria-disabled={!enabled}
+                          onClick={() => enabled && setDeckMode(mode)}
                         >
                           {label}
                         </Badge>
