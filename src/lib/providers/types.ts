@@ -76,10 +76,10 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     isExperimental: false,
     hasStreamingSettings: false,
     isAdminPanel: true,
-    // type=2/3/4 plus onDeck land in Phase 3.
-    hasSeries: false,
-    hasSeasons: false,
-    hasProgress: false,
+    // type=2/3/4, /children and /library/onDeck are implemented.
+    hasSeries: true,
+    hasSeasons: true,
+    hasProgress: true,
     hasNextUp: false,
   },
   [ProviderType.TMDB]: {

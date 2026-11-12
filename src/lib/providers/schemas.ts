@@ -124,6 +124,19 @@ export const PlexMetadataSchema = z.object({
   Role: z.array(z.object({ tag: z.string(), role: z.string().optional(), id: z.number().optional(), thumb: z.string().optional() })).optional(),
   Language: z.array(z.object({ tag: z.string() })).optional(),
   Country: z.array(z.object({ tag: z.string() })).optional(),
+  // Series/season/episode shape (Plex: 1 movie, 2 show, 3 season, 4 episode)
+  type: z.union([z.number(), z.string()]).optional(),
+  index: z.number().optional(),
+  parentIndex: z.number().optional(),
+  parentTitle: z.string().optional(),
+  grandparentTitle: z.string().optional(),
+  parentRatingKey: z.string().optional(),
+  grandparentRatingKey: z.string().optional(),
+  leafCount: z.number().optional(),
+  viewedLeafCount: z.number().optional(),
+  childCount: z.number().optional(),
+  originallyAvailableAt: z.string().optional(),
+  addedAt: z.number().optional(),
   Media: z.array(z.object({
     Part: z.array(z.object({
       Stream: z.array(z.object({
@@ -139,6 +152,10 @@ export const PlexMetadataSchema = z.object({
 export const PlexContainerSchema = z.object({
   MediaContainer: z.object({
     size: z.number(),
+    // Plex names the child array after the element it holds: /children returns
+    // Directory (seasons) or Video (episodes), list endpoints return Metadata.
     Metadata: z.array(PlexMetadataSchema).optional(),
+    Directory: z.array(PlexMetadataSchema).optional(),
+    Video: z.array(PlexMetadataSchema).optional(),
   }),
 });
