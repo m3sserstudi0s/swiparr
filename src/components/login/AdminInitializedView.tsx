@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, ArrowRight } from "lucide-react";
+import {
+  ShieldCheck,
+  ArrowRight,
+} from "@phosphor-icons/react/dist/ssr";
 
 interface AdminInitializedViewProps {
   onContinue: () => void;

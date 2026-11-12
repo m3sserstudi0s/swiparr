@@ -7,7 +7,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import {
+  List,
+} from "@phosphor-icons/react/dist/ssr";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/utils";
@@ -89,7 +91,7 @@ export function SettingsSidebar() {
             <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                     <Button className="absolute right-6 size-10 hover:bg-muted/30!" variant="ghost" size="icon">
-                        <Menu className="size-5.5" />
+                        <List className="size-5.5" />
                     </Button>
                 </SheetTrigger>
                 <SheetContent className="flex flex-col overflow-hidden">

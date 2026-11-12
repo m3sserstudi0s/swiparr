@@ -9,7 +9,16 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
-import { RotateCcw, Users, Heart, X, Sparkles, TrendingUp, Infinity, Loader } from "lucide-react";
+import {
+  ArrowCounterClockwise,
+  Users,
+  Heart,
+  X,
+  Sparkle,
+  TrendUp,
+  Infinity,
+  CircleNotch,
+} from "@phosphor-icons/react/dist/ssr";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
@@ -147,7 +156,7 @@ export function SessionSettingsSheet({
             <div className="space-y-4">
               <Label className="text-base font-semibold flex items-center gap-2">
                 Stats
-                {isLoading && <Loader className="size-4 animate-spin"/>}
+                {isLoading && <CircleNotch className="size-4 animate-spin"/>}
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <Card className="bg-muted/30 border-none gap-0">
@@ -158,7 +167,7 @@ export function SessionSettingsSheet({
                       <span className="text-xs text-muted-foreground">likes</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <TrendingUp className="size-3 text-primary" />
+                      <TrendUp className="size-3 text-primary" />
                       <span>
                         <span className="font-mono">{stats?.myLikeRate.toFixed(0) || 0}</span>
                         % like rate
@@ -210,7 +219,7 @@ export function SessionSettingsSheet({
                   onClick={handleResetStats}
                   disabled={isResettingStats}
                 >
-                  <RotateCcw className={cn('size-3 text-xs/0', isResettingStats && "animate-spin")} />
+                  <ArrowCounterClockwise className={cn('size-3 text-xs/0', isResettingStats && "animate-spin")} />
                   {isResettingStats ? "Resetting..." : confirmResetStats ? "Confirm reset" : "Reset stats"}
                 </Button>
               </div>
@@ -322,7 +331,7 @@ export function SessionSettingsSheet({
               className="gap-2 text-muted-foreground hover:text-foreground"
               onClick={resetAll}
             >
-              <RotateCcw className="size-3 text-xs/0" />
+              <ArrowCounterClockwise className="size-3 text-xs/0" />
               Reset settings
             </Button>
             </div>

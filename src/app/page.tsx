@@ -2,7 +2,10 @@
 import { CardDeck } from "@/components/deck/CardDeck";
 import { SessionManager } from "@/components/session/SessionManager";
 import { LikesList } from "@/components/likes/LikesList";
-import { GalleryHorizontalEnd, Heart } from "lucide-react";
+import {
+  CardsThree,
+  Heart,
+} from "@phosphor-icons/react/dist/ssr";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/animate-ui/components/animate/tabs";
 import { SettingsSidebar } from "@/components/home/SettingsSidebar";
 import { useState } from "react";
@@ -35,14 +38,16 @@ export default function Home() {
         >
           <TabsList className="grid mx-auto h-fit grid-cols-2 bg-muted/30 rounded-none z-0">
             <TabsTrigger value="swipe" className="h-11 w-16 group rounded-none z-0">
-              <GalleryHorizontalEnd
-                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
+              <CardsThree
+                weight={tab === "swipe" ? "fill" : "regular"}
+                className="size-5 z-0 text-foreground"
               />
             </TabsTrigger>
 
             <TabsTrigger value="likes" className="h-11 w-16 group rounded-none z-0">
               <Heart
-                className="size-5 z-0 text-foreground fill-none transition-all group-data-[state=active]:fill-foreground"
+                weight={tab === "likes" ? "fill" : "regular"}
+                className="size-5 z-0 text-foreground"
               />
             </TabsTrigger>
           </TabsList>

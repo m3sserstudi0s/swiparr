@@ -12,7 +12,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Filters } from "@/types";
-import { RotateCcw, Star, Check, Search, X } from "lucide-react";
+import {
+  ArrowCounterClockwise,
+  Star,
+  Check,
+  MagnifyingGlass,
+  X,
+} from "@phosphor-icons/react/dist/ssr";
 import { Label } from "@/components/ui/label";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
@@ -409,7 +415,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
             className="h-8 gap-2 text-muted-foreground hover:text-foreground text-xs absolute right-4 top-4"
             onClick={resetAll}
           >
-            <RotateCcw className="size-3" />
+            <ArrowCounterClockwise className="size-3" />
             Reset
           </Button>
         </DrawerHeader>
@@ -948,7 +954,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                       </div>
                       <InputGroup className="bg-muted/30 border-input">
                         <InputGroupAddon align="inline-start">
-                          <Search className="size-4" />
+                          <MagnifyingGlass className="size-4" />
                         </InputGroupAddon>
                         <InputGroupInput
                           placeholder="Search services..."

@@ -4,7 +4,11 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, Check, Play } from "lucide-react";
+import {
+  CaretDown,
+  Check,
+  Play,
+} from "@phosphor-icons/react/dist/ssr";
 import { MediaItem } from "@/types";
 import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -152,7 +156,7 @@ export function SeriesDetailSection({ series }: Props) {
             {startHereTitle}
           </div>
           <div className="flex items-center gap-2">
-            <Play className="size-4 fill-current" />
+            <Play weight="fill" className="size-4" />
             <span className="text-sm font-medium">{startHere.startHere.label}</span>
           </div>
           {startHere.startHere.warning && (
@@ -194,7 +198,7 @@ export function SeriesDetailSection({ series }: Props) {
                     <span className="text-[10px] font-mono text-muted-foreground">
                       {watched}/{seasonEpisodes.length || season.EpisodeCount || 0}
                     </span>
-                    <ChevronDown
+                    <CaretDown
                       className={cn("size-4 text-muted-foreground transition-transform", isOpen && "rotate-180")}
                     />
                   </span>

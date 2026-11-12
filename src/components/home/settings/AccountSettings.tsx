@@ -1,6 +1,10 @@
 "use client";
 
-import { Shield, UserPlus, Globe } from "lucide-react";
+import {
+  Shield,
+  UserPlus,
+  Globe,
+} from "@phosphor-icons/react/dist/ssr";
 import { SettingsSection } from "./SettingsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";

@@ -6,7 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { startHereHeading, type StartHereResult } from "@/lib/start-here";
 import { getRuntimeConfig } from "@/lib/runtime-config";
-import { Heart } from "lucide-react";
+import {
+  Heart,
+} from "@phosphor-icons/react/dist/ssr";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { UserAvatarList } from "../session/UserAvatarList";
 import { useMovieDetail } from "../movie/MovieDetailProvider";
@@ -72,7 +74,7 @@ export function MatchOverlay({ item, sessionCode, onClose }: MatchOverlayProps) 
                 transition={{ repeat: Infinity, duration: 2 }}
                 className="absolute -top-10 opacity-40 pointer-events-none"
               >
-                <Heart className="w-75 h-75 fill-neutral-900 text-neutral-900" />
+                <Heart weight="fill" className="w-75 h-75 text-neutral-900" />
               </motion.div>
 
               <h1 className="text-5xl font-black italic text-neutral-100 mb-2 drop-shadow-2xl tracking-tighter uppercase">

@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
-import { Check, TriangleAlert, Info, Settings, Search, X, Circle } from "lucide-react";
+import {
+  Check,
+  Warning,
+  Info,
+  Gear,
+  MagnifyingGlass,
+  X,
+  Circle,
+} from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,7 +46,7 @@ export default function SinkPage() {
           </p>
         </div>
         <Button size="sm" variant="outline">
-          <Settings />
+          <Gear />
           Theme
         </Button>
       </header>
@@ -103,7 +111,7 @@ export default function SinkPage() {
                 Large
               </Button>
               <Button size="icon" variant="outline" data-fixture="btn-icon" aria-label="Search">
-                <Search />
+                <MagnifyingGlass />
               </Button>
               <Button disabled data-fixture="btn-disabled">
                 Disabled
@@ -224,7 +232,7 @@ export default function SinkPage() {
                   </td>
                   <td className="border-border border-b px-2 py-2">
                     <Badge variant="outline" className="text-warning">
-                      <TriangleAlert />
+                      <Warning />
                       Degraded
                     </Badge>
                   </td>

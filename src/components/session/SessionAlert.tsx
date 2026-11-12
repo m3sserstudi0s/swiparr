@@ -1,4 +1,8 @@
-import { Info, UserPlus, X } from "lucide-react";
+import {
+  Info,
+  UserPlus,
+  X,
+} from "@phosphor-icons/react/dist/ssr";
 import {
     Item,
     ItemActions,

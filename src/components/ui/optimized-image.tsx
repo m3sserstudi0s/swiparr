@@ -5,7 +5,9 @@ import Image, { ImageLoaderProps, ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
 import { useRuntimeConfig } from "@/lib/runtime-config";
 import { useBlurData } from "@/hooks/use-blur-data";
-import { ImageOff } from "lucide-react";
+import {
+  ImageBroken,
+} from "@phosphor-icons/react/dist/ssr";
 
 import { Skeleton } from "./skeleton";
 
@@ -109,7 +111,7 @@ export function OptimizedImage({
 
       {hasError ? (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/10">
-          <ImageOff className="w-8 h-8 text-muted-foreground" />
+          <ImageBroken className="w-8 h-8 text-muted-foreground" />
         </div>
       ) : (
         <Image

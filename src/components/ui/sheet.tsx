@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
-import { XIcon } from "lucide-react";
+import {
+  X,
+} from "@phosphor-icons/react/dist/ssr";
 
 import { cn } from "@/lib/utils"
 import { Button } from "./button"
@@ -76,7 +78,7 @@ function SheetContent({
         {children}
         <SheetPrimitive.Close asChild className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-[calc(1rem+env(safe-area-inset-top))] right-[calc(1rem+env(safe-area-inset-right))] rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
           <Button variant="outline" size="icon" className="rounded-sm">
-            <XIcon className="size-6" />
+            <X className="size-6" />
             <span className="sr-only">Close</span>
           </Button>
         </SheetPrimitive.Close>

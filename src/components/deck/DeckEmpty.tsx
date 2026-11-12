@@ -1,6 +1,10 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, SlidersHorizontal, GalleryHorizontalEnd } from "lucide-react";
+import {
+  ArrowsCounterClockwise,
+  SlidersHorizontal,
+  CardsThree,
+} from "@phosphor-icons/react/dist/ssr";
 import {
   Empty,
   EmptyContent,
@@ -50,7 +54,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter, deckMode }: DeckEmptyProps)
       <Empty className="w-full h-full mt-10">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <GalleryHorizontalEnd />
+            <CardsThree />
           </EmptyMedia>
           <EmptyTitle className="text-foreground">{copy.title}</EmptyTitle>
           <EmptyDescription>{copy.description}</EmptyDescription>
@@ -62,7 +66,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter, deckMode }: DeckEmptyProps)
             className="w-28"
             onClick={onRefresh}
           >
-            <RefreshCcw />
+            <ArrowsCounterClockwise />
             Refresh
           </Button>
           <Button

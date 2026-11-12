@@ -1,6 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, Plus, Share2, LogOut, Info, X, Check, Copy } from "lucide-react";
+import {
+  UserPlus,
+  Plus,
+  ShareNetwork,
+  SignOut,
+  Info,
+  X,
+  Check,
+  Copy,
+} from "@phosphor-icons/react/dist/ssr";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SecureContextCopyFallback } from "../SecureContextCopyFallback";
@@ -125,7 +134,7 @@ export function SessionCodeSection({
           ) : (
             <>
               <Button onClick={handleShare} className="flex-1 h-10" variant="default">
-                <Share2 className="w-4 h-4 mr-2" />
+                <ShareNetwork className="w-4 h-4 mr-2" />
                 Share
               </Button>
               <Button
@@ -134,7 +143,7 @@ export function SessionCodeSection({
                 className="flex-1 h-10"
                 disabled={isLeaving}
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <SignOut className="w-4 h-4 mr-2" />
                 Leave
               </Button>
             </>
