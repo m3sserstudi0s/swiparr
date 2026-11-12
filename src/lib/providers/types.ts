@@ -92,9 +92,10 @@ export const PROVIDER_CAPABILITIES: Record<ProviderType, ProviderCapabilities> =
     isExperimental: false,
     hasStreamingSettings: true,
     isAdminPanel: false,
-    // discover/tv and tv/{id} land in Phase 4. TMDB has no progress data at all.
-    hasSeries: false,
-    hasSeasons: false,
+    // discover/tv, tv/{id} and season detail are implemented; TMDB has no
+    // progress data at all, so Continue and next-up stay off.
+    hasSeries: true,
+    hasSeasons: true,
     hasProgress: false,
     hasNextUp: false,
   },

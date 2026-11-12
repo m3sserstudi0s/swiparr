@@ -18,9 +18,36 @@ export const TmdbMovieSchema = z.object({
   tagline: z.string().optional(),
 });
 
+/**
+ * A series as it appears in list payloads (`discover/tv`, `search/tv`,
+ * `trending/tv`). It has `name` instead of `title`, `first_air_date` instead of
+ * `release_date`, and none of the detail-only counts — validating a TV response
+ * with the movie schema throws "expected string, received undefined" on `title`,
+ * which surfaces as a 500 rather than an empty deck.
+ */
+export const TmdbTvListItemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  original_name: z.string().optional(),
+  overview: z.string().optional(),
+  first_air_date: z.string().optional().nullable(),
+  last_air_date: z.string().optional().nullable(),
+  vote_average: z.number().optional(),
+  poster_path: z.string().nullable().optional(),
+  backdrop_path: z.string().nullable().optional(),
+  genre_ids: z.array(z.number()).optional(),
+  origin_country: z.array(z.string()).optional(),
+  status: z.string().optional(),
+  number_of_seasons: z.number().optional(),
+  number_of_episodes: z.number().optional(),
+  episode_run_time: z.array(z.number()).optional(),
+});
+
+export const TmdbListItemSchema = z.union([TmdbTvListItemSchema, TmdbMovieSchema]);
+
 export const TmdbSearchResponseSchema = z.object({
   page: z.number(),
-  results: z.array(TmdbMovieSchema),
+  results: z.array(TmdbListItemSchema),
   total_pages: z.number(),
   total_results: z.number(),
 });
