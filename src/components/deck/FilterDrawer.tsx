@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/input-group";
 
 import { deriveDeckMode } from "@/lib/deck-mode";
+import { HybridTooltip, HybridTooltipTrigger, HybridTooltipContent } from "@/components/ui/hybrid-tooltip";
 import type { DeckMode } from "@/types/session";
 
 interface FilterDrawerProps {
@@ -480,23 +481,31 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                               // Movies and episodes in one deck is a puzzle, not a feature.
                               enabled: !mediaKinds.includes("movie"),
                             },
-                          ]).map(({ unit, label, enabled }) => (
-                            <Badge
-                              key={unit}
-                              variant={showUnit === unit ? "default" : "outline"}
-                              className={`text-xs py-1 px-3 rounded-none transition-colors ${enabled ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}
-                              aria-disabled={!enabled}
-                              onClick={() => enabled && setShowUnit(unit)}
-                            >
-                              {label}
-                            </Badge>
-                          ))}
-                        </div>
-                        {mediaKinds.includes("movie") && (
-                          <p className="text-xs text-muted-foreground">
-                            Episodes need Shows on its own.
-                          </p>
-                        )}
+                          ]).map(({ unit, label, enabled }) => {
+                            const chip = (
+                              <Badge
+                                variant={showUnit === unit ? "default" : "outline"}
+                                className={`text-xs py-1 px-3 rounded-none transition-colors ${enabled ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}
+                                aria-disabled={!enabled}
+                                onClick={() => enabled && setShowUnit(unit)}
+                              >
+                                {label}
+                              </Badge>
+                            );
+                            // The reason lives in a tooltip (a popover on touch) so a
+                            // disabled chip does not add a paragraph to the drawer.
+                            if (enabled) return <span key={unit} className="contents">{chip}</span>;
+                            return (
+                              <HybridTooltip key={unit}>
+                                <HybridTooltipTrigger asChild>{chip}</HybridTooltipTrigger>
+                                <HybridTooltipContent side="top" className="max-w-56 text-xs">
+                                  Episodes need Shows on its own — a deck of films and single
+                                  episodes is two different questions.
+                                </HybridTooltipContent>
+                              </HybridTooltip>
+                            );
+                          })}
+                      </div>
                       </div>
 
                       <div className="space-y-1.5">
@@ -519,28 +528,31 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                               {label}
                             </Badge>
                           ))}
-                          <Badge
-                            variant={watchingOnly ? "default" : "outline"}
-                            className={`text-xs py-1 px-3 rounded-none transition-colors ${
-                              capabilities.hasProgress && capabilities.hasNextUp
-                                ? "cursor-pointer"
-                                : "cursor-not-allowed opacity-40"
-                            }`}
-                            aria-disabled={!(capabilities.hasProgress && capabilities.hasNextUp)}
-                            onClick={() => {
-                              if (!(capabilities.hasProgress && capabilities.hasNextUp)) return;
-                              setWatchingOnly((prev) => !prev);
-                            }}
-                          >
-                            Only what I&apos;m watching
-                          </Badge>
-                        </div>
-                        {!(capabilities.hasProgress && capabilities.hasNextUp) && (
-                          <p className="text-xs text-muted-foreground">
-                            This provider has no watch progress, so shows cannot be narrowed that way.
-                          </p>
-                        )}
+                          {(() => {
+                            const canNarrow = capabilities.hasProgress && capabilities.hasNextUp;
+                            const chip = (
+                              <Badge
+                                variant={watchingOnly ? "default" : "outline"}
+                                className={`text-xs py-1 px-3 rounded-none transition-colors ${canNarrow ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}
+                                aria-disabled={!canNarrow}
+                                onClick={() => canNarrow && setWatchingOnly((prev) => !prev)}
+                              >
+                                Only what I&apos;m watching
+                              </Badge>
+                            );
+                            if (canNarrow) return chip;
+                            return (
+                              <HybridTooltip>
+                                <HybridTooltipTrigger asChild>{chip}</HybridTooltipTrigger>
+                                <HybridTooltipContent side="top" className="max-w-56 text-xs">
+                                  This provider keeps no watch progress, so there is nothing to
+                                  narrow by.
+                                </HybridTooltipContent>
+                              </HybridTooltip>
+                            );
+                          })()}
                       </div>
+                    </div>
                     </div>
                   )}
                 </div>
