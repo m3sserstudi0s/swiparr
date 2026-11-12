@@ -17,7 +17,7 @@
     "db:migrate": "tsx src/db/migrate.js",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm test",
     "doctor": "node scripts/doctor.mjs"
   },
