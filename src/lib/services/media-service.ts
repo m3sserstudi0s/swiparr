@@ -102,6 +102,21 @@ export class MediaService {
   }
 
   /**
+   * "Continuing" / "Ended" is a property of a show, and no provider filters on it
+   * server-side, so it is applied here. A film is unaffected; a show with unknown
+   * status is kept rather than hidden, because "unknown" is not "ended".
+   */
+  private static filterBySeriesStatus(items: MediaItem[], filters: Filters | null): MediaItem[] {
+    const wanted = filters?.status;
+    if (!wanted?.length) return items;
+    return items.filter((item) => {
+      if (item.Kind !== "series") return true;
+      if (!item.Status) return true;
+      return wanted.includes(item.Status as "continuing" | "ended");
+    });
+  }
+
+  /**
    * Continue = the provider's next-up shelf (one episode per show you are in the
    * middle of). Episodes = the unwatched episodes of those same shows, so the
    * deck still only offers shows you have actually started.
@@ -294,6 +309,7 @@ export class MediaService {
 
       let filtered = this.applyClientFilters(fetchedItems, sessionFilters);
       filtered = filtered.filter(item => !excludeIds.has(item.Id));
+      filtered = this.filterBySeriesStatus(filtered, sessionFilters);
       items.push(...filtered);
 
       if (hasExclusionFilters) {
@@ -812,6 +828,7 @@ export class MediaService {
 
       let filtered = this.applyClientFilters(fetchedItems, sessionFilters);
       filtered = filtered.filter(item => !excludeIds.has(item.Id));
+      filtered = this.filterBySeriesStatus(filtered, sessionFilters);
       items.push(...filtered);
 
       if (hasExclusionFilters) {

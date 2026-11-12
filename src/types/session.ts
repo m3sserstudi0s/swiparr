@@ -23,6 +23,12 @@ export interface Filters {
   unplayedOnly?: boolean;
   /** Absent on every filter object written before 2.0 — read it via `deckModeOf`. */
   deckMode?: DeckMode;
+  /**
+   * What one show card represents. `series` swipes a whole show, `episode` swipes
+   * a single episode. Set from the Media section of the drawer, not by the user
+   * choosing a "mode".
+   */
+  showUnit?: "series" | "episode";
   /** Derived from `deckMode`, stored so cache keys and API params carry it. */
   kinds?: MediaKind[];
   /** Series airing state the deck may restrict to (shows mode). */

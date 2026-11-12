@@ -45,12 +45,47 @@ export function kindsForDeckMode(mode: DeckMode): MediaKind[] {
 }
 
 /**
+ * The deck the user is describing, derived from what the Media section sets:
+ * which kinds are selected, what a show card is, and whether they narrowed to
+ * shows they are watching.
+ *
+ * This replaced five mutually-exclusive modes in the UI. The deck the server runs
+ * is still one of those five, but the user now expresses it as two toggles plus
+ * filters instead of picking a "mode".
+ */
+export function deriveDeckMode(filters?: {
+  kinds?: MediaKind[];
+  showUnit?: "series" | "episode";
+  started?: "any" | "notStarted" | "inProgress";
+} | null): DeckMode {
+  const kinds = filters?.kinds?.length ? filters.kinds : ["movie"];
+  const hasMovies = kinds.includes("movie");
+  const hasSeries = kinds.includes("series") || kinds.includes("season") || kinds.includes("episode");
+
+  if (hasMovies && hasSeries) return "mixed";
+  if (!hasSeries) return "movies";
+
+  const watching = filters?.started === "inProgress";
+  const episodes = filters?.showUnit === "episode";
+
+  if (episodes && watching) return "continue";
+  if (episodes) return "episodes";
+  return "shows";
+}
+
+/**
  * Fills `deckMode`/`kinds` on a stored filter object. Null stays null: a user
  * with no filters configured already gets the movies deck, and turning null into
  * an object would change paths that branch on "has filters".
  */
 export function withDeckDefaults(filters: Filters | null | undefined): Filters | null {
   if (!filters) return null;
-  const deckMode = deckModeOf(filters);
-  return { ...filters, deckMode, kinds: kindsForDeckMode(deckMode) };
+  // A filter object written by the 2.x drawer carries `kinds`/`showUnit`/`started`
+  // and the mode is derived from them. One written before that only has a
+  // `deckMode`, and that is what its `kinds` must come from.
+  const selectedKinds = filters.kinds?.length ? filters.kinds : kindsForDeckMode(deckModeOf(filters));
+  const deckMode = filters.kinds?.length || filters.showUnit || filters.started
+    ? deriveDeckMode({ kinds: selectedKinds, showUnit: filters.showUnit, started: filters.started })
+    : deckModeOf(filters);
+  return { ...filters, deckMode, kinds: selectedKinds };
 }
