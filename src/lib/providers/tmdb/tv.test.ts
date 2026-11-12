@@ -6,6 +6,7 @@ import {
   mapTvEpisode,
   mapTvListItem,
   mapTvSeason,
+  seasonNumbersFor,
   tmdbTvId,
   tvApiId,
   tvStatusOf,
@@ -141,4 +142,20 @@ test("an episode knows its season, number and runtime", () => {
   assert.equal(episode.SeriesName, "Breaking Bad");
   // 58 minutes in 100 ns ticks.
   assert.equal(episode.RunTimeTicks, 58 * 60 * 10_000_000);
+});
+
+test("season numbers come from the show payload, specials excluded and sorted", () => {
+  // TMDB lists season 0 for specials and does not promise ordering.
+  const show = {
+    seasons: [
+      { season_number: 2 },
+      { season_number: 0 },
+      { season_number: 1 },
+      { season_number: 2 },
+      { season_number: null },
+    ],
+  };
+  assert.deepEqual(seasonNumbersFor(show), [1, 2]);
+  // A show with no season list fans out to nothing rather than guessing season 1.
+  assert.deepEqual(seasonNumbersFor({}), []);
 });

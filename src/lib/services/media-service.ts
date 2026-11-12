@@ -11,7 +11,7 @@ import { deckCache } from "./deck-cache";
 import { HybridDeckService } from "./hybrid-deck-service";
 import { logger } from "@/lib/logger";
 import { getRuntimeConfig, getEffectiveCapabilities } from "@/lib/runtime-config";
-import { resolveItemSource } from "@/lib/providers/item-source";
+import { detailsIdFor, resolveItemSource } from "@/lib/providers/item-source";
 import { deckModeOf, withDeckDefaults } from "@/lib/deck-mode";
 import { canServeContinuation, excludeSwiped, seriesIdsFromNextUp, slicePage, unwatchedEpisodes } from "@/lib/continue-deck";
 
@@ -463,9 +463,9 @@ export class MediaService {
     // Load blur data for first item (hybrid decks mix tmdb:-prefixed ids)
     if (result.items.length > 0) {
       const first = result.items[0];
-      const { providerType, externalId } = resolveItemSource(first.Id, auth.provider);
+      const { providerType } = resolveItemSource(first.Id, auth.provider);
       const blurProvider = providerType === auth.provider ? provider : getMediaProvider(providerType);
-      first.BlurDataURL = await blurProvider.getBlurDataUrl(externalId, "Primary", auth);
+      first.BlurDataURL = await blurProvider.getBlurDataUrl(detailsIdFor(first.Id, providerType), "Primary", auth);
     }
 
     return {

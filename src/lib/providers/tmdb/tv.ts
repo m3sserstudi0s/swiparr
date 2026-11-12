@@ -16,6 +16,21 @@ export function tvApiId(id: string | number): string {
   return stripTypedPrefix(String(id));
 }
 
+/**
+ * Season numbers a show actually has, in order, specials excluded.
+ *
+ * The show payload lists every season but TMDB has no "all episodes" endpoint:
+ * `tv/{id}/season/{n}` answers for exactly one season. So the provider fans out
+ * over these numbers instead of assuming season 1 (which is what it used to do,
+ * leaving every other season row empty).
+ */
+export function seasonNumbersFor(show: { seasons?: Array<{ season_number?: number | null }> }): number[] {
+  const numbers = (show.seasons ?? [])
+    .map((season) => season?.season_number)
+    .filter((value): value is number => typeof value === "number" && Number.isInteger(value) && value > 0);
+  return Array.from(new Set(numbers)).sort((a, b) => a - b);
+}
+
 /** TMDB's free-text status -> the three states the deck understands. */
 export function tvStatusOf(status?: string): MediaItem["Status"] {
   const value = (status ?? "").toLowerCase();

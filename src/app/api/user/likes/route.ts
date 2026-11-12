@@ -9,7 +9,7 @@ import { EventService } from "@/lib/services/event-service";
 import { EVENT_TYPES } from "@/lib/events";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
-import { resolveItemSource } from "@/lib/providers/item-source";
+import { detailsIdFor, resolveItemSource } from "@/lib/providers/item-source";
 import { handleApiError } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 
@@ -46,9 +46,10 @@ export async function GET(request: NextRequest) {
     await Promise.all(ids.map(async (id: string) => {
         try {
             // Hybrid decks store tmdb:-prefixed ids for streaming-only items
-            const { providerType, externalId } = resolveItemSource(id, auth.provider);
+            const { providerType } = resolveItemSource(id, auth.provider);
             const itemProvider = providerType === auth.provider ? provider : getMediaProvider(providerType);
-            const item = await itemProvider.getItemDetails(externalId, auth, { includeUserState: true });
+            // TMDB needs the typed id to know movie from series; other providers take the bare one.
+            const item = await itemProvider.getItemDetails(detailsIdFor(id, providerType), auth, { includeUserState: true });
             if (item) {
                 item.Id = id; // keep the prefixed id so DB rows keep matching
                 itemsMap.set(id, item);

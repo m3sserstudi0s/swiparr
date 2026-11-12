@@ -8,7 +8,8 @@ import { ChevronDown, Check, Play } from "lucide-react";
 import { MediaItem } from "@/types";
 import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import type { StartHereResult } from "@/lib/start-here";
+import { startHereHeading, type StartHereResult } from "@/lib/start-here";
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 /**
  * Series detail: commitment numbers, where to start, and the seasons/episodes.
@@ -61,6 +62,9 @@ const statusLabel = (status: MediaItem["Status"]) => {
 
 export function SeriesDetailSection({ series }: Props) {
   const [openSeasons, setOpenSeasons] = useState<number[]>([]);
+  // A provider without watch state cannot answer "where are you": asking it for a
+  // start-here position would print S1E1 under a heading that claims progress.
+  const knowsProgress = getRuntimeConfig().capabilities.hasProgress;
 
   const { data: seasons, isLoading: isLoadingSeasons } = useQuery({
     queryKey: ["series-seasons", series.Id],
@@ -90,8 +94,10 @@ export function SeriesDetailSection({ series }: Props) {
       });
       return res.data;
     },
-    // A provider without series support answers 501; the section simply hides.
+    // A provider without series support answers 501, and one without watch
+    // state has no position to report; either way the section simply hides.
     retry: false,
+    enabled: knowsProgress,
   });
 
   const episodesBySeason = useMemo(() => {
@@ -116,6 +122,9 @@ export function SeriesDetailSection({ series }: Props) {
 
   const commitment = commitmentLine(series, episodes);
   const status = statusLabel(series.Status);
+  const startHereTitle = startHere?.startHere
+    ? startHereHeading({ action: startHere.startHere.action, hostOnly: startHere.hostOnly })
+    : null;
 
   return (
     <section className="mt-2 mb-8">
@@ -137,10 +146,10 @@ export function SeriesDetailSection({ series }: Props) {
         )}
       </div>
 
-      {startHere?.startHere && startHere.startHere.action !== "unavailable" && (
+      {knowsProgress && startHere?.startHere && startHereTitle && (
         <div className="border border-border p-4 mb-6">
           <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
-            {startHere.hostOnly ? "The host's position" : "Where you are"}
+            {startHereTitle}
           </div>
           <div className="flex items-center gap-2">
             <Play className="size-4 fill-current" />

@@ -38,6 +38,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // A provider with no watched state (TMDB) cannot say where anyone is. Answer
+    // before fetching every episode: `unavailable` is the honest reply, and the UI
+    // hides the panel for these providers anyway.
+    if (provider.capabilities?.hasProgress === false) {
+      return NextResponse.json({
+        startHere: { action: "unavailable", label: "No watch progress for this provider" },
+        episodeCount: 0,
+        hostOnly: !!session.sessionCode,
+      });
+    }
+
     const episodes = await provider.getChildren(seriesId, "episode", auth);
     episodes.sort(
       (a, b) =>

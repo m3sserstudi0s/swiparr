@@ -5,7 +5,7 @@ import { getSessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { AuthService } from "@/lib/services/auth-service";
 import { getMediaProvider } from "@/lib/providers/factory";
-import { resolveItemSource } from "@/lib/providers/item-source";
+import { detailsIdFor, resolveItemSource } from "@/lib/providers/item-source";
 import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -23,10 +23,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const imageType = searchParams.get("imageType") || "Primary";
     const creds = await AuthService.getEffectiveCredentials(session);
     // Hybrid decks contain tmdb:-prefixed streaming-only items
-    const { providerType, externalId } = resolveItemSource(id, creds.provider);
+    const { providerType } = resolveItemSource(id, creds.provider);
     const provider = getMediaProvider(providerType);
 
-    const blurDataURL = await provider.getBlurDataUrl(externalId, imageType, creds);
+    const blurDataURL = await provider.getBlurDataUrl(detailsIdFor(id, providerType), imageType, creds);
     
     if (!blurDataURL) return new NextResponse("Not found", { status: 404 });
 

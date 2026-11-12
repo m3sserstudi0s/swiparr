@@ -4,6 +4,7 @@ import test from "node:test";
 import { TMDB_ID_PREFIX, TMDB_MOVIE_ID_PREFIX, TMDB_TV_ID_PREFIX } from "@/lib/constants";
 import { ProviderType } from "./types";
 import {
+  detailsIdFor,
   isTmdbSourcedId,
   kindFromId,
   resolveItemSource,
@@ -70,4 +71,16 @@ test("season and episode ids fall back to the movie prefix rather than inventing
 test("the two prefixes are distinct and stable", () => {
   assert.equal(TMDB_MOVIE_ID_PREFIX, "tmdb:movie:");
   assert.equal(TMDB_TV_ID_PREFIX, "tmdb:tv:");
+});
+
+test("details keep the typed TMDB id, because the provider decides the kind from it", () => {
+  // Id 57243 is both a film and a show: stripping the prefix resolves a series to
+  // the unrelated film, which is how a liked show rendered as a movie.
+  assert.equal(detailsIdFor("tmdb:tv:57243", ProviderType.TMDB), "tmdb:tv:57243");
+  assert.equal(detailsIdFor("tmdb:movie:57243", ProviderType.TMDB), "tmdb:movie:57243");
+});
+
+test("every other provider takes the bare id", () => {
+  assert.equal(detailsIdFor("tmdb:tv:57243", ProviderType.JELLYFIN), "57243");
+  assert.equal(detailsIdFor("abc123", ProviderType.JELLYFIN), "abc123");
 });
