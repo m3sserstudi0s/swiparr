@@ -76,7 +76,7 @@ export function AccountSettings() {
                     <div className="flex items-center gap-1.5">
                         <span className="text-base font-medium truncate">{userName}</span>
                         {isAdmin && (
-                            <Badge variant='outline' className="text-[10px] h-4 px-1.5 uppercase tracking-wider">
+                            <Badge variant='outline' className="text-[10px] h-4 px-1.5 font-semibold uppercase tracking-wider">
                                 Admin
                             </Badge>
                         )}

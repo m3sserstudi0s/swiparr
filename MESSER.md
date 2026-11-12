@@ -18,6 +18,9 @@ Components stay local, so patches are ordinary edits and upstream deltas stay vi
   the deck/likes tabs, a liked heart, a rating star, a saved bookmark. The mark glyph is Phosphor
   `CardsThree` (`mark.source: "phosphor"`, the `fill` silhouette) because the deck tab uses the same
   glyph: logo, favicon, tab and the OG card are one icon.
+- **Mono is for machine values, never for chips.** Season indices, counts, runtimes, codes and
+  versions stay mono; badges, buttons, prose and headings-sized statistics do not. A badge is
+  semibold uppercase Golos at 10px — there is one `meta` badge variant so no site hand-rolls it.
 - Layout, sidebar mapping (`--sidebar-*` → surface/text tokens), navigation shape.
 - Deck interactions (swipe, match overlay) — behaviour, not style.
 - Copy voice.
@@ -29,6 +32,8 @@ Components stay local, so patches are ordinary edits and upstream deltas stay vi
 | 2026-11-08 | R2 | The swipe stack keeps `shadow-xl` on the front card, and movie posters keep `shadow-2xl` over artwork | Depth is the only signal that cards are stacked and that a poster floats over a backdrop; drop when the deck gets an explicit offset/blur treatment |
 | 2026-11-08 | R1 | `rounded-full` remains on avatars and on the scroll-area / slider thumbs | Permanent — these are the sanctioned circles |
 | 2026-11-08 | R9 | `@react-bits` / `@animate-ui` registry components keep their own icon sizes | Third-party items; revisit if they diverge visually |
+| 2026-11-12 | R18 | Deck badges are uppercase meta chips, not sentence case | They sit on poster artwork at 10px, where an uppercase chip reads as meta and matches the deck's own chips; exit when the deck gains a light metadata rail and badges leave the artwork |
+| 2026-11-12 | R19 | Season rows print indices and counts at 10.5px mono | Canon's machine-meta size; the floor allows 10px, the label size reads better beside 14px titles |
 
 ## Names that did not change
 

@@ -623,7 +623,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Release Year</Label>
-                    <Badge variant="secondary" className="font-mono">
+                    <Badge variant="secondary" className="tabular-nums">
                       {yearRange[0]} — {yearRange[1]}
                     </Badge>
                   </div>
@@ -642,7 +642,7 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Runtime</Label>
-                    <Badge variant="secondary" className="font-mono">
+                    <Badge variant="secondary" className="tabular-nums">
                       {formatRuntime(runtimeRange[0])} — {runtimeRange[1] === 240 ? "4:00+" : formatRuntime(runtimeRange[1])}
                     </Badge>
                   </div>

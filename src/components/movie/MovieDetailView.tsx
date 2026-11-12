@@ -200,13 +200,13 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                         </span>
                       )}
                       {!!movie.OfficialRating && (
-                        <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
+                        <Badge variant="meta" className="border-foreground/30 text-foreground/80">
                           <ShieldCheck className="w-3 h-3"/>
                           {movie.OfficialRating}
                         </Badge>
                       )}
                       {movie.InLibrary && (
-                        <Badge variant="outline" className="text-[10px]/0 py-0 h-4 border-foreground/30 text-foreground/80">
+                        <Badge variant="meta" className="border-foreground/30 text-foreground/80">
                           <HardDrives className="w-3 h-3"/>
                           In Library
                         </Badge>

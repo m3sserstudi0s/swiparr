@@ -140,30 +140,30 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                     </Badge>
                   )}
                   {!!item.CommunityRating && ratingDisplay !== null && (
-                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
+                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 text-[10px] font-semibold uppercase tracking-wider">
                       {isRottenTomatoes ? <Percent className="w-3 h-3 mb-px" /> : <Star className="w-3 h-3 fill-neutral-100 mb-px" />}
                       {ratingDisplay}{isRottenTomatoes ? "%" : ""}
                     </Badge>
                   )}
                    {!!item.RunTimeTicks && (
-                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100">
+                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 text-[10px] font-semibold uppercase tracking-wider">
                       <Clock className="w-3 h-3 mb-px" />
                       {ticksToTime(item.RunTimeTicks)}
                     </Badge>
                   )}
                   {item.Kind === "series" && !!item.SeasonCount && (
-                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 font-mono">
+                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 text-[10px] font-semibold uppercase tracking-wider tabular-nums">
                       {item.SeasonCount}S
                       {typeof item.EpisodeCount === "number" && ` · ${item.EpisodeCount}E`}
                     </Badge>
                   )}
                   {item.Kind === "series" && !!item.Status && (
-                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 font-mono uppercase tracking-wider">
+                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 text-[10px] font-semibold uppercase tracking-wider">
                       {item.Status === "continuing" ? "Continuing" : item.Status === "ended" ? "Ended" : "Upcoming"}
                     </Badge>
                   )}
                   {item.Kind === "episode" && typeof item.SeasonNumber === "number" && (
-                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 font-mono">
+                    <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 text-[10px] font-semibold uppercase tracking-wider tabular-nums">
                       S{item.SeasonNumber} · E{item.EpisodeNumber ?? "?"}
                     </Badge>
                   )}

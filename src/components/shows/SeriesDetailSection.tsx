@@ -134,17 +134,17 @@ export function SeriesDetailSection({ series }: Props) {
     <section className="mt-2 mb-8">
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {commitment && (
-          <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {commitment}
           </span>
         )}
         {status && (
-          <Badge variant="outline" className="rounded-none text-[10px] uppercase tracking-wider font-mono">
+          <Badge variant="meta">
             {status}
           </Badge>
         )}
         {typeof series.CommunityRating === "number" && (
-          <Badge variant="outline" className="rounded-none text-[10px] font-mono">
+          <Badge variant="meta">
             {series.CommunityRating.toFixed(1)}
           </Badge>
         )}
@@ -189,13 +189,13 @@ export function SeriesDetailSection({ series }: Props) {
                   onClick={() => toggleSeason(seasonNumber)}
                 >
                   <span className="flex items-baseline gap-3 min-w-0">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[10.5px] font-mono uppercase tracking-wider text-muted-foreground">
                       {String(seasonNumber).padStart(2, "0")}
                     </span>
                     <span className="text-sm font-medium truncate">{season.Name}</span>
                   </span>
                   <span className="flex items-center gap-3 shrink-0">
-                    <span className="text-[10px] font-mono text-muted-foreground">
+                    <span className="text-[10.5px] font-mono tabular-nums text-muted-foreground">
                       {watched}/{seasonEpisodes.length || season.EpisodeCount || 0}
                     </span>
                     <CaretDown
@@ -211,7 +211,7 @@ export function SeriesDetailSection({ series }: Props) {
                         key={episode.Id}
                         className="flex items-center gap-3 py-1.5 pl-8 text-sm"
                       >
-                        <span className="text-[10px] font-mono text-muted-foreground w-8 shrink-0">
+                        <span className="text-[10.5px] font-mono tabular-nums text-muted-foreground w-8 shrink-0">
                           E{episode.EpisodeNumber ?? "?"}
                         </span>
                         <span className={cn("flex-1 truncate", episode.Progress?.played && "text-muted-foreground")}>
@@ -219,7 +219,7 @@ export function SeriesDetailSection({ series }: Props) {
                         </span>
                         {episode.Progress?.played && <Check className="size-3.5 shrink-0 text-muted-foreground" />}
                         {typeof episode.EpisodeRuntimeMinutes === "number" && (
-                          <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                          <span className="text-[10.5px] font-mono tabular-nums text-muted-foreground shrink-0">
                             {episode.EpisodeRuntimeMinutes} min
                           </span>
                         )}
