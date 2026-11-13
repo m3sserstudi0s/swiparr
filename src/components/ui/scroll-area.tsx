@@ -22,12 +22,11 @@ function ScrollArea({
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
         ref={viewportRef}
-        /* Canon `scroll-fade` (messer-ui utilities.css, vendored from shadcn): a
-           scroll-driven mask that fades only the edge with content behind it. */
-        className={cn(
-          "focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1",
-          "scroll-fade"
-        )}
+        /* No `scroll-fade` here on purpose. Inside a bordered panel the mask reads as a second
+           shadow over the last rows, and every list that uses this component (settings, likes,
+           guide) sits in one. The canon utility stays available for content that scrolls under a
+           toolbar, which is the detail sheet's job. */
+        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
       >
         {children}
       </ScrollAreaPrimitive.Viewport>

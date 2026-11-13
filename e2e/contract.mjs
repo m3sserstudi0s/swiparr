@@ -150,23 +150,22 @@ const main = async () => {
   });
   await page.waitForTimeout(1800);
   const beforeSwitch = await page.evaluate(() => {
-    const sw = document.querySelector('[data-slot="switch"]');
+    const sw = document.querySelector('[data-slot="drawer-content"] [data-slot="switch"]');
     if (!sw) return null;
-    const thumb = sw.querySelector('[data-slot="switch-thumb"]');
-    const row = sw.closest('[role="switch"]');
+    const row = sw.closest('div[role="switch"]');
     const r = sw.getBoundingClientRect();
-    return { thumb: getComputedStyle(thumb).backgroundColor, state: sw.getAttribute("data-state"), row: !!row, rect: [r.x, r.y, r.width, r.height] };
+    return { thumb: getComputedStyle(sw, "::after").backgroundColor, state: sw.checked, row: !!row, rect: [r.x, r.y, r.width, r.height] };
   });
   if (beforeSwitch) {
     const lum = luminance(beforeSwitch.thumb);
     check("switch thumb is the paper colour", lum > 200, `${beforeSwitch.thumb}`);
     const rowBox = await page.evaluate(() => {
-      const r = document.querySelector('[role="switch"]').getBoundingClientRect();
-      return { before: document.querySelector('[role="switch"]').getAttribute("aria-checked"), x: Math.round(r.x + 40), y: Math.round(r.y + r.height / 2) };
+      const r = document.querySelector('[data-slot="drawer-content"] div[role="switch"]').getBoundingClientRect();
+      return { before: document.querySelector('[data-slot="drawer-content"] div[role="switch"]').getAttribute("aria-checked"), x: Math.round(r.x + 40), y: Math.round(r.y + r.height / 2) };
     });
     await page.mouse.click(rowBox.x, rowBox.y);
     await page.waitForTimeout(600);
-    const after = await page.evaluate(() => document.querySelector('[role="switch"]').getAttribute("aria-checked"));
+    const after = await page.evaluate(() => document.querySelector('[data-slot="drawer-content"] div[role="switch"]').getAttribute("aria-checked"));
     check("the whole row toggles the switch", rowBox.before !== after, `${rowBox.before} → ${after}`);
     await page.screenshot({ path: path.join(SHOTS, "filter-drawer.png") });
   } else {

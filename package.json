@@ -20,7 +20,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm test",
     "doctor": "node scripts/doctor.mjs",
-    "e2e": "node e2e/contract.mjs"
+    "e2e": "node e2e/contract.mjs",
+    "e2e:live": "node e2e/live.mjs"
   },
   "engines": {
     "node": ">=24"
