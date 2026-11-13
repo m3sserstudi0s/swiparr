@@ -23,6 +23,9 @@ Components stay local, so patches are ordinary edits and upstream deltas stay vi
   means "this is already true".
 - **A title is not a machine value.** Media names are `font-sans` even where the document's heading
   rule is mono.
+- **A scroll edge fades; it is not shadowed.** `scroll-fade` on the element that owns
+  `overflow-y-auto`. At the very top there is nothing above, so the top fade is correctly absent
+  until content scrolls under the header.
 - **A series past five seasons opens folded.** Three rows are legible, the fourth is half-visible
   under the canon `scroll-fade`, and a "See all N seasons" toggle finishes the list; opening a
   season unfolds it, because an episode list inside a 155px window is unusable.
@@ -78,7 +81,8 @@ would break somebody:
 
 | Component | Deviation | Why |
 |---|---|---|
-| `sheet` | side panels cast **away from their edge** (`-24px 0 44px -20px`), dark theme gets a white halo | shadcn's `shadow-lg` only offsets downward, and a full-height panel on the right edge hides every pixel of it |
+| `sheet` | `shadow-(--shadow-pop)`, and `dark:bg-surface` | `shadow-lg` offsets straight down, so a full-height side panel hides it; a white-vs-black halo is a hand-made value. In the dark theme the panel needs one surface step — page 5 vs panel 20 after the scrim, where both used to be `#0a0a0a` |
+| `scroll-area` | carries `scroll-fade` (shadcn's utility) | every panel list — settings, filters, session settings, likes, matches, guide — wants the same edge fade; measured 21 css px of dissolve at the top edge in Chromium and WebKit |
 | `combobox` | portal node is `display: contents` | as a flex child of the sheet it stole a row of height from the scroll area and left an empty strip under the last card |
 | deck queries | key includes the running version | a release that changes what the same filters return is picked up on the next render instead of after a manual reload |
 | `switch` | knob is `--background`, track is `--border-strong` unchecked / `--primary` checked, `rounded-none` | a text-coloured knob reads as disabled and flips tone when toggled |
