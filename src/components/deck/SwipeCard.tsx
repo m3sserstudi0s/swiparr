@@ -141,7 +141,7 @@ export const SwipeCard = memo(forwardRef<TinderCardHandle, SwipeCardProps>(
                   )}
                   {!!item.CommunityRating && ratingDisplay !== null && (
                     <Badge variant="outline" className="gap-1 border-neutral-700/70 bg-neutral-700/20 text-neutral-100 text-[10px] font-semibold uppercase tracking-wider">
-                      {isRottenTomatoes ? <Percent className="w-3 h-3 mb-px" /> : <Star className="w-3 h-3 fill-neutral-100 mb-px" />}
+                      {isRottenTomatoes ? <Percent weight="fill" className="w-3 h-3 text-neutral-100 mb-px" /> : <Star weight="fill" className="w-3 h-3 text-neutral-100 mb-px" />}
                       {ratingDisplay}{isRottenTomatoes ? "%" : ""}
                     </Badge>
                   )}

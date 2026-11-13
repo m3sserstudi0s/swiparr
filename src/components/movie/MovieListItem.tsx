@@ -5,7 +5,7 @@ import {
   Play,
   Star,
   CalendarBlank,
-  HeartBreak,
+  Heart,
   Clock,
   Bookmark,
   Percent,
@@ -21,6 +21,7 @@ import { useMovieActions } from "@/hooks/use-movie-actions";
 import { getProviderDetailsUrl } from "@/lib/provider-links";
 import { isTmdbSourcedId } from "@/lib/providers/item-source";
 import { useSession } from "@/hooks/api";
+import type { ReactNode } from "react";
 
 
 interface MovieListItemProps {
@@ -77,6 +78,38 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
     ? (isRottenTomatoes ? Math.round(currentMovie.CommunityRating * 10) : currentMovie.CommunityRating.toFixed(1))
     : null;
 
+  const metaParts: { key: string; node: ReactNode }[] = [];
+  if (currentMovie.ProductionYear) {
+    metaParts.push({ key: "year", node: <span>{currentMovie.ProductionYear}</span> });
+  }
+  if (ratingDisplay !== null) {
+    metaParts.push({
+      key: "rating",
+      node: (
+        <span className="flex items-center">
+          {isRottenTomatoes ? <Percent weight="fill" className="size-2.5 mr-0.5 mb-px" /> : <Star weight="fill" className="size-2.5 mr-0.5 mb-px" />}
+          {ratingDisplay}{isRottenTomatoes ? "%" : ""}
+        </span>
+      ),
+    });
+  }
+  // A series has no runtime; its third value is the season count.
+  if (currentMovie.Kind === "series" && currentMovie.SeasonCount) {
+    metaParts.push({
+      key: "seasons",
+      node: <span>{currentMovie.SeasonCount} season{currentMovie.SeasonCount === 1 ? "" : "s"}</span>,
+    });
+  } else if (currentMovie.RunTimeTicks) {
+    metaParts.push({
+      key: "runtime",
+      node: (
+        <span className="flex items-center">
+          <Clock className="size-2.5 mr-0.5 mb-px" /> {ticksToTime(currentMovie.RunTimeTicks)}
+        </span>
+      ),
+    });
+  }
+
   return (
     <div
       onClick={onClick}
@@ -113,25 +146,19 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
       <div className="flex flex-col justify-between flex-1 py-0.5 min-w-0">
         <div>
           <h3 className={cn(
-            "font-bold line-clamp-2 leading-tight mb-1 text-foreground",
+            "font-sans font-bold line-clamp-2 leading-tight mb-1 text-foreground",
           )}>
             {currentMovie.Name}
           </h3>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground h-6">
-            <span>{currentMovie.ProductionYear}</span>
-            {!!currentMovie.CommunityRating && '•'}
-            {!!currentMovie.CommunityRating && ratingDisplay !== null && (
-              <span className="flex items-center">
-                {isRottenTomatoes ? <Percent className="size-2.5 mr-0.5 mb-px" /> : <Star className="size-2.5 mr-0.5 mb-px" />}
-                {ratingDisplay}{isRottenTomatoes ? "%" : ""}
+            {/* Separators are inserted between values, never after them: a series has no runtime,
+                and the old fixed "•" left a bullet dangling at the end of every show. */}
+            {metaParts.map((part, index) => (
+              <span key={part.key} className="flex items-center gap-1.5">
+                {index > 0 && <span aria-hidden>•</span>}
+                {part.node}
               </span>
-            )}
-            •
-            {!!currentMovie.RunTimeTicks && (
-              <span className="flex items-center">
-                <Clock className="size-2.5 mr-0.5 mb-px" /> {ticksToTime(currentMovie.RunTimeTicks)}
-              </span>
-            )}
+            ))}
             <div className="ml-auto">
               {currentMovie.sessionCode && currentMovie.likedBy && currentMovie.likedBy.length > 0 && (
                 <UserAvatarList
@@ -210,7 +237,7 @@ export function MovieListItem({ movie, onClick, variant = "full", isLiked }: Mov
               onClick={handleUnlike}
               disabled={isUnliking}
             >
-              <HeartBreak className="w-3.5 h-3.5" />
+              <Heart weight="fill" className="w-3.5 h-3.5 text-destructive" />
             </Button>}
           </div>
         </div>
