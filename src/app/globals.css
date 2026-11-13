@@ -4,6 +4,7 @@
 @import "../styles/messer/theme.css";
 @import "../styles/messer/type.css";
 @import "../styles/messer/utilities.css";
+@import "../styles/messer/recipes.css";
 @import "../styles/messer/brand.css";
 
 @custom-variant dark (&:is(.dark *));

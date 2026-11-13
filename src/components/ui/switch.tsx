@@ -1,30 +1,37 @@
 "use client"
 
 import * as React from "react"
-import * as SwitchPrimitive from "@radix-ui/react-switch"
 
 import { cn } from "@/lib/utils"
 
-function Switch({
-  className,
-  ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+/**
+ * The canon switch (messer-ui `recipes.css` → `.m-switch`), not a Radix rebuild of it.
+ *
+ * A native checkbox with the recipe's own pseudo-element knob means the settings drawer, the
+ * filter drawer and the sink all render the identical control — the two implementations that
+ * existed before drifted in height, knob size and margins, which is what made one look off-centre
+ * next to the other.
+ */
+export interface SwitchProps
+  extends Omit<React.ComponentProps<"input">, "type" | "onChange" | "size" | "checked"> {
+  checked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+}
+
+function Switch({ className, checked, defaultChecked, onCheckedChange, disabled, ...props }: SwitchProps) {
   return (
-    <SwitchPrimitive.Root
+    <input
+      type="checkbox"
+      role="switch"
       data-slot="switch"
-      className={cn(
-        "peer data-[state=checked]:bg-primary data-[state=unchecked]:bg-border-strong focus-visible:border-ring focus-visible:ring-ring/50 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-none border border-border-strong transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
+      className={cn("m-switch", className)}
+      // Uncontrolled callers pass `defaultChecked`, controlled ones `checked`; handing React
+      // `checked={undefined}` would make it warn about switching between the two modes.
+      {...(checked === undefined ? { defaultChecked } : { checked })}
+      disabled={disabled}
+      onChange={(event) => onCheckedChange?.(event.currentTarget.checked)}
       {...props}
-    >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
-        className={cn(
-          "bg-background pointer-events-none block size-4 rounded-none ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0"
-        )}
-      />
-    </SwitchPrimitive.Root>
+    />
   )
 }
 

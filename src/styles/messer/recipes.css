@@ -1,0 +1,185 @@
+/* messer-ui — atoms. Hand-written CSS on tokens: no Tailwind needed to consume it,
+   no literals, no @apply. Square by default; the only circles are avatar, status dot,
+   slider thumb (see canon/rules.md §1).
+
+   PORT 2 IS FROZEN. Atoms only: no new recipes, no new variants. Exit condition: request-games
+   becomes a port-1 app and this file's build pipeline is deleted. */
+
+.m-shell { max-width: var(--shell); margin-inline: auto; padding: var(--page-pad); }
+
+/* ── buttons ─────────────────────────────────────────────────────────────── */
+.m-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: var(--ctl); padding-inline: 10px;
+  border: 1px solid var(--border-strong); border-radius: 0;
+  background: var(--surface); color: var(--text);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 500; line-height: 1;
+  cursor: pointer; white-space: nowrap; text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+.m-btn:hover { background: var(--surface-2); }
+.m-btn[disabled], .m-btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.m-btn--primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.m-btn--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.m-btn--ghost { background: transparent; border-color: transparent; color: var(--text); }
+.m-btn--ghost:hover { background: var(--surface-2); color: var(--text); }
+.m-btn--danger { background: var(--destructive); border-color: var(--destructive); color: #ffffff; }
+.m-btn--danger:hover { background: color-mix(in oklab, var(--destructive) 90%, #000); }
+.m-btn--sm { height: var(--ctl-sm); padding-inline: 8px; }
+.m-btn--lg { height: var(--ctl-lg); padding-inline: 14px; }
+.m-btn--icon { width: var(--ctl); padding: 0; }
+.m-btn svg { width: 16px; height: 16px; flex: none; }
+
+/* ── fields ──────────────────────────────────────────────────────────────── */
+.m-field { display: grid; gap: 6px; }
+.m-label {
+  display: block; font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+  line-height: 1; letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--text-3);
+}
+.m-hint { font-size: 12px; line-height: 1.45; color: var(--text-3); }
+.m-error { font-size: 12px; line-height: 1.45; color: var(--destructive); display: flex; align-items: center; gap: 4px; }
+
+.m-input, .m-textarea, .m-select {
+  width: 100%; height: var(--ctl); padding-inline: 10px;
+  border: 1px solid var(--border-strong); border-radius: 0;
+  background: var(--surface); color: var(--text);
+  font-family: var(--font-sans); font-size: 14px; line-height: 1;
+}
+.m-input::placeholder, .m-textarea::placeholder { color: var(--text-3); }
+.m-input:focus-visible, .m-textarea:focus-visible, .m-select:focus-visible {
+  outline: 2px solid var(--ring); outline-offset: 2px; border-color: var(--ring);
+}
+.m-input[aria-invalid="true"], .m-textarea[aria-invalid="true"] { border-color: var(--destructive); }
+.m-textarea { height: auto; min-height: 78px; padding: 8px 10px; line-height: 1.5; resize: vertical; }
+.m-select { appearance: none; padding-right: 30px; }
+.m-select-wrap { position: relative; display: block; }
+.m-select-wrap svg { position: absolute; right: 8px; top: 50%; translate: 0 -50%; pointer-events: none; color: var(--text-3); }
+
+.m-check, .m-radio {
+  appearance: none; flex: none; display: inline-grid; place-content: center;
+  width: 16px; height: 16px; margin: 0;
+  border: 1px solid var(--border-strong); border-radius: 0;
+  background: var(--surface); cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.m-check::after {
+  content: ""; width: 7px; height: 4px; translate: 0 -1px;
+  border-left: 2px solid var(--primary-foreground); border-bottom: 2px solid var(--primary-foreground);
+  rotate: -45deg; opacity: 0;
+}
+.m-check:checked, .m-radio:checked { background: var(--primary); border-color: var(--primary); }
+.m-check:checked::after { opacity: 1; }
+.m-radio::after { content: ""; width: 6px; height: 6px; background: var(--primary-foreground); opacity: 0; }
+.m-radio:checked::after { opacity: 1; }
+.m-check-row { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+
+.m-switch {
+  appearance: none; position: relative; flex: none; width: 32px; height: 18px; margin: 0;
+  border: 1px solid var(--border-strong); border-radius: 0; background: var(--border-strong); cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+/* The knob is the page colour in both states: a text-coloured knob reads as disabled, and it flips
+   tone when you toggle. Only the track changes, and the unchecked track is a step darker than the
+   surround so a paper knob still has an edge on it. */
+.m-switch::after {
+  content: ""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
+  box-sizing: border-box; background: var(--background);
+  transition: translate var(--dur-fast) var(--ease);
+}
+.m-switch:checked { background: var(--primary); border-color: var(--primary); }
+.m-switch:disabled { cursor: not-allowed; opacity: 0.5; }
+.m-switch:checked::after { translate: 14px 0; }
+
+/* ── surfaces ────────────────────────────────────────────────────────────── */
+.m-panel { border: 1px solid var(--border); background: var(--surface); }
+.m-panel__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.m-panel__title { font-family: var(--font-mono); font-size: 16px; font-weight: 500; line-height: 1.2; margin: 0; }
+.m-panel__body { padding: 12px; }
+.m-panel__foot { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── data ────────────────────────────────────────────────────────────────── */
+.m-table { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 14px; }
+.m-table th {
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+  letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--text-3);
+  white-space: nowrap;
+}
+.m-table td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.m-table tbody tr:hover { background: var(--surface-2); }
+.m-table .num, .m-table td.num, .m-table th.num {
+  text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+}
+.m-table td code, .m-data { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ── status ──────────────────────────────────────────────────────────────── */
+.m-badge {
+  display: inline-flex; align-items: center; gap: 6px; height: 20px; padding-inline: 8px;
+  border: 1px solid var(--border-strong); border-radius: 0; background: var(--surface);
+  font-family: var(--font-sans); font-size: 12px; font-weight: 500; line-height: 1; color: var(--text);
+  text-transform: none; white-space: nowrap;
+}
+.m-badge svg { width: 12px; height: 12px; flex: none; }
+.m-badge--success { color: var(--success); border-color: color-mix(in oklab, var(--success) 45%, transparent); background: color-mix(in oklab, var(--success) 8%, transparent); }
+.m-badge--warning { color: var(--warning); border-color: color-mix(in oklab, var(--warning) 45%, transparent); background: color-mix(in oklab, var(--warning) 8%, transparent); }
+.m-badge--danger  { color: var(--destructive); border-color: color-mix(in oklab, var(--destructive) 45%, transparent); background: color-mix(in oklab, var(--destructive) 8%, transparent); }
+.m-badge--primary { color: var(--primary); border-color: color-mix(in oklab, var(--primary) 45%, transparent); background: color-mix(in oklab, var(--primary) 8%, transparent); }
+
+.m-dot { width: 6px; height: 6px; border-radius: 9999px; background: currentColor; flex: none; }
+
+/* ── navigation ──────────────────────────────────────────────────────────── */
+.m-tabs { display: flex; align-items: stretch; gap: 2px; border-bottom: 1px solid var(--border); }
+.m-tabs a {
+  display: inline-flex; align-items: center; height: var(--ctl);
+  padding-inline: 10px; margin-bottom: -1px;
+  border-bottom: 1px solid transparent;
+  color: var(--text-2); font-size: 14px; text-decoration: none;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.m-tabs a:hover { color: var(--text); }
+.m-tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--primary); }
+
+/* ── feedback ────────────────────────────────────────────────────────────── */
+.m-alert {
+  display: flex; gap: 8px; padding: 10px 12px;
+  border: 1px solid var(--border); border-left: 2px solid var(--text-3); background: var(--surface);
+  font-size: 14px; line-height: 1.5;
+}
+.m-alert svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.m-alert--danger { border-left-color: var(--destructive); }
+.m-alert--danger > svg { color: var(--destructive); }
+.m-alert--warning { border-left-color: var(--warning); }
+.m-alert--warning > svg { color: var(--warning); }
+
+.m-kbd {
+  display: inline-flex; align-items: center; height: 18px; padding-inline: 5px;
+  border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 0;
+  background: var(--surface-2); color: var(--text-3);
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; line-height: 1;
+}
+
+.m-progress { height: 4px; background: var(--surface-2); overflow: hidden; }
+.m-progress > span { display: block; height: 100%; background: var(--primary); transition: width var(--dur-slow) var(--ease); }
+
+.m-skeleton { background: var(--surface-2); animation: m-pulse 1.6s var(--ease) infinite; }
+@keyframes m-pulse { 50% { opacity: .55; } }
+
+.m-empty { display: grid; justify-items: center; gap: 8px; padding: 32px 16px; text-align: center; color: var(--text-3); }
+.m-empty svg { width: 24px; height: 24px; }
+
+.m-avatar {
+  display: inline-grid; place-items: center; flex: none;
+  width: 24px; height: 24px; border-radius: 9999px; overflow: hidden;
+  background: var(--surface-2); color: var(--text);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 400;
+}
+.m-sep { height: 1px; background: var(--border); border: 0; margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
