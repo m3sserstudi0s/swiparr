@@ -64,9 +64,12 @@ function SheetContent({
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
           "pt-[env(safe-area-inset-top)]",
           side === "right" &&
-          "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+          // `shadow-lg` offsets straight down, so a full-height panel on the right edge casts
+          // nothing you can see. A side sheet casts away from its own edge — dark on the light
+          // theme, a light halo on the dark one, where black on #0a0a0a has nothing left to darken.
+          "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l shadow-[-24px_0_44px_-20px_rgba(0,0,0,0.34)] dark:shadow-[-24px_0_44px_-20px_rgba(255,255,255,0.15)] sm:max-w-sm",
           side === "left" &&
-          "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+          "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r shadow-[24px_0_44px_-20px_rgba(0,0,0,0.34)] dark:shadow-[24px_0_44px_-20px_rgba(255,255,255,0.15)] sm:max-w-sm",
           side === "top" &&
           "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
           side === "bottom" &&

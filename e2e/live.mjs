@@ -18,6 +18,9 @@ import { createRequire } from "node:module";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BASE = process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
+// A Plex server only has shows in this test library, so the deck check looks for the kind the
+// library actually holds instead of assuming a mixed catalogue.
+const EXPECT_KINDS = (process.env.E2E_KINDS || "movie,series").split(",");
 const SHOTS = path.join(ROOT, "e2e/shots");
 const require = createRequire(import.meta.url);
 
@@ -38,7 +41,13 @@ function credentials() {
     const m = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/);
     if (m) env[m[1]] = m[2].trim();
   }
-  if (!env.JELLYFIN_USER || !env.JELLYFIN_PASSWORD) throw new Error("credential file is missing JELLYFIN_USER / JELLYFIN_PASSWORD");
+  // A Plex instance signs in with the account token in the password field; a shared library with a
+  // real username and password. `E2E_CREDENTIALS` lets a run point at either file.
+  if (process.env.E2E_PASSWORD) {
+    env.JELLYFIN_PASSWORD = process.env.E2E_PASSWORD;
+    if (process.env.E2E_USER) env.JELLYFIN_USER = process.env.E2E_USER;
+  }
+  if (!env.JELLYFIN_USER || !env.JELLYFIN_PASSWORD) throw new Error(`credential file ${file} is missing JELLYFIN_USER / JELLYFIN_PASSWORD`);
   return env;
 }
 
@@ -62,8 +71,24 @@ const main = async () => {
   const page = await ctx.newPage();
 
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+  // Plex signs in through plex.tv, so there is no username/password form to drive. The same
+  // endpoint accepts the account token as the password, and `page.request` shares the browser
+  // context's cookie jar — so the session lands in the browser either way.
+  const hasForm = await page
+    .locator('input[placeholder="Username"]')
+    .waitFor({ timeout: 15000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!hasForm) {
+    const res = await page.request.post(`${BASE}/api/auth/login`, {
+      data: { username: JELLYFIN_USER, password: JELLYFIN_PASSWORD },
+    });
+    if (!res.ok()) throw new Error(`api login failed: ${res.status()} ${(await res.text()).slice(0, 120)}`);
+    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(6000);
+    console.log(`ok    signed in without a form (provider answers the API login)`);
+  } else {
   const user = page.locator('input[placeholder="Username"]');
-  await user.waitFor({ timeout: 30000 });
   const pass = page.locator('input[placeholder="Password"]');
   const submit = page.locator("button[type=submit]");
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -82,6 +107,7 @@ const main = async () => {
   await page.waitForTimeout(14000);
   if (page.url().includes("/login")) {
     throw new Error(`login did not leave /login (still at ${page.url()})`);
+  }
   }
   // A fresh database promotes the first user to admin and says so behind a Continue button.
   const continued = await page.evaluate(() => {
@@ -179,9 +205,8 @@ const main = async () => {
     const s = document.querySelector('[data-slot="sheet-content"]');
     return s ? getComputedStyle(s).boxShadow : "no sheet";
   });
-  const wantsShadow = /0px 10px 15px -3px/.test(shadow) && /0px 4px 6px -4px/.test(shadow)
-    && (shadow.match(/rgba\(0, 0, 0, 0\.1\)/g) || []).length === 2;
-  check("sheet casts exactly one shadow-lg", wantsShadow, shadow.slice(-80));
+  const castsSideways = /rgba\(0, 0, 0, 0\.[1-9]\d*\)\s-24px 0px 44px -20px/.test(shadow) || /rgba\(255, 255, 255, 0\.[1-9]\d*\)\s-24px 0px 44px -20px/.test(shadow);
+  check("sheet casts away from its edge", castsSideways, shadow.split(", ").slice(-1)[0]);
   await page.screenshot({ path: path.join(SHOTS, "live-settings.png") });
 
   await browser.close();
