@@ -29,7 +29,8 @@ export function tmdbPrefixForKind(kind: MediaKind | undefined): string | undefin
   return kind ? TMDB_PREFIX_BY_KIND[kind] : undefined;
 }
 
-export function isTmdbSourcedId(id: string): boolean {
+export function isTmdbSourcedId(id: string | undefined | null): boolean {
+  if (!id) return false;
   return KNOWN_PREFIXES.some(({ prefix }) => id.startsWith(prefix));
 }
 

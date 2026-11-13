@@ -48,3 +48,6 @@ docs/*
 
 # local agent workspace
 .hermes/
+
+# e2e screenshots
+/e2e/shots/

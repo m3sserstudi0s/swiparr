@@ -19,7 +19,8 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm test",
-    "doctor": "node scripts/doctor.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "e2e": "node e2e/contract.mjs"
   },
   "engines": {
     "node": ">=24"

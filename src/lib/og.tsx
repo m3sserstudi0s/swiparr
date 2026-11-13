@@ -91,7 +91,11 @@ export async function renderOgCard({
               `brand/messer-swipe.json` names (256 grid, inlined because Satori cannot render a
               React icon component). */}
           <svg width={96} height={96} viewBox="0 0 256 256" fill={PAPER}>
-            <path d="M224,104v96a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V104A16,16,0,0,1,48,88H208A16,16,0,0,1,224,104ZM56,72H200a8,8,0,0,0,0-16H56a8,8,0,0,0,0,16ZM72,40H184a8,8,0,0,0,0-16H72a8,8,0,0,0,0,16Z" />
+            {/* Same 270deg turn as `mark.rotate` in brand/messer-swipe.json: the cards stand up
+                and the two thin ones sit on the left, which is where the old mark had them. */}
+            <g transform="rotate(270 128 128)">
+              <path d="M224,104v96a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V104A16,16,0,0,1,48,88H208A16,16,0,0,1,224,104ZM56,72H200a8,8,0,0,0,0-16H56a8,8,0,0,0,0,16ZM72,40H184a8,8,0,0,0,0-16H72a8,8,0,0,0,0,16Z" />
+            </g>
           </svg>
           <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 32 }}>
             <div

@@ -40,7 +40,7 @@ export default function Home() {
             <TabsTrigger value="swipe" className="h-11 w-16 group rounded-none z-0">
               <CardsThree
                 weight={tab === "swipe" ? "fill" : "regular"}
-                className="size-5 z-0 text-foreground"
+                className="size-5 z-0 text-foreground rotate-[270deg]"
               />
             </TabsTrigger>
 

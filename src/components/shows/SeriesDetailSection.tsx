@@ -143,11 +143,6 @@ export function SeriesDetailSection({ series }: Props) {
             {status}
           </Badge>
         )}
-        {typeof series.CommunityRating === "number" && (
-          <Badge variant="meta">
-            {series.CommunityRating.toFixed(1)}
-          </Badge>
-        )}
       </div>
 
       {knowsProgress && startHere?.startHere && startHereTitle && (
