@@ -111,7 +111,10 @@ function ComboboxContent({
     "side" | "align" | "sideOffset" | "alignOffset" | "anchor"
   > & { container?: HTMLElement | null }) {
   return (
-    <ComboboxPrimitive.Portal container={container}>
+    /* `contents` keeps the portal node out of the parent's layout. Inside the settings sheet the
+       node was a flex child, so opening the popup stole a row of height from the scroll area and
+       left a blank strip under the last card. */
+    <ComboboxPrimitive.Portal container={container} className="contents">
       <ComboboxPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}

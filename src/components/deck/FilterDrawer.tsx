@@ -173,10 +173,15 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
       setProviderSearch("");
       // Legacy filter objects only carry a deckMode; translate it into the two rows
       // so an existing user's deck is what they left it as.
-      const legacyMode = currentFilters?.deckMode ?? "movies";
+      const legacyMode = currentFilters?.deckMode;
       const kinds = currentFilters?.kinds?.filter((kind): kind is "movie" | "series" => kind === "movie" || kind === "series");
+      // No stored mode and no kinds = written before shows existed: on a provider that has
+      // shows that means "everything", matching withDeckDefaults() on the server.
       const fallbackKinds: ("movie" | "series")[] =
-        legacyMode === "mixed" ? ["movie", "series"] : legacyMode === "movies" ? ["movie"] : ["series"];
+        legacyMode === "mixed" ? ["movie", "series"]
+          : legacyMode === "movies" ? ["movie"]
+            : legacyMode ? ["series"]
+              : capabilities.hasSeries ? ["movie", "series"] : ["movie"];
       setMediaKinds(kinds?.length ? kinds : fallbackKinds);
       setShowUnit(currentFilters?.showUnit ?? (legacyMode === "continue" || legacyMode === "episodes" ? "episode" : "series"));
       setSeriesStatus(currentFilters?.status ?? []);

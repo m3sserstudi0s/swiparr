@@ -70,7 +70,8 @@ would break somebody:
 
 | Component | Deviation | Why |
 |---|---|---|
-| `sheet` | no `shadow-lg` | the scrim already separates the panel; the shadow's two layers read as a second dark edge on the drawer |
+| `sheet` | keeps `shadow-lg` (shadcn default) | he wants the panel to cast a shadow; the "double shadow" was the scroll-fade, not this |
+| `combobox` | portal node is `display: contents` | as a flex child of the sheet it stole a row of height from the scroll area and left an empty strip under the last card |
 | `switch` | knob is `--background`, track is `--border-strong` unchecked / `--primary` checked, `rounded-none` | a text-coloured knob reads as disabled and flips tone when toggled |
 | `combobox` | square, hairline, no shadow | the popup shadow painted a band over the drawer beneath it |
 | `select` / `popover` / `dropdown` | still shadcn shadows | not on a panel edge; no complaint yet |

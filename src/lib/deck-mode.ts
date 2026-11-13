@@ -78,13 +78,24 @@ export function deriveDeckMode(filters?: {
  * with no filters configured already gets the movies deck, and turning null into
  * an object would change paths that branch on "has filters".
  */
-export function withDeckDefaults(filters: Filters | null | undefined): Filters | null {
+export function withDeckDefaults(filters: Filters | null | undefined, hasSeries = false): Filters | null {
   if (!filters) return null;
   // A filter object written by the 2.x drawer carries `kinds`/`showUnit`/`started`
   // and the mode is derived from them. One written before that only has a
-  // `deckMode`, and that is what its `kinds` must come from.
-  const selectedKinds = filters.kinds?.length ? filters.kinds : kindsForDeckMode(deckModeOf(filters));
-  const deckMode = filters.kinds?.length || filters.showUnit || filters.started
+  // `deckMode`, and that is what its `kinds` must come from. And one written
+  // before *shows existed* has neither: it was the movies deck because movies were
+  // all the app had, so on a provider that has shows it means "everything", not
+  // "films only" — otherwise every existing session is stuck on films forever.
+  const selectedKinds = filters.kinds?.length
+    ? filters.kinds
+    : filters.deckMode
+      ? kindsForDeckMode(deckModeOf(filters))
+      : hasSeries
+        ? (["movie", "series"] as MediaKind[])
+        : (["movie"] as MediaKind[]);
+  // Derive whenever the object has no stored mode to honour; only an explicit legacy
+  // `deckMode` wins over the kinds we just resolved.
+  const deckMode = filters.kinds?.length || filters.showUnit || filters.started || !filters.deckMode
     ? deriveDeckMode({ kinds: selectedKinds, showUnit: filters.showUnit, started: filters.started })
     : deckModeOf(filters);
   return { ...filters, deckMode, kinds: selectedKinds };
