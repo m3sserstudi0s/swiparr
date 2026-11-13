@@ -7,7 +7,7 @@ import {
   Play,
   Clock,
   Star,
-  HeartBreak,
+  Heart,
   Bookmark,
   ShieldCheck,
   ArrowSquareOut,
@@ -274,14 +274,16 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
                   {isLikedByMe && <Button
                     variant="outline"
                     size="lg"
-                    className="shrink-0 aspect-square p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    aria-label="Unlike"
+                    title="Unlike"
+                    className="shrink-0 aspect-square p-0 text-destructive border-destructive/40 hover:bg-destructive/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUnlike();
                     }}
                     disabled={isUnliking}
                   >
-                    <HeartBreak className="w-5 h-5" />
+                    <Heart weight="fill" className="w-5 h-5 text-destructive" />
                   </Button>}
                 </div>
 

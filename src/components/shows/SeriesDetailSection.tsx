@@ -64,8 +64,14 @@ const statusLabel = (status: MediaItem["Status"]) => {
   return null;
 };
 
+/** Past this many seasons the list is a wall, so it opens folded. */
+const SEASON_FOLD_THRESHOLD = 5;
+/** Three rows plus a sliver of the fourth, which the fade covers. */
+const FOLDED_SEASON_HEIGHT = "9.7rem";
+
 export function SeriesDetailSection({ series }: Props) {
   const [openSeasons, setOpenSeasons] = useState<number[]>([]);
+  const [showAllSeasons, setShowAllSeasons] = useState(false);
   // A provider without watch state cannot answer "where are you": asking it for a
   // start-here position would print S1E1 under a heading that claims progress.
   const knowsProgress = getRuntimeConfig().capabilities.hasProgress;
@@ -130,6 +136,9 @@ export function SeriesDetailSection({ series }: Props) {
     ? startHereHeading({ action: startHere.startHere.action, hostOnly: startHere.hostOnly })
     : null;
 
+  const seasonTotal = seasons?.length ?? 0;
+  const folded = !showAllSeasons && openSeasons.length === 0 && seasonTotal > SEASON_FOLD_THRESHOLD;
+
   return (
     <section className="mt-2 mb-8">
       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -169,7 +178,16 @@ export function SeriesDetailSection({ series }: Props) {
       )}
 
       {!isLoadingSeasons && !isLoadingEpisodes && (
-        <div className="border-t border-border">
+        <div
+          className={cn(
+            "border-t border-border",
+            // Folded: exactly three rows are legible, the fourth is half-visible under the
+            // canon scroll-fade, and the toggle below finishes the list. Opening a season
+            // removes the fold — an episode list inside a 155px window is unusable.
+            folded && "overflow-y-auto scroll-fade",
+          )}
+          style={folded ? { maxHeight: FOLDED_SEASON_HEIGHT } : undefined}
+        >
           {(seasons ?? []).map((season) => {
             const seasonNumber = season.SeasonNumber ?? 1;
             const seasonEpisodes = episodesBySeason.get(seasonNumber) ?? [];
@@ -229,7 +247,20 @@ export function SeriesDetailSection({ series }: Props) {
               </div>
             );
           })}
+          {folded && <div className="h-10" aria-hidden />}
         </div>
+      )}
+
+      {!isLoadingSeasons && !isLoadingEpisodes && (seasons?.length ?? 0) > SEASON_FOLD_THRESHOLD && (
+        <button
+          type="button"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => setShowAllSeasons((value) => !value)}
+          aria-expanded={showAllSeasons}
+        >
+          {showAllSeasons ? "See less" : `See all ${seasons?.length} seasons`}
+          <CaretDown className={cn("size-3.5 transition-transform", showAllSeasons && "rotate-180")} />
+        </button>
       )}
     </section>
   );

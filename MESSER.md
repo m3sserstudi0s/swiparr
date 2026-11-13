@@ -18,6 +18,14 @@ Components stay local, so patches are ordinary edits and upstream deltas stay vi
   the deck/likes tabs, a liked heart, a rating star, a saved bookmark. The mark glyph is Phosphor
   `CardsThree` (`mark.source: "phosphor"`, the `fill` silhouette) because the deck tab uses the same
   glyph: logo, favicon, tab and the OG card are one icon.
+- **A state icon is filled *and* coloured.** A liked heart is `weight="fill"` in `text-destructive`
+  in the detail sheet and in a likes row; a rating star is `weight="fill"`. An outline icon never
+  means "this is already true".
+- **A title is not a machine value.** Media names are `font-sans` even where the document's heading
+  rule is mono.
+- **A series past five seasons opens folded.** Three rows are legible, the fourth is half-visible
+  under the canon `scroll-fade`, and a "See all N seasons" toggle finishes the list; opening a
+  season unfolds it, because an episode list inside a 155px window is unusable.
 - **Mono is for machine values, never for chips.** Season indices, counts, runtimes, codes and
   versions stay mono; badges, buttons, prose and headings-sized statistics do not. A badge is
   semibold uppercase Golos at 10px — there is one `meta` badge variant so no site hand-rolls it.
