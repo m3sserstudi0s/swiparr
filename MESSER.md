@@ -70,8 +70,9 @@ would break somebody:
 
 | Component | Deviation | Why |
 |---|---|---|
-| `sheet` | keeps `shadow-lg` (shadcn default) | he wants the panel to cast a shadow; the "double shadow" was the scroll-fade, not this |
+| `sheet` | side panels cast **away from their edge** (`-24px 0 44px -20px`), dark theme gets a white halo | shadcn's `shadow-lg` only offsets downward, and a full-height panel on the right edge hides every pixel of it |
 | `combobox` | portal node is `display: contents` | as a flex child of the sheet it stole a row of height from the scroll area and left an empty strip under the last card |
+| deck queries | key includes the running version | a release that changes what the same filters return is picked up on the next render instead of after a manual reload |
 | `switch` | knob is `--background`, track is `--border-strong` unchecked / `--primary` checked, `rounded-none` | a text-coloured knob reads as disabled and flips tone when toggled |
 | `combobox` | square, hairline, no shadow | the popup shadow painted a band over the drawer beneath it |
 | `select` / `popover` / `dropdown` | still shadcn shadows | not on a panel edge; no complaint yet |

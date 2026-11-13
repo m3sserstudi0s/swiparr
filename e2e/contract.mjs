@@ -223,11 +223,10 @@ const main = async () => {
     const s = document.querySelector('[data-slot="sheet-content"]');
     return s ? getComputedStyle(s).boxShadow : "no sheet";
   });
-  // The sheet is meant to cast shadcn's shadow-lg (two layers). What must not come back is a
-  // *second* custom shadow stacked on it, which is what used to read as a doubled edge.
-  const wantsShadow = /0px 10px 15px -3px/.test(shadow) && /0px 4px 6px -4px/.test(shadow)
-    && (shadow.match(/rgba\(0, 0, 0, 0\.1\)/g) || []).length === 2;
-  check("sheet casts exactly one shadow-lg", wantsShadow, shadow.slice(-80));
+  // A full-height panel on the right edge casts away from that edge; shadcn's `shadow-lg` only
+  // offsets downward, which is invisible on a panel that runs the whole viewport height.
+  const castsSideways = /rgba\(0, 0, 0, 0\.[1-9]\d*\)\s-24px 0px 44px -20px/.test(shadow) || /rgba\(255, 255, 255, 0\.[1-9]\d*\)\s-24px 0px 44px -20px/.test(shadow);
+  check("sheet casts away from its edge", castsSideways, shadow.split(", ").slice(-1)[0]);
   await page.screenshot({ path: path.join(SHOTS, "settings.png") });
 
   await browser.close();
