@@ -63,9 +63,15 @@ export class MediaService {
         : session.soloFilters;
     }
 
-    // Fill in `deckMode`/`kinds`. Filter objects written before 2.0 have neither,
-    // and every one of them means the movies deck.
-    sessionFilters = withDeckDefaults(sessionFilters);
+    // Fill in `deckMode`/`kinds`. A filter object that predates shows has neither;
+    // on a provider with shows that means every kind, not films only. A session with
+    // no filters at all gets the same deck — "no filter" is not "films only".
+    const providerHasSeries = getEffectiveCapabilities(activeProviderName).hasSeries;
+    sessionFilters = sessionFilters
+      ? withDeckDefaults(sessionFilters, providerHasSeries)
+      : providerHasSeries
+        ? ({ kinds: ["movie", "series"], deckMode: "mixed", genres: [] } as Filters)
+        : null;
 
     const { watchProviders, watchRegion } = await this.resolveWatchProviders(session, sessionFilters, auth, activeProviderName);
     const hybrid = this.isHybridActive(activeProviderName, watchProviders);

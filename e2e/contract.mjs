@@ -13,6 +13,7 @@
  * Screenshots land in `e2e/shots/` (gitignored) for a human or a vision pass.
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -68,6 +69,17 @@ const check = (name, ok, detail) => {
   console.log(`${ok ? "ok  " : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
 };
 
+function loadCredentials() {
+  const file = process.env.E2E_CREDENTIALS || path.join(os.homedir(), ".config/messer/jellyfin-test.env");
+  const env = {};
+  if (!fs.existsSync(file)) throw new Error(`no credential file at ${file}`);
+  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/);
+    if (m) env[m[1]] = m[2].trim();
+  }
+  return env;
+}
+
 const luminance = (rgb) => {
   const [r, g, b] = rgb.match(/\d+/g).map(Number);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -75,9 +87,36 @@ const luminance = (rgb) => {
 
 const login = async (page, base) => {
   await page.goto(`${base}/login`, { waitUntil: "domcontentloaded" });
-  const name = page.locator('input[placeholder="Display name"]');
   const submit = page.locator("button[type=submit]");
-  await name.waitFor({ timeout: 30000 });
+  // A library-backed instance asks for a username and password; a streaming-only one asks for
+  // a display name. The fixtures answer the media API either way, so accept both forms.
+  const name = page.locator('input[placeholder="Display name"]');
+  const user = page.locator('input[placeholder="Username"]');
+  await Promise.race([
+    name.waitFor({ timeout: 30000 }).catch(() => {}),
+    user.waitFor({ timeout: 30000 }).catch(() => {}),
+  ]);
+  if (!(await name.count())) {
+    const credentials = loadCredentials();
+    const pass = page.locator('input[placeholder="Password"]');
+    // fill() drives React's onChange in one shot; pressSequentially is the fallback when a
+    // controlled input swallows it (hydration race on a cold dev server).
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await user.fill(credentials.JELLYFIN_USER);
+      await pass.fill(credentials.JELLYFIN_PASSWORD);
+      await page.waitForTimeout(500);
+      if ((await user.inputValue()) === credentials.JELLYFIN_USER && await submit.isEnabled()) break;
+      await user.click();
+      await user.pressSequentially(credentials.JELLYFIN_USER, { delay: 25 });
+      await pass.click();
+      await pass.pressSequentially(credentials.JELLYFIN_PASSWORD, { delay: 25 });
+      await page.waitForTimeout(600);
+      if (await submit.isEnabled()) break;
+    }
+    await submit.click();
+    await page.waitForTimeout(12000);
+    return;
+  }
   // hydration can swallow the first typing; retype until the form accepts it
   for (let attempt = 0; attempt < 4; attempt++) {
     await name.click();
@@ -184,7 +223,11 @@ const main = async () => {
     const s = document.querySelector('[data-slot="sheet-content"]');
     return s ? getComputedStyle(s).boxShadow : "no sheet";
   });
-  check("sheet draws no shadow", shadow === "none", shadow.slice(0, 60));
+  // The sheet is meant to cast shadcn's shadow-lg (two layers). What must not come back is a
+  // *second* custom shadow stacked on it, which is what used to read as a doubled edge.
+  const wantsShadow = /0px 10px 15px -3px/.test(shadow) && /0px 4px 6px -4px/.test(shadow)
+    && (shadow.match(/rgba\(0, 0, 0, 0\.1\)/g) || []).length === 2;
+  check("sheet casts exactly one shadow-lg", wantsShadow, shadow.slice(-80));
   await page.screenshot({ path: path.join(SHOTS, "settings.png") });
 
   await browser.close();

@@ -50,8 +50,22 @@ test("a pre-2.0 filter object keeps its stored mode and gains matching kinds", (
   assert.deepEqual(stored?.kinds, ["series"]);
 });
 
-test("a filter object with no mode at all is the movies deck", () => {
+test("a filter object with no mode at all is the movies deck on a films-only provider", () => {
   const stored = withDeckDefaults({ genres: [] });
+  assert.equal(stored?.deckMode, "movies");
+  assert.deepEqual(stored?.kinds, ["movie"]);
+});
+
+test("a filter object that predates shows means every kind when the provider has shows", () => {
+  // Sessions saved before 2.0 carry no kinds and no mode. They were films-only because
+  // films were all the app could show, not because anyone asked for that.
+  const stored = withDeckDefaults({ genres: [], unplayedOnly: true }, true);
+  assert.equal(stored?.deckMode, "mixed");
+  assert.deepEqual(stored?.kinds, ["movie", "series"]);
+});
+
+test("an explicit movies choice stays films-only even on a provider with shows", () => {
+  const stored = withDeckDefaults({ genres: [], deckMode: "movies" }, true);
   assert.equal(stored?.deckMode, "movies");
   assert.deepEqual(stored?.kinds, ["movie"]);
 });

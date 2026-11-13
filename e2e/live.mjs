@@ -64,20 +64,25 @@ const main = async () => {
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   const user = page.locator('input[placeholder="Username"]');
   await user.waitFor({ timeout: 30000 });
-  await user.click();
-  await user.pressSequentially(JELLYFIN_USER, { delay: 20 });
   const pass = page.locator('input[placeholder="Password"]');
-  await pass.click();
-  await pass.pressSequentially(JELLYFIN_PASSWORD, { delay: 20 });
   const submit = page.locator("button[type=submit]");
-  for (let i = 0; i < 4 && !(await submit.isEnabled()); i++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await user.fill(JELLYFIN_USER);
+    await pass.fill(JELLYFIN_PASSWORD);
+    await page.waitForTimeout(500);
+    if ((await user.inputValue()) === JELLYFIN_USER && await submit.isEnabled()) break;
+    await user.click();
+    await user.pressSequentially(JELLYFIN_USER, { delay: 25 });
     await pass.click();
-    await pass.pressSequentially("x", { delay: 30 });
-    await pass.press("Backspace");
-    await page.waitForTimeout(400);
+    await pass.pressSequentially(JELLYFIN_PASSWORD, { delay: 25 });
+    await page.waitForTimeout(600);
+    if (await submit.isEnabled()) break;
   }
   await submit.click();
   await page.waitForTimeout(14000);
+  if (page.url().includes("/login")) {
+    throw new Error(`login did not leave /login (still at ${page.url()})`);
+  }
   // A fresh database promotes the first user to admin and says so behind a Continue button.
   const continued = await page.evaluate(() => {
     const btn = Array.from(document.querySelectorAll("button")).find((b) => b.textContent?.trim().startsWith("Continue"));
@@ -174,7 +179,9 @@ const main = async () => {
     const s = document.querySelector('[data-slot="sheet-content"]');
     return s ? getComputedStyle(s).boxShadow : "no sheet";
   });
-  check("settings sheet draws no shadow", shadow === "none", shadow.slice(0, 60));
+  const wantsShadow = /0px 10px 15px -3px/.test(shadow) && /0px 4px 6px -4px/.test(shadow)
+    && (shadow.match(/rgba\(0, 0, 0, 0\.1\)/g) || []).length === 2;
+  check("sheet casts exactly one shadow-lg", wantsShadow, shadow.slice(-80));
   await page.screenshot({ path: path.join(SHOTS, "live-settings.png") });
 
   await browser.close();
