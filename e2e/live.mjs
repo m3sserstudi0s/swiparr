@@ -4,7 +4,7 @@
  *
  *   E2E_BASE_URL=http://127.0.0.1:3000 npm run e2e:live
  *
- * Credentials come from `~/.config/messer/jellyfin-test.env` (chmod 600) and are never printed.
+ * Credentials come from `~/Server/etc/secrets/jellyfin.env` (chmod 600) and are never printed.
  * The Jellyfin server is reached by the app itself (`http://jellyfin:8096`), so no Cloudflare
  * Access is involved.
  *
@@ -34,7 +34,7 @@ function loadPlaywright() {
 }
 
 function credentials() {
-  const file = process.env.E2E_CREDENTIALS || path.join(os.homedir(), ".config/messer/jellyfin-test.env");
+  const file = process.env.E2E_CREDENTIALS || path.join(os.homedir(), "Server/etc/secrets/jellyfin.env");
   if (!fs.existsSync(file)) throw new Error(`no credential file at ${file}`);
   const env = {};
   for (const line of fs.readFileSync(file, "utf8").split("\n")) {

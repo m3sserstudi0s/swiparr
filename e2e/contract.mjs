@@ -70,7 +70,7 @@ const check = (name, ok, detail) => {
 };
 
 function loadCredentials() {
-  const file = process.env.E2E_CREDENTIALS || path.join(os.homedir(), ".config/messer/jellyfin-test.env");
+  const file = process.env.E2E_CREDENTIALS || path.join(os.homedir(), "Server/etc/secrets/jellyfin.env");
   const env = {};
   if (!fs.existsSync(file)) throw new Error(`no credential file at ${file}`);
   for (const line of fs.readFileSync(file, "utf8").split("\n")) {
