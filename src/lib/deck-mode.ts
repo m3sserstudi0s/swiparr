@@ -86,7 +86,18 @@ export function withDeckDefaults(filters: Filters | null | undefined, hasSeries 
   // before *shows existed* has neither: it was the movies deck because movies were
   // all the app had, so on a provider that has shows it means "everything", not
   // "films only" — otherwise every existing session is stuck on films forever.
-  const selectedKinds = filters.kinds?.length
+  // A filter object that says films-only but has no `deckMode` is the *old drawer's* fallback,
+  // not a choice: the 1.x drawer wrote `kinds: ["movie"]` whenever nothing else was selected,
+  // and that object lives in the session cookie, so it survives every release. A real films-only
+  // choice always carries `deckMode: "movies"` (the 2.x drawer derives it), and that is honoured.
+  const staleFilmsOnly =
+    !filters.deckMode &&
+    filters.kinds?.length === 1 &&
+    filters.kinds[0] === "movie" &&
+    hasSeries;
+  const selectedKinds = staleFilmsOnly
+    ? (["movie", "series"] as MediaKind[])
+    : filters.kinds?.length
     ? filters.kinds
     : filters.deckMode
       ? kindsForDeckMode(deckModeOf(filters))

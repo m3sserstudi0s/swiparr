@@ -205,8 +205,8 @@ const main = async () => {
     const s = document.querySelector('[data-slot="sheet-content"]');
     return s ? getComputedStyle(s).boxShadow : "no sheet";
   });
-  const castsSideways = /rgba\(0, 0, 0, 0\.[1-9]\d*\)\s-24px 0px 44px -20px/.test(shadow) || /rgba\(255, 255, 255, 0\.[1-9]\d*\)\s-24px 0px 44px -20px/.test(shadow);
-  check("sheet casts away from its edge", castsSideways, shadow.split(", ").slice(-1)[0]);
+  const elevated = /rgba\(0, 0, 0, 0\.12\) 0px 8px 24px 0px/.test(shadow);
+  check("sheet wears the canon elevation", elevated, shadow.split(", ").slice(-1)[0]);
   await page.screenshot({ path: path.join(SHOTS, "live-settings.png") });
 
   await browser.close();

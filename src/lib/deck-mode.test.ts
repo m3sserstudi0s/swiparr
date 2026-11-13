@@ -69,3 +69,23 @@ test("an explicit movies choice stays films-only even on a provider with shows",
   assert.equal(stored?.deckMode, "movies");
   assert.deepEqual(stored?.kinds, ["movie"]);
 });
+
+test("the 1.x drawer's films-only fallback is not a choice", () => {
+  // `kinds: ["movie"]` with no `deckMode` is what the old drawer wrote when nothing was selected.
+  // It lives in the session cookie, so it outlives the release that stopped writing it.
+  const stored = withDeckDefaults({ genres: [], kinds: ["movie"], unplayedOnly: true }, true);
+  assert.equal(stored?.deckMode, "mixed");
+  assert.deepEqual(stored?.kinds, ["movie", "series"]);
+});
+
+test("the same films-only object on a provider without shows stays films", () => {
+  const stored = withDeckDefaults({ genres: [], kinds: ["movie"] }, false);
+  assert.equal(stored?.deckMode, "movies");
+  assert.deepEqual(stored?.kinds, ["movie"]);
+});
+
+test("choosing only shows keeps the shows deck", () => {
+  const stored = withDeckDefaults({ genres: [], kinds: ["series"], deckMode: "shows" }, true);
+  assert.equal(stored?.deckMode, "shows");
+  assert.deepEqual(stored?.kinds, ["series"]);
+});
