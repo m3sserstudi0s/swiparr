@@ -19,7 +19,7 @@ export function DeckError() {
       <Empty className="from-muted/50 to-background h-full w-full bg-linear-to-b from-30% max-h-[67vh] mt-10 rounded-3xl">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <CardsThree />
+            <CardsThree className="rotate-[270deg]" />
           </EmptyMedia>
           <EmptyTitle className="text-foreground">Something unexpected happened.</EmptyTitle>
           <EmptyDescription>

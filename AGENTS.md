@@ -44,6 +44,7 @@ npm run typecheck          # tsc --noEmit  (authoritative; the patch tool's lint
 npm test                   # node --import tsx --test "src/**/*.test.ts"
 npm run check              # lint + typecheck + test — run before every commit
 npm run doctor             # env, provider reachability, db, version
+npm run e2e                # UI contract on a running instance (needs E2E_BASE_URL, defaults :3000)
 npm run db:migrate         # apply migrations (tsx)
 npm run db:generate        # new migration from schema changes
 ```
@@ -67,7 +68,9 @@ cannot resolve Docker service names.
 6. **`src/proxy.ts` is the only middleware.** All request-level logic (CSP, auth, base-path rewrites)
    lives there; `next.config.ts` `headers()` is build-time and runs after the middleware.
 7. **Mono is for machine values.** Badges use the `meta` variant; see `MESSER.md`.
-8. **Icons are Phosphor** (`@phosphor-icons/react/dist/ssr`), `weight="fill"` only for state.
+8. **Icons are Phosphor** (`@phosphor-icons/react/dist/ssr`), `weight="fill"` only for state. The
+   swipe mark is `CardsThree` turned 270° (`mark.rotate` in messer-ui, `rotate-[270deg]` here) so the
+   cards stand up with the thin ones on the left; the tab glyph uses the same turn.
 9. **A new provider mapper is a pure function** in a `map.ts` with no axios/Next import, so it is
    testable without a runtime.
 10. **Tests are `node:test`.** Do not add vitest/jest; the lockfile cost is not worth it.
@@ -80,6 +83,10 @@ cannot resolve Docker service names.
 - Commit as Jakob (`Jakob Bjelvér <jakobbjelver@gmail.com>`); Vercel only builds his commits.
 - After changing a provider or the deck service, prove it through `/api/media/items` — a helper
   having a test is not evidence the deck uses it.
+- **UI changes are proven with `npm run e2e`**, which answers the media API from fixtures and asserts
+  the things a unit test cannot see (a rating rendered once, a switch whose knob is the paper colour,
+  a whole row that toggles, a sheet with no shadow). It writes screenshots to `e2e/shots/`. A visual
+  fix reported without this is a guess.
 - Never accept a credential in chat; ask for a revocable token.
 - Public communication (release notes, catalog PRs) is drafted for approval first.
 

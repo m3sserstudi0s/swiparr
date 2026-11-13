@@ -54,7 +54,7 @@ export function DeckEmpty({ onRefresh, onOpenFilter, deckMode }: DeckEmptyProps)
       <Empty className="w-full h-full mt-10">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <CardsThree />
+            <CardsThree className="rotate-[270deg]" />
           </EmptyMedia>
           <EmptyTitle className="text-foreground">{copy.title}</EmptyTitle>
           <EmptyDescription>{copy.description}</EmptyDescription>

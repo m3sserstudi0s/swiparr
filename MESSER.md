@@ -55,19 +55,31 @@ would break somebody:
 - `next lint` no longer exists in Next 16 and `eslint-config-next` was pinned to `^0.2.4` (a stub), so
   lint had never run. Fixed: `eslint-config-next@16.1.6`, `eslint@^9`, `npx eslint src`.
   Pre-existing `any` and React-Compiler-era rule violations are **warnings**, not errors.
-- Icons came back to Lucide at 2.0 (`@phosphor-icons/react` removed). The sweep renamed identifiers
-  only — no copy string was touched.
+- Icons are Phosphor since canon 2.4.0 (`lucide-react` uninstalled, no family exception). `weight`
+  carries state (`fill` for the active tab, a liked heart, a rated star); nothing else fills. The
+  sweep renamed identifiers only — no copy string was touched.
+- The mark is Phosphor `CardsThree` turned 270° (`mark.rotate` in `brand/messer-swipe.json`, so the
+  cards stand up with the thin ones on the left, matching the old Lucide mark instead of mirroring
+  it). The deck tab and the empty/error states draw the same turn.
 - The OG card and the app mark both come from `marks/messer-swipe/` in messer-ui; `public/icon0.svg`,
   `icon1.png`, `favicon.ico` and the `web-app-manifest-*.png` set are gone.
 - The sink is public in development and behind the session in production unless `MESSER_SINK_PUBLIC=1`
   (see `src/proxy.ts`).
 
+## Deviations from shadcn defaults
+
+| Component | Deviation | Why |
+|---|---|---|
+| `sheet` | no `shadow-lg` | the scrim already separates the panel; the shadow's two layers read as a second dark edge on the drawer |
+| `switch` | knob is `--background`, track is `--border-strong` unchecked / `--primary` checked, `rounded-none` | a text-coloured knob reads as disabled and flips tone when toggled |
+| `combobox` | square, hairline, no shadow | the popup shadow painted a band over the drawer beneath it |
+| `select` / `popover` / `dropdown` | still shadcn shadows | not on a panel edge; no complaint yet |
+
 ## Verify
 
 ```bash
-npx eslint src            # 0 errors
-npx tsc --noEmit          # 0 errors
-npm test                  # node:test harness
+npm run check             # eslint + tsc + 102 tests
+npm run e2e               # UI contract against a running instance; shots in e2e/shots/
 npx next build
 node ../messer-ui/scripts/check.mjs --url http://127.0.0.1:3001/ui --app . --profile full
 ```

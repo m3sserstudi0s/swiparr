@@ -108,7 +108,7 @@ export function MovieDetailView({ movieId, onClose, showLikedBy = true, sessionC
   return (
     <Drawer open={!!movieId} onOpenChange={(open: boolean) => !open && onClose()}>
       <DrawerContent>
-        <DrawerTitle className="sr-only">Movie Details</DrawerTitle>
+        <DrawerTitle className="sr-only">{movie?.Kind === "series" ? "Series details" : "Movie details"}</DrawerTitle>
         <div
           onScroll={handleScroll} // Update motion value here
           className={cn(

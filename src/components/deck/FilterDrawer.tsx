@@ -581,14 +581,30 @@ export function FilterDrawer({ open, onOpenChange, currentFilters, onSave }: Fil
 
                 {/* Watched Section */}
                 {capabilities.hasAuth && (
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
+                  // The row is the control: a 32x18 switch is a hard target on a phone, and the
+                  // card was inert outside it. The switch stays as the visual, inert to pointers.
+                  <div
+                    role="switch"
+                    aria-checked={unplayedOnly}
+                    tabIndex={0}
+                    onClick={() => setUnplayedOnly(!unplayedOnly)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setUnplayedOnly(!unplayedOnly);
+                      }
+                    }}
+                    className="flex cursor-pointer items-center justify-between gap-3 p-4 bg-muted/30 border border-border/50 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
                     <div className="space-y-0.5">
                       <Label className="text-sm font-semibold tracking-tight">Hide Watched</Label>
                       <p className="text-xs text-muted-foreground font-medium">Only show items you haven&apos;t seen yet</p>
                     </div>
                     <Switch
                       checked={unplayedOnly}
-                      onCheckedChange={setUnplayedOnly}
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      className="pointer-events-none"
                     />
                   </div>
                 )}
